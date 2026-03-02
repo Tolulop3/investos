@@ -515,7 +515,7 @@ def run_daily(test_mode=False):
     print(f"\n  📝 TWEET READY:")
     print(f"  {content['tweet'][:120]}...")
     print(f"\n  💾 Files saved: latest_brief.json | fx_signals.json | content_output.json")
-    print(f"  🖥  Open: dashboard.html\n")
+    print(f"  🖥  Open: index.html\n")
 
     return brief
 
@@ -529,11 +529,11 @@ MARKER_END   = "// INVESTOS_DATA_END"
 
 def bake_dashboard(brief, fx_signals, crypto_signals):
     """
-    Inject today's data directly into dashboard.html.
+    Inject today's data directly into index.html.
     This is what makes the GitHub Pages URL always show fresh data —
     the HTML file itself contains the baked data, no server needed.
     """
-    dashboard_file = "dashboard.html"
+    dashboard_file = "index.html"
     if not os.path.exists(dashboard_file):
         print(f"  ⚠️  {dashboard_file} not found — skipping bake")
         return False
@@ -549,7 +549,7 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
         html = f.read()
 
     if MARKER_START not in html or MARKER_END not in html:
-        print("  ⚠️  Data markers missing from dashboard.html — skipping bake")
+        print("  ⚠️  Data markers missing from index.html — skipping bake")
         return False
 
     s    = html.index(MARKER_START) + len(MARKER_START)
