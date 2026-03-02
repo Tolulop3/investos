@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-02T23:41:16.272900",
+    "run_at": "2026-03-02T23:54:06.395362",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -22,8 +22,8 @@
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 16,
-        "survived": 6,
-        "survival_pct": 37.5,
+        "survived": 5,
+        "survival_pct": 31.2,
         "verdict": "\u274c BROKEN",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
@@ -38,33 +38,32 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 91.6,
-        "stressed_avg": 83.3,
-        "score_drop": 8.3,
+        "normal_avg": 90.9,
+        "stressed_avg": 86.7,
+        "score_drop": 4.2,
         "removed": [
-          "TGT",
-          "MRK",
-          "AMGN",
-          "BMY"
+          "TIH.TO",
+          "FM.TO",
+          "NA.TO"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 8.3 pts without top 5 \u2014 system depth check"
+        "verdict": "\u2705 ROBUST",
+        "note": "Score drops 4.2 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 16,
         "survived": 16,
         "survival_pct": 100.0,
-        "avg_score_drop": 3.8,
+        "avg_score_drop": 3.6,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.8 pts"
+        "note": "If momentum stops working: avg score drops 3.6 pts"
       }
     },
     "summary": {
       "normal_picks": 16,
-      "normal_avg_score": 91.6,
-      "scenarios_robust": 3,
-      "scenarios_fragile": 1,
+      "normal_avg_score": 90.9,
+      "scenarios_robust": 4,
+      "scenarios_fragile": 0,
       "scenarios_broken": 1,
       "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
