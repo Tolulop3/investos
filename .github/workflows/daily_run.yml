@@ -27,10 +27,6 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run InvestOS daily analysis
-        env:
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
-          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
         run: python run_daily.py --github
 
       - name: Commit updated dashboard
@@ -42,21 +38,3 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Send failure alert
-        if: failure()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          secure: true
-          username: ${{ secrets.GMAIL_USER }}
-          password: ${{ secrets.GMAIL_PASSWORD }}
-          subject: "InvestOS run FAILED ${{ github.run_id }}"
-          to: ${{ secrets.NOTIFY_EMAIL }}
-          from: ${{ secrets.GMAIL_USER }}
-          body: |
-            Your InvestOS daily run failed.
-
-            Check the logs here:
-            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
