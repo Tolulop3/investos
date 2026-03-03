@@ -669,7 +669,7 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
         # Verify the write worked
         with open(dashboard_file, "r", encoding="utf-8") as f:
             verify = f.read()
-        if 'investos-baked-data' in verify and '"brief"' in verify:
+        if 'const BAKED' in verify and '"brief"' in verify:
             print(f"  ✅ Dashboard baked and VERIFIED ({len(html)//1024}KB)")
             return True
         print(f"  ⚠️  Written but BAKED content unclear — check manually")
