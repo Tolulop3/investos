@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-03T03:52:08.061941",
+    "run_at": "2026-03-03T04:01:23.196964",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,24 +32,22 @@
         "normal_count": 16,
         "survived": 15,
         "survival_pct": 93.8,
-        "avg_score_change": 4.6,
+        "avg_score_change": 4.4,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.6 pts with 10% noise"
+        "note": "Avg score change: \u00b14.4 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 92.1,
-        "stressed_avg": 82.4,
-        "score_drop": 9.7,
+        "normal_avg": 88.7,
+        "stressed_avg": 83.6,
+        "score_drop": 5.1,
         "removed": [
-          "GRT-UN.TO",
-          "CM.TO",
+          "SU.TO",
           "NA.TO",
-          "KO",
           "DXCM"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 9.7 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 5.1 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -63,7 +61,7 @@
     },
     "summary": {
       "normal_picks": 16,
-      "normal_avg_score": 92.1,
+      "normal_avg_score": 88.7,
       "scenarios_robust": 3,
       "scenarios_fragile": 1,
       "scenarios_broken": 1,
@@ -73,7 +71,7 @@
   },
   "decay_monitor": {
     "date": "March 03, 2026",
-    "robustness_score": 50,
+    "robustness_score": 55,
     "rolling_sharpe": {
       "sharpe": null,
       "note": "Only 2 days of data \u2014 need 10+ for Sharpe"
@@ -90,9 +88,11 @@
     "alpha": null,
     "neg_alpha_days": 0,
     "momentum_health": {
-      "verdict": "\u23f3 No momentum picks tracked yet",
+      "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "note": ""
+      "alignment_pct": 100.0,
+      "momentum_picks": 1,
+      "note": "1/1 rising-score picks also rose in price"
     },
     "alerts": [],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
