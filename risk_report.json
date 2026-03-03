@@ -9,15 +9,15 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-03T20:56:56.457074",
+    "run_at": "2026-03-03T21:08:05.240866",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 16,
-        "survived": 13,
-        "survival_pct": 81.2,
+        "survived": 12,
+        "survival_pct": 75.0,
         "verdict": "\u2705 ROBUST",
-        "note": "3 picks unviable after doubling costs"
+        "note": "4 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
@@ -38,31 +38,31 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 88.2,
-        "stressed_avg": 81.0,
-        "score_drop": 7.2,
+        "normal_avg": 88.9,
+        "stressed_avg": 80.3,
+        "score_drop": 8.6,
         "removed": [
-          "CP.TO",
-          "O",
-          "KO",
-          "DXCM"
+          "AMGN",
+          "SCHD",
+          "DXCM",
+          "BMY"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 7.2 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 8.6 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 16,
         "survived": 15,
         "survival_pct": 93.8,
-        "avg_score_drop": 3.6,
+        "avg_score_drop": 3.4,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.6 pts"
+        "note": "If momentum stops working: avg score drops 3.4 pts"
       }
     },
     "summary": {
       "normal_picks": 16,
-      "normal_avg_score": 88.2,
+      "normal_avg_score": 88.9,
       "scenarios_robust": 3,
       "scenarios_fragile": 1,
       "scenarios_broken": 1,
@@ -78,12 +78,12 @@
       "note": "Only 2 days of data \u2014 need 10+ for Sharpe"
     },
     "benchmark": {
-      "ret_7d": -0.36,
-      "ret_30d": 0.24,
-      "ret_90d": 1.7,
-      "ann_ret": 4.8,
+      "ret_7d": -0.31,
+      "ret_30d": 0.29,
+      "ret_90d": 1.75,
+      "ann_ret": 4.9,
       "ann_vol": 11.8,
-      "sharpe": 0.4,
+      "sharpe": 0.42,
       "symbol": "^GSPC"
     },
     "alpha": null,
