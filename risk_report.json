@@ -9,21 +9,21 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-03T04:01:23.196964",
+    "run_at": "2026-03-03T11:40:16.668152",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 16,
-        "survived": 13,
-        "survival_pct": 81.2,
+        "survived": 12,
+        "survival_pct": 75.0,
         "verdict": "\u2705 ROBUST",
-        "note": "3 picks unviable after doubling costs"
+        "note": "4 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 16,
-        "survived": 5,
-        "survival_pct": 31.2,
+        "survived": 3,
+        "survival_pct": 18.8,
         "verdict": "\u274c BROKEN",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
@@ -32,36 +32,37 @@
         "normal_count": 16,
         "survived": 15,
         "survival_pct": 93.8,
-        "avg_score_change": 4.4,
+        "avg_score_change": 4.5,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.4 pts with 10% noise"
+        "note": "Avg score change: \u00b14.5 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 88.7,
-        "stressed_avg": 83.6,
-        "score_drop": 5.1,
+        "normal_avg": 88.6,
+        "stressed_avg": 81.8,
+        "score_drop": 6.8,
         "removed": [
-          "SU.TO",
-          "NA.TO",
-          "DXCM"
+          "PLD",
+          "EWA",
+          "DXCM",
+          "AGI.TO"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 5.1 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 6.8 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 16,
         "survived": 16,
         "survival_pct": 100.0,
-        "avg_score_drop": 3.7,
+        "avg_score_drop": 2.9,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.7 pts"
+        "note": "If momentum stops working: avg score drops 2.9 pts"
       }
     },
     "summary": {
       "normal_picks": 16,
-      "normal_avg_score": 88.7,
+      "normal_avg_score": 88.6,
       "scenarios_robust": 3,
       "scenarios_fragile": 1,
       "scenarios_broken": 1,
