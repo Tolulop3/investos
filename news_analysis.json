@@ -1,18 +1,18 @@
 {
-  "timestamp": "2026-03-03T14:34:23.694188",
+  "timestamp": "2026-03-03T14:48:58.930546",
   "date": "March 03, 2026",
   "articles_fetched": 96,
   "feeds_online": 8,
   "feeds_total": 16,
   "signals_detected": 6,
   "active_signals": {
-    "war_escalation": {
-      "confidence": 75,
-      "note": "War = risk-off. Boost gold, defense, energy. Reduce growth exposure."
-    },
     "middle_east_tension": {
       "confidence": 100,
       "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
+    },
+    "war_escalation": {
+      "confidence": 75,
+      "note": "War = risk-off. Boost gold, defense, energy. Reduce growth exposure."
     },
     "russia_ukraine": {
       "confidence": 100,
@@ -32,6 +32,47 @@
     }
   },
   "sector_sentiment": {
+    "OIL": {
+      "bullish_score": 350,
+      "bearish_score": 0,
+      "net_score": 350,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        },
+        {
+          "name": "war_escalation",
+          "direction": "bullish",
+          "confidence": 75
+        }
+      ]
+    },
+    "CANADIAN_ENERGY": {
+      "bullish_score": 300,
+      "bearish_score": 200,
+      "net_score": 100,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        },
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 50
+        }
+      ]
+    },
     "DEFENSE": {
       "bullish_score": 500.0,
       "bearish_score": 0,
@@ -39,14 +80,14 @@
       "sentiment": "BULLISH",
       "signals": [
         {
-          "name": "war_escalation",
-          "direction": "bullish",
-          "confidence": 75
-        },
-        {
           "name": "middle_east_tension",
           "direction": "bullish",
           "confidence": 100
+        },
+        {
+          "name": "war_escalation",
+          "direction": "bullish",
+          "confidence": 75
         },
         {
           "name": "russia_ukraine",
@@ -62,14 +103,14 @@
       "sentiment": "BULLISH",
       "signals": [
         {
-          "name": "war_escalation",
-          "direction": "bullish",
-          "confidence": 75
-        },
-        {
           "name": "middle_east_tension",
           "direction": "bullish",
           "confidence": 100
+        },
+        {
+          "name": "war_escalation",
+          "direction": "bullish",
+          "confidence": 75
         },
         {
           "name": "russia_ukraine",
@@ -78,20 +119,38 @@
         }
       ]
     },
-    "OIL": {
-      "bullish_score": 350,
-      "bearish_score": 0,
-      "net_score": 350,
-      "sentiment": "BULLISH",
+    "AIRLINES": {
+      "bullish_score": 0,
+      "bearish_score": 500,
+      "net_score": -500,
+      "sentiment": "BEARISH",
       "signals": [
         {
-          "name": "war_escalation",
-          "direction": "bullish",
-          "confidence": 75
+          "name": "middle_east_tension",
+          "direction": "bearish",
+          "confidence": 100
         },
         {
+          "name": "health_outbreak",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "SHIPPING": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
           "name": "middle_east_tension",
-          "direction": "bullish",
+          "direction": "bearish",
           "confidence": 100
         }
       ]
@@ -150,65 +209,6 @@
           "name": "war_escalation",
           "direction": "bearish",
           "confidence": 75
-        }
-      ]
-    },
-    "CANADIAN_ENERGY": {
-      "bullish_score": 300,
-      "bearish_score": 200,
-      "net_score": 100,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "middle_east_tension",
-          "direction": "bullish",
-          "confidence": 100
-        },
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 50
-        }
-      ]
-    },
-    "AIRLINES": {
-      "bullish_score": 0,
-      "bearish_score": 500,
-      "net_score": -500,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "middle_east_tension",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "health_outbreak",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
-          "confidence": 50
-        }
-      ]
-    },
-    "SHIPPING": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "middle_east_tension",
-          "direction": "bearish",
-          "confidence": 100
         }
       ]
     },
@@ -461,6 +461,54 @@
     }
   },
   "ticker_adjustments": {
+    "ENB.TO": {
+      "adjustment": 13.3,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "TRP.TO": {
+      "adjustment": 13.3,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "CNQ.TO": {
+      "adjustment": 13.3,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "SU.TO": {
+      "adjustment": 13.3,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "CVE.TO": {
+      "adjustment": 13.3,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "PPL.TO": {
+      "adjustment": 13.3,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
     "LMT": {
       "adjustment": 20,
       "reasons": [
@@ -524,54 +572,6 @@
       "adjustment": 20,
       "reasons": [
         "\ud83d\udcc8 GOLD (BULLISH)"
-      ],
-      "news_sentiment": "BULLISH"
-    },
-    "ENB.TO": {
-      "adjustment": 13.3,
-      "reasons": [
-        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-        "\ud83d\udcc8 PIPELINES (BULLISH)"
-      ],
-      "news_sentiment": "BULLISH"
-    },
-    "TRP.TO": {
-      "adjustment": 13.3,
-      "reasons": [
-        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-        "\ud83d\udcc8 PIPELINES (BULLISH)"
-      ],
-      "news_sentiment": "BULLISH"
-    },
-    "CNQ.TO": {
-      "adjustment": 13.3,
-      "reasons": [
-        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
-      ],
-      "news_sentiment": "BULLISH"
-    },
-    "SU.TO": {
-      "adjustment": 13.3,
-      "reasons": [
-        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
-      ],
-      "news_sentiment": "BULLISH"
-    },
-    "CVE.TO": {
-      "adjustment": 13.3,
-      "reasons": [
-        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
-      ],
-      "news_sentiment": "BULLISH"
-    },
-    "PPL.TO": {
-      "adjustment": 13.3,
-      "reasons": [
-        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-        "\ud83d\udcc8 PIPELINES (BULLISH)"
       ],
       "news_sentiment": "BULLISH"
     },
@@ -878,11 +878,11 @@
     ],
     "top_headlines": [
       {
-        "title": "Stocks and bonds tumble as widening Middle East war rattles markets",
+        "title": "US embassy in Saudi Arabia warns of imminent attack on oil city of Dhahran",
         "source": "Financial Times"
       },
       {
-        "title": "US embassy in Saudi Arabia warns of imminent attack on oil city of Dhahran",
+        "title": "Stocks and bonds tumble as widening Middle East war rattles markets",
         "source": "Financial Times"
       },
       {
