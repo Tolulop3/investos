@@ -9,22 +9,22 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-03T20:14:57.859933",
+    "run_at": "2026-03-03T20:30:47.119810",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 16,
-        "survived": 12,
-        "survival_pct": 75.0,
-        "verdict": "\u2705 ROBUST",
-        "note": "4 picks unviable after doubling costs"
+        "survived": 11,
+        "survival_pct": 68.8,
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "5 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 16,
-        "survived": 8,
-        "survival_pct": 50.0,
-        "verdict": "\u26a0\ufe0f FRAGILE",
+        "survived": 5,
+        "survival_pct": 31.2,
+        "verdict": "\u274c BROKEN",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
@@ -38,37 +38,37 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 87.3,
-        "stressed_avg": 78.6,
-        "score_drop": 8.7,
+        "normal_avg": 86.8,
+        "stressed_avg": 76.6,
+        "score_drop": 10.2,
         "removed": [
-          "NTR.TO",
-          "TGT",
+          "AGI.TO",
+          "GRT-UN.TO",
           "DXCM",
-          "TIH.TO"
+          "CM.TO"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 8.7 pts without top 5 \u2014 system depth check"
+        "verdict": "\u274c CONCENTRATED",
+        "note": "Score drops 10.2 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 16,
         "survived": 15,
         "survival_pct": 93.8,
-        "avg_score_drop": 3.8,
+        "avg_score_drop": 2.6,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.8 pts"
+        "note": "If momentum stops working: avg score drops 2.6 pts"
       }
     },
     "summary": {
       "normal_picks": 16,
-      "normal_avg_score": 87.3,
-      "scenarios_robust": 3,
-      "scenarios_fragile": 2,
-      "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+      "normal_avg_score": 86.8,
+      "scenarios_robust": 2,
+      "scenarios_fragile": 1,
+      "scenarios_broken": 2,
+      "overall_verdict": "\u274c FRAGILE \u2014 System needs redesign"
     },
-    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+    "verdict": "\u274c FRAGILE \u2014 System needs redesign"
   },
   "decay_monitor": {
     "date": "March 03, 2026",
@@ -78,12 +78,12 @@
       "note": "Only 2 days of data \u2014 need 10+ for Sharpe"
     },
     "benchmark": {
-      "ret_7d": -0.22,
-      "ret_30d": 0.38,
-      "ret_90d": 1.84,
-      "ann_ret": 5.1,
+      "ret_7d": -0.19,
+      "ret_30d": 0.41,
+      "ret_90d": 1.87,
+      "ann_ret": 5.2,
       "ann_vol": 11.8,
-      "sharpe": 0.44,
+      "sharpe": 0.45,
       "symbol": "^GSPC"
     },
     "alpha": null,
