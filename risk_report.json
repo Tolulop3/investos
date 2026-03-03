@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-03T20:42:43.015969",
+    "run_at": "2026-03-03T20:56:56.457074",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -22,48 +22,47 @@
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 16,
-        "survived": 8,
-        "survival_pct": 50.0,
-        "verdict": "\u26a0\ufe0f FRAGILE",
+        "survived": 4,
+        "survival_pct": 25.0,
+        "verdict": "\u274c BROKEN",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 16,
-        "survived": 14,
-        "survival_pct": 87.5,
+        "survived": 15,
+        "survival_pct": 93.8,
         "avg_score_change": 4.4,
         "verdict": "\u2705 ROBUST",
         "note": "Avg score change: \u00b14.4 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 87.5,
-        "stressed_avg": 75.0,
-        "score_drop": 12.5,
+        "normal_avg": 88.2,
+        "stressed_avg": 81.0,
+        "score_drop": 7.2,
         "removed": [
-          "LUN.TO",
-          "VZ",
-          "TIH.TO",
-          "EWA",
+          "CP.TO",
+          "O",
+          "KO",
           "DXCM"
         ],
-        "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 12.5 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 7.2 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 16,
         "survived": 15,
         "survival_pct": 93.8,
-        "avg_score_drop": 3.8,
+        "avg_score_drop": 3.6,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.8 pts"
+        "note": "If momentum stops working: avg score drops 3.6 pts"
       }
     },
     "summary": {
       "normal_picks": 16,
-      "normal_avg_score": 87.5,
+      "normal_avg_score": 88.2,
       "scenarios_robust": 3,
       "scenarios_fragile": 1,
       "scenarios_broken": 1,
@@ -79,12 +78,12 @@
       "note": "Only 2 days of data \u2014 need 10+ for Sharpe"
     },
     "benchmark": {
-      "ret_7d": -0.27,
-      "ret_30d": 0.33,
-      "ret_90d": 1.79,
-      "ann_ret": 5.0,
+      "ret_7d": -0.36,
+      "ret_30d": 0.24,
+      "ret_90d": 1.7,
+      "ann_ret": 4.8,
       "ann_vol": 11.8,
-      "sharpe": 0.43,
+      "sharpe": 0.4,
       "symbol": "^GSPC"
     },
     "alpha": null,
@@ -92,9 +91,9 @@
     "momentum_health": {
       "verdict": "\ud83d\udd34 DECAYING \u2014 Momentum picks underperforming",
       "decaying": true,
-      "alignment_pct": 0.0,
-      "momentum_picks": 2,
-      "note": "0/2 rising-score picks also rose in price"
+      "alignment_pct": 33.3,
+      "momentum_picks": 3,
+      "note": "1/3 rising-score picks also rose in price"
     },
     "alerts": [
       {
