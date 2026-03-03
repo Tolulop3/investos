@@ -599,26 +599,43 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
             "signal_accuracy", "screen_stats", "crypto", "deployment_plan",
             "risk_report", "content", "win_rate", "shortlist",
             "FHSA_top5", "TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3",
-            "screen_results",
+            "screen_results", "market_regime", "run_duration_sec",
         ]
         for k in keep_keys:
             if k in brief:
                 slim_brief[k] = brief[k]
-        # Also pull picks from screen_results if nested there
-        if "screen_results" not in slim_brief and "FHSA_top5" not in slim_brief:
-            for k in ["FHSA_top5","TFSA_growth_top5","TFSA_income_top5","TFSA_swing_top3"]:
-                if k in brief:
-                    slim_brief[k] = brief[k]
+
+        # ── BRIDGE: map flat keys → accounts structure the HTML expects ──
+        fhsa_picks   = brief.get("FHSA_top5", [])
+        growth_picks = brief.get("TFSA_growth_top5", [])
+        income_picks = brief.get("TFSA_income_top5", [])
+        swing_picks  = brief.get("TFSA_swing_top3", [])
+
+        for p in fhsa_picks:
+            p.setdefault("_tag", "[FHSA]"); p.setdefault("_tagCol", "var(--g)"); p.setdefault("_venue", "STOCK_ACCOUNT")
+        for p in growth_picks:
+            p.setdefault("_tag", "[TFSA]"); p.setdefault("_tagCol", "var(--c)"); p.setdefault("_venue", "STOCK_ACCOUNT")
+        for p in income_picks:
+            p.setdefault("_tag", "[TFSA]"); p.setdefault("_tagCol", "var(--c)"); p.setdefault("_venue", "STOCK_ACCOUNT")
+        for p in swing_picks:
+            p.setdefault("_tag", "[TFSA]"); p.setdefault("_tagCol", "var(--a)"); p.setdefault("_venue", "STOCK_ACCOUNT")
+
+        existing_accounts = slim_brief.get("accounts", {})
+        existing_fhsa     = existing_accounts.get("FHSA", {})
+        existing_tfsa     = existing_accounts.get("TFSA", {})
+        existing_fhsa["top_picks"]    = fhsa_picks
+        existing_tfsa["growth_picks"] = growth_picks
+        existing_tfsa["income_picks"] = income_picks
+        existing_tfsa["swing_picks"]  = swing_picks
+        slim_brief["accounts"] = {**existing_accounts, "FHSA": existing_fhsa, "TFSA": existing_tfsa}
+
+        for p in slim_brief.get("conviction_picks", []):
+            p.setdefault("_tag", "[TFSA]"); p.setdefault("_tagCol", "var(--c)"); p.setdefault("_venue", "STOCK_ACCOUNT")
+
+        total = len(fhsa_picks)+len(growth_picks)+len(income_picks)+len(swing_picks)
+        print(f"  🔗 Bridged {total} picks → accounts (FHSA:{len(fhsa_picks)} growth:{len(growth_picks)} income:{len(income_picks)} swing:{len(swing_picks)})")
 
         baked = json.dumps({
-            "brief":    slim_brief,
-            "fx":       fx_signals  or {},
-            "crypto":   crypto_signals or {},
-            "baked_at": datetime.now().isoformat(),
-        }, default=str, ensure_ascii=True)  # ensure_ascii=True prevents JS-breaking chars
-        # Escape </script> sequences that would break inline JS
-        baked = baked.replace("</script>", r"<\/script>").replace("</", r"<\/")
-        print(f"  📦 Baked JSON size: {len(baked)//1024}KB")
     except Exception as e:
         print(f"  ❌ JSON serialization failed: {e}")
         return False
