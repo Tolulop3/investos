@@ -2163,22 +2163,22 @@ function renderUnifiedPickList(brief) {
   const allPicks = [];
 
   // FHSA picks → [FHSA] tag
-  (brief.accounts?.FHSA?.top_picks || []).forEach(p => {
+  (brief.FHSA_top5 || brief.accounts?.FHSA?.top_picks || []).forEach(p => {
     allPicks.push({...p, _tag:'[FHSA]', _tagCol:'var(--g)', _venue:'STOCK_ACCOUNT'});
   });
 
   // TFSA growth picks
-  (brief.accounts?.TFSA?.growth_picks || []).forEach(p => {
+ (brief.TFSA_growth_top5 || brief.accounts?.TFSA?.growth_picks || []).forEach(p => {
     allPicks.push({...p, _tag:'[TFSA]', _tagCol:'var(--c)', _venue:'STOCK_ACCOUNT'});
   });
 
   // TFSA income picks
-  (brief.accounts?.TFSA?.income_picks || []).forEach(p => {
+  (brief.TFSA_income_top5 || brief.accounts?.TFSA?.income_picks || []).forEach(p => {
     allPicks.push({...p, _tag:'[TFSA]', _tagCol:'var(--c)', _venue:'STOCK_ACCOUNT'});
   });
 
   // Swing picks
-  (brief.accounts?.TFSA?.swing_picks || []).forEach(p => {
+ (brief.TFSA_swing_top3 || brief.accounts?.TFSA?.swing_picks || []).forEach(p => {
     allPicks.push({...p, _tag:'[TFSA]', _tagCol:'var(--a)', _venue:'STOCK_ACCOUNT'});
   });
 
