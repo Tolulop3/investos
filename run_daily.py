@@ -636,6 +636,13 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
         print(f"  🔗 Bridged {total} picks → accounts (FHSA:{len(fhsa_picks)} growth:{len(growth_picks)} income:{len(income_picks)} swing:{len(swing_picks)})")
 
         baked = json.dumps({
+            "brief":    slim_brief,
+            "fx":       fx_signals  or {},
+            "crypto":   crypto_signals or {},
+            "baked_at": datetime.now().isoformat(),
+        }, default=str, ensure_ascii=True)
+        baked = baked.replace("</script>", r"<\/script>").replace("</", r"<\/")
+        print(f"  📦 Baked JSON size: {len(baked)//1024}KB")
     except Exception as e:
         print(f"  ❌ JSON serialization failed: {e}")
         return False
