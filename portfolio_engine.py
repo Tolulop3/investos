@@ -43,7 +43,7 @@ CONFIG = {
             # Canada First Home Savings Account
             # Conservative by rule — max 16% drawdown, ETFs preferred
             # Tax deductible contributions + tax-free withdrawals for first home
-            "balance":          0,        # ← UPDATE when you deposit
+            "balance":          01,        # ← UPDATE when you deposit
             "max_drawdown_pct": 16,       # Hard rule — never override
             "style":            "conservative_growth",
             "venue":            "STOCK_ACCOUNT",
@@ -53,7 +53,7 @@ CONFIG = {
         "TFSA": {
             # Tax-Free Savings Account — all gains tax-free forever
             # Full range: stocks + ETFs. Route FX/crypto to separate venues.
-            "balance":          0,        # ← UPDATE when you deposit
+            "balance":          01,        # ← UPDATE when you deposit
             "style":            "growth_income",
             "venue":            "STOCK_ACCOUNT",
             "tag":              "[TFSA]",
