@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-03-04T16:29:13.815508",
+  "timestamp": "2026-03-04T21:38:03.993858",
   "date": "March 04, 2026",
-  "articles_fetched": 96,
+  "articles_fetched": 97,
   "feeds_online": 8,
   "feeds_total": 16,
-  "signals_detected": 5,
+  "signals_detected": 6,
   "active_signals": {
     "middle_east_tension": {
       "confidence": 100,
@@ -14,17 +14,21 @@
       "confidence": 100,
       "note": "War = risk-off. Boost gold, defense, energy. Reduce growth exposure."
     },
-    "russia_ukraine": {
-      "confidence": 100,
-      "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
-    },
     "trump_tariff_negative": {
       "confidence": 100,
       "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
     },
+    "russia_ukraine": {
+      "confidence": 100,
+      "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
+    },
     "health_outbreak": {
       "confidence": 100,
       "note": "Health outbreak = defensive positioning. Pharma, staples, ecommerce."
+    },
+    "trump_tariff_canada_specific": {
+      "confidence": 50,
+      "note": "Direct Canada tariff \u2014 defensive FHSA positioning, reduce TSX exporters"
     }
   },
   "sector_sentiment": {
@@ -198,6 +202,50 @@
         }
       ]
     },
+    "TSX_EXPORTERS": {
+      "bullish_score": 0,
+      "bearish_score": 350,
+      "net_score": -350,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "CANADIAN_MATERIALS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "AUTOS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
     "EUROPEAN_ENERGY": {
       "bullish_score": 150.0,
       "bearish_score": 0,
@@ -245,45 +293,6 @@
       "signals": [
         {
           "name": "russia_ukraine",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "TSX_EXPORTERS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "CANADIAN_MATERIALS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "AUTOS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
           "direction": "bearish",
           "confidence": 100
         }
@@ -390,6 +399,71 @@
           "name": "health_outbreak",
           "direction": "bearish",
           "confidence": 100
+        }
+      ]
+    },
+    "US_DEFENSE": {
+      "bullish_score": 150,
+      "bearish_score": 0,
+      "net_score": 150,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bullish",
+          "confidence": 50
+        }
+      ]
+    },
+    "US_DOMESTIC": {
+      "bullish_score": 150,
+      "bearish_score": 0,
+      "net_score": 150,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bullish",
+          "confidence": 50
+        }
+      ]
+    },
+    "TSX_MATERIALS": {
+      "bullish_score": 0,
+      "bearish_score": 150,
+      "net_score": -150,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "TSX_ENERGY": {
+      "bullish_score": 0,
+      "bearish_score": 150,
+      "net_score": -150,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "TSX_AUTOS": {
+      "bullish_score": 0,
+      "bearish_score": 150,
+      "net_score": -150,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 50
         }
       ]
     }
@@ -499,28 +573,28 @@
       "news_sentiment": "BEARISH"
     },
     "CNR.TO": {
-      "adjustment": -13.3,
+      "adjustment": -20,
       "reasons": [
         "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
       ],
       "news_sentiment": "BEARISH"
     },
     "CP.TO": {
-      "adjustment": -13.3,
+      "adjustment": -20,
       "reasons": [
         "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
       ],
       "news_sentiment": "BEARISH"
     },
     "MG.TO": {
-      "adjustment": -13.3,
+      "adjustment": -20,
       "reasons": [
         "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
       ],
       "news_sentiment": "BEARISH"
     },
     "ATD.TO": {
-      "adjustment": -13.3,
+      "adjustment": -20,
       "reasons": [
         "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
       ],
@@ -714,6 +788,27 @@
         "\ud83d\udcc8 ECOMMERCE (BULLISH)"
       ],
       "news_sentiment": "BULLISH"
+    },
+    "SPY": {
+      "adjustment": 10.0,
+      "reasons": [
+        "\ud83d\udcc8 US_DOMESTIC (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "VOO": {
+      "adjustment": 10.0,
+      "reasons": [
+        "\ud83d\udcc8 US_DOMESTIC (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "VTI": {
+      "adjustment": 10.0,
+      "reasons": [
+        "\ud83d\udcc8 US_DOMESTIC (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     }
   },
   "weight_adjustments": {
@@ -734,8 +829,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "Rate of Iranian missile launches declining, western officials say",
-          "Ali Khamenei\u2019s son Mojtaba emerges as a leading candidate for supreme leader of Iran"
+          "Israel expects weeks-long war against Iran",
+          "US submarine sinks Iranian warship in Indian Ocean"
         ]
       },
       {
@@ -745,19 +840,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "War = risk-off. Boost gold, defense, energy. Reduce growth exposure.",
         "articles": [
-          "S\u00e1nchez calls US-Israeli war in Iran a \u2018disaster\u2019 amid spat with Trump",
-          "Dubai evacuation costs rise as high as $250,000 as more families flee"
-        ]
-      },
-      {
-        "signal": "Russia Ukraine",
-        "magnitude": "MODERATE",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported",
-        "articles": [
-          "S\u00e1nchez calls US-Israeli war in Iran a \u2018disaster\u2019 amid spat with Trump",
-          "Attacks on Ukraine\u2019s health care increased by 20% in 2025"
+          "Dubai evacuation costs rise as high as $250,000 as more families flee",
+          "Strait of Hormuz Closure Sends European Gas Benchmark Soaring"
         ]
       },
       {
@@ -767,8 +851,19 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure",
         "articles": [
-          "Scott Bessent says 15% global tariff \u2018likely\u2019 to be imposed this week",
-          "Arabica Coffee Prices Hit Record on U.S., Colombia Tariff Spat"
+          "Arabica Coffee Prices Hit Record on U.S., Colombia Tariff Spat",
+          "Russia's Crude Exports Fairly Stable Despite U.S. Sanctions, Goldman Says"
+        ]
+      },
+      {
+        "signal": "Russia Ukraine",
+        "magnitude": "MODERATE",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported",
+        "articles": [
+          "Nvidia CEO Huang rules out US$100 billion OpenAI investment",
+          "Attacks on Ukraine\u2019s health care increased by 20% in 2025"
         ]
       },
       {
@@ -781,35 +876,49 @@
           "Global commitment on display as countries negotiate key annex to the Pandemic Agreement",
           "Six years after COVID-19\u2019s global alarm: Is the world better prepared for the next pandemic?"
         ]
+      },
+      {
+        "signal": "Trump Tariff Canada Specific",
+        "magnitude": "CRITICAL",
+        "confidence": 50,
+        "bars": "\u2588\u2588",
+        "note": "Direct Canada tariff \u2014 defensive FHSA positioning, reduce TSX exporters",
+        "articles": [
+          "Canada and India Sign Landmark Uranium Deal Worth $2.6B"
+        ]
       }
     ],
     "top_headlines": [
       {
-        "title": "Rate of Iranian missile launches declining, western officials say",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Ali Khamenei\u2019s son Mojtaba emerges as a leading candidate for supreme leader of Iran",
-        "source": "Financial Times"
-      },
-      {
-        "title": "S\u00e1nchez calls US-Israeli war in Iran a \u2018disaster\u2019 amid spat with Trump",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Gulf insurance costs soar 12-fold despite Trump guarantee",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Dollar shines in Iran turmoil as conflict upends popular trades",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Vance takes low profile on Iran after resisting foreign wars",
+        "title": "Israel expects weeks-long war against Iran",
         "source": "Financial Times"
       },
       {
         "title": "US submarine sinks Iranian warship in Indian Ocean",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Gulf states in race to secure more US interceptors",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Rate of Iranian missile launches is declining, western officials say",
+        "source": "Financial Times"
+      },
+      {
+        "title": "What does JD Vance think about Trump\u2019s Iran war?",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Military briefing: how Iran could wage a new \u2018tanker war\u2019",
+        "source": "Financial Times"
+      },
+      {
+        "title": "US in talks with Iranian Kurdish militants over anti-regime operations",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Gulf insurance costs soar 12-fold despite Trump guarantee",
         "source": "Financial Times"
       },
       {
@@ -818,10 +927,6 @@
       },
       {
         "title": "Dubai evacuation costs rise as high as $250,000 as more families flee",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Scott Bessent says 15% global tariff \u2018likely\u2019 to be imposed this week",
         "source": "Financial Times"
       }
     ]
