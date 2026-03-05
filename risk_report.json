@@ -9,28 +9,28 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-05T11:40:30.967286",
+    "run_at": "2026-03-05T17:59:44.976215",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
-        "normal_count": 13,
+        "normal_count": 15,
         "survived": 12,
-        "survival_pct": 92.3,
+        "survival_pct": 80.0,
         "verdict": "\u2705 ROBUST",
-        "note": "1 picks unviable after doubling costs"
+        "note": "3 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
-        "normal_count": 13,
+        "normal_count": 15,
         "survived": 12,
-        "survival_pct": 92.3,
+        "survival_pct": 80.0,
         "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
-        "normal_count": 13,
-        "survived": 13,
+        "normal_count": 15,
+        "survived": 15,
         "survival_pct": 100.0,
         "avg_score_change": 4.0,
         "verdict": "\u2705 ROBUST",
@@ -38,32 +38,32 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 90.0,
-        "stressed_avg": 81.3,
-        "score_drop": 8.7,
+        "normal_avg": 92.3,
+        "stressed_avg": 83.9,
+        "score_drop": 8.4,
         "removed": [
-          "NEE",
-          "NVDA",
-          "DXCM",
-          "NTR.TO",
-          "SLF.TO"
+          "CNQ.TO",
+          "SLF.TO",
+          "AGI.TO",
+          "AMGN",
+          "BCE.TO"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 8.7 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 8.4 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
-        "normal_count": 13,
-        "survived": 13,
+        "normal_count": 15,
+        "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_drop": 4.0,
+        "avg_score_drop": 3.2,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 4.0 pts"
+        "note": "If momentum stops working: avg score drops 3.2 pts"
       }
     },
     "summary": {
-      "normal_picks": 13,
-      "normal_avg_score": 90.0,
+      "normal_picks": 15,
+      "normal_avg_score": 92.3,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -73,28 +73,28 @@
   },
   "decay_monitor": {
     "date": "March 05, 2026",
-    "robustness_score": 55,
+    "robustness_score": 50,
     "rolling_sharpe": {
       "sharpe": null,
       "note": "Only 4 days of data \u2014 need 10+ for Sharpe"
     },
     "benchmark": {
-      "ret_7d": -0.3,
-      "ret_30d": -0.09,
-      "ret_90d": 1.94,
-      "ann_ret": 5.4,
-      "ann_vol": 11.8,
-      "sharpe": 0.46,
+      "ret_7d": -2.42,
+      "ret_30d": -1.96,
+      "ret_90d": -0.2,
+      "ann_ret": -0.6,
+      "ann_vol": 12.0,
+      "sharpe": -0.05,
       "symbol": "^GSPC"
     },
     "alpha": null,
     "neg_alpha_days": 0,
     "momentum_health": {
-      "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
+      "verdict": "\u26a0\ufe0f MIXED \u2014 Momentum showing some weakness",
       "decaying": false,
-      "alignment_pct": 66.7,
+      "alignment_pct": 50.0,
       "momentum_picks": 6,
-      "note": "4/6 rising-score picks also rose in price"
+      "note": "3/6 rising-score picks also rose in price"
     },
     "alerts": [],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
