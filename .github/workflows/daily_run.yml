@@ -1,23 +1,31 @@
 name: InvestOS Daily Run
-
 on:
   schedule:
     - cron: '0 11 * * 1-5'   # 6am Toronto (pre-market)
     - cron: '0 16 * * 1-5'   # 11am Toronto (mid-session)
     - cron: '0 21 * * 1-5'   # 4pm Toronto (after close)
   workflow_dispatch:
-
 jobs:
   daily-analysis:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     permissions:
       contents: write
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore baked index.html from last bot commit
+        run: |
+          LAST=$(git log --author="InvestOS Bot" --format="%H" -1 -- index.html)
+          if [ -n "$LAST" ]; then
+            echo "Restoring baked index.html from $LAST"
+            git checkout $LAST -- index.html
+          else
+            echo "No previous baked version found, using current"
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,4 +48,3 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
