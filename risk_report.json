@@ -1,5 +1,5 @@
 {
-  "date": "March 08, 2026",
+  "date": "March 09, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-08T23:08:56.371229",
+    "run_at": "2026-03-09T00:23:06.272632",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -38,45 +38,44 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 89.9,
-        "stressed_avg": 77.7,
-        "score_drop": 12.2,
+        "normal_avg": 89.7,
+        "stressed_avg": 82.3,
+        "score_drop": 7.4,
         "removed": [
-          "NA.TO",
-          "SBUX",
-          "JNJ",
+          "AEM.TO",
           "BNS.TO",
-          "O"
+          "CVE.TO",
+          "NEE"
         ],
-        "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 12.2 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 7.4 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 14,
         "survived": 14,
         "survival_pct": 100.0,
-        "avg_score_drop": 3.0,
+        "avg_score_drop": 3.3,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.0 pts"
+        "note": "If momentum stops working: avg score drops 3.3 pts"
       }
     },
     "summary": {
       "normal_picks": 14,
-      "normal_avg_score": 89.9,
+      "normal_avg_score": 89.7,
       "scenarios_robust": 2,
-      "scenarios_fragile": 2,
-      "scenarios_broken": 1,
+      "scenarios_fragile": 3,
+      "scenarios_broken": 0,
       "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
     "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
   },
   "decay_monitor": {
-    "date": "March 08, 2026",
+    "date": "March 09, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
       "sharpe": null,
-      "note": "Only 6 days of data \u2014 need 10+ for Sharpe"
+      "note": "Only 7 days of data \u2014 need 10+ for Sharpe"
     },
     "benchmark": {
       "ret_7d": -2.44,
