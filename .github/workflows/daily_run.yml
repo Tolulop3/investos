@@ -17,16 +17,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Restore baked index.html from last bot commit
-        run: |
-          LAST=$(git log --author="InvestOS Bot" --format="%H" -1 -- index.html)
-          if [ -n "$LAST" ]; then
-            echo "Restoring baked index.html from $LAST"
-            git checkout $LAST -- index.html
-          else
-            echo "No previous baked version found, using current"
-          fi
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
