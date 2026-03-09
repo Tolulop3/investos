@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-09T05:54:41.129255",
+    "run_at": "2026-03-09T06:04:51.351751",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -38,36 +38,38 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 91.8,
-        "stressed_avg": 87.9,
-        "score_drop": 3.9,
+        "normal_avg": 92.2,
+        "stressed_avg": 86.6,
+        "score_drop": 5.6,
         "removed": [
-          "AGI.TO",
-          "SLF.TO",
-          "CVE.TO"
+          "BCE.TO",
+          "TRP.TO",
+          "NTR.TO",
+          "TD.TO",
+          "LUN.TO"
         ],
-        "verdict": "\u2705 ROBUST",
-        "note": "Score drops 3.9 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 5.6 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 17,
         "survived": 17,
         "survival_pct": 100.0,
-        "avg_score_drop": 2.6,
+        "avg_score_drop": 2.2,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.6 pts"
+        "note": "If momentum stops working: avg score drops 2.2 pts"
       }
     },
     "summary": {
       "normal_picks": 17,
-      "normal_avg_score": 91.8,
-      "scenarios_robust": 5,
-      "scenarios_fragile": 0,
+      "normal_avg_score": 92.2,
+      "scenarios_robust": 4,
+      "scenarios_fragile": 1,
       "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ROBUST \u2014 System survives stress well"
+      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
-    "verdict": "\u2705 ROBUST \u2014 System survives stress well"
+    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
     "date": "March 09, 2026",
