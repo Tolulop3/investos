@@ -9,15 +9,15 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-09T04:20:36.424608",
+    "run_at": "2026-03-09T04:56:08.158257",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 14,
-        "survived": 10,
-        "survival_pct": 71.4,
-        "verdict": "\u2705 ROBUST",
-        "note": "4 picks unviable after doubling costs"
+        "survived": 9,
+        "survival_pct": 64.3,
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "5 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
@@ -32,40 +32,39 @@
         "normal_count": 14,
         "survived": 13,
         "survival_pct": 92.9,
-        "avg_score_change": 3.9,
+        "avg_score_change": 3.8,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.9 pts with 10% noise"
+        "note": "Avg score change: \u00b13.8 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 89.5,
-        "stressed_avg": 79.1,
-        "score_drop": 10.4,
+        "normal_avg": 90.1,
+        "stressed_avg": 82.7,
+        "score_drop": 7.4,
         "removed": [
-          "BMY",
-          "AGI.TO",
-          "CNQ.TO",
-          "DUK"
+          "CVE.TO",
+          "VZ",
+          "AEM.TO"
         ],
-        "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 10.4 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 7.4 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 14,
         "survived": 14,
         "survival_pct": 100.0,
-        "avg_score_drop": 3.7,
+        "avg_score_drop": 3.6,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.7 pts"
+        "note": "If momentum stops working: avg score drops 3.6 pts"
       }
     },
     "summary": {
       "normal_picks": 14,
-      "normal_avg_score": 89.5,
-      "scenarios_robust": 3,
-      "scenarios_fragile": 1,
-      "scenarios_broken": 1,
+      "normal_avg_score": 90.1,
+      "scenarios_robust": 2,
+      "scenarios_fragile": 3,
+      "scenarios_broken": 0,
       "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
     "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
