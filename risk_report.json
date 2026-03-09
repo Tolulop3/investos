@@ -9,66 +9,66 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-09T03:07:51.688925",
+    "run_at": "2026-03-09T03:24:14.879828",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
-        "normal_count": 14,
-        "survived": 8,
-        "survival_pct": 57.1,
+        "normal_count": 15,
+        "survived": 9,
+        "survival_pct": 60.0,
         "verdict": "\u26a0\ufe0f FRAGILE",
         "note": "6 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
-        "normal_count": 14,
-        "survived": 10,
-        "survival_pct": 71.4,
-        "verdict": "\u26a0\ufe0f FRAGILE",
+        "normal_count": 15,
+        "survived": 12,
+        "survival_pct": 80.0,
+        "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
-        "normal_count": 14,
-        "survived": 13,
-        "survival_pct": 92.9,
-        "avg_score_change": 3.8,
+        "normal_count": 15,
+        "survived": 14,
+        "survival_pct": 93.3,
+        "avg_score_change": 4.0,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.8 pts with 10% noise"
+        "note": "Avg score change: \u00b14.0 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 89.4,
-        "stressed_avg": 79.9,
-        "score_drop": 9.5,
+        "normal_avg": 89.6,
+        "stressed_avg": 81.9,
+        "score_drop": 7.7,
         "removed": [
-          "BNS.TO",
-          "H.TO",
-          "RCI-B.TO",
-          "MG.TO"
+          "XEL",
+          "MRK",
+          "MG.TO",
+          "SCHD"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 9.5 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 7.7 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
-        "normal_count": 14,
-        "survived": 14,
+        "normal_count": 15,
+        "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_drop": 2.8,
+        "avg_score_drop": 3.1,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.8 pts"
+        "note": "If momentum stops working: avg score drops 3.1 pts"
       }
     },
     "summary": {
-      "normal_picks": 14,
-      "normal_avg_score": 89.4,
-      "scenarios_robust": 2,
-      "scenarios_fragile": 3,
+      "normal_picks": 15,
+      "normal_avg_score": 89.6,
+      "scenarios_robust": 3,
+      "scenarios_fragile": 2,
       "scenarios_broken": 0,
-      "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
+      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
-    "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
+    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
     "date": "March 09, 2026",
