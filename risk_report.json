@@ -9,62 +9,64 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-03-09T04:56:08.158257",
+    "run_at": "2026-03-09T05:08:36.454063",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
-        "normal_count": 14,
+        "normal_count": 15,
         "survived": 9,
-        "survival_pct": 64.3,
+        "survival_pct": 60.0,
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "5 picks unviable after doubling costs"
+        "note": "6 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
-        "normal_count": 14,
+        "normal_count": 15,
         "survived": 11,
-        "survival_pct": 78.6,
+        "survival_pct": 73.3,
         "verdict": "\u26a0\ufe0f FRAGILE",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
-        "normal_count": 14,
-        "survived": 13,
-        "survival_pct": 92.9,
-        "avg_score_change": 3.8,
+        "normal_count": 15,
+        "survived": 14,
+        "survival_pct": 93.3,
+        "avg_score_change": 4.0,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.8 pts with 10% noise"
+        "note": "Avg score change: \u00b14.0 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 90.1,
-        "stressed_avg": 82.7,
-        "score_drop": 7.4,
+        "normal_avg": 90.0,
+        "stressed_avg": 76.4,
+        "score_drop": 13.6,
         "removed": [
-          "CVE.TO",
-          "VZ",
-          "AEM.TO"
+          "SLF.TO",
+          "NTR.TO",
+          "RCI-B.TO",
+          "BNS.TO",
+          "SCHD"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 7.4 pts without top 5 \u2014 system depth check"
+        "verdict": "\u274c CONCENTRATED",
+        "note": "Score drops 13.6 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
-        "normal_count": 14,
-        "survived": 14,
+        "normal_count": 15,
+        "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_drop": 3.6,
+        "avg_score_drop": 3.0,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.6 pts"
+        "note": "If momentum stops working: avg score drops 3.0 pts"
       }
     },
     "summary": {
-      "normal_picks": 14,
-      "normal_avg_score": 90.1,
+      "normal_picks": 15,
+      "normal_avg_score": 90.0,
       "scenarios_robust": 2,
-      "scenarios_fragile": 3,
-      "scenarios_broken": 0,
+      "scenarios_fragile": 2,
+      "scenarios_broken": 1,
       "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
     "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
