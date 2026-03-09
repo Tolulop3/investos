@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-03-09T14:10:46.194297",
+  "timestamp": "2026-03-09T14:29:28.088966",
   "date": "March 09, 2026",
-  "articles_fetched": 97,
+  "articles_fetched": 96,
   "feeds_online": 8,
   "feeds_total": 16,
   "signals_detected": 6,
@@ -14,10 +14,6 @@
       "confidence": 100,
       "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
     },
-    "oil_price_spike": {
-      "confidence": 100,
-      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
-    },
     "russia_ukraine": {
       "confidence": 50,
       "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
@@ -29,6 +25,10 @@
     "war_escalation": {
       "confidence": 50,
       "note": "War = risk-off. Boost gold, defense, energy. Reduce growth exposure."
+    },
+    "oil_price_spike": {
+      "confidence": 50,
+      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
     }
   },
   "sector_sentiment": {
@@ -51,9 +51,9 @@
       ]
     },
     "CANADIAN_ENERGY": {
-      "bullish_score": 400,
+      "bullish_score": 300,
       "bearish_score": 200,
-      "net_score": 200,
+      "net_score": 100,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -69,7 +69,7 @@
         {
           "name": "oil_price_spike",
           "direction": "bullish",
-          "confidence": 100
+          "confidence": 50
         }
       ]
     },
@@ -121,8 +121,8 @@
     },
     "AIRLINES": {
       "bullish_score": 0,
-      "bearish_score": 600,
-      "net_score": -600,
+      "bearish_score": 500,
+      "net_score": -500,
       "sentiment": "BEARISH",
       "signals": [
         {
@@ -131,14 +131,14 @@
           "confidence": 100
         },
         {
-          "name": "oil_price_spike",
+          "name": "health_outbreak",
           "direction": "bearish",
           "confidence": 100
         },
         {
-          "name": "health_outbreak",
+          "name": "oil_price_spike",
           "direction": "bearish",
-          "confidence": 100
+          "confidence": 50
         }
       ]
     },
@@ -189,58 +189,6 @@
       "signals": [
         {
           "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "OIL_PRODUCERS": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "PIPELINES": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "CONSUMER": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "TRANSPORT": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
           "direction": "bearish",
           "confidence": 100
         }
@@ -458,11 +406,63 @@
           "confidence": 50
         }
       ]
+    },
+    "OIL_PRODUCERS": {
+      "bullish_score": 100,
+      "bearish_score": 0,
+      "net_score": 100,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 50
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 100,
+      "bearish_score": 0,
+      "net_score": 100,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 50
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 0,
+      "bearish_score": 100,
+      "net_score": -100,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 100,
+      "net_score": -100,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
     }
   },
   "ticker_adjustments": {
     "ENB.TO": {
-      "adjustment": 25,
+      "adjustment": 13.3,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -470,7 +470,7 @@
       "news_sentiment": "BULLISH"
     },
     "TRP.TO": {
-      "adjustment": 25,
+      "adjustment": 13.3,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -478,7 +478,7 @@
       "news_sentiment": "BULLISH"
     },
     "CNQ.TO": {
-      "adjustment": 25,
+      "adjustment": 13.3,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -486,7 +486,7 @@
       "news_sentiment": "BULLISH"
     },
     "SU.TO": {
-      "adjustment": 25,
+      "adjustment": 13.3,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -494,7 +494,7 @@
       "news_sentiment": "BULLISH"
     },
     "CVE.TO": {
-      "adjustment": 25,
+      "adjustment": 13.3,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -502,7 +502,7 @@
       "news_sentiment": "BULLISH"
     },
     "PPL.TO": {
-      "adjustment": 25,
+      "adjustment": 13.3,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -818,7 +818,7 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "Kharg Island: Iran\u2019s oil lifeline that Trump has left untouched",
+          "French finance minister says \u2018not there yet\u2019 on releasing petroleum reserves",
           "Iran war will leave a complex geoeconomic legacy"
         ]
       },
@@ -831,17 +831,6 @@
         "articles": [
           "Arabica Coffee Prices Hit Record on U.S., Colombia Tariff Spat",
           "Russia's Crude Exports Fairly Stable Despite U.S. Sanctions, Goldman Says"
-        ]
-      },
-      {
-        "signal": "Oil Price Spike",
-        "magnitude": "HIGH",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
-        "articles": [
-          "Energy Shock Rewrites Europe\u2019s Rate Path as Traders Bet on Hikes",
-          "Cuba Gambles on Green Energy to End Crippling Blackouts"
         ]
       },
       {
@@ -874,15 +863,21 @@
         "articles": [
           "Iran\u2019s New Supreme Leader Opens Tenure With Missile Attacks Across Region"
         ]
+      },
+      {
+        "signal": "Oil Price Spike",
+        "magnitude": "HIGH",
+        "confidence": 50,
+        "bars": "\u2588\u2588",
+        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
+        "articles": [
+          "Cuba Gambles on Green Energy to End Crippling Blackouts"
+        ]
       }
     ],
     "top_headlines": [
       {
-        "title": "G7 discuss joint release of emergency oil reserves",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Kharg Island: Iran\u2019s oil lifeline that Trump has left untouched",
+        "title": "French finance minister says \u2018not there yet\u2019 on releasing petroleum reserves",
         "source": "Financial Times"
       },
       {
@@ -890,7 +885,11 @@
         "source": "Financial Times"
       },
       {
-        "title": "Stocks and bonds tumble as oil soars past $100 a barrel",
+        "title": "Gilt market slump deepens as traders bet on BoE rate rise",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Kharg Island: Iran\u2019s oil lifeline that Trump has left untouched",
         "source": "Financial Times"
       },
       {
@@ -906,15 +905,15 @@
         "source": "Financial Times"
       },
       {
-        "title": "Trump raises stakes in Iran by weighing deployment of US ground forces",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Muscat airport limits private jet flights as wealthy leave Gulf",
+        "title": "Jefferies claims Western Alliance made \u2018false\u2019 statements over First Brands",
         "source": "Financial Times"
       },
       {
         "title": "Ex-EY executive launches private equity-backed tax firm to challenge Big Four",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Switzerland votes to end \u2018marriage penalty\u2019 in historic tax referendum",
         "source": "Financial Times"
       }
     ]
