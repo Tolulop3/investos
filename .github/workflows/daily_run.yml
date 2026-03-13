@@ -5,6 +5,8 @@ on:
     - cron: '0 16 * * 1-5'   # 11am Toronto (mid-session)
     - cron: '0 21 * * 1-5'   # 4pm Toronto (after close)
   workflow_dispatch:
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # suppress Node.js 20 deprecation warning
 jobs:
   daily-analysis:
     runs-on: ubuntu-latest
