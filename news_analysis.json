@@ -1,14 +1,18 @@
 {
-  "timestamp": "2026-03-19T21:39:04.224989",
-  "date": "March 19, 2026",
-  "articles_fetched": 95,
+  "timestamp": "2026-03-20T11:37:13.314275",
+  "date": "March 20, 2026",
+  "articles_fetched": 97,
   "feeds_online": 8,
   "feeds_total": 16,
-  "signals_detected": 6,
+  "signals_detected": 7,
   "active_signals": {
     "middle_east_tension": {
       "confidence": 100,
       "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
+    },
+    "oil_price_spike": {
+      "confidence": 75,
+      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
     },
     "trump_tariff_negative": {
       "confidence": 100,
@@ -51,15 +55,20 @@
       ]
     },
     "CANADIAN_ENERGY": {
-      "bullish_score": 200,
+      "bullish_score": 350,
       "bearish_score": 200,
-      "net_score": 0,
-      "sentiment": "NEUTRAL",
+      "net_score": 150,
+      "sentiment": "BULLISH",
       "signals": [
         {
           "name": "middle_east_tension",
           "direction": "bullish",
           "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 75
         },
         {
           "name": "trump_tariff_negative",
@@ -116,14 +125,19 @@
     },
     "AIRLINES": {
       "bullish_score": 0,
-      "bearish_score": 300,
-      "net_score": -300,
+      "bearish_score": 450,
+      "net_score": -450,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "middle_east_tension",
           "direction": "bearish",
           "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 75
         },
         {
           "name": "health_outbreak",
@@ -142,6 +156,58 @@
           "name": "middle_east_tension",
           "direction": "bearish",
           "confidence": 100
+        }
+      ]
+    },
+    "OIL_PRODUCERS": {
+      "bullish_score": 150,
+      "bearish_score": 0,
+      "net_score": 150,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 75
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 150,
+      "bearish_score": 0,
+      "net_score": 150,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 75
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 0,
+      "bearish_score": 150,
+      "net_score": -150,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 75
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 150,
+      "net_score": -150,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 75
         }
       ]
     },
@@ -413,34 +479,52 @@
   },
   "ticker_adjustments": {
     "ENB.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "TRP.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "CNQ.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "SU.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "CVE.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "PPL.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "LMT": {
       "adjustment": 20,
@@ -786,8 +870,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "Oil drops as Netanyahu says Iran can no longer enrich uranium",
-          "Iran allows handful of favoured ships through Strait of Hormuz"
+          "Iran renews strikes on Gulf as Israel attacks Tehran",
+          "IEA calls for working from home, driving slower and flying less to tackle energy crisis"
         ]
       },
       {
@@ -799,6 +883,16 @@
         "articles": [
           "Arabica Coffee Prices Hit Record on U.S., Colombia Tariff Spat",
           "Russia's Crude Exports Fairly Stable Despite U.S. Sanctions, Goldman Says"
+        ]
+      },
+      {
+        "signal": "Oil Price Spike",
+        "magnitude": "HIGH",
+        "confidence": 75,
+        "bars": "\u2588\u2588\u2588",
+        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
+        "articles": [
+          "IEA calls for working from home, driving slower and flying less to tackle energy crisis"
         ]
       },
       {
@@ -830,57 +924,47 @@
         "articles": [
           "Global commitment on display as countries negotiate key annex to the Pandemic Agreement"
         ]
-      },
-      {
-        "signal": "War Escalation",
-        "magnitude": "HIGH",
-        "confidence": 50,
-        "bars": "\u2588\u2588",
-        "note": "War = risk-off. Boost gold, defense, energy. Reduce growth exposure.",
-        "articles": [
-          "Oil Prices Could Hit $150 If War Continues Through End of March"
-        ]
       }
     ],
     "top_headlines": [
       {
-        "title": "Oil drops as Netanyahu says Iran can no longer enrich uranium",
+        "title": "Iran renews strikes on Gulf as Israel attacks Tehran",
         "source": "Financial Times"
       },
       {
-        "title": "Trump administration says it is not considering oil export ban as prices surge",
+        "title": "IEA calls for working from home, driving slower and flying less to tackle energy crisis",
         "source": "Financial Times"
       },
       {
-        "title": "\u2018Armageddon scenario\u2019 for gas markets as Qatar hit by missiles",
+        "title": "Desperation, thy name is Scott Bessent",
         "source": "Financial Times"
       },
       {
-        "title": "How the White House tries to sell war and death as a game",
+        "title": "Military briefing: the perils of the Hormuz escort plan",
         "source": "Financial Times"
       },
       {
-        "title": "Iran allows handful of favoured ships through Strait of Hormuz",
+        "title": "Quiet rituals of survival in Tehran",
         "source": "Financial Times"
       },
       {
-        "title": "Trump praises Japan\u2019s \u2018tremendous support\u2019 over Iran war",
+        "title": "The war over tail risks is in full swing",
         "source": "Financial Times"
       },
       {
-        "title": "Japan rebels over $6bn fee for SoftBank under US trade deal",
+        "title": "JPMorgan deploys tech to monitor junior bankers\u2019 working hours",
         "source": "Financial Times"
       },
       {
-        "title": "Denmark was ready to blow up Greenland runways if US invaded",
+        "title": "Airlines draw up contingency plans over jet fuel shortage fears",
         "source": "Financial Times"
       },
       {
-        "title": "Deutsche Bank promotes two potential successors to Sewing",
+        "title": "China cracks down on fuel and fertiliser exports",
         "source": "Financial Times"
       },
       {
-        "title": "SEC urged to restrict Chinese companies\u2019 access to US capital markets",
+        "title": "Unilever in talks to sell food division to spice and sauce maker McCormick",
         "source": "Financial Times"
       }
     ]
