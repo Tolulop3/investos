@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-04-02T21:41:20.179197",
-  "date": "April 02, 2026",
-  "articles_fetched": 95,
+  "timestamp": "2026-04-03T11:41:39.221210",
+  "date": "April 03, 2026",
+  "articles_fetched": 96,
   "feeds_online": 8,
   "feeds_total": 16,
   "signals_detected": 5,
@@ -14,6 +14,10 @@
       "confidence": 100,
       "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
     },
+    "oil_price_spike": {
+      "confidence": 100,
+      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
+    },
     "health_outbreak": {
       "confidence": 100,
       "note": "Health outbreak = defensive positioning. Pharma, staples, ecommerce."
@@ -21,10 +25,6 @@
     "russia_ukraine": {
       "confidence": 100,
       "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
-    },
-    "earnings_misses": {
-      "confidence": 50,
-      "note": "Earnings misses = defensive tilt, watch FHSA positions"
     }
   },
   "sector_sentiment": {
@@ -42,10 +42,10 @@
       ]
     },
     "CANADIAN_ENERGY": {
-      "bullish_score": 200,
+      "bullish_score": 400,
       "bearish_score": 200,
-      "net_score": 0,
-      "sentiment": "NEUTRAL",
+      "net_score": 200,
+      "sentiment": "BULLISH",
       "signals": [
         {
           "name": "middle_east_tension",
@@ -55,6 +55,11 @@
         {
           "name": "trump_tariff_negative",
           "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
           "confidence": 100
         }
       ]
@@ -97,12 +102,17 @@
     },
     "AIRLINES": {
       "bullish_score": 0,
-      "bearish_score": 400,
-      "net_score": -400,
+      "bearish_score": 600,
+      "net_score": -600,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "middle_east_tension",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
           "direction": "bearish",
           "confidence": 100
         },
@@ -160,6 +170,58 @@
       "signals": [
         {
           "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "OIL_PRODUCERS": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
           "direction": "bearish",
           "confidence": 100
         }
@@ -333,51 +395,56 @@
           "confidence": 100
         }
       ]
-    },
-    "REPORTING_SECTOR": {
-      "bullish_score": 0,
-      "bearish_score": 75.0,
-      "net_score": -75.0,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "earnings_misses",
-          "direction": "bearish",
-          "confidence": 50
-        }
-      ]
     }
   },
   "ticker_adjustments": {
     "ENB.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "TRP.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "CNQ.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "SU.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "CVE.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "PPL.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "LMT": {
       "adjustment": 20,
@@ -672,7 +739,7 @@
   },
   "weight_adjustments": {
     "safety_weight": 10,
-    "momentum_weight": -5,
+    "momentum_weight": -3,
     "growth_weight": 0,
     "dividend_weight": 0,
     "value_weight": 0,
@@ -688,8 +755,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "Oil jumps after Donald Trump\u2019s remarks dash hopes of end to war",
-          "Canada\u2019s Irving turns to Newfoundland for oil on Iran disruption"
+          "French-owned container ship braves passage through Strait of Hormuz",
+          "Gulf energy sites targeted in wave of attacks"
         ]
       },
       {
@@ -699,8 +766,19 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure",
         "articles": [
-          "The case for Trump\u2019s tariffs looks strong a year on from \u2018liberation day\u2019",
-          "Trump administration announces new tariffs on pharmaceuticals"
+          "Trump administration announces new tariffs on pharmaceuticals",
+          "Arabica Coffee Prices Hit Record on U.S., Colombia Tariff Spat"
+        ]
+      },
+      {
+        "signal": "Oil Price Spike",
+        "magnitude": "HIGH",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
+        "articles": [
+          "The energy crisis is getting worse. How protected is Canada?",
+          "Europe Braces for Prolonged Energy Crisis as Supplies Tighten"
         ]
       },
       {
@@ -724,33 +802,35 @@
           "Attacks on Ukraine\u2019s health care increased by 20% in 2025",
           "Donbas Coal Deal Exposes Fragile Enforcement of Russia Sanctions"
         ]
-      },
-      {
-        "signal": "Earnings Misses",
-        "magnitude": "MODERATE",
-        "confidence": 50,
-        "bars": "\u2588\u2588",
-        "note": "Earnings misses = defensive tilt, watch FHSA positions",
-        "articles": [
-          "Tesla Disappoints With Q1 Deliveries Miss"
-        ]
       }
     ],
     "top_headlines": [
       {
+        "title": "Europe must prepare for \u2018long-lasting\u2019 energy shock, EU warns",
+        "source": "Financial Times"
+      },
+      {
+        "title": "French-owned container ship braves passage through Strait of Hormuz",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Gulf energy sites targeted in wave of attacks",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Prediction markets: the hunt for the new \u2018dumb money\u2019",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Investors are betting on AI chaos. History suggests otherwise",
+        "source": "Financial Times"
+      },
+      {
+        "title": "What\u2019s going on with dollar debt?",
+        "source": "Financial Times"
+      },
+      {
         "title": "Trump fires US attorney-general Pam Bondi",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Oil jumps after Donald Trump\u2019s remarks dash hopes of end to war",
-        "source": "Financial Times"
-      },
-      {
-        "title": "SpaceX IPO is Musk\u2019s biggest financial moonshot",
-        "source": "Financial Times"
-      },
-      {
-        "title": "The case for Trump\u2019s tariffs looks strong a year on from \u2018liberation day\u2019",
         "source": "Financial Times"
       },
       {
@@ -758,23 +838,11 @@
         "source": "Financial Times"
       },
       {
-        "title": "UK urges pharma companies to invest after reaching drug pricing deal with US",
+        "title": "Credit investors flee to safety, pulling $11bn from junk bonds this year",
         "source": "Financial Times"
       },
       {
-        "title": "Blue Owl struck by $5.4bn of redemption requests",
-        "source": "Financial Times"
-      },
-      {
-        "title": "US Treasury calls in regulators for talks on private credit risks",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Tesla reports weaker than expected 6% rise in global deliveries",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Goldman and Citi tell Paris staff to work from home after thwarted BofA attack",
+        "title": "Fund managers snap up bonds on growth threat from Iran war",
         "source": "Financial Times"
       }
     ]
