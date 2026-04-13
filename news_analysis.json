@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-04-10T21:41:01.116555",
-  "date": "April 10, 2026",
-  "articles_fetched": 96,
+  "timestamp": "2026-04-13T12:07:16.227544",
+  "date": "April 13, 2026",
+  "articles_fetched": 94,
   "feeds_online": 8,
   "feeds_total": 16,
   "signals_detected": 6,
@@ -10,13 +10,13 @@
       "confidence": 100,
       "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
     },
+    "oil_price_spike": {
+      "confidence": 100,
+      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
+    },
     "trump_tariff_negative": {
       "confidence": 100,
       "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
-    },
-    "oil_price_spike": {
-      "confidence": 50,
-      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
     },
     "health_outbreak": {
       "confidence": 100,
@@ -46,9 +46,9 @@
       ]
     },
     "CANADIAN_ENERGY": {
-      "bullish_score": 300,
+      "bullish_score": 400,
       "bearish_score": 200,
-      "net_score": 100,
+      "net_score": 200,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -57,14 +57,14 @@
           "confidence": 100
         },
         {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
+          "name": "oil_price_spike",
+          "direction": "bullish",
           "confidence": 100
         },
         {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 50
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
         }
       ]
     },
@@ -116,8 +116,8 @@
     },
     "AIRLINES": {
       "bullish_score": 0,
-      "bearish_score": 500,
-      "net_score": -500,
+      "bearish_score": 600,
+      "net_score": -600,
       "sentiment": "BEARISH",
       "signals": [
         {
@@ -128,7 +128,7 @@
         {
           "name": "oil_price_spike",
           "direction": "bearish",
-          "confidence": 50
+          "confidence": 100
         },
         {
           "name": "health_outbreak",
@@ -145,6 +145,63 @@
       "signals": [
         {
           "name": "middle_east_tension",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "OIL_PRODUCERS": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 150.0,
+      "bearish_score": 200,
+      "net_score": -50.0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
           "direction": "bearish",
           "confidence": 100
         }
@@ -186,63 +243,6 @@
           "name": "trump_tariff_negative",
           "direction": "bearish",
           "confidence": 100
-        }
-      ]
-    },
-    "OIL_PRODUCERS": {
-      "bullish_score": 100,
-      "bearish_score": 0,
-      "net_score": 100,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 50
-        }
-      ]
-    },
-    "PIPELINES": {
-      "bullish_score": 100,
-      "bearish_score": 0,
-      "net_score": 100,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 50
-        }
-      ]
-    },
-    "CONSUMER": {
-      "bullish_score": 150.0,
-      "bearish_score": 100,
-      "net_score": 50.0,
-      "sentiment": "NEUTRAL",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
-          "confidence": 50
-        },
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "TRANSPORT": {
-      "bullish_score": 0,
-      "bearish_score": 100,
-      "net_score": -100,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
-          "confidence": 50
         }
       ]
     },
@@ -449,7 +449,7 @@
   },
   "ticker_adjustments": {
     "ENB.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -457,7 +457,7 @@
       "news_sentiment": "BULLISH"
     },
     "TRP.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -465,7 +465,7 @@
       "news_sentiment": "BULLISH"
     },
     "CNQ.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -473,7 +473,7 @@
       "news_sentiment": "BULLISH"
     },
     "SU.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -481,7 +481,7 @@
       "news_sentiment": "BULLISH"
     },
     "CVE.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -489,7 +489,7 @@
       "news_sentiment": "BULLISH"
     },
     "PPL.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -805,8 +805,19 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "US inflation jumps to two-year high as Iran war ripples across economy",
-          "Lebanon and Israel agree to talks in Washington next week"
+          "Why time is on Iran\u2019s side",
+          "Iran threatens to hit back against Middle East ports ahead of US blockade"
+        ]
+      },
+      {
+        "signal": "Oil Price Spike",
+        "magnitude": "HIGH",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
+        "articles": [
+          "Why time is on Iran\u2019s side",
+          "The energy crisis is getting worse. How protected is Canada?"
         ]
       },
       {
@@ -838,18 +849,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Peace = risk-on. Growth and consumer stocks benefit.",
         "articles": [
-          "Strait of Hormuz Constraints Keep Oil Prices Elevated",
-          "Oil Ignores Escalation, Logs Biggest Weekly Drop Since 2025"
-        ]
-      },
-      {
-        "signal": "Oil Price Spike",
-        "magnitude": "HIGH",
-        "confidence": 50,
-        "bars": "\u2588\u2588",
-        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
-        "articles": [
-          "The energy crisis is getting worse. How protected is Canada?"
+          "How the Iran War Is Disrupting Gulf Economies: 5 Key Effects",
+          "How the Strait of Hormuz Blockade Handed China a Clean Energy Windfall"
         ]
       },
       {
@@ -865,44 +866,44 @@
     ],
     "top_headlines": [
       {
-        "title": "US inflation jumps to two-year high as Iran war ripples across economy",
+        "title": "Goldman reports best quarter in 5 years even as bond traders disappoint",
         "source": "Financial Times"
       },
       {
-        "title": "Lebanon and Israel agree to talks in Washington next week",
+        "title": "Pope Leo says he has \u2018no fear\u2019 of Trump administration",
         "source": "Financial Times"
       },
       {
-        "title": "Trump is surrendering America\u2019s moral leadership",
+        "title": "Why time is on Iran\u2019s side",
         "source": "Financial Times"
       },
       {
-        "title": "JD Vance says Islamabad talks should be \u2018positive\u2019 as Iranian negotiators arrive",
+        "title": "Meta builds AI version of Mark Zuckerberg to interact with staff",
         "source": "Financial Times"
       },
       {
-        "title": "Crispin Odey abandons \u00a379mn libel case against the FT over sexual misconduct claims",
+        "title": "Iran threatens to hit back against Middle East ports ahead of US blockade",
         "source": "Financial Times"
       },
       {
-        "title": "Trumpism has done remarkably little to the GOP\u2019s centre of gravity",
+        "title": "The risks of Trump\u2019s Strait of Hormuz blockade plan",
         "source": "Financial Times"
       },
       {
-        "title": "Cyber security stocks fall on worries over Anthropic\u2019s advanced AI tool",
+        "title": "EU ties \u20ac35bn fund release to Hungary\u2019s break with Orb\u00e1n era",
         "source": "Financial Times"
       },
       {
-        "title": "Bessent called in US bank CEOs to discuss Anthropic model\u2019s cyber risks",
+        "title": "Bets against US stocks will have \u2018wind at their backs\u2019, says Carson Block",
         "source": "Financial Times"
       },
       {
-        "title": "Trump touts Palantir\u2019s \u2018war\u2019 role after short seller attack",
+        "title": "Sotheby\u2019s offers to pay sellers interest as art market struggles",
         "source": "Financial Times"
       },
       {
-        "title": "China\u2019s Xi tells Taiwan opposition leader unification an \u2018inevitability\u2019",
-        "source": "Financial Times"
+        "title": "Stocks Sink in Broad AI Rout Sparked by China's DeepSeek",
+        "source": "WSJ Markets"
       }
     ]
   },
