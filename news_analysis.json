@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-04-17T11:56:02.210360",
+  "timestamp": "2026-04-17T16:40:09.971558",
   "date": "April 17, 2026",
-  "articles_fetched": 98,
-  "feeds_online": 9,
+  "articles_fetched": 97,
+  "feeds_online": 8,
   "feeds_total": 16,
   "signals_detected": 6,
   "active_signals": {
@@ -22,13 +22,13 @@
       "confidence": 50,
       "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
     },
-    "peace_deal": {
-      "confidence": 100,
-      "note": "Peace = risk-on. Growth and consumer stocks benefit."
-    },
     "oil_price_spike": {
       "confidence": 100,
       "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
+    },
+    "peace_deal": {
+      "confidence": 100,
+      "note": "Peace = risk-on. Growth and consumer stocks benefit."
     }
   },
   "sector_sentiment": {
@@ -363,6 +363,32 @@
         }
       ]
     },
+    "OIL_PRODUCERS": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
     "CONSUMER": {
       "bullish_score": 150.0,
       "bearish_score": 200,
@@ -370,10 +396,23 @@
       "sentiment": "NEUTRAL",
       "signals": [
         {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
           "name": "peace_deal",
           "direction": "bullish",
           "confidence": 100
-        },
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
         {
           "name": "oil_price_spike",
           "direction": "bearish",
@@ -403,45 +442,6 @@
         {
           "name": "peace_deal",
           "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "OIL_PRODUCERS": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "PIPELINES": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "TRANSPORT": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
           "confidence": 100
         }
       ]
@@ -805,8 +805,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "Trump says Iran war should end \u2018pretty soon\u2019 as Lebanon truce begins",
-          "Macron and Starmer to hold summit on plan to secure Strait of Hormuz"
+          "Oil tumbles after Iran pledges to open strait during Lebanon truce",
+          "Thousands of Lebanese head home despite warnings"
         ]
       },
       {
@@ -821,24 +821,25 @@
         ]
       },
       {
-        "signal": "Peace Deal",
-        "magnitude": "MODERATE",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Peace = risk-on. Growth and consumer stocks benefit.",
-        "articles": [
-          "A Ceasefire, a Blockade, and a Clock Running Out for Trump",
-          "A Lebanon Ceasefire and Potential Iran Peace Talks Push Oil Prices Down"
-        ]
-      },
-      {
         "signal": "Oil Price Spike",
         "magnitude": "HIGH",
         "confidence": 100,
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
         "articles": [
+          "Why Diesel Prices Surge Faster Than Gasoline in Every Energy Crisis",
           "IMF Tells Europe Not to Repeat Its Costly Energy Crisis Mistakes"
+        ]
+      },
+      {
+        "signal": "Peace Deal",
+        "magnitude": "MODERATE",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Peace = risk-on. Growth and consumer stocks benefit.",
+        "articles": [
+          "Oil Prices Sink 10% as Trump Announces Strait of Hormuz is Fully Open",
+          "A Ceasefire, a Blockade, and a Clock Running Out for Trump"
         ]
       },
       {
@@ -864,15 +865,23 @@
     ],
     "top_headlines": [
       {
-        "title": "Trump says Iran war should end \u2018pretty soon\u2019 as Lebanon truce begins",
+        "title": "Oil tumbles after Iran pledges to open strait during Lebanon truce",
         "source": "Financial Times"
       },
       {
-        "title": "Macron and Starmer to hold summit on plan to secure Strait of Hormuz",
+        "title": "Thousands of Lebanese head home despite warnings",
         "source": "Financial Times"
       },
       {
-        "title": "Data centre delays threaten to choke AI expansion",
+        "title": "EU prepares for jet fuel sharing as supplies dwindle",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Anthropic\u2019s Dario Amodei: \u2018I don\u2019t want AI turned on our own people\u2019",
+        "source": "Financial Times"
+      },
+      {
+        "title": "How World Cup tickets became collateral for a private credit firm",
         "source": "Financial Times"
       },
       {
@@ -880,11 +889,11 @@
         "source": "Financial Times"
       },
       {
-        "title": "Welcome to the age of hoarding",
+        "title": "US\u2019s status as lowest-cost dollar borrower challenged as investors shun Trump risk",
         "source": "Financial Times"
       },
       {
-        "title": "US\u2019s status as lowest-cost dollar borrower challenged as investors shun Trump risk",
+        "title": "What Warsh should do at the Fed",
         "source": "Financial Times"
       },
       {
@@ -893,14 +902,6 @@
       },
       {
         "title": "OnlyFans tops $3bn valuation in stake sale after death of owner",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Starmer blames \u2018unforgivable\u2019 Foreign Office for vetting fiasco",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Mandelson vetting scandal shows Starmer isn\u2019t up to the job",
         "source": "Financial Times"
       }
     ]
