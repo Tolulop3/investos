@@ -1,18 +1,30 @@
 {
-  "timestamp": "2026-04-22T16:47:02.394635",
+  "timestamp": "2026-04-22T21:53:18.821684",
   "date": "April 22, 2026",
-  "articles_fetched": 95,
+  "articles_fetched": 94,
   "feeds_online": 8,
   "feeds_total": 16,
-  "signals_detected": 5,
+  "signals_detected": 7,
   "active_signals": {
     "middle_east_tension": {
       "confidence": 100,
       "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
     },
+    "peace_deal": {
+      "confidence": 100,
+      "note": "Peace = risk-on. Growth and consumer stocks benefit."
+    },
+    "oil_price_spike": {
+      "confidence": 100,
+      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
+    },
     "trump_tariff_negative": {
       "confidence": 100,
       "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
+    },
+    "earnings_beats": {
+      "confidence": 75,
+      "note": "Strong earnings season = risk-on, growth picks benefit"
     },
     "health_outbreak": {
       "confidence": 50,
@@ -21,10 +33,6 @@
     "russia_ukraine": {
       "confidence": 100,
       "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
-    },
-    "peace_deal": {
-      "confidence": 100,
-      "note": "Peace = risk-on. Growth and consumer stocks benefit."
     }
   },
   "sector_sentiment": {
@@ -42,13 +50,18 @@
       ]
     },
     "CANADIAN_ENERGY": {
-      "bullish_score": 200,
+      "bullish_score": 400,
       "bearish_score": 200,
-      "net_score": 0,
-      "sentiment": "NEUTRAL",
+      "net_score": 200,
+      "sentiment": "BULLISH",
       "signals": [
         {
           "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
           "direction": "bullish",
           "confidence": 100
         },
@@ -71,13 +84,13 @@
           "confidence": 100
         },
         {
-          "name": "russia_ukraine",
-          "direction": "bullish",
+          "name": "peace_deal",
+          "direction": "bearish",
           "confidence": 100
         },
         {
-          "name": "peace_deal",
-          "direction": "bearish",
+          "name": "russia_ukraine",
+          "direction": "bullish",
           "confidence": 100
         }
       ]
@@ -94,25 +107,30 @@
           "confidence": 100
         },
         {
-          "name": "russia_ukraine",
-          "direction": "bullish",
+          "name": "peace_deal",
+          "direction": "bearish",
           "confidence": 100
         },
         {
-          "name": "peace_deal",
-          "direction": "bearish",
+          "name": "russia_ukraine",
+          "direction": "bullish",
           "confidence": 100
         }
       ]
     },
     "AIRLINES": {
       "bullish_score": 0,
-      "bearish_score": 300,
-      "net_score": -300,
+      "bearish_score": 500,
+      "net_score": -500,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "middle_east_tension",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
           "direction": "bearish",
           "confidence": 100
         },
@@ -131,6 +149,107 @@
       "signals": [
         {
           "name": "middle_east_tension",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "TRAVEL": {
+      "bullish_score": 150.0,
+      "bearish_score": 100,
+      "net_score": 50.0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        },
+        {
+          "name": "health_outbreak",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 150.0,
+      "bearish_score": 200,
+      "net_score": -50.0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "EMERGING_MARKETS": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "INDUSTRIALS": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "OIL_PRODUCERS": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
           "direction": "bearish",
           "confidence": 100
         }
@@ -172,6 +291,19 @@
           "name": "trump_tariff_negative",
           "direction": "bearish",
           "confidence": 100
+        }
+      ]
+    },
+    "REPORTING_SECTOR": {
+      "bullish_score": 112.0,
+      "bearish_score": 0,
+      "net_score": 112.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "earnings_beats",
+          "direction": "bullish",
+          "confidence": 75
         }
       ]
     },
@@ -237,24 +369,6 @@
           "name": "health_outbreak",
           "direction": "bullish",
           "confidence": 50
-        }
-      ]
-    },
-    "TRAVEL": {
-      "bullish_score": 150.0,
-      "bearish_score": 100,
-      "net_score": 50.0,
-      "sentiment": "NEUTRAL",
-      "signals": [
-        {
-          "name": "health_outbreak",
-          "direction": "bearish",
-          "confidence": 50
-        },
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
         }
       ]
     },
@@ -348,77 +462,56 @@
           "confidence": 100
         }
       ]
-    },
-    "CONSUMER": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "EMERGING_MARKETS": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "INDUSTRIALS": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
     }
   },
   "ticker_adjustments": {
     "ENB.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "TRP.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "CNQ.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "SU.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "CVE.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "PPL.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 25,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "LMT": {
       "adjustment": 13.3,
@@ -712,9 +805,9 @@
     }
   },
   "weight_adjustments": {
-    "safety_weight": 7,
-    "momentum_weight": 1,
-    "growth_weight": 0,
+    "safety_weight": 8,
+    "momentum_weight": 4,
+    "growth_weight": 2,
     "dividend_weight": 0,
     "value_weight": 0,
     "regime": "CAUTIOUS",
@@ -729,8 +822,30 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "Iran says it has seized two container ships in Strait of Hormuz",
-          "Energy traders dig in for a long Iran war"
+          "Trump\u2019s \u2018dirty ceasefire\u2019 tested as Iran hits shipping",
+          "Trump envoy seeks to replace Iran with Italy in upcoming World Cup"
+        ]
+      },
+      {
+        "signal": "Peace Deal",
+        "magnitude": "MODERATE",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Peace = risk-on. Growth and consumer stocks benefit.",
+        "articles": [
+          "Trump\u2019s \u2018dirty ceasefire\u2019 tested as Iran hits shipping",
+          "Traders Placed $430M Bets Minutes Before Trump Extended Iran Ceasefire"
+        ]
+      },
+      {
+        "signal": "Oil Price Spike",
+        "magnitude": "HIGH",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
+        "articles": [
+          "Trump\u2019s \u2018dirty ceasefire\u2019 tested as Iran hits shipping",
+          "The Global Energy Crisis Is Reviving Green Hydrogen"
         ]
       },
       {
@@ -756,42 +871,39 @@
         ]
       },
       {
-        "signal": "Peace Deal",
+        "signal": "Earnings Beats",
         "magnitude": "MODERATE",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Peace = risk-on. Growth and consumer stocks benefit.",
+        "confidence": 75,
+        "bars": "\u2588\u2588\u2588",
+        "note": "Strong earnings season = risk-on, growth picks benefit",
         "articles": [
-          "Traders Placed $430M Bets Minutes Before Trump Extended Iran Ceasefire",
-          "Trump Extends Iran Ceasefire While Maintaining Naval Blockade"
-        ]
-      },
-      {
-        "signal": "Health Outbreak",
-        "magnitude": "HIGH",
-        "confidence": 50,
-        "bars": "\u2588\u2588",
-        "note": "Health outbreak = defensive positioning. Pharma, staples, ecommerce.",
-        "articles": [
-          "WHO Member States agree to extend negotiations on key annex to the Pandemic Agreement"
+          "Tesla\u2019s first-quarter earnings beat Wall Street expectations"
         ]
       }
     ],
     "top_headlines": [
       {
+        "title": "Tesla shares rally as profits rebound from last year\u2019s lows",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Pennsylvania\u2019s chipmaking comeback left in limbo under Donald Trump",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Trump\u2019s \u2018dirty ceasefire\u2019 tested as Iran hits shipping",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Trump envoy seeks to replace Iran with Italy in upcoming World Cup",
+        "source": "Financial Times"
+      },
+      {
         "title": "Iran says it has seized two container ships in Strait of Hormuz",
         "source": "Financial Times"
       },
       {
-        "title": "Energy traders dig in for a long Iran war",
-        "source": "Financial Times"
-      },
-      {
-        "title": "The military man trying to save US-Iran peace talks",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Six lessons from history\u2019s greatest financial crises",
+        "title": "Switzerland hits UBS with proposed $20bn capital increase",
         "source": "Financial Times"
       },
       {
@@ -803,20 +915,12 @@
         "source": "Financial Times"
       },
       {
-        "title": "Switzerland hits UBS with proposed $20bn capital increase",
+        "title": "Crypto billionaire Justin Sun sues Trump family\u2019s World Liberty Financial",
         "source": "Financial Times"
       },
       {
-        "title": "Anthropic investigating unauthorised access of powerful Mythos AI model",
-        "source": "Financial Times"
-      },
-      {
-        "title": "AI robot outplays humans in table tennis milestone",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Dollar gives up bulk of war gains as traders abandon bullish bets",
-        "source": "Financial Times"
+        "title": "Stocks Sink in Broad AI Rout Sparked by China's DeepSeek",
+        "source": "WSJ Markets"
       }
     ]
   },
