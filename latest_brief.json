@@ -1,32 +1,20 @@
 {
-  "date": "April 22, 2026",
-  "generated_at": "2026-04-22T21:53:18.821632",
-  "run_duration_sec": 48.5,
+  "date": "April 23, 2026",
+  "generated_at": "2026-04-23T12:02:35.493445",
+  "run_duration_sec": 48.1,
   "macro": {
-    "regime": "CAUTIOUS",
-    "regime_note": "Elevated uncertainty \u2014 slight defensive tilt",
-    "signals_detected": 7,
+    "regime": "RISK_OFF",
+    "regime_note": "Multiple risk signals \u2014 defensive positioning recommended",
+    "signals_detected": 5,
     "articles_read": 94,
     "active_signals": {
       "middle_east_tension": {
         "confidence": 100,
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
       },
-      "peace_deal": {
-        "confidence": 100,
-        "note": "Peace = risk-on. Growth and consumer stocks benefit."
-      },
-      "oil_price_spike": {
-        "confidence": 100,
-        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
-      },
       "trump_tariff_negative": {
         "confidence": 100,
         "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
-      },
-      "earnings_beats": {
-        "confidence": 75,
-        "note": "Strong earnings season = risk-on, growth picks benefit"
       },
       "health_outbreak": {
         "confidence": 50,
@@ -35,6 +23,10 @@
       "russia_ukraine": {
         "confidence": 100,
         "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
+      },
+      "oil_price_spike": {
+        "confidence": 50,
+        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
       }
     },
     "sector_sentiment": {
@@ -52,18 +44,13 @@
         ]
       },
       "CANADIAN_ENERGY": {
-        "bullish_score": 400,
+        "bullish_score": 300,
         "bearish_score": 200,
-        "net_score": 200,
+        "net_score": 100,
         "sentiment": "BULLISH",
         "signals": [
           {
             "name": "middle_east_tension",
-            "direction": "bullish",
-            "confidence": 100
-          },
-          {
-            "name": "oil_price_spike",
             "direction": "bullish",
             "confidence": 100
           },
@@ -71,23 +58,23 @@
             "name": "trump_tariff_negative",
             "direction": "bearish",
             "confidence": 100
+          },
+          {
+            "name": "oil_price_spike",
+            "direction": "bullish",
+            "confidence": 50
           }
         ]
       },
       "DEFENSE": {
         "bullish_score": 350.0,
-        "bearish_score": 150.0,
-        "net_score": 200.0,
+        "bearish_score": 0,
+        "net_score": 350.0,
         "sentiment": "BULLISH",
         "signals": [
           {
             "name": "middle_east_tension",
             "direction": "bullish",
-            "confidence": 100
-          },
-          {
-            "name": "peace_deal",
-            "direction": "bearish",
             "confidence": 100
           },
           {
@@ -99,18 +86,13 @@
       },
       "GOLD": {
         "bullish_score": 350.0,
-        "bearish_score": 150.0,
-        "net_score": 200.0,
+        "bearish_score": 0,
+        "net_score": 350.0,
         "sentiment": "BULLISH",
         "signals": [
           {
             "name": "middle_east_tension",
             "direction": "bullish",
-            "confidence": 100
-          },
-          {
-            "name": "peace_deal",
-            "direction": "bearish",
             "confidence": 100
           },
           {
@@ -122,8 +104,8 @@
       },
       "AIRLINES": {
         "bullish_score": 0,
-        "bearish_score": 500,
-        "net_score": -500,
+        "bearish_score": 400,
+        "net_score": -400,
         "sentiment": "BEARISH",
         "signals": [
           {
@@ -132,12 +114,12 @@
             "confidence": 100
           },
           {
-            "name": "oil_price_spike",
+            "name": "health_outbreak",
             "direction": "bearish",
-            "confidence": 100
+            "confidence": 50
           },
           {
-            "name": "health_outbreak",
+            "name": "oil_price_spike",
             "direction": "bearish",
             "confidence": 50
           }
@@ -151,107 +133,6 @@
         "signals": [
           {
             "name": "middle_east_tension",
-            "direction": "bearish",
-            "confidence": 100
-          }
-        ]
-      },
-      "TRAVEL": {
-        "bullish_score": 150.0,
-        "bearish_score": 100,
-        "net_score": 50.0,
-        "sentiment": "NEUTRAL",
-        "signals": [
-          {
-            "name": "peace_deal",
-            "direction": "bullish",
-            "confidence": 100
-          },
-          {
-            "name": "health_outbreak",
-            "direction": "bearish",
-            "confidence": 50
-          }
-        ]
-      },
-      "CONSUMER": {
-        "bullish_score": 150.0,
-        "bearish_score": 200,
-        "net_score": -50.0,
-        "sentiment": "NEUTRAL",
-        "signals": [
-          {
-            "name": "peace_deal",
-            "direction": "bullish",
-            "confidence": 100
-          },
-          {
-            "name": "oil_price_spike",
-            "direction": "bearish",
-            "confidence": 100
-          }
-        ]
-      },
-      "EMERGING_MARKETS": {
-        "bullish_score": 150.0,
-        "bearish_score": 0,
-        "net_score": 150.0,
-        "sentiment": "BULLISH",
-        "signals": [
-          {
-            "name": "peace_deal",
-            "direction": "bullish",
-            "confidence": 100
-          }
-        ]
-      },
-      "INDUSTRIALS": {
-        "bullish_score": 150.0,
-        "bearish_score": 0,
-        "net_score": 150.0,
-        "sentiment": "BULLISH",
-        "signals": [
-          {
-            "name": "peace_deal",
-            "direction": "bullish",
-            "confidence": 100
-          }
-        ]
-      },
-      "OIL_PRODUCERS": {
-        "bullish_score": 200,
-        "bearish_score": 0,
-        "net_score": 200,
-        "sentiment": "BULLISH",
-        "signals": [
-          {
-            "name": "oil_price_spike",
-            "direction": "bullish",
-            "confidence": 100
-          }
-        ]
-      },
-      "PIPELINES": {
-        "bullish_score": 200,
-        "bearish_score": 0,
-        "net_score": 200,
-        "sentiment": "BULLISH",
-        "signals": [
-          {
-            "name": "oil_price_spike",
-            "direction": "bullish",
-            "confidence": 100
-          }
-        ]
-      },
-      "TRANSPORT": {
-        "bullish_score": 0,
-        "bearish_score": 200,
-        "net_score": -200,
-        "sentiment": "BEARISH",
-        "signals": [
-          {
-            "name": "oil_price_spike",
             "direction": "bearish",
             "confidence": 100
           }
@@ -293,19 +174,6 @@
             "name": "trump_tariff_negative",
             "direction": "bearish",
             "confidence": 100
-          }
-        ]
-      },
-      "REPORTING_SECTOR": {
-        "bullish_score": 112.0,
-        "bearish_score": 0,
-        "net_score": 112.0,
-        "sentiment": "BULLISH",
-        "signals": [
-          {
-            "name": "earnings_beats",
-            "direction": "bullish",
-            "confidence": 75
           }
         ]
       },
@@ -370,6 +238,19 @@
           {
             "name": "health_outbreak",
             "direction": "bullish",
+            "confidence": 50
+          }
+        ]
+      },
+      "TRAVEL": {
+        "bullish_score": 0,
+        "bearish_score": 100,
+        "net_score": -100,
+        "sentiment": "BEARISH",
+        "signals": [
+          {
+            "name": "health_outbreak",
+            "direction": "bearish",
             "confidence": 50
           }
         ]
@@ -464,6 +345,58 @@
             "confidence": 100
           }
         ]
+      },
+      "OIL_PRODUCERS": {
+        "bullish_score": 100,
+        "bearish_score": 0,
+        "net_score": 100,
+        "sentiment": "BULLISH",
+        "signals": [
+          {
+            "name": "oil_price_spike",
+            "direction": "bullish",
+            "confidence": 50
+          }
+        ]
+      },
+      "PIPELINES": {
+        "bullish_score": 100,
+        "bearish_score": 0,
+        "net_score": 100,
+        "sentiment": "BULLISH",
+        "signals": [
+          {
+            "name": "oil_price_spike",
+            "direction": "bullish",
+            "confidence": 50
+          }
+        ]
+      },
+      "CONSUMER": {
+        "bullish_score": 0,
+        "bearish_score": 100,
+        "net_score": -100,
+        "sentiment": "BEARISH",
+        "signals": [
+          {
+            "name": "oil_price_spike",
+            "direction": "bearish",
+            "confidence": 50
+          }
+        ]
+      },
+      "TRANSPORT": {
+        "bullish_score": 0,
+        "bearish_score": 100,
+        "net_score": -100,
+        "sentiment": "BEARISH",
+        "signals": [
+          {
+            "name": "oil_price_spike",
+            "direction": "bearish",
+            "confidence": 50
+          }
+        ]
       }
     },
     "headline_summary": {
@@ -475,30 +408,8 @@
           "bars": "\u2588\u2588\u2588\u2588\u2588",
           "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
           "articles": [
-            "Trump\u2019s \u2018dirty ceasefire\u2019 tested as Iran hits shipping",
-            "Trump envoy seeks to replace Iran with Italy in upcoming World Cup"
-          ]
-        },
-        {
-          "signal": "Peace Deal",
-          "magnitude": "MODERATE",
-          "confidence": 100,
-          "bars": "\u2588\u2588\u2588\u2588\u2588",
-          "note": "Peace = risk-on. Growth and consumer stocks benefit.",
-          "articles": [
-            "Trump\u2019s \u2018dirty ceasefire\u2019 tested as Iran hits shipping",
-            "Traders Placed $430M Bets Minutes Before Trump Extended Iran Ceasefire"
-          ]
-        },
-        {
-          "signal": "Oil Price Spike",
-          "magnitude": "HIGH",
-          "confidence": 100,
-          "bars": "\u2588\u2588\u2588\u2588\u2588",
-          "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
-          "articles": [
-            "Trump\u2019s \u2018dirty ceasefire\u2019 tested as Iran hits shipping",
-            "The Global Energy Crisis Is Reviving Green Hydrogen"
+            "US navy secretary fired amid Iran blockade",
+            "Iran war drives Panama Canal lane prices to record high"
           ]
         },
         {
@@ -520,55 +431,65 @@
           "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported",
           "articles": [
             "Attacks on Ukraine\u2019s health care increased by 20% in 2025",
-            "Sanctioned Crypto Exchange Tied to Russia Hit by $13 Million Hack"
+            "Russian Oil Resumes Flowing to Slovakia via Druzhba After Three-Month Halt"
           ]
         },
         {
-          "signal": "Earnings Beats",
-          "magnitude": "MODERATE",
-          "confidence": 75,
-          "bars": "\u2588\u2588\u2588",
-          "note": "Strong earnings season = risk-on, growth picks benefit",
+          "signal": "Health Outbreak",
+          "magnitude": "HIGH",
+          "confidence": 50,
+          "bars": "\u2588\u2588",
+          "note": "Health outbreak = defensive positioning. Pharma, staples, ecommerce.",
           "articles": [
-            "Tesla\u2019s first-quarter earnings beat Wall Street expectations"
+            "WHO Member States agree to extend negotiations on key annex to the Pandemic Agreement"
+          ]
+        },
+        {
+          "signal": "Oil Price Spike",
+          "magnitude": "HIGH",
+          "confidence": 50,
+          "bars": "\u2588\u2588",
+          "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
+          "articles": [
+            "The Global Energy Crisis Is Reviving Green Hydrogen"
           ]
         }
       ],
       "top_headlines": [
         {
-          "title": "Tesla shares rally as profits rebound from last year\u2019s lows",
+          "title": "US navy secretary fired amid Iran blockade",
           "source": "Financial Times"
         },
         {
-          "title": "Pennsylvania\u2019s chipmaking comeback left in limbo under Donald Trump",
+          "title": "Iran war drives Panama Canal lane prices to record high",
           "source": "Financial Times"
         },
         {
-          "title": "Trump\u2019s \u2018dirty ceasefire\u2019 tested as Iran hits shipping",
+          "title": "The oil tankers slipping through Hormuz",
           "source": "Financial Times"
         },
         {
-          "title": "Trump envoy seeks to replace Iran with Italy in upcoming World Cup",
+          "title": "The secret diary of a middle power",
           "source": "Financial Times"
         },
         {
-          "title": "Iran says it has seized two container ships in Strait of Hormuz",
+          "title": "It\u2019s a \u2018sontaku\u2019 world \u2014 we are just living in it",
           "source": "Financial Times"
         },
         {
-          "title": "Switzerland hits UBS with proposed $20bn capital increase",
+          "title": "French weather service alerts police to tampering after suspicious Polymarket bets",
           "source": "Financial Times"
         },
         {
-          "title": "Russia to suspend Kazakh oil flows through key pipeline supplying Berlin",
+          "title": "Trump envoy seeks to replace Iran with Italy in football World Cup",
           "source": "Financial Times"
         },
         {
-          "title": "Germany to take on \u2018more responsibility\u2019 for Europe\u2019s defence",
+          "title": "Top Republican pushes party to shun $300mn AI lobby",
           "source": "Financial Times"
         },
         {
-          "title": "Crypto billionaire Justin Sun sues Trump family\u2019s World Liberty Financial",
+          "title": "DeepSeek targets $20bn valuation to stop poaching of staff",
           "source": "Financial Times"
         },
         {
@@ -594,390 +515,8 @@
       "max_loss_buffer": 1.6,
       "top_picks": [
         {
-          "ticker": "TD.TO",
-          "score": 97,
-          "data": {
-            "ticker": "TD.TO",
-            "price": 142.93,
-            "day_chg_pct": -0.82,
-            "perf_30d": 12.23,
-            "perf_90d": 11.96,
-            "w52_high": 145.9,
-            "w52_low": 85.59,
-            "drawdown_high": -2.04,
-            "recovery_pct": 66.99,
-            "avg_volume": 7605182,
-            "volatility": 0.7,
-            "rsi_approx": 84.8,
-            "div_yield": 3.0,
-            "div_rate": 4.32,
-            "ex_div_date": "Apr 09, 2026",
-            "days_to_ex_div": -14,
-            "pe_ratio": 11.6,
-            "peg_ratio": 0.91,
-            "profit_margin": 33.0,
-            "rev_growth": 21.1,
-            "earn_growth": 51.3,
-            "debt_equity": null,
-            "roe": 17.8,
-            "current_ratio": null,
-            "target_price": 140.43,
-            "upside_target": -1.8,
-            "analyst_rec": "none",
-            "next_earnings": "N/A",
-            "short_pct_float": 0,
-            "vol_accum_score": 10,
-            "status": "ok",
-            "closes_30d": [
-              129.2846,
-              127.2309,
-              127.0424,
-              129.2648,
-              130.3859,
-              128.4909,
-              127.6278,
-              125.1177,
-              127.3599,
-              127.6873,
-              129.2945,
-              127.6476,
-              125.8717,
-              126.5166,
-              128.8977,
-              130.2767,
-              131.4673,
-              132.39,
-              133.7988,
-              136.17,
-              137.94,
-              139.28,
-              140.67,
-              141.95,
-              142.77,
-              142.48,
-              144.17,
-              145.41,
-              144.11,
-              142.93
-            ]
-          },
-          "pillars": {
-            "momentum": 19,
-            "dividend_income": 12,
-            "growth": 18,
-            "value": 15,
-            "safety": 15,
-            "volume_liquidity": 10
-          },
-          "reasons": [
-            "\ud83d\udcc8 Good 90d: +11.96%",
-            "\ud83d\udcc8 30d momentum: +12.23%",
-            "\ud83d\udcb0 Good yield: 3.0%",
-            "\ud83d\udcca Revenue growth: +21.1%",
-            "\ud83d\udcca Earnings growth: +51.3%",
-            "\ud83d\udc8e Very cheap: P/E 11.6",
-            "\ud83d\udc8e PEG < 1: 0.91 (undervalued vs growth)",
-            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-            "\ud83d\udcaa RS Rating: 75 \u2014 \u2705 STRONG"
-          ],
-          "flags": [],
-          "pick": {
-            "category": "FHSA Conservative Growth",
-            "venue": "STOCK_ACCOUNT",
-            "tag": "[FHSA]",
-            "hold_days": 180,
-            "risk_label": "LOW",
-            "amount": 50,
-            "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
-            "exit_note": "FHSA stop: $120.06 (16% rule). Review if drawdown hits 12%.",
-            "exp_low": 9.6,
-            "exp_high": 35.9,
-            "exp_prob": 68,
-            "options_eligible": false,
-            "suggested_play": "none",
-            "est_premium_pct": 0.0,
-            "short_interest": 0,
-            "next_earnings": "N/A"
-          },
-          "sector": "BANKS",
-          "ml_prob": 0.8944,
-          "ml_signal": "\ud83d\udd25 STRONG BUY",
-          "rs_rating": 75,
-          "rs_signal": "\u2705 STRONG",
-          "rs_adj": 5,
-          "score_velocity": 0.022058823529411766,
-          "velocity_boost": 0,
-          "decay_penalty": 15,
-          "decay_half_life": 30,
-          "signal_age_note": "\u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
-          "stale_label": "DEGRADING",
-          "conviction_signals": [
-            "\ud83d\udcaa RS 75",
-            "\ud83e\udd16 ML Score 89%"
-          ],
-          "conviction_boost": 12,
-          "conviction_count": 2
-        },
-        {
-          "ticker": "SLF.TO",
-          "score": 85,
-          "data": {
-            "ticker": "SLF.TO",
-            "price": 96.39,
-            "day_chg_pct": 0.21,
-            "perf_30d": 11.28,
-            "perf_90d": 12.81,
-            "w52_high": 96.68,
-            "w52_low": 77.38,
-            "drawdown_high": -0.3,
-            "recovery_pct": 24.57,
-            "avg_volume": 1259825,
-            "volatility": 1.21,
-            "rsi_approx": 88.5,
-            "div_yield": 3.74,
-            "div_rate": 3.6,
-            "ex_div_date": "Feb 25, 2026",
-            "days_to_ex_div": -57,
-            "pe_ratio": 15.7,
-            "peg_ratio": 1.18,
-            "profit_margin": 10.2,
-            "rev_growth": 4.7,
-            "earn_growth": 240.9,
-            "debt_equity": 90.3,
-            "roe": 13.9,
-            "current_ratio": 8.0,
-            "target_price": 95.86,
-            "upside_target": -0.6,
-            "analyst_rec": "buy",
-            "next_earnings": "N/A",
-            "short_pct_float": 0,
-            "vol_accum_score": 10,
-            "status": "ok",
-            "closes_30d": [
-              86.38,
-              85.68,
-              86.15,
-              87.34,
-              87.71,
-              87.02,
-              85.95,
-              85.34,
-              86.62,
-              86.81,
-              86.74,
-              86.65,
-              85.26,
-              86.31,
-              87.15,
-              87.34,
-              88.5,
-              88.42,
-              88.82,
-              91.23,
-              91.31,
-              90.27,
-              91.41,
-              92.42,
-              93.89,
-              94.06,
-              96.31,
-              96.08,
-              96.19,
-              96.39
-            ]
-          },
-          "pillars": {
-            "momentum": 19,
-            "dividend_income": 12,
-            "growth": 11,
-            "value": 12,
-            "safety": 15,
-            "volume_liquidity": 10
-          },
-          "reasons": [
-            "\ud83d\udcc8 Good 90d: +12.81%",
-            "\ud83d\udcc8 30d momentum: +11.28%",
-            "\ud83d\udcb0 Good yield: 3.74%",
-            "\ud83d\udcca Earnings growth: +240.9%",
-            "\u2705 Fair value: P/E 15.7",
-            "\ud83d\udcca Good liquidity",
-            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-            "\u2705 Analyst consensus: buy",
-            "\ud83d\udcaa RS Rating: 78 \u2014 \u2705 STRONG"
-          ],
-          "flags": [],
-          "pick": {
-            "category": "FHSA Conservative Growth",
-            "venue": "STOCK_ACCOUNT",
-            "tag": "[FHSA]",
-            "hold_days": 180,
-            "risk_label": "LOW",
-            "amount": 50,
-            "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
-            "exit_note": "FHSA stop: $80.97 (16% rule). Review if drawdown hits 12%.",
-            "exp_low": 10.2,
-            "exp_high": 38.4,
-            "exp_prob": 68,
-            "options_eligible": false,
-            "suggested_play": "none",
-            "est_premium_pct": 0.0,
-            "short_interest": 0,
-            "next_earnings": "N/A"
-          },
-          "sector": "FINANCIALS",
-          "ml_prob": 0.5655,
-          "ml_signal": "\ud83d\udcca NEUTRAL",
-          "rs_rating": 78,
-          "rs_signal": "\u2705 STRONG",
-          "rs_adj": 5,
-          "score_velocity": 0.1388888888888889,
-          "velocity_boost": 0,
-          "decay_penalty": 15,
-          "decay_half_life": 30,
-          "signal_age_note": "\u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
-          "stale_label": "DEGRADING"
-        },
-        {
-          "ticker": "CM.TO",
-          "score": 100,
-          "data": {
-            "ticker": "CM.TO",
-            "price": 148.57,
-            "day_chg_pct": 0.06,
-            "perf_30d": 13.0,
-            "perf_90d": 19.76,
-            "w52_high": 150.97,
-            "w52_low": 83.03,
-            "drawdown_high": -1.59,
-            "recovery_pct": 78.94,
-            "avg_volume": 2717887,
-            "volatility": 0.92,
-            "rsi_approx": 89.7,
-            "div_yield": 2.88,
-            "div_rate": 4.28,
-            "ex_div_date": "Mar 27, 2026",
-            "days_to_ex_div": -27,
-            "pe_ratio": 15.5,
-            "peg_ratio": 1.79,
-            "profit_margin": 33.5,
-            "rev_growth": 16.7,
-            "earn_growth": 46.6,
-            "debt_equity": null,
-            "roe": 14.7,
-            "current_ratio": null,
-            "target_price": 142.96,
-            "upside_target": -3.8,
-            "analyst_rec": "none",
-            "next_earnings": "N/A",
-            "short_pct_float": 0,
-            "vol_accum_score": 10,
-            "status": "ok",
-            "closes_30d": [
-              133.4783,
-              131.0285,
-              129.7888,
-              132.3774,
-              132.8336,
-              131.455,
-              130.3541,
-              128.4201,
-              131.4749,
-              132.1096,
-              133.4287,
-              129.64,
-              128.9,
-              127.87,
-              131.84,
-              133.57,
-              133.96,
-              135.12,
-              136.58,
-              139.65,
-              141.59,
-              142.66,
-              144.4,
-              146.07,
-              147.4,
-              147.36,
-              149.43,
-              150.39,
-              148.48,
-              148.57
-            ]
-          },
-          "pillars": {
-            "momentum": 19,
-            "dividend_income": 12,
-            "growth": 18,
-            "value": 12,
-            "safety": 15,
-            "volume_liquidity": 10
-          },
-          "reasons": [
-            "\ud83d\udcc8 Good 90d: +19.76%",
-            "\ud83d\udcc8 30d momentum: +13.0%",
-            "\ud83d\udcb0 Good yield: 2.88%",
-            "\ud83d\udcca Revenue growth: +16.7%",
-            "\ud83d\udcca Earnings growth: +46.6%",
-            "\u2705 Fair value: P/E 15.5",
-            "\ud83d\udcca Good liquidity",
-            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-            "\ud83d\udcaa RS Rating: 95 \u2014 \ud83d\udd25 TOP PERFORMER"
-          ],
-          "flags": [],
-          "pick": {
-            "category": "FHSA Conservative Growth",
-            "venue": "STOCK_ACCOUNT",
-            "tag": "[FHSA]",
-            "hold_days": 180,
-            "risk_label": "LOW",
-            "amount": 0.24,
-            "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 50d old (earnings t\u00bd=30d) \u221215pts",
-            "exit_note": "FHSA stop: $124.8 (16% rule). Review if drawdown hits 12%.",
-            "exp_low": 15.8,
-            "exp_high": 59.3,
-            "exp_prob": 68,
-            "options_eligible": false,
-            "suggested_play": "none",
-            "est_premium_pct": 0.0,
-            "short_interest": 0,
-            "next_earnings": "N/A"
-          },
-          "sector": "BANKS",
-          "ml_prob": 0.9083,
-          "ml_signal": "\ud83d\udd25 STRONG BUY",
-          "rs_rating": 95,
-          "rs_signal": "\ud83d\udd25 TOP PERFORMER",
-          "rs_adj": 15,
-          "score_velocity": 0.0,
-          "velocity_boost": 0,
-          "decay_penalty": 15,
-          "decay_half_life": 30,
-          "signal_age_note": "\u23f3 50d old (earnings t\u00bd=30d) \u221215pts",
-          "stale_label": "DEGRADING",
-          "conviction_signals": [
-            "\ud83d\udcaa RS 95 \u2014 Top Performer",
-            "\ud83e\udd16 ML Score 91%"
-          ],
-          "conviction_boost": 16,
-          "conviction_count": 2,
-          "size_guardrail": {
-            "ticker": "CM.TO",
-            "category": "FHSA Conservative Growth",
-            "bucket": "ML-assisted growth picks. Max loss if model fails = 30% of TFSA.",
-            "bucket_pool": 3.0,
-            "max_raw": 0.6,
-            "regime_adj": 1.0,
-            "accuracy_adj": 0.4,
-            "recommended": 0.24,
-            "if_zero_pct": 2.4,
-            "regime": "BULL",
-            "survival_note": "If this goes to zero \u2192 you lose 2.4% of account. \u2705 Acceptable"
-          }
-        },
-        {
           "ticker": "GRT-UN.TO",
-          "score": 97,
+          "score": 82,
           "data": {
             "ticker": "GRT-UN.TO",
             "price": 90.54,
@@ -988,13 +527,13 @@
             "w52_low": 61.29,
             "drawdown_high": -4.69,
             "recovery_pct": 47.72,
-            "avg_volume": 105275,
+            "avg_volume": 105290,
             "volatility": 1.26,
             "rsi_approx": 75.7,
-            "div_yield": 3.81,
+            "div_yield": 3.82,
             "div_rate": 3.46,
             "ex_div_date": "Apr 30, 2026",
-            "days_to_ex_div": 7,
+            "days_to_ex_div": 6,
             "pe_ratio": 16.0,
             "peg_ratio": null,
             "profit_margin": 55.4,
@@ -1054,8 +593,8 @@
           "reasons": [
             "\ud83d\udcc8 Positive 90d: +5.65%",
             "\ud83d\udcc8 30d momentum: +11.33%",
-            "\ud83d\udcb0 Good yield: 3.81%",
-            "\ud83d\udcc5 Ex-div in 7 days \u2014 collect soon!",
+            "\ud83d\udcb0 Good yield: 3.82%",
+            "\ud83d\udcc5 Ex-div in 6 days \u2014 collect soon!",
             "\ud83d\udcca Earnings growth: +67.4%",
             "\u2705 Fair value: P/E 16.0",
             "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates"
@@ -1068,7 +607,7 @@
             "hold_days": 180,
             "risk_label": "LOW",
             "amount": 50,
-            "action": "Suggested: $50 | Core hold \u2014 review in 180 days",
+            "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
             "exit_note": "FHSA stop: $76.05 (16% rule). Review if drawdown hits 12%.",
             "exp_low": 4.5,
             "exp_high": 17.0,
@@ -1080,14 +619,162 @@
             "next_earnings": "N/A"
           },
           "sector": "REIT",
-          "ml_prob": 0.8143,
+          "ml_prob": 0.8001,
           "ml_signal": "\ud83d\udd25 STRONG BUY",
-          "rs_rating": 49,
+          "rs_rating": 51,
           "rs_signal": "\ud83d\ude10 AVERAGE",
           "rs_adj": -3,
-          "score_velocity": -0.13043478260869565,
+          "score_velocity": -0.12,
           "velocity_boost": 0,
-          "signal_age_note": "\ud83d\udd04 FRESH \u2014 score +5 pts over 7 days"
+          "decay_penalty": 15,
+          "decay_half_life": 30,
+          "signal_age_note": "\u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+          "stale_label": "DEGRADING"
+        },
+        {
+          "ticker": "SU.TO",
+          "score": 100,
+          "data": {
+            "ticker": "SU.TO",
+            "price": 86.72,
+            "day_chg_pct": 1.15,
+            "perf_30d": 0.02,
+            "perf_90d": 27.93,
+            "w52_high": 94.34,
+            "w52_low": 46.34,
+            "drawdown_high": -8.08,
+            "recovery_pct": 87.14,
+            "avg_volume": 5051725,
+            "volatility": 1.26,
+            "rsi_approx": 41.2,
+            "div_yield": 2.77,
+            "div_rate": 2.4,
+            "ex_div_date": "Mar 04, 2026",
+            "days_to_ex_div": -51,
+            "pe_ratio": 17.9,
+            "peg_ratio": 11.41,
+            "profit_margin": 12.1,
+            "rev_growth": -3.9,
+            "earn_growth": 87.6,
+            "debt_equity": 33.0,
+            "roe": 13.2,
+            "current_ratio": 1.39,
+            "target_price": 96.74,
+            "upside_target": 11.6,
+            "analyst_rec": "buy",
+            "next_earnings": "N/A",
+            "short_pct_float": 0,
+            "vol_accum_score": 10,
+            "status": "ok",
+            "closes_30d": [
+              79.1,
+              81.46,
+              81.83,
+              82.93,
+              84.11,
+              85.13,
+              87.01,
+              87.49,
+              86.7,
+              88.23,
+              89.42,
+              90.06,
+              92.5,
+              91.94,
+              92.01,
+              90.29,
+              91.72,
+              91.86,
+              92.79,
+              89.24,
+              87.65,
+              89.29,
+              89.41,
+              87.56,
+              86.31,
+              87.37,
+              83.69,
+              84.11,
+              85.73,
+              86.72
+            ]
+          },
+          "pillars": {
+            "momentum": 20,
+            "dividend_income": 12,
+            "growth": 11,
+            "value": 13,
+            "safety": 11,
+            "volume_liquidity": 10
+          },
+          "reasons": [
+            "\ud83d\ude80 Strong 90d: +27.93%",
+            "\ud83d\udcb0 Good yield: 2.77%",
+            "\ud83d\udcca Earnings growth: +87.6%",
+            "\u2705 Fair value: P/E 17.9",
+            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
+            "\u2705 Analyst consensus: buy",
+            "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcaa RS Rating: 95 \u2014 \ud83d\udd25 TOP PERFORMER"
+          ],
+          "flags": [],
+          "pick": {
+            "category": "FHSA Conservative Growth",
+            "venue": "STOCK_ACCOUNT",
+            "tag": "[FHSA]",
+            "hold_days": 180,
+            "risk_label": "LOW",
+            "amount": 0.24,
+            "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (news t\u00bd=5d) \u221218pts",
+            "exit_note": "FHSA stop: $72.84 (16% rule). Review if drawdown hits 12%.",
+            "exp_low": 22.3,
+            "exp_high": 83.8,
+            "exp_prob": 68,
+            "options_eligible": false,
+            "suggested_play": "none",
+            "est_premium_pct": 0.0,
+            "short_interest": 0,
+            "next_earnings": "N/A"
+          },
+          "sector": "ENERGY",
+          "news_adjustment": 13.3,
+          "news_sentiment": "BULLISH",
+          "news_reasons": [
+            "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+          ],
+          "ml_prob": 0.7973,
+          "ml_signal": "\ud83d\udd25 STRONG BUY",
+          "rs_rating": 95,
+          "rs_signal": "\ud83d\udd25 TOP PERFORMER",
+          "rs_adj": 15,
+          "score_velocity": 0.0,
+          "velocity_boost": 0,
+          "decay_penalty": 18,
+          "decay_half_life": 5,
+          "signal_age_note": "\u23f3 51d old (news t\u00bd=5d) \u221218pts",
+          "stale_label": "DEGRADING",
+          "conviction_signals": [
+            "\ud83d\udcf0 Positive News Macro",
+            "\ud83d\udcaa RS 95 \u2014 Top Performer",
+            "\ud83e\udd16 ML Score 80%"
+          ],
+          "conviction_boost": 22,
+          "conviction_count": 3,
+          "size_guardrail": {
+            "ticker": "SU.TO",
+            "category": "FHSA Conservative Growth",
+            "bucket": "ML-assisted growth picks. Max loss if model fails = 30% of TFSA.",
+            "bucket_pool": 3.0,
+            "max_raw": 0.6,
+            "regime_adj": 1.0,
+            "accuracy_adj": 0.4,
+            "recommended": 0.24,
+            "if_zero_pct": 2.4,
+            "regime": "BULL",
+            "survival_note": "If this goes to zero \u2192 you lose 2.4% of account. \u2705 Acceptable"
+          }
         },
         {
           "ticker": "CNQ.TO",
@@ -1102,13 +789,13 @@
             "w52_low": 38.58,
             "drawdown_high": -13.92,
             "recovery_pct": 58.4,
-            "avg_volume": 17922601,
+            "avg_volume": 17922600,
             "volatility": 1.27,
             "rsi_approx": 41.1,
-            "div_yield": 4.13,
+            "div_yield": 4.09,
             "div_rate": 2.5,
             "ex_div_date": "Mar 20, 2026",
-            "days_to_ex_div": -34,
+            "days_to_ex_div": -35,
             "pe_ratio": 11.8,
             "peg_ratio": 3.42,
             "profit_margin": 27.9,
@@ -1167,14 +854,14 @@
           },
           "reasons": [
             "\ud83d\ude80 Strong 90d: +29.49%",
-            "\ud83d\udcb0 Strong yield: 4.13%",
+            "\ud83d\udcb0 Strong yield: 4.09%",
             "\ud83d\udcca Earnings growth: +371.8%",
             "\ud83d\udcaa Strong ROE: 25.8%",
             "\ud83d\udc8e Very cheap: P/E 11.8",
             "\u2705 Analyst consensus: buy",
-            "\ud83d\udcf0 News +25pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-            "\ud83d\udcf0 News +25pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-            "\ud83d\udcaa RS Rating: 87 \u2014 \u2705 STRONG"
+            "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcaa RS Rating: 90 \u2014 \ud83d\udd25 TOP PERFORMER"
           ],
           "flags": [
             "\u26a0\ufe0f Approaching FHSA limit: 13.92% drawdown"
@@ -1186,7 +873,7 @@
             "hold_days": 180,
             "risk_label": "LOW",
             "amount": 0.24,
-            "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (news t\u00bd=5d) \u221218pts",
+            "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 52d old (news t\u00bd=5d) \u221218pts",
             "exit_note": "FHSA stop: $51.33 (16% rule). Review if drawdown hits 12%.",
             "exp_low": 23.6,
             "exp_high": 88.5,
@@ -1198,7 +885,7 @@
             "next_earnings": "N/A"
           },
           "sector": "ENERGY",
-          "news_adjustment": 25,
+          "news_adjustment": 13.3,
           "news_sentiment": "BULLISH",
           "news_reasons": [
             "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
@@ -1206,24 +893,278 @@
           ],
           "ml_prob": 0.9027,
           "ml_signal": "\ud83d\udd25 STRONG BUY",
-          "rs_rating": 87,
-          "rs_signal": "\u2705 STRONG",
-          "rs_adj": 10,
+          "rs_rating": 90,
+          "rs_signal": "\ud83d\udd25 TOP PERFORMER",
+          "rs_adj": 15,
           "score_velocity": 0.0,
           "velocity_boost": 0,
           "decay_penalty": 18,
           "decay_half_life": 5,
-          "signal_age_note": "\u23f3 51d old (news t\u00bd=5d) \u221218pts",
+          "signal_age_note": "\u23f3 52d old (news t\u00bd=5d) \u221218pts",
           "stale_label": "DEGRADING",
           "conviction_signals": [
             "\ud83d\udcf0 Positive News Macro",
-            "\ud83d\udcaa RS 87 \u2014 Top Performer",
+            "\ud83d\udcaa RS 90 \u2014 Top Performer",
             "\ud83e\udd16 ML Score 90%"
           ],
           "conviction_boost": 22,
           "conviction_count": 3,
           "size_guardrail": {
             "ticker": "CNQ.TO",
+            "category": "FHSA Conservative Growth",
+            "bucket": "ML-assisted growth picks. Max loss if model fails = 30% of TFSA.",
+            "bucket_pool": 3.0,
+            "max_raw": 0.6,
+            "regime_adj": 1.0,
+            "accuracy_adj": 0.4,
+            "recommended": 0.24,
+            "if_zero_pct": 2.4,
+            "regime": "BULL",
+            "survival_note": "If this goes to zero \u2192 you lose 2.4% of account. \u2705 Acceptable"
+          }
+        },
+        {
+          "ticker": "O",
+          "score": 76,
+          "data": {
+            "ticker": "O",
+            "price": 63.34,
+            "day_chg_pct": -1.03,
+            "perf_30d": 4.56,
+            "perf_90d": 4.13,
+            "w52_high": 67.94,
+            "w52_low": 54.38,
+            "drawdown_high": -6.77,
+            "recovery_pct": 16.48,
+            "avg_volume": 5318835,
+            "volatility": 1.12,
+            "rsi_approx": 61.1,
+            "div_yield": 5.11,
+            "div_rate": 3.24,
+            "ex_div_date": "Apr 30, 2026",
+            "days_to_ex_div": 6,
+            "pe_ratio": 54.1,
+            "peg_ratio": 5.68,
+            "profit_margin": 18.4,
+            "rev_growth": 11.0,
+            "earn_growth": 41.2,
+            "debt_equity": 73.5,
+            "roe": 2.7,
+            "current_ratio": 1.25,
+            "target_price": 68.3,
+            "upside_target": 7.8,
+            "analyst_rec": "hold",
+            "next_earnings": "N/A",
+            "short_pct_float": 3.5,
+            "vol_accum_score": 10,
+            "status": "ok",
+            "closes_30d": [
+              64.4232,
+              64.7418,
+              64.1544,
+              64.6323,
+              63.806,
+              62.7606,
+              62.3624,
+              60.6799,
+              60.5803,
+              60.1921,
+              59.7938,
+              60.0029,
+              60.421,
+              60.879,
+              61.18,
+              61.88,
+              62.21,
+              61.83,
+              62.23,
+              62.79,
+              63.2,
+              63.75,
+              63.32,
+              63.81,
+              63.96,
+              64.64,
+              65.09,
+              64.92,
+              64.0,
+              63.34
+            ]
+          },
+          "pillars": {
+            "momentum": 8,
+            "dividend_income": 20,
+            "growth": 14,
+            "value": 8,
+            "safety": 15,
+            "volume_liquidity": 10
+          },
+          "reasons": [
+            "\ud83d\udcb0 Strong yield: 5.11%",
+            "\ud83d\udcc5 Ex-div in 6 days \u2014 collect soon!",
+            "\ud83d\udcca Earnings growth: +41.2%",
+            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates"
+          ],
+          "flags": [
+            "\u26a0\ufe0f RS Rating: 31 \u2014 lagging the market"
+          ],
+          "pick": {
+            "category": "FHSA Conservative Growth",
+            "venue": "STOCK_ACCOUNT",
+            "tag": "[FHSA]",
+            "hold_days": 180,
+            "risk_label": "LOW",
+            "amount": 50,
+            "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+            "exit_note": "FHSA stop: $53.21 (16% rule). Review if drawdown hits 12%.",
+            "exp_low": 3.3,
+            "exp_high": 12.4,
+            "exp_prob": 68,
+            "options_eligible": false,
+            "suggested_play": "none",
+            "est_premium_pct": 0.0,
+            "short_interest": 3.5,
+            "next_earnings": "N/A"
+          },
+          "sector": "REIT",
+          "ml_prob": 0.4268,
+          "ml_signal": "\u26a0\ufe0f WEAK",
+          "rs_rating": 31,
+          "rs_signal": "\u26a0\ufe0f BELOW AVERAGE",
+          "rs_adj": -8,
+          "score_velocity": -0.09782608695652174,
+          "velocity_boost": 0,
+          "decay_penalty": 15,
+          "decay_half_life": 30,
+          "signal_age_note": "\u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+          "stale_label": "DEGRADING"
+        },
+        {
+          "ticker": "TGT",
+          "score": 100,
+          "data": {
+            "ticker": "TGT",
+            "price": 130.6,
+            "day_chg_pct": -1.14,
+            "perf_30d": 13.63,
+            "perf_90d": 20.66,
+            "w52_high": 133.1,
+            "w52_low": 83.44,
+            "drawdown_high": -1.88,
+            "recovery_pct": 56.52,
+            "avg_volume": 4848100,
+            "volatility": 1.85,
+            "rsi_approx": 66.5,
+            "div_yield": 3.49,
+            "div_rate": 4.56,
+            "ex_div_date": "May 13, 2026",
+            "days_to_ex_div": 19,
+            "pe_ratio": 16.0,
+            "peg_ratio": 3.7,
+            "profit_margin": 3.5,
+            "rev_growth": -1.5,
+            "earn_growth": -5.0,
+            "debt_equity": 125.5,
+            "roe": 24.0,
+            "current_ratio": 0.94,
+            "target_price": 125.03,
+            "upside_target": -4.3,
+            "analyst_rec": "hold",
+            "next_earnings": "N/A",
+            "short_pct_float": 4.2,
+            "vol_accum_score": 10,
+            "status": "ok",
+            "closes_30d": [
+              118.78,
+              115.75,
+              117.34,
+              117.05,
+              116.76,
+              115.05,
+              114.47,
+              113.26,
+              114.93,
+              115.92,
+              116.37,
+              117.0,
+              119.84,
+              118.78,
+              121.2,
+              120.45,
+              120.45,
+              122.21,
+              119.52,
+              123.12,
+              124.03,
+              121.89,
+              117.88,
+              119.53,
+              122.87,
+              123.91,
+              127.84,
+              130.18,
+              132.1,
+              130.6
+            ]
+          },
+          "pillars": {
+            "momentum": 20,
+            "dividend_income": 17,
+            "growth": 3,
+            "value": 12,
+            "safety": 13,
+            "volume_liquidity": 10
+          },
+          "reasons": [
+            "\ud83d\ude80 Strong 90d: +20.66%",
+            "\ud83d\udcc8 30d momentum: +13.63%",
+            "\ud83d\udcb0 Good yield: 3.49%",
+            "\ud83d\udcc5 Ex-div in 19 days \u2014 collect soon!",
+            "\ud83d\udcaa Strong ROE: 24.0%",
+            "\u2705 Fair value: P/E 16.0",
+            "\ud83d\udcca Good liquidity",
+            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
+            "\ud83d\udcaa RS Rating: 97 \u2014 \ud83d\udd25 TOP PERFORMER"
+          ],
+          "flags": [],
+          "pick": {
+            "category": "FHSA Conservative Growth",
+            "venue": "STOCK_ACCOUNT",
+            "tag": "[FHSA]",
+            "hold_days": 180,
+            "risk_label": "LOW",
+            "amount": 0.24,
+            "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 52d old (value t\u00bd=90d) \u22128pts",
+            "exit_note": "FHSA stop: $109.7 (16% rule). Review if drawdown hits 12%.",
+            "exp_low": 16.5,
+            "exp_high": 62.0,
+            "exp_prob": 68,
+            "options_eligible": false,
+            "suggested_play": "none",
+            "est_premium_pct": 0.0,
+            "short_interest": 4.2,
+            "next_earnings": "N/A"
+          },
+          "sector": "CONSUMER",
+          "ml_prob": 0.8757,
+          "ml_signal": "\ud83d\udd25 STRONG BUY",
+          "rs_rating": 97,
+          "rs_signal": "\ud83d\udd25 TOP PERFORMER",
+          "rs_adj": 15,
+          "score_velocity": 0.0,
+          "velocity_boost": 0,
+          "decay_penalty": 8,
+          "decay_half_life": 90,
+          "signal_age_note": "\u23f3 52d old (value t\u00bd=90d) \u22128pts",
+          "stale_label": "AGING",
+          "conviction_signals": [
+            "\ud83d\udcaa RS 97 \u2014 Top Performer",
+            "\ud83e\udd16 ML Score 88%"
+          ],
+          "conviction_boost": 16,
+          "conviction_count": 2,
+          "size_guardrail": {
+            "ticker": "TGT",
             "category": "FHSA Conservative Growth",
             "bucket": "ML-assisted growth picks. Max loss if model fails = 30% of TFSA.",
             "bucket_pool": 3.0,
@@ -1320,16 +1261,16 @@
             "perf_30d": 15.29,
             "perf_90d": 13.73,
             "w52_high": 212.19,
-            "w52_low": 102.02,
+            "w52_low": 103.11,
             "drawdown_high": -4.57,
-            "recovery_pct": 98.49,
-            "avg_volume": 152057474,
+            "recovery_pct": 96.39,
+            "avg_volume": 152094210,
             "volatility": 2.96,
             "rsi_approx": 91.6,
             "div_yield": 2.0,
             "div_rate": 0.04,
             "ex_div_date": "Mar 11, 2026",
-            "days_to_ex_div": -43,
+            "days_to_ex_div": -44,
             "pe_ratio": 41.3,
             "peg_ratio": 0.72,
             "profit_margin": 55.6,
@@ -1396,7 +1337,7 @@
             "\ud83d\udc8e PEG < 1: 0.72 (undervalued vs growth)",
             "\ud83c\udfaf Analyst upside: +32.6%",
             "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-            "\ud83d\udcaa RS Rating: 84 \u2014 \u2705 STRONG"
+            "\ud83d\udcaa RS Rating: 87 \u2014 \u2705 STRONG"
           ],
           "flags": [],
           "pick": {
@@ -1420,14 +1361,14 @@
           "sector": "TECH",
           "ml_prob": 0.88,
           "ml_signal": "\ud83d\udd25 STRONG BUY",
-          "rs_rating": 84,
+          "rs_rating": 87,
           "rs_signal": "\u2705 STRONG",
           "rs_adj": 10,
-          "score_velocity": 0.3815789473684211,
+          "score_velocity": 0.37662337662337664,
           "velocity_boost": 0,
-          "signal_age_note": "\ud83d\udd04 FRESH \u2014 score +10 pts over 7 days",
+          "signal_age_note": "\ud83d\udd04 FRESH \u2014 score +8 pts over 7 days",
           "conviction_signals": [
-            "\ud83d\udcaa RS 84 \u2014 Top Performer",
+            "\ud83d\udcaa RS 87 \u2014 Top Performer",
             "\ud83e\udd16 ML Score 88%"
           ],
           "conviction_boost": 16,
@@ -1459,13 +1400,13 @@
             "w52_low": 356.28,
             "drawdown_high": -22.06,
             "recovery_pct": 21.51,
-            "avg_volume": 33701957,
+            "avg_volume": 33804740,
             "volatility": 1.42,
             "rsi_approx": 88.6,
-            "div_yield": 0.86,
+            "div_yield": 0.84,
             "div_rate": 3.64,
             "ex_div_date": "May 21, 2026",
-            "days_to_ex_div": 28,
+            "days_to_ex_div": 27,
             "pe_ratio": 27.1,
             "peg_ratio": 1.32,
             "profit_margin": 39.0,
@@ -1524,7 +1465,7 @@
           },
           "reasons": [
             "\ud83d\udcc8 30d momentum: +13.03%",
-            "\ud83d\udcc5 Ex-div in 28 days \u2014 collect soon!",
+            "\ud83d\udcc5 Ex-div in 27 days \u2014 collect soon!",
             "\ud83d\udcca Revenue growth: +16.7%",
             "\ud83d\udcca Earnings growth: +59.8%",
             "\ud83d\udcaa Strong ROE: 34.4%",
@@ -1558,12 +1499,12 @@
           "rs_rating": 19,
           "rs_signal": "\ud83d\udd34 LAGGARD",
           "rs_adj": -15,
-          "score_velocity": -1.4285714285714286,
+          "score_velocity": -1.25,
           "velocity_boost": 0
         },
         {
           "ticker": "MFC.TO",
-          "score": 79,
+          "score": 94.5,
           "data": {
             "ticker": "MFC.TO",
             "price": 52.35,
@@ -1571,16 +1512,16 @@
             "perf_30d": 10.93,
             "perf_90d": 4.43,
             "w52_high": 53.6,
-            "w52_low": 41.06,
+            "w52_low": 41.08,
             "drawdown_high": -2.33,
-            "recovery_pct": 27.5,
-            "avg_volume": 3835365,
+            "recovery_pct": 27.43,
+            "avg_volume": 3835680,
             "volatility": 1.13,
             "rsi_approx": 80.5,
             "div_yield": 3.45,
             "div_rate": 1.81,
             "ex_div_date": "Feb 25, 2026",
-            "days_to_ex_div": -57,
+            "days_to_ex_div": -58,
             "pe_ratio": 17.1,
             "peg_ratio": 0.78,
             "profit_margin": 18.7,
@@ -1638,6 +1579,7 @@
             "volume_liquidity": 10
           },
           "reasons": [
+            "\ud83d\udcc8 Rising fast: +16pts in 7d",
             "\ud83d\udcc8 30d momentum: +10.93%",
             "\ud83d\udcb0 Good yield: 3.45%",
             "\u2705 Fair value: P/E 17.1",
@@ -1647,8 +1589,7 @@
             "\u2705 Analyst consensus: buy"
           ],
           "flags": [
-            "\u26a0\ufe0f Declining revenue: -34.9%",
-            "\u26a0\ufe0f RS Rating: 39 \u2014 lagging the market"
+            "\u26a0\ufe0f Declining revenue: -34.9%"
           ],
           "pick": {
             "category": "WATCH",
@@ -1671,12 +1612,13 @@
           "sector": "FINANCIALS",
           "ml_prob": 0.5858,
           "ml_signal": "\u2705 BUY",
-          "rs_rating": 39,
-          "rs_signal": "\u26a0\ufe0f BELOW AVERAGE",
-          "rs_adj": -8,
-          "score_velocity": 1.8333333333333333,
-          "velocity_boost": 0,
-          "signal_age_note": "\ud83d\udd04 FRESH \u2014 score +11 pts over 7 days"
+          "rs_rating": 41,
+          "rs_signal": "\ud83d\ude10 AVERAGE",
+          "rs_adj": -3,
+          "score_velocity": 2.2857142857142856,
+          "velocity_boost": 10.5,
+          "score_original": 84,
+          "signal_age_note": "\ud83d\udd04 FRESH \u2014 score +16 pts over 7 days"
         },
         {
           "ticker": "BX",
@@ -1691,13 +1633,13 @@
             "w52_low": 101.73,
             "drawdown_high": -31.75,
             "recovery_pct": 27.52,
-            "avg_volume": 6904206,
+            "avg_volume": 6906345,
             "volatility": 1.26,
             "rsi_approx": 75.2,
-            "div_yield": 3.69,
+            "div_yield": 3.65,
             "div_rate": 4.74,
             "ex_div_date": "Feb 09, 2026",
-            "days_to_ex_div": -73,
+            "days_to_ex_div": -74,
             "pe_ratio": 33.5,
             "peg_ratio": 1.9,
             "profit_margin": 21.2,
@@ -1756,7 +1698,7 @@
           },
           "reasons": [
             "\ud83d\udcc8 30d momentum: +18.64%",
-            "\ud83d\udcb0 Good yield: 3.69%",
+            "\ud83d\udcb0 Good yield: 3.65%",
             "\ud83d\udcca Revenue growth: +50.6%",
             "\ud83d\udcca Earnings growth: +42.5%",
             "\ud83d\udcaa Strong ROE: 29.2%",
@@ -1765,7 +1707,7 @@
           ],
           "flags": [
             "\u26a0\ufe0f Negative 90d trend: -14.73%",
-            "\u26a0\ufe0f RS Rating: 3 \u2014 lagging the market"
+            "\u26a0\ufe0f RS Rating: 4 \u2014 lagging the market"
           ],
           "pick": {
             "category": "WATCH",
@@ -1788,7 +1730,7 @@
           "sector": "FINANCIALS",
           "ml_prob": 0.2555,
           "ml_signal": "\u26a0\ufe0f WEAK",
-          "rs_rating": 3,
+          "rs_rating": 4,
           "rs_signal": "\ud83d\udd34 LAGGARD",
           "rs_adj": -15
         },
@@ -1805,19 +1747,19 @@
             "w52_low": 18.53,
             "drawdown_high": -16.74,
             "recovery_pct": 140.69,
-            "avg_volume": 2810412,
+            "avg_volume": 2810720,
             "volatility": 2.76,
             "rsi_approx": 50.5,
             "div_yield": 0.42,
             "div_rate": 0.19,
             "ex_div_date": "Mar 11, 2026",
-            "days_to_ex_div": -43,
-            "pe_ratio": 16.7,
+            "days_to_ex_div": -44,
+            "pe_ratio": 16.8,
             "peg_ratio": 1.12,
             "profit_margin": 33.9,
             "rev_growth": 42.9,
             "earn_growth": 237.9,
-            "debt_equity": 8.7,
+            "debt_equity": 9.1,
             "roe": 31.5,
             "current_ratio": 2.35,
             "target_price": 53.1,
@@ -1873,7 +1815,7 @@
             "\ud83d\udcca Revenue growth: +42.9%",
             "\ud83d\udcca Earnings growth: +237.9%",
             "\ud83d\udcaa Strong ROE: 31.5%",
-            "\u2705 Fair value: P/E 16.7",
+            "\u2705 Fair value: P/E 16.8",
             "\ud83d\udcca Good liquidity",
             "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
             "\u2705 Analyst consensus: buy"
@@ -1882,7 +1824,7 @@
             "\u26a0\ufe0f Negative 90d trend: -11.7%",
             "\ud83d\udcf0 News -13.3pts: \ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)",
             "\ud83d\udcf0 News -13.3pts: \ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)",
-            "\u26a0\ufe0f RS Rating: 6 \u2014 lagging the market"
+            "\u26a0\ufe0f RS Rating: 8 \u2014 lagging the market"
           ],
           "pick": {
             "category": "WATCH",
@@ -1891,7 +1833,7 @@
             "hold_days": 90,
             "risk_label": "MODERATE",
             "amount": 300,
-            "action": "Suggested: $300 | Core hold \u2014 review in 90 days | Analyst target: $53.1 (+19.1% upside) | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+            "action": "Suggested: $300 | Core hold \u2014 review in 90 days | Analyst target: $53.1 (+19.1% upside) | \u23f3 52d old (earnings t\u00bd=30d) \u221215pts",
             "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
             "exp_low": -5.3,
             "exp_high": -22.2,
@@ -1910,223 +1852,102 @@
           ],
           "ml_prob": 0.9249,
           "ml_signal": "\ud83d\udd25 STRONG BUY",
-          "rs_rating": 6,
+          "rs_rating": 8,
           "rs_signal": "\ud83d\udd34 LAGGARD",
           "rs_adj": -15,
-          "score_velocity": -0.5402298850574713,
+          "score_velocity": -0.5340909090909091,
           "velocity_boost": 0,
           "decay_penalty": 15,
           "decay_half_life": 30,
-          "signal_age_note": "\u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+          "signal_age_note": "\u23f3 52d old (earnings t\u00bd=30d) \u221215pts",
           "stale_label": "DEGRADING"
         }
       ],
       "income_picks": [
         {
-          "ticker": "TD.TO",
-          "score": 85,
+          "ticker": "GRT-UN.TO",
+          "score": 82,
           "data": {
-            "ticker": "TD.TO",
-            "price": 142.93,
-            "day_chg_pct": -0.82,
-            "perf_30d": 12.23,
-            "perf_90d": 11.96,
-            "w52_high": 145.9,
-            "w52_low": 85.59,
-            "drawdown_high": -2.04,
-            "recovery_pct": 66.99,
-            "avg_volume": 7605182,
-            "volatility": 0.7,
-            "rsi_approx": 84.8,
-            "div_yield": 3.0,
-            "div_rate": 4.32,
-            "ex_div_date": "Apr 09, 2026",
-            "days_to_ex_div": -14,
-            "pe_ratio": 11.6,
-            "peg_ratio": 0.91,
-            "profit_margin": 33.0,
-            "rev_growth": 21.1,
-            "earn_growth": 51.3,
-            "debt_equity": null,
-            "roe": 17.8,
-            "current_ratio": null,
-            "target_price": 140.43,
-            "upside_target": -1.8,
-            "analyst_rec": "none",
+            "ticker": "GRT-UN.TO",
+            "price": 90.54,
+            "day_chg_pct": -0.43,
+            "perf_30d": 11.33,
+            "perf_90d": 5.65,
+            "w52_high": 95.0,
+            "w52_low": 61.29,
+            "drawdown_high": -4.69,
+            "recovery_pct": 47.72,
+            "avg_volume": 105290,
+            "volatility": 1.26,
+            "rsi_approx": 75.7,
+            "div_yield": 3.82,
+            "div_rate": 3.46,
+            "ex_div_date": "Apr 30, 2026",
+            "days_to_ex_div": 6,
+            "pe_ratio": 16.0,
+            "peg_ratio": null,
+            "profit_margin": 55.4,
+            "rev_growth": 9.3,
+            "earn_growth": 67.4,
+            "debt_equity": 62.2,
+            "roe": 6.1,
+            "current_ratio": 0.41,
+            "target_price": 99.5,
+            "upside_target": 9.9,
+            "analyst_rec": "strong_buy",
             "next_earnings": "N/A",
             "short_pct_float": 0,
-            "vol_accum_score": 10,
+            "vol_accum_score": 6,
             "status": "ok",
             "closes_30d": [
-              129.2846,
-              127.2309,
-              127.0424,
-              129.2648,
-              130.3859,
-              128.4909,
-              127.6278,
-              125.1177,
-              127.3599,
-              127.6873,
-              129.2945,
-              127.6476,
-              125.8717,
-              126.5166,
-              128.8977,
-              130.2767,
-              131.4673,
-              132.39,
-              133.7988,
-              136.17,
-              137.94,
-              139.28,
-              140.67,
-              141.95,
-              142.77,
-              142.48,
-              144.17,
-              145.41,
-              144.11,
-              142.93
+              86.4461,
+              86.0674,
+              86.3364,
+              87.2332,
+              86.6154,
+              85.8183,
+              82.5402,
+              79.8102,
+              81.3247,
+              80.8763,
+              81.4741,
+              80.966,
+              81.6833,
+              81.504,
+              81.8,
+              84.02,
+              85.14,
+              84.97,
+              85.42,
+              87.18,
+              87.86,
+              89.23,
+              88.99,
+              90.83,
+              93.22,
+              92.48,
+              91.75,
+              91.32,
+              90.93,
+              90.54
             ]
           },
           "pillars": {
-            "momentum": 19,
-            "dividend_income": 12,
-            "growth": 18,
-            "value": 15,
-            "safety": 15,
-            "volume_liquidity": 10
-          },
-          "reasons": [
-            "\ud83d\udcc8 Good 90d: +11.96%",
-            "\ud83d\udcc8 30d momentum: +12.23%",
-            "\ud83d\udcb0 Good yield: 3.0%",
-            "\ud83d\udcca Revenue growth: +21.1%",
-            "\ud83d\udcca Earnings growth: +51.3%",
-            "\ud83d\udc8e Very cheap: P/E 11.6",
-            "\ud83d\udc8e PEG < 1: 0.91 (undervalued vs growth)",
-            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-            "\ud83d\udcaa RS Rating: 75 \u2014 \u2705 STRONG"
-          ],
-          "flags": [],
-          "pick": {
-            "category": "DIVIDEND GROWTH",
-            "venue": "STOCK_ACCOUNT",
-            "tag": "[TFSA]",
-            "hold_days": 365,
-            "risk_label": "MODERATE",
-            "amount": 300,
-            "action": "Suggested: $300 | Hold 365 days for income cycle | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
-            "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
-            "exp_low": 2.1,
-            "exp_high": 17.6,
-            "exp_prob": 65,
-            "options_eligible": true,
-            "suggested_play": "covered_call",
-            "est_premium_pct": 0.17,
-            "short_interest": 0,
-            "next_earnings": "N/A"
-          },
-          "sector": "BANKS",
-          "ml_prob": 0.8944,
-          "ml_signal": "\ud83d\udd25 STRONG BUY",
-          "rs_rating": 75,
-          "rs_signal": "\u2705 STRONG",
-          "rs_adj": 5,
-          "score_velocity": 0.022058823529411766,
-          "velocity_boost": 0,
-          "decay_penalty": 15,
-          "decay_half_life": 30,
-          "signal_age_note": "\u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
-          "stale_label": "DEGRADING"
-        },
-        {
-          "ticker": "SLF.TO",
-          "score": 85,
-          "data": {
-            "ticker": "SLF.TO",
-            "price": 96.39,
-            "day_chg_pct": 0.21,
-            "perf_30d": 11.28,
-            "perf_90d": 12.81,
-            "w52_high": 96.68,
-            "w52_low": 77.38,
-            "drawdown_high": -0.3,
-            "recovery_pct": 24.57,
-            "avg_volume": 1259825,
-            "volatility": 1.21,
-            "rsi_approx": 88.5,
-            "div_yield": 3.74,
-            "div_rate": 3.6,
-            "ex_div_date": "Feb 25, 2026",
-            "days_to_ex_div": -57,
-            "pe_ratio": 15.7,
-            "peg_ratio": 1.18,
-            "profit_margin": 10.2,
-            "rev_growth": 4.7,
-            "earn_growth": 240.9,
-            "debt_equity": 90.3,
-            "roe": 13.9,
-            "current_ratio": 8.0,
-            "target_price": 95.86,
-            "upside_target": -0.6,
-            "analyst_rec": "buy",
-            "next_earnings": "N/A",
-            "short_pct_float": 0,
-            "vol_accum_score": 10,
-            "status": "ok",
-            "closes_30d": [
-              86.38,
-              85.68,
-              86.15,
-              87.34,
-              87.71,
-              87.02,
-              85.95,
-              85.34,
-              86.62,
-              86.81,
-              86.74,
-              86.65,
-              85.26,
-              86.31,
-              87.15,
-              87.34,
-              88.5,
-              88.42,
-              88.82,
-              91.23,
-              91.31,
-              90.27,
-              91.41,
-              92.42,
-              93.89,
-              94.06,
-              96.31,
-              96.08,
-              96.19,
-              96.39
-            ]
-          },
-          "pillars": {
-            "momentum": 19,
-            "dividend_income": 12,
-            "growth": 11,
+            "momentum": 14,
+            "dividend_income": 17,
+            "growth": 14,
             "value": 12,
             "safety": 15,
             "volume_liquidity": 10
           },
           "reasons": [
-            "\ud83d\udcc8 Good 90d: +12.81%",
-            "\ud83d\udcc8 30d momentum: +11.28%",
-            "\ud83d\udcb0 Good yield: 3.74%",
-            "\ud83d\udcca Earnings growth: +240.9%",
-            "\u2705 Fair value: P/E 15.7",
-            "\ud83d\udcca Good liquidity",
-            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-            "\u2705 Analyst consensus: buy",
-            "\ud83d\udcaa RS Rating: 78 \u2014 \u2705 STRONG"
+            "\ud83d\udcc8 Positive 90d: +5.65%",
+            "\ud83d\udcc8 30d momentum: +11.33%",
+            "\ud83d\udcb0 Good yield: 3.82%",
+            "\ud83d\udcc5 Ex-div in 6 days \u2014 collect soon!",
+            "\ud83d\udcca Earnings growth: +67.4%",
+            "\u2705 Fair value: P/E 16.0",
+            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates"
           ],
           "flags": [],
           "pick": {
@@ -2136,24 +1957,24 @@
             "hold_days": 365,
             "risk_label": "MODERATE",
             "amount": 300,
-            "action": "Suggested: $300 | Hold 365 days for income cycle | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+            "action": "Suggested: $300 | Hold 365 days for income cycle | Buy before Apr 30, 2026 to capture $3.46/share dividend | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
             "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
-            "exp_low": 2.6,
-            "exp_high": 19.3,
+            "exp_low": 2.7,
+            "exp_high": 10.7,
             "exp_prob": 65,
-            "options_eligible": true,
-            "suggested_play": "covered_call",
-            "est_premium_pct": 0.29,
+            "options_eligible": false,
+            "suggested_play": "none",
+            "est_premium_pct": 0.0,
             "short_interest": 0,
             "next_earnings": "N/A"
           },
-          "sector": "FINANCIALS",
-          "ml_prob": 0.5655,
-          "ml_signal": "\ud83d\udcca NEUTRAL",
-          "rs_rating": 78,
-          "rs_signal": "\u2705 STRONG",
-          "rs_adj": 5,
-          "score_velocity": 0.1388888888888889,
+          "sector": "REIT",
+          "ml_prob": 0.8001,
+          "ml_signal": "\ud83d\udd25 STRONG BUY",
+          "rs_rating": 51,
+          "rs_signal": "\ud83d\ude10 AVERAGE",
+          "rs_adj": -3,
+          "score_velocity": -0.12,
           "velocity_boost": 0,
           "decay_penalty": 15,
           "decay_half_life": 30,
@@ -2161,347 +1982,216 @@
           "stale_label": "DEGRADING"
         },
         {
-          "ticker": "LUN.TO",
-          "score": 100,
+          "ticker": "SU.TO",
+          "score": 82,
           "data": {
-            "ticker": "LUN.TO",
-            "price": 37.79,
-            "day_chg_pct": 1.18,
-            "perf_30d": 18.39,
-            "perf_90d": 6.34,
-            "w52_high": 45.74,
-            "w52_low": 11.04,
-            "drawdown_high": -17.38,
-            "recovery_pct": 242.3,
-            "avg_volume": 2232386,
-            "volatility": 3.22,
-            "rsi_approx": 62.4,
-            "div_yield": 29.0,
-            "div_rate": 0.11,
-            "ex_div_date": "Mar 20, 2026",
-            "days_to_ex_div": -34,
-            "pe_ratio": 22.6,
-            "peg_ratio": 0.93,
-            "profit_margin": 31.7,
-            "rev_growth": 62.1,
-            "earn_growth": 0,
-            "debt_equity": 5.7,
-            "roe": 21.1,
-            "current_ratio": 1.64,
-            "target_price": 38.47,
-            "upside_target": 1.8,
+            "ticker": "SU.TO",
+            "price": 86.72,
+            "day_chg_pct": 1.15,
+            "perf_30d": 0.02,
+            "perf_90d": 27.93,
+            "w52_high": 94.34,
+            "w52_low": 46.34,
+            "drawdown_high": -8.08,
+            "recovery_pct": 87.14,
+            "avg_volume": 5051725,
+            "volatility": 1.26,
+            "rsi_approx": 41.2,
+            "div_yield": 2.77,
+            "div_rate": 2.4,
+            "ex_div_date": "Mar 04, 2026",
+            "days_to_ex_div": -51,
+            "pe_ratio": 17.9,
+            "peg_ratio": 11.41,
+            "profit_margin": 12.1,
+            "rev_growth": -3.9,
+            "earn_growth": 87.6,
+            "debt_equity": 33.0,
+            "roe": 13.2,
+            "current_ratio": 1.39,
+            "target_price": 96.74,
+            "upside_target": 11.6,
             "analyst_rec": "buy",
             "next_earnings": "N/A",
             "short_pct_float": 0,
             "vol_accum_score": 10,
             "status": "ok",
             "closes_30d": [
-              36.7066,
-              35.7975,
-              34.3887,
-              34.4787,
-              34.119,
-              32.3906,
-              30.812,
-              29.43,
-              31.92,
-              31.79,
-              33.27,
-              31.22,
-              32.04,
-              31.33,
-              34.69,
-              35.14,
-              35.04,
-              35.08,
-              35.18,
-              37.96,
-              37.71,
-              39.2,
-              39.48,
-              40.51,
-              40.96,
-              41.01,
-              40.32,
-              40.03,
-              37.35,
-              37.79
+              79.1,
+              81.46,
+              81.83,
+              82.93,
+              84.11,
+              85.13,
+              87.01,
+              87.49,
+              86.7,
+              88.23,
+              89.42,
+              90.06,
+              92.5,
+              91.94,
+              92.01,
+              90.29,
+              91.72,
+              91.86,
+              92.79,
+              89.24,
+              87.65,
+              89.29,
+              89.41,
+              87.56,
+              86.31,
+              87.37,
+              83.69,
+              84.11,
+              85.73,
+              86.72
             ]
           },
           "pillars": {
-            "momentum": 14,
-            "dividend_income": 20,
-            "growth": 13,
-            "value": 11,
-            "safety": 13,
+            "momentum": 20,
+            "dividend_income": 12,
+            "growth": 11,
+            "value": 13,
+            "safety": 15,
             "volume_liquidity": 10
           },
           "reasons": [
-            "\ud83d\udcc8 Positive 90d: +6.34%",
-            "\ud83d\udcc8 30d momentum: +18.39%",
-            "\ud83d\udcb0 Exceptional yield: 29.0%",
-            "\ud83d\udcca Revenue growth: +62.1%",
-            "\ud83d\udcaa Strong ROE: 21.1%",
-            "\ud83d\udc8e PEG < 1: 0.93 (undervalued vs growth)",
-            "\ud83d\udcca Good liquidity",
+            "\ud83d\ude80 Strong 90d: +27.93%",
+            "\ud83d\udcb0 Good yield: 2.77%",
+            "\ud83d\udcca Earnings growth: +87.6%",
+            "\u2705 Fair value: P/E 17.9",
             "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
             "\u2705 Analyst consensus: buy",
-            "\ud83d\udcaa RS Rating: 73 \u2014 \ud83d\udcca ABOVE AVERAGE"
+            "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcaa RS Rating: 95 \u2014 \ud83d\udd25 TOP PERFORMER"
           ],
           "flags": [],
           "pick": {
-            "category": "INCOME + GROWTH",
+            "category": "DIVIDEND GROWTH",
             "venue": "STOCK_ACCOUNT",
             "tag": "[TFSA]",
             "hold_days": 365,
             "risk_label": "MODERATE",
-            "amount": 0.4,
-            "action": "Suggested: $300 | Hold 365 days for income cycle | \u23f3 50d old (value t\u00bd=90d) \u22128pts",
+            "amount": 300,
+            "action": "Suggested: $300 | Hold 365 days for income cycle | \u23f3 51d old (news t\u00bd=5d) \u221218pts",
             "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
-            "exp_low": 20.3,
-            "exp_high": 36.7,
-            "exp_prob": 72,
+            "exp_low": 2.0,
+            "exp_high": 36.8,
+            "exp_prob": 65,
             "options_eligible": true,
             "suggested_play": "covered_call",
-            "est_premium_pct": 1.44,
+            "est_premium_pct": 0.3,
             "short_interest": 0,
             "next_earnings": "N/A"
           },
-          "sector": "MATERIALS",
-          "ml_prob": 0.9127,
+          "sector": "ENERGY",
+          "news_adjustment": 13.3,
+          "news_sentiment": "BULLISH",
+          "news_reasons": [
+            "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+          ],
+          "ml_prob": 0.7973,
           "ml_signal": "\ud83d\udd25 STRONG BUY",
-          "rs_rating": 73,
-          "rs_signal": "\ud83d\udcca ABOVE AVERAGE",
-          "rs_adj": 5,
+          "rs_rating": 95,
+          "rs_signal": "\ud83d\udd25 TOP PERFORMER",
+          "rs_adj": 15,
           "score_velocity": 0.0,
           "velocity_boost": 0,
-          "decay_penalty": 8,
-          "decay_half_life": 90,
-          "signal_age_note": "\u23f3 50d old (value t\u00bd=90d) \u22128pts",
-          "stale_label": "AGING",
-          "conviction_signals": [
-            "\ud83d\udcaa RS 73",
-            "\ud83e\udd16 ML Score 91%"
-          ],
-          "conviction_boost": 12,
-          "conviction_count": 2,
-          "size_guardrail": {
-            "ticker": "LUN.TO",
-            "category": "INCOME + GROWTH",
-            "bucket": "Dividend core. Pays you 5-7%/yr regardless of model quality.",
-            "bucket_pool": 5.0,
-            "max_raw": 1.0,
-            "regime_adj": 1.0,
-            "accuracy_adj": 0.4,
-            "recommended": 0.4,
-            "if_zero_pct": 4.0,
-            "regime": "BULL",
-            "survival_note": "If this goes to zero \u2192 you lose 4.0% of account. \u2705 Acceptable"
-          }
+          "decay_penalty": 18,
+          "decay_half_life": 5,
+          "signal_age_note": "\u23f3 51d old (news t\u00bd=5d) \u221218pts",
+          "stale_label": "DEGRADING"
         },
         {
-          "ticker": "VICI",
-          "score": 73,
+          "ticker": "CNQ.TO",
+          "score": 82,
           "data": {
-            "ticker": "VICI",
-            "price": 28.2,
-            "day_chg_pct": -0.77,
-            "perf_30d": 4.25,
-            "perf_90d": -0.56,
-            "w52_high": 34.01,
-            "w52_low": 26.55,
-            "drawdown_high": -17.08,
-            "recovery_pct": 6.21,
-            "avg_volume": 7167365,
-            "volatility": 1.07,
-            "rsi_approx": 62.3,
-            "div_yield": 6.27,
-            "div_rate": 1.78,
-            "ex_div_date": "Mar 19, 2026",
+            "ticker": "CNQ.TO",
+            "price": 61.11,
+            "day_chg_pct": 0.92,
+            "perf_30d": -8.09,
+            "perf_90d": 29.49,
+            "w52_high": 70.99,
+            "w52_low": 38.58,
+            "drawdown_high": -13.92,
+            "recovery_pct": 58.4,
+            "avg_volume": 17922600,
+            "volatility": 1.27,
+            "rsi_approx": 41.1,
+            "div_yield": 4.09,
+            "div_rate": 2.5,
+            "ex_div_date": "Mar 20, 2026",
             "days_to_ex_div": -35,
-            "pe_ratio": 10.8,
-            "peg_ratio": null,
-            "profit_margin": 69.3,
-            "rev_growth": 3.8,
-            "earn_growth": -3.4,
-            "debt_equity": 62.7,
-            "roe": 10.2,
-            "current_ratio": 17.23,
-            "target_price": 34.26,
-            "upside_target": 21.5,
+            "pe_ratio": 11.8,
+            "peg_ratio": 3.42,
+            "profit_margin": 27.9,
+            "rev_growth": 1.5,
+            "earn_growth": 371.8,
+            "debt_equity": 44.5,
+            "roe": 25.8,
+            "current_ratio": 0.95,
+            "target_price": 69.68,
+            "upside_target": 14.0,
             "analyst_rec": "buy",
             "next_earnings": "N/A",
-            "short_pct_float": 2.7,
-            "vol_accum_score": 6,
+            "short_pct_float": 0,
+            "vol_accum_score": 3,
             "status": "ok",
             "closes_30d": [
-              27.9649,
-              28.2207,
-              27.9649,
-              28.1617,
-              28.1617,
-              27.65,
-              27.98,
-              26.83,
-              27.05,
-              27.3,
-              27.07,
-              27.16,
-              26.61,
-              27.11,
-              27.32,
-              27.46,
-              27.66,
-              27.66,
-              27.83,
-              27.73,
-              28.06,
-              28.11,
-              28.33,
-              28.36,
-              28.13,
-              28.4,
-              29.01,
-              28.78,
-              28.42,
-              28.2
+              63.6028,
+              65.5749,
+              65.9119,
+              66.1398,
+              66.5461,
+              66.8831,
+              68.875,
+              67.39,
+              66.49,
+              67.48,
+              68.0,
+              67.52,
+              69.46,
+              68.83,
+              67.86,
+              64.64,
+              66.15,
+              67.23,
+              68.23,
+              64.12,
+              63.14,
+              64.16,
+              64.68,
+              62.8,
+              62.91,
+              63.47,
+              58.81,
+              59.03,
+              60.55,
+              61.11
             ]
           },
           "pillars": {
-            "momentum": 4,
-            "dividend_income": 20,
-            "growth": 0,
+            "momentum": 20,
+            "dividend_income": 16,
+            "growth": 13,
             "value": 15,
             "safety": 15,
             "volume_liquidity": 10
           },
           "reasons": [
-            "\ud83d\udcb0 Exceptional yield: 6.27%",
-            "\ud83d\udc8e Very cheap: P/E 10.8",
-            "\ud83c\udfaf Analyst upside: +21.5%",
-            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-            "\u2705 Analyst consensus: buy"
-          ],
-          "flags": [
-            "\u26a0\ufe0f RS Rating: 12 \u2014 lagging the market"
-          ],
-          "pick": {
-            "category": "INCOME",
-            "venue": "STOCK_ACCOUNT",
-            "tag": "[TFSA]",
-            "hold_days": 365,
-            "risk_label": "MODERATE",
-            "amount": 300,
-            "action": "Suggested: $300 | Hold 365 days for income cycle | Analyst target: $34.26 (+21.5% upside) | \u23f3 50d old (value t\u00bd=90d) \u22128pts",
-            "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
-            "exp_low": 4.4,
-            "exp_high": 6.3,
-            "exp_prob": 72,
-            "options_eligible": true,
-            "suggested_play": "covered_call",
-            "est_premium_pct": 0.26,
-            "short_interest": 2.7,
-            "next_earnings": "N/A"
-          },
-          "sector": "REIT",
-          "ml_prob": 0.2777,
-          "ml_signal": "\u26a0\ufe0f WEAK",
-          "rs_rating": 12,
-          "rs_signal": "\ud83d\udd34 LAGGARD",
-          "rs_adj": -15,
-          "score_velocity": -0.34375,
-          "velocity_boost": 0,
-          "decay_penalty": 8,
-          "decay_half_life": 90,
-          "signal_age_note": "\u23f3 50d old (value t\u00bd=90d) \u22128pts",
-          "stale_label": "AGING"
-        },
-        {
-          "ticker": "AGI.TO",
-          "score": 85,
-          "data": {
-            "ticker": "AGI.TO",
-            "price": 61.73,
-            "day_chg_pct": 1.41,
-            "perf_30d": 12.05,
-            "perf_90d": 9.38,
-            "w52_high": 75.78,
-            "w52_low": 32.9,
-            "drawdown_high": -18.54,
-            "recovery_pct": 87.63,
-            "avg_volume": 863286,
-            "volatility": 2.15,
-            "rsi_approx": 45.0,
-            "div_yield": 26.0,
-            "div_rate": 0.16,
-            "ex_div_date": "Mar 12, 2026",
-            "days_to_ex_div": -42,
-            "pe_ratio": 21.4,
-            "peg_ratio": 0.99,
-            "profit_margin": 49.0,
-            "rev_growth": 53.1,
-            "earn_growth": 396.3,
-            "debt_equity": 5.0,
-            "roe": 22.1,
-            "current_ratio": 2.0,
-            "target_price": 80.84,
-            "upside_target": 31.0,
-            "analyst_rec": "strong_buy",
-            "next_earnings": "N/A",
-            "short_pct_float": 0,
-            "vol_accum_score": 10,
-            "status": "ok",
-            "closes_30d": [
-              67.056,
-              66.13,
-              62.95,
-              63.29,
-              62.56,
-              57.44,
-              54.31,
-              52.7,
-              55.09,
-              56.3,
-              57.89,
-              55.85,
-              58.97,
-              58.21,
-              61.89,
-              63.44,
-              64.03,
-              64.45,
-              64.65,
-              65.87,
-              65.08,
-              67.1,
-              66.58,
-              67.14,
-              65.71,
-              66.34,
-              67.62,
-              66.9,
-              60.87,
-              61.73
-            ]
-          },
-          "pillars": {
-            "momentum": 14,
-            "dividend_income": 20,
-            "growth": 20,
-            "value": 14,
-            "safety": 15,
-            "volume_liquidity": 10
-          },
-          "reasons": [
-            "\ud83d\udcc8 Positive 90d: +9.38%",
-            "\ud83d\udcc8 30d momentum: +12.05%",
-            "\ud83d\udcb0 Exceptional yield: 26.0%",
-            "\ud83d\udcca Revenue growth: +53.1%",
-            "\ud83d\udcca Earnings growth: +396.3%",
-            "\ud83d\udcaa Strong ROE: 22.1%",
-            "\ud83d\udc8e PEG < 1: 0.99 (undervalued vs growth)",
-            "\ud83c\udfaf Analyst upside: +31.0%",
-            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates"
+            "\ud83d\ude80 Strong 90d: +29.49%",
+            "\ud83d\udcb0 Strong yield: 4.09%",
+            "\ud83d\udcca Earnings growth: +371.8%",
+            "\ud83d\udcaa Strong ROE: 25.8%",
+            "\ud83d\udc8e Very cheap: P/E 11.8",
+            "\u2705 Analyst consensus: buy",
+            "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcaa RS Rating: 90 \u2014 \ud83d\udd25 TOP PERFORMER"
           ],
           "flags": [],
           "pick": {
@@ -2511,28 +2201,276 @@
             "hold_days": 365,
             "risk_label": "MODERATE",
             "amount": 300,
-            "action": "Suggested: $300 | Hold 365 days for income cycle | \u23f3 50d old (earnings t\u00bd=30d) \u221215pts",
+            "action": "Suggested: $300 | Hold 365 days for income cycle | \u23f3 52d old (news t\u00bd=5d) \u221218pts",
             "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
-            "exp_low": 18.2,
-            "exp_high": 37.4,
+            "exp_low": 2.9,
+            "exp_high": 40.0,
             "exp_prob": 72,
             "options_eligible": true,
             "suggested_play": "covered_call",
-            "est_premium_pct": 0.52,
+            "est_premium_pct": 0.31,
             "short_interest": 0,
             "next_earnings": "N/A"
           },
-          "sector": "MATERIALS",
-          "ml_prob": 0.9298,
+          "sector": "ENERGY",
+          "news_adjustment": 13.3,
+          "news_sentiment": "BULLISH",
+          "news_reasons": [
+            "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+            "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+          ],
+          "ml_prob": 0.9027,
           "ml_signal": "\ud83d\udd25 STRONG BUY",
-          "rs_rating": 65,
-          "rs_signal": "\ud83d\udcca ABOVE AVERAGE",
-          "rs_adj": 0,
+          "rs_rating": 90,
+          "rs_signal": "\ud83d\udd25 TOP PERFORMER",
+          "rs_adj": 15,
           "score_velocity": 0.0,
+          "velocity_boost": 0,
+          "decay_penalty": 18,
+          "decay_half_life": 5,
+          "signal_age_note": "\u23f3 52d old (news t\u00bd=5d) \u221218pts",
+          "stale_label": "DEGRADING"
+        },
+        {
+          "ticker": "O",
+          "score": 76,
+          "data": {
+            "ticker": "O",
+            "price": 63.34,
+            "day_chg_pct": -1.03,
+            "perf_30d": 4.56,
+            "perf_90d": 4.13,
+            "w52_high": 67.94,
+            "w52_low": 54.38,
+            "drawdown_high": -6.77,
+            "recovery_pct": 16.48,
+            "avg_volume": 5318835,
+            "volatility": 1.12,
+            "rsi_approx": 61.1,
+            "div_yield": 5.11,
+            "div_rate": 3.24,
+            "ex_div_date": "Apr 30, 2026",
+            "days_to_ex_div": 6,
+            "pe_ratio": 54.1,
+            "peg_ratio": 5.68,
+            "profit_margin": 18.4,
+            "rev_growth": 11.0,
+            "earn_growth": 41.2,
+            "debt_equity": 73.5,
+            "roe": 2.7,
+            "current_ratio": 1.25,
+            "target_price": 68.3,
+            "upside_target": 7.8,
+            "analyst_rec": "hold",
+            "next_earnings": "N/A",
+            "short_pct_float": 3.5,
+            "vol_accum_score": 10,
+            "status": "ok",
+            "closes_30d": [
+              64.4232,
+              64.7418,
+              64.1544,
+              64.6323,
+              63.806,
+              62.7606,
+              62.3624,
+              60.6799,
+              60.5803,
+              60.1921,
+              59.7938,
+              60.0029,
+              60.421,
+              60.879,
+              61.18,
+              61.88,
+              62.21,
+              61.83,
+              62.23,
+              62.79,
+              63.2,
+              63.75,
+              63.32,
+              63.81,
+              63.96,
+              64.64,
+              65.09,
+              64.92,
+              64.0,
+              63.34
+            ]
+          },
+          "pillars": {
+            "momentum": 8,
+            "dividend_income": 20,
+            "growth": 14,
+            "value": 8,
+            "safety": 15,
+            "volume_liquidity": 10
+          },
+          "reasons": [
+            "\ud83d\udcb0 Strong yield: 5.11%",
+            "\ud83d\udcc5 Ex-div in 6 days \u2014 collect soon!",
+            "\ud83d\udcca Earnings growth: +41.2%",
+            "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates"
+          ],
+          "flags": [
+            "\u26a0\ufe0f RS Rating: 31 \u2014 lagging the market"
+          ],
+          "pick": {
+            "category": "INCOME + GROWTH",
+            "venue": "STOCK_ACCOUNT",
+            "tag": "[TFSA]",
+            "hold_days": 365,
+            "risk_label": "MODERATE",
+            "amount": 300,
+            "action": "Suggested: $300 | Hold 365 days for income cycle | Buy before Apr 30, 2026 to capture $3.24/share dividend | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+            "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
+            "exp_low": 3.6,
+            "exp_high": 10.1,
+            "exp_prob": 72,
+            "options_eligible": true,
+            "suggested_play": "covered_call",
+            "est_premium_pct": 0.27,
+            "short_interest": 3.5,
+            "next_earnings": "N/A"
+          },
+          "sector": "REIT",
+          "ml_prob": 0.4268,
+          "ml_signal": "\u26a0\ufe0f WEAK",
+          "rs_rating": 31,
+          "rs_signal": "\u26a0\ufe0f BELOW AVERAGE",
+          "rs_adj": -8,
+          "score_velocity": -0.09782608695652174,
           "velocity_boost": 0,
           "decay_penalty": 15,
           "decay_half_life": 30,
-          "signal_age_note": "\u23f3 50d old (earnings t\u00bd=30d) \u221215pts",
+          "signal_age_note": "\u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+          "stale_label": "DEGRADING"
+        },
+        {
+          "ticker": "NTR.TO",
+          "score": 55.400000000000006,
+          "data": {
+            "ticker": "NTR.TO",
+            "price": 97.78,
+            "day_chg_pct": -1.52,
+            "perf_30d": -1.51,
+            "perf_90d": 5.91,
+            "w52_high": 116.95,
+            "w52_low": 73.59,
+            "drawdown_high": -16.39,
+            "recovery_pct": 32.87,
+            "avg_volume": 1683405,
+            "volatility": 1.89,
+            "rsi_approx": 38.0,
+            "div_yield": 3.09,
+            "div_rate": 3.02,
+            "ex_div_date": "Mar 31, 2026",
+            "days_to_ex_div": -24,
+            "pe_ratio": 15.4,
+            "peg_ratio": 0.58,
+            "profit_margin": 8.7,
+            "rev_growth": 5.7,
+            "earn_growth": 414.7,
+            "debt_equity": 47.4,
+            "roe": 9.2,
+            "current_ratio": 1.34,
+            "target_price": 104.97,
+            "upside_target": 7.3,
+            "analyst_rec": "buy",
+            "next_earnings": "N/A",
+            "short_pct_float": 0.5,
+            "vol_accum_score": 0,
+            "status": "ok",
+            "closes_30d": [
+              106.926,
+              113.5878,
+              112.9723,
+              105.6652,
+              108.2365,
+              106.2013,
+              103.749,
+              101.952,
+              99.2814,
+              104.9603,
+              105.1489,
+              101.2968,
+              104.2851,
+              105.824,
+              105.01,
+              103.6,
+              105.12,
+              105.44,
+              107.01,
+              103.7,
+              100.68,
+              102.13,
+              102.59,
+              101.47,
+              100.8,
+              102.15,
+              96.75,
+              97.15,
+              99.29,
+              97.78
+            ]
+          },
+          "pillars": {
+            "momentum": 10,
+            "dividend_income": 12,
+            "growth": 14,
+            "value": 15,
+            "safety": 15,
+            "volume_liquidity": 8
+          },
+          "reasons": [
+            "\ud83d\udcc8 Positive 90d: +5.91%",
+            "\ud83d\udcb0 Good yield: 3.09%",
+            "\ud83d\udcca Earnings growth: +414.7%",
+            "\u2705 Fair value: P/E 15.4",
+            "\ud83d\udc8e PEG < 1: 0.58 (undervalued vs growth)",
+            "\ud83d\udcca Good liquidity",
+            "\u2705 Analyst consensus: buy"
+          ],
+          "flags": [
+            "\ud83d\udcf0 News -13.3pts: \ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)",
+            "\ud83d\udcf0 News -13.3pts: \ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)",
+            "\u26a0\ufe0f RS Rating: 23 \u2014 lagging the market"
+          ],
+          "pick": {
+            "category": "DIVIDEND GROWTH",
+            "venue": "STOCK_ACCOUNT",
+            "tag": "[TFSA]",
+            "hold_days": 365,
+            "risk_label": "MODERATE",
+            "amount": 300,
+            "action": "Suggested: $300 | Hold 365 days for income cycle | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+            "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
+            "exp_low": 2.2,
+            "exp_high": 10.3,
+            "exp_prob": 65,
+            "options_eligible": true,
+            "suggested_play": "covered_call",
+            "est_premium_pct": 0.46,
+            "short_interest": 0.5,
+            "next_earnings": "N/A"
+          },
+          "sector": "MATERIALS",
+          "news_adjustment": -13.3,
+          "news_sentiment": "BEARISH",
+          "news_reasons": [
+            "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)"
+          ],
+          "ml_prob": 0.7347,
+          "ml_signal": "\ud83d\udd25 STRONG BUY",
+          "rs_rating": 23,
+          "rs_signal": "\u26a0\ufe0f BELOW AVERAGE",
+          "rs_adj": -8,
+          "score_velocity": -0.20430107526881722,
+          "velocity_boost": 0,
+          "decay_penalty": 15,
+          "decay_half_life": 30,
+          "signal_age_note": "\u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
           "stale_label": "DEGRADING"
         }
       ],
@@ -2550,14 +2488,14 @@
             "w52_low": 113.4,
             "drawdown_high": -2.26,
             "recovery_pct": 384.81,
-            "avg_volume": 478337,
+            "avg_volume": 478585,
             "volatility": 4.9,
             "rsi_approx": 93.8,
             "div_yield": 0,
             "div_rate": 0,
             "ex_div_date": "N/A",
             "days_to_ex_div": 999,
-            "pe_ratio": 56.0,
+            "pe_ratio": 56.2,
             "peg_ratio": 1.0,
             "profit_margin": 6.7,
             "rev_growth": 43.6,
@@ -2565,7 +2503,7 @@
             "debt_equity": 41.4,
             "roe": 40.5,
             "current_ratio": 1.44,
-            "target_price": 577.97,
+            "target_price": 577.99,
             "upside_target": 5.1,
             "analyst_rec": "strong_buy",
             "next_earnings": "N/A",
@@ -2632,7 +2570,7 @@
             "hold_days": 30,
             "risk_label": "HIGH",
             "amount": 12.0,
-            "action": "Suggested: $100 | Swing trade \u2014 target exit in 30 days | \u23f3 29d old (earnings t\u00bd=30d) \u221211pts",
+            "action": "Suggested: $100 | Swing trade \u2014 target exit in 30 days | \u23f3 30d old (earnings t\u00bd=30d) \u221211pts",
             "exit_note": "Stop loss: $483.8 | Target: $678.42 | Hard exit before N/A",
             "exp_low": 1.9,
             "exp_high": 23.4,
@@ -2649,11 +2587,11 @@
           "rs_rating": 99,
           "rs_signal": "\ud83d\udd25 TOP PERFORMER",
           "rs_adj": 15,
-          "score_velocity": 0.5925925925925926,
+          "score_velocity": 0.5714285714285714,
           "velocity_boost": 0,
           "decay_penalty": 11,
           "decay_half_life": 30,
-          "signal_age_note": "\u23f3 29d old (earnings t\u00bd=30d) \u221211pts",
+          "signal_age_note": "\u23f3 30d old (earnings t\u00bd=30d) \u221211pts",
           "stale_label": "STALE",
           "conviction_signals": [
             "\ud83d\udcaa RS 99 \u2014 Top Performer",
@@ -2688,13 +2626,13 @@
             "w52_low": 4.35,
             "drawdown_high": -6.57,
             "recovery_pct": 69.89,
-            "avg_volume": 3559972,
+            "avg_volume": 3560005,
             "volatility": 2.04,
             "rsi_approx": 89.7,
             "div_yield": 0,
             "div_rate": 0,
             "ex_div_date": "Sep 08, 1999",
-            "days_to_ex_div": -9724,
+            "days_to_ex_div": -9725,
             "pe_ratio": 61.6,
             "peg_ratio": 2.66,
             "profit_margin": 9.7,
@@ -2766,7 +2704,7 @@
             "hold_days": 30,
             "risk_label": "HIGH",
             "amount": 100,
-            "action": "Suggested: $100 | Swing trade \u2014 target exit in 30 days | \u23f3 5d old (default t\u00bd=10d) \u22127pts",
+            "action": "Suggested: $100 | Swing trade \u2014 target exit in 30 days | \u23f3 6d old (default t\u00bd=10d) \u22128pts",
             "exit_note": "Stop loss: $6.5 | Target: $9.24 | Hard exit before N/A",
             "exp_low": 2.7,
             "exp_high": 33.3,
@@ -2778,20 +2716,20 @@
             "next_earnings": "N/A"
           },
           "days_to_earnings": 999,
-          "ml_prob": 0.7002,
+          "ml_prob": 0.708,
           "ml_signal": "\ud83d\udd25 STRONG BUY",
           "rs_rating": 100,
           "rs_signal": "\ud83d\udd25 TOP PERFORMER",
           "rs_adj": 15,
-          "score_velocity": 0.36363636363636365,
+          "score_velocity": 0.3333333333333333,
           "velocity_boost": 0,
-          "decay_penalty": 7,
+          "decay_penalty": 8,
           "decay_half_life": 10,
-          "signal_age_note": "\u23f3 5d old (default t\u00bd=10d) \u22127pts",
+          "signal_age_note": "\u23f3 6d old (default t\u00bd=10d) \u22128pts",
           "stale_label": "AGING",
           "conviction_signals": [
             "\ud83d\udcaa RS 100 \u2014 Top Performer",
-            "\ud83e\udd16 ML Score 70%"
+            "\ud83e\udd16 ML Score 71%"
           ],
           "conviction_boost": 16,
           "conviction_count": 2
@@ -2829,6 +2767,151 @@
   },
   "conviction_picks": [
     {
+      "ticker": "SU.TO",
+      "score": 100,
+      "data": {
+        "ticker": "SU.TO",
+        "price": 86.72,
+        "day_chg_pct": 1.15,
+        "perf_30d": 0.02,
+        "perf_90d": 27.93,
+        "w52_high": 94.34,
+        "w52_low": 46.34,
+        "drawdown_high": -8.08,
+        "recovery_pct": 87.14,
+        "avg_volume": 5051725,
+        "volatility": 1.26,
+        "rsi_approx": 41.2,
+        "div_yield": 2.77,
+        "div_rate": 2.4,
+        "ex_div_date": "Mar 04, 2026",
+        "days_to_ex_div": -51,
+        "pe_ratio": 17.9,
+        "peg_ratio": 11.41,
+        "profit_margin": 12.1,
+        "rev_growth": -3.9,
+        "earn_growth": 87.6,
+        "debt_equity": 33.0,
+        "roe": 13.2,
+        "current_ratio": 1.39,
+        "target_price": 96.74,
+        "upside_target": 11.6,
+        "analyst_rec": "buy",
+        "next_earnings": "N/A",
+        "short_pct_float": 0,
+        "vol_accum_score": 10,
+        "status": "ok",
+        "closes_30d": [
+          79.1,
+          81.46,
+          81.83,
+          82.93,
+          84.11,
+          85.13,
+          87.01,
+          87.49,
+          86.7,
+          88.23,
+          89.42,
+          90.06,
+          92.5,
+          91.94,
+          92.01,
+          90.29,
+          91.72,
+          91.86,
+          92.79,
+          89.24,
+          87.65,
+          89.29,
+          89.41,
+          87.56,
+          86.31,
+          87.37,
+          83.69,
+          84.11,
+          85.73,
+          86.72
+        ]
+      },
+      "pillars": {
+        "momentum": 20,
+        "dividend_income": 12,
+        "growth": 11,
+        "value": 13,
+        "safety": 11,
+        "volume_liquidity": 10
+      },
+      "reasons": [
+        "\ud83d\ude80 Strong 90d: +27.93%",
+        "\ud83d\udcb0 Good yield: 2.77%",
+        "\ud83d\udcca Earnings growth: +87.6%",
+        "\u2705 Fair value: P/E 17.9",
+        "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
+        "\u2705 Analyst consensus: buy",
+        "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcaa RS Rating: 95 \u2014 \ud83d\udd25 TOP PERFORMER"
+      ],
+      "flags": [],
+      "pick": {
+        "category": "FHSA Conservative Growth",
+        "venue": "STOCK_ACCOUNT",
+        "tag": "[FHSA]",
+        "hold_days": 180,
+        "risk_label": "LOW",
+        "amount": 0.24,
+        "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (news t\u00bd=5d) \u221218pts",
+        "exit_note": "FHSA stop: $72.84 (16% rule). Review if drawdown hits 12%.",
+        "exp_low": 22.3,
+        "exp_high": 83.8,
+        "exp_prob": 68,
+        "options_eligible": false,
+        "suggested_play": "none",
+        "est_premium_pct": 0.0,
+        "short_interest": 0,
+        "next_earnings": "N/A"
+      },
+      "sector": "ENERGY",
+      "news_adjustment": 13.3,
+      "news_sentiment": "BULLISH",
+      "news_reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "ml_prob": 0.7973,
+      "ml_signal": "\ud83d\udd25 STRONG BUY",
+      "rs_rating": 95,
+      "rs_signal": "\ud83d\udd25 TOP PERFORMER",
+      "rs_adj": 15,
+      "score_velocity": 0.0,
+      "velocity_boost": 0,
+      "decay_penalty": 18,
+      "decay_half_life": 5,
+      "signal_age_note": "\u23f3 51d old (news t\u00bd=5d) \u221218pts",
+      "stale_label": "DEGRADING",
+      "conviction_signals": [
+        "\ud83d\udcf0 Positive News Macro",
+        "\ud83d\udcaa RS 95 \u2014 Top Performer",
+        "\ud83e\udd16 ML Score 80%"
+      ],
+      "conviction_boost": 22,
+      "conviction_count": 3,
+      "size_guardrail": {
+        "ticker": "SU.TO",
+        "category": "FHSA Conservative Growth",
+        "bucket": "ML-assisted growth picks. Max loss if model fails = 30% of TFSA.",
+        "bucket_pool": 3.0,
+        "max_raw": 0.6,
+        "regime_adj": 1.0,
+        "accuracy_adj": 0.4,
+        "recommended": 0.24,
+        "if_zero_pct": 2.4,
+        "regime": "BULL",
+        "survival_note": "If this goes to zero \u2192 you lose 2.4% of account. \u2705 Acceptable"
+      }
+    },
+    {
       "ticker": "CNQ.TO",
       "score": 100,
       "data": {
@@ -2841,13 +2924,13 @@
         "w52_low": 38.58,
         "drawdown_high": -13.92,
         "recovery_pct": 58.4,
-        "avg_volume": 17922601,
+        "avg_volume": 17922600,
         "volatility": 1.27,
         "rsi_approx": 41.1,
-        "div_yield": 4.13,
+        "div_yield": 4.09,
         "div_rate": 2.5,
         "ex_div_date": "Mar 20, 2026",
-        "days_to_ex_div": -34,
+        "days_to_ex_div": -35,
         "pe_ratio": 11.8,
         "peg_ratio": 3.42,
         "profit_margin": 27.9,
@@ -2906,14 +2989,14 @@
       },
       "reasons": [
         "\ud83d\ude80 Strong 90d: +29.49%",
-        "\ud83d\udcb0 Strong yield: 4.13%",
+        "\ud83d\udcb0 Strong yield: 4.09%",
         "\ud83d\udcca Earnings growth: +371.8%",
         "\ud83d\udcaa Strong ROE: 25.8%",
         "\ud83d\udc8e Very cheap: P/E 11.8",
         "\u2705 Analyst consensus: buy",
-        "\ud83d\udcf0 News +25pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-        "\ud83d\udcf0 News +25pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
-        "\ud83d\udcaa RS Rating: 87 \u2014 \u2705 STRONG"
+        "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcf0 News +13.3pts: \ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcaa RS Rating: 90 \u2014 \ud83d\udd25 TOP PERFORMER"
       ],
       "flags": [
         "\u26a0\ufe0f Approaching FHSA limit: 13.92% drawdown"
@@ -2925,7 +3008,7 @@
         "hold_days": 180,
         "risk_label": "LOW",
         "amount": 0.24,
-        "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (news t\u00bd=5d) \u221218pts",
+        "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 52d old (news t\u00bd=5d) \u221218pts",
         "exit_note": "FHSA stop: $51.33 (16% rule). Review if drawdown hits 12%.",
         "exp_low": 23.6,
         "exp_high": 88.5,
@@ -2937,7 +3020,7 @@
         "next_earnings": "N/A"
       },
       "sector": "ENERGY",
-      "news_adjustment": 25,
+      "news_adjustment": 13.3,
       "news_sentiment": "BULLISH",
       "news_reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
@@ -2945,18 +3028,18 @@
       ],
       "ml_prob": 0.9027,
       "ml_signal": "\ud83d\udd25 STRONG BUY",
-      "rs_rating": 87,
-      "rs_signal": "\u2705 STRONG",
-      "rs_adj": 10,
+      "rs_rating": 90,
+      "rs_signal": "\ud83d\udd25 TOP PERFORMER",
+      "rs_adj": 15,
       "score_velocity": 0.0,
       "velocity_boost": 0,
       "decay_penalty": 18,
       "decay_half_life": 5,
-      "signal_age_note": "\u23f3 51d old (news t\u00bd=5d) \u221218pts",
+      "signal_age_note": "\u23f3 52d old (news t\u00bd=5d) \u221218pts",
       "stale_label": "DEGRADING",
       "conviction_signals": [
         "\ud83d\udcf0 Positive News Macro",
-        "\ud83d\udcaa RS 87 \u2014 Top Performer",
+        "\ud83d\udcaa RS 90 \u2014 Top Performer",
         "\ud83e\udd16 ML Score 90%"
       ],
       "conviction_boost": 22,
@@ -2976,91 +3059,91 @@
       }
     },
     {
-      "ticker": "CM.TO",
+      "ticker": "TGT",
       "score": 100,
       "data": {
-        "ticker": "CM.TO",
-        "price": 148.57,
-        "day_chg_pct": 0.06,
-        "perf_30d": 13.0,
-        "perf_90d": 19.76,
-        "w52_high": 150.97,
-        "w52_low": 83.03,
-        "drawdown_high": -1.59,
-        "recovery_pct": 78.94,
-        "avg_volume": 2717887,
-        "volatility": 0.92,
-        "rsi_approx": 89.7,
-        "div_yield": 2.88,
-        "div_rate": 4.28,
-        "ex_div_date": "Mar 27, 2026",
-        "days_to_ex_div": -27,
-        "pe_ratio": 15.5,
-        "peg_ratio": 1.79,
-        "profit_margin": 33.5,
-        "rev_growth": 16.7,
-        "earn_growth": 46.6,
-        "debt_equity": null,
-        "roe": 14.7,
-        "current_ratio": null,
-        "target_price": 142.96,
-        "upside_target": -3.8,
-        "analyst_rec": "none",
+        "ticker": "TGT",
+        "price": 130.6,
+        "day_chg_pct": -1.14,
+        "perf_30d": 13.63,
+        "perf_90d": 20.66,
+        "w52_high": 133.1,
+        "w52_low": 83.44,
+        "drawdown_high": -1.88,
+        "recovery_pct": 56.52,
+        "avg_volume": 4848100,
+        "volatility": 1.85,
+        "rsi_approx": 66.5,
+        "div_yield": 3.49,
+        "div_rate": 4.56,
+        "ex_div_date": "May 13, 2026",
+        "days_to_ex_div": 19,
+        "pe_ratio": 16.0,
+        "peg_ratio": 3.7,
+        "profit_margin": 3.5,
+        "rev_growth": -1.5,
+        "earn_growth": -5.0,
+        "debt_equity": 125.5,
+        "roe": 24.0,
+        "current_ratio": 0.94,
+        "target_price": 125.03,
+        "upside_target": -4.3,
+        "analyst_rec": "hold",
         "next_earnings": "N/A",
-        "short_pct_float": 0,
+        "short_pct_float": 4.2,
         "vol_accum_score": 10,
         "status": "ok",
         "closes_30d": [
-          133.4783,
-          131.0285,
-          129.7888,
-          132.3774,
-          132.8336,
-          131.455,
-          130.3541,
-          128.4201,
-          131.4749,
-          132.1096,
-          133.4287,
-          129.64,
-          128.9,
-          127.87,
-          131.84,
-          133.57,
-          133.96,
-          135.12,
-          136.58,
-          139.65,
-          141.59,
-          142.66,
-          144.4,
-          146.07,
-          147.4,
-          147.36,
-          149.43,
-          150.39,
-          148.48,
-          148.57
+          118.78,
+          115.75,
+          117.34,
+          117.05,
+          116.76,
+          115.05,
+          114.47,
+          113.26,
+          114.93,
+          115.92,
+          116.37,
+          117.0,
+          119.84,
+          118.78,
+          121.2,
+          120.45,
+          120.45,
+          122.21,
+          119.52,
+          123.12,
+          124.03,
+          121.89,
+          117.88,
+          119.53,
+          122.87,
+          123.91,
+          127.84,
+          130.18,
+          132.1,
+          130.6
         ]
       },
       "pillars": {
-        "momentum": 19,
-        "dividend_income": 12,
-        "growth": 18,
+        "momentum": 20,
+        "dividend_income": 17,
+        "growth": 3,
         "value": 12,
-        "safety": 15,
+        "safety": 13,
         "volume_liquidity": 10
       },
       "reasons": [
-        "\ud83d\udcc8 Good 90d: +19.76%",
-        "\ud83d\udcc8 30d momentum: +13.0%",
-        "\ud83d\udcb0 Good yield: 2.88%",
-        "\ud83d\udcca Revenue growth: +16.7%",
-        "\ud83d\udcca Earnings growth: +46.6%",
-        "\u2705 Fair value: P/E 15.5",
+        "\ud83d\ude80 Strong 90d: +20.66%",
+        "\ud83d\udcc8 30d momentum: +13.63%",
+        "\ud83d\udcb0 Good yield: 3.49%",
+        "\ud83d\udcc5 Ex-div in 19 days \u2014 collect soon!",
+        "\ud83d\udcaa Strong ROE: 24.0%",
+        "\u2705 Fair value: P/E 16.0",
         "\ud83d\udcca Good liquidity",
         "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-        "\ud83d\udcaa RS Rating: 95 \u2014 \ud83d\udd25 TOP PERFORMER"
+        "\ud83d\udcaa RS Rating: 97 \u2014 \ud83d\udd25 TOP PERFORMER"
       ],
       "flags": [],
       "pick": {
@@ -3070,37 +3153,37 @@
         "hold_days": 180,
         "risk_label": "LOW",
         "amount": 0.24,
-        "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 50d old (earnings t\u00bd=30d) \u221215pts",
-        "exit_note": "FHSA stop: $124.8 (16% rule). Review if drawdown hits 12%.",
-        "exp_low": 15.8,
-        "exp_high": 59.3,
+        "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 52d old (value t\u00bd=90d) \u22128pts",
+        "exit_note": "FHSA stop: $109.7 (16% rule). Review if drawdown hits 12%.",
+        "exp_low": 16.5,
+        "exp_high": 62.0,
         "exp_prob": 68,
         "options_eligible": false,
         "suggested_play": "none",
         "est_premium_pct": 0.0,
-        "short_interest": 0,
+        "short_interest": 4.2,
         "next_earnings": "N/A"
       },
-      "sector": "BANKS",
-      "ml_prob": 0.9083,
+      "sector": "CONSUMER",
+      "ml_prob": 0.8757,
       "ml_signal": "\ud83d\udd25 STRONG BUY",
-      "rs_rating": 95,
+      "rs_rating": 97,
       "rs_signal": "\ud83d\udd25 TOP PERFORMER",
       "rs_adj": 15,
       "score_velocity": 0.0,
       "velocity_boost": 0,
-      "decay_penalty": 15,
-      "decay_half_life": 30,
-      "signal_age_note": "\u23f3 50d old (earnings t\u00bd=30d) \u221215pts",
-      "stale_label": "DEGRADING",
+      "decay_penalty": 8,
+      "decay_half_life": 90,
+      "signal_age_note": "\u23f3 52d old (value t\u00bd=90d) \u22128pts",
+      "stale_label": "AGING",
       "conviction_signals": [
-        "\ud83d\udcaa RS 95 \u2014 Top Performer",
-        "\ud83e\udd16 ML Score 91%"
+        "\ud83d\udcaa RS 97 \u2014 Top Performer",
+        "\ud83e\udd16 ML Score 88%"
       ],
       "conviction_boost": 16,
       "conviction_count": 2,
       "size_guardrail": {
-        "ticker": "CM.TO",
+        "ticker": "TGT",
         "category": "FHSA Conservative Growth",
         "bucket": "ML-assisted growth picks. Max loss if model fails = 30% of TFSA.",
         "bucket_pool": 3.0,
@@ -3123,16 +3206,16 @@
         "perf_30d": 15.29,
         "perf_90d": 13.73,
         "w52_high": 212.19,
-        "w52_low": 102.02,
+        "w52_low": 103.11,
         "drawdown_high": -4.57,
-        "recovery_pct": 98.49,
-        "avg_volume": 152057474,
+        "recovery_pct": 96.39,
+        "avg_volume": 152094210,
         "volatility": 2.96,
         "rsi_approx": 91.6,
         "div_yield": 2.0,
         "div_rate": 0.04,
         "ex_div_date": "Mar 11, 2026",
-        "days_to_ex_div": -43,
+        "days_to_ex_div": -44,
         "pe_ratio": 41.3,
         "peg_ratio": 0.72,
         "profit_margin": 55.6,
@@ -3199,7 +3282,7 @@
         "\ud83d\udc8e PEG < 1: 0.72 (undervalued vs growth)",
         "\ud83c\udfaf Analyst upside: +32.6%",
         "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-        "\ud83d\udcaa RS Rating: 84 \u2014 \u2705 STRONG"
+        "\ud83d\udcaa RS Rating: 87 \u2014 \u2705 STRONG"
       ],
       "flags": [],
       "pick": {
@@ -3223,14 +3306,14 @@
       "sector": "TECH",
       "ml_prob": 0.88,
       "ml_signal": "\ud83d\udd25 STRONG BUY",
-      "rs_rating": 84,
+      "rs_rating": 87,
       "rs_signal": "\u2705 STRONG",
       "rs_adj": 10,
-      "score_velocity": 0.3815789473684211,
+      "score_velocity": 0.37662337662337664,
       "velocity_boost": 0,
-      "signal_age_note": "\ud83d\udd04 FRESH \u2014 score +10 pts over 7 days",
+      "signal_age_note": "\ud83d\udd04 FRESH \u2014 score +8 pts over 7 days",
       "conviction_signals": [
-        "\ud83d\udcaa RS 84 \u2014 Top Performer",
+        "\ud83d\udcaa RS 87 \u2014 Top Performer",
         "\ud83e\udd16 ML Score 88%"
       ],
       "conviction_boost": 16,
@@ -3250,145 +3333,6 @@
       }
     },
     {
-      "ticker": "LUN.TO",
-      "score": 100,
-      "data": {
-        "ticker": "LUN.TO",
-        "price": 37.79,
-        "day_chg_pct": 1.18,
-        "perf_30d": 18.39,
-        "perf_90d": 6.34,
-        "w52_high": 45.74,
-        "w52_low": 11.04,
-        "drawdown_high": -17.38,
-        "recovery_pct": 242.3,
-        "avg_volume": 2232386,
-        "volatility": 3.22,
-        "rsi_approx": 62.4,
-        "div_yield": 29.0,
-        "div_rate": 0.11,
-        "ex_div_date": "Mar 20, 2026",
-        "days_to_ex_div": -34,
-        "pe_ratio": 22.6,
-        "peg_ratio": 0.93,
-        "profit_margin": 31.7,
-        "rev_growth": 62.1,
-        "earn_growth": 0,
-        "debt_equity": 5.7,
-        "roe": 21.1,
-        "current_ratio": 1.64,
-        "target_price": 38.47,
-        "upside_target": 1.8,
-        "analyst_rec": "buy",
-        "next_earnings": "N/A",
-        "short_pct_float": 0,
-        "vol_accum_score": 10,
-        "status": "ok",
-        "closes_30d": [
-          36.7066,
-          35.7975,
-          34.3887,
-          34.4787,
-          34.119,
-          32.3906,
-          30.812,
-          29.43,
-          31.92,
-          31.79,
-          33.27,
-          31.22,
-          32.04,
-          31.33,
-          34.69,
-          35.14,
-          35.04,
-          35.08,
-          35.18,
-          37.96,
-          37.71,
-          39.2,
-          39.48,
-          40.51,
-          40.96,
-          41.01,
-          40.32,
-          40.03,
-          37.35,
-          37.79
-        ]
-      },
-      "pillars": {
-        "momentum": 14,
-        "dividend_income": 20,
-        "growth": 13,
-        "value": 11,
-        "safety": 13,
-        "volume_liquidity": 10
-      },
-      "reasons": [
-        "\ud83d\udcc8 Positive 90d: +6.34%",
-        "\ud83d\udcc8 30d momentum: +18.39%",
-        "\ud83d\udcb0 Exceptional yield: 29.0%",
-        "\ud83d\udcca Revenue growth: +62.1%",
-        "\ud83d\udcaa Strong ROE: 21.1%",
-        "\ud83d\udc8e PEG < 1: 0.93 (undervalued vs growth)",
-        "\ud83d\udcca Good liquidity",
-        "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-        "\u2705 Analyst consensus: buy",
-        "\ud83d\udcaa RS Rating: 73 \u2014 \ud83d\udcca ABOVE AVERAGE"
-      ],
-      "flags": [],
-      "pick": {
-        "category": "INCOME + GROWTH",
-        "venue": "STOCK_ACCOUNT",
-        "tag": "[TFSA]",
-        "hold_days": 365,
-        "risk_label": "MODERATE",
-        "amount": 0.4,
-        "action": "Suggested: $300 | Hold 365 days for income cycle | \u23f3 50d old (value t\u00bd=90d) \u22128pts",
-        "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
-        "exp_low": 20.3,
-        "exp_high": 36.7,
-        "exp_prob": 72,
-        "options_eligible": true,
-        "suggested_play": "covered_call",
-        "est_premium_pct": 1.44,
-        "short_interest": 0,
-        "next_earnings": "N/A"
-      },
-      "sector": "MATERIALS",
-      "ml_prob": 0.9127,
-      "ml_signal": "\ud83d\udd25 STRONG BUY",
-      "rs_rating": 73,
-      "rs_signal": "\ud83d\udcca ABOVE AVERAGE",
-      "rs_adj": 5,
-      "score_velocity": 0.0,
-      "velocity_boost": 0,
-      "decay_penalty": 8,
-      "decay_half_life": 90,
-      "signal_age_note": "\u23f3 50d old (value t\u00bd=90d) \u22128pts",
-      "stale_label": "AGING",
-      "conviction_signals": [
-        "\ud83d\udcaa RS 73",
-        "\ud83e\udd16 ML Score 91%"
-      ],
-      "conviction_boost": 12,
-      "conviction_count": 2,
-      "size_guardrail": {
-        "ticker": "LUN.TO",
-        "category": "INCOME + GROWTH",
-        "bucket": "Dividend core. Pays you 5-7%/yr regardless of model quality.",
-        "bucket_pool": 5.0,
-        "max_raw": 1.0,
-        "regime_adj": 1.0,
-        "accuracy_adj": 0.4,
-        "recommended": 0.4,
-        "if_zero_pct": 4.0,
-        "regime": "BULL",
-        "survival_note": "If this goes to zero \u2192 you lose 4.0% of account. \u2705 Acceptable"
-      }
-    },
-    {
       "ticker": "CLS.TO",
       "score": 100,
       "data": {
@@ -3401,14 +3345,14 @@
         "w52_low": 113.4,
         "drawdown_high": -2.26,
         "recovery_pct": 384.81,
-        "avg_volume": 478337,
+        "avg_volume": 478585,
         "volatility": 4.9,
         "rsi_approx": 93.8,
         "div_yield": 0,
         "div_rate": 0,
         "ex_div_date": "N/A",
         "days_to_ex_div": 999,
-        "pe_ratio": 56.0,
+        "pe_ratio": 56.2,
         "peg_ratio": 1.0,
         "profit_margin": 6.7,
         "rev_growth": 43.6,
@@ -3416,7 +3360,7 @@
         "debt_equity": 41.4,
         "roe": 40.5,
         "current_ratio": 1.44,
-        "target_price": 577.97,
+        "target_price": 577.99,
         "upside_target": 5.1,
         "analyst_rec": "strong_buy",
         "next_earnings": "N/A",
@@ -3483,7 +3427,7 @@
         "hold_days": 30,
         "risk_label": "HIGH",
         "amount": 12.0,
-        "action": "Suggested: $100 | Swing trade \u2014 target exit in 30 days | \u23f3 29d old (earnings t\u00bd=30d) \u221211pts",
+        "action": "Suggested: $100 | Swing trade \u2014 target exit in 30 days | \u23f3 30d old (earnings t\u00bd=30d) \u221211pts",
         "exit_note": "Stop loss: $483.8 | Target: $678.42 | Hard exit before N/A",
         "exp_low": 1.9,
         "exp_high": 23.4,
@@ -3500,11 +3444,11 @@
       "rs_rating": 99,
       "rs_signal": "\ud83d\udd25 TOP PERFORMER",
       "rs_adj": 15,
-      "score_velocity": 0.5925925925925926,
+      "score_velocity": 0.5714285714285714,
       "velocity_boost": 0,
       "decay_penalty": 11,
       "decay_half_life": 30,
-      "signal_age_note": "\u23f3 29d old (earnings t\u00bd=30d) \u221211pts",
+      "signal_age_note": "\u23f3 30d old (earnings t\u00bd=30d) \u221211pts",
       "stale_label": "STALE",
       "conviction_signals": [
         "\ud83d\udcaa RS 99 \u2014 Top Performer",
@@ -3528,53 +3472,46 @@
     }
   ],
   "fx_signals": {
-    "generated_at": "2026-04-22T21:54:05.165101",
-    "date": "April 22, 2026",
+    "generated_at": "2026-04-23T12:03:21.555067",
+    "date": "April 23, 2026",
     "pairs": {
       "EURUSD=X": {
         "pair": "EUR/USD",
         "symbol": "EURUSD=X",
-        "price": 1.171,
-        "day_chg_pct": -0.292,
+        "price": 1.1696,
+        "day_chg_pct": -0.411,
         "direction": "LONG",
-        "conviction": 65,
-        "quality": "\u2705 MODERATE",
-        "alignment": "ALIGNED \u2705",
-        "entry": 1.171,
-        "target": 1.18473,
-        "stop": 1.16277,
+        "conviction": 24,
+        "quality": "\ud83d\ude10 NEUTRAL",
+        "alignment": "TECH ONLY",
+        "entry": 1.1696,
+        "target": 1.1824,
+        "stop": 1.16192,
         "rr_ratio": 1.67,
-        "key_driver": "RSI healthy: 63.9",
+        "key_driver": "RSI healthy: 62.5",
         "hold_period": "1-3 days",
         "tech": {
           "direction": "LONG",
           "conviction": 35,
-          "rsi": 63.9,
+          "rsi": 62.5,
           "trend": "ABOVE_MA50",
-          "perf_20d": 1.281,
+          "perf_20d": 1.163,
           "reasons": [
-            "RSI healthy: 63.9"
+            "RSI healthy: 62.5"
           ]
         },
         "macro": {
-          "direction": "LONG",
-          "conviction": 90,
-          "signals": [
-            {
-              "name": "Peace Deal",
-              "direction": "LONG",
-              "confidence": 100,
-              "weight": 0.3
-            }
-          ]
+          "direction": "NEUTRAL",
+          "conviction": 0,
+          "signals": []
         },
         "price_context": {
-          "ma20": 1.16548,
-          "ma50": 1.16621,
-          "ma200": 1.16753,
+          "ma20": 1.16542,
+          "ma50": 1.16618,
+          "ma200": 1.16758,
           "w52_high": 1.20236,
           "w52_low": 1.14157,
-          "atr": 0.00549
+          "atr": 0.00512
         },
         "notes": "Most liquid pair. Very signal-friendly. Tight spreads.",
         "status": "ok",
@@ -3585,33 +3522,33 @@
       "JPY=X": {
         "pair": "USD/JPY",
         "symbol": "JPY=X",
-        "price": 159.38,
-        "day_chg_pct": 0.005,
-        "direction": "LONG",
-        "conviction": 38,
-        "quality": "\ud83d\udcca WEAK",
-        "alignment": "TECH ONLY",
-        "entry": 159.38,
-        "target": 161.0716,
-        "stop": 158.36504,
+        "price": 159.54,
+        "day_chg_pct": 0.107,
+        "direction": "NEUTRAL",
+        "conviction": 15,
+        "quality": "\ud83d\ude10 NEUTRAL",
+        "alignment": "CONFLICTED \u26a0\ufe0f",
+        "entry": 159.54,
+        "target": 161.2421,
+        "stop": 158.5187,
         "rr_ratio": 1.67,
         "key_driver": "Price above MA50 > MA200 (uptrend)",
         "hold_period": "3-7 days",
         "tech": {
           "direction": "LONG",
-          "conviction": 55,
-          "rsi": 48.8,
+          "conviction": 63,
+          "rsi": 50.5,
           "trend": "UPTREND",
-          "perf_20d": -0.002,
+          "perf_20d": 0.1,
           "reasons": [
             "Price above MA50 > MA200 (uptrend)",
-            "RSI healthy: 48.8",
+            "RSI healthy: 50.5",
             "Near 52w high \u2014 breakout zone"
           ]
         },
         "macro": {
-          "direction": "NEUTRAL",
-          "conviction": 1.0,
+          "direction": "SHORT",
+          "conviction": 71.0,
           "signals": [
             {
               "name": "Middle East Tension",
@@ -3620,32 +3557,26 @@
               "weight": 0.5
             },
             {
-              "name": "Peace Deal",
-              "direction": "LONG",
+              "name": "Trump Tariff Negative",
+              "direction": "SHORT",
               "confidence": 100,
               "weight": 0.4
             },
             {
               "name": "Oil Price Spike",
               "direction": "LONG",
-              "confidence": 100,
+              "confidence": 50,
               "weight": 0.3
-            },
-            {
-              "name": "Trump Tariff Negative",
-              "direction": "SHORT",
-              "confidence": 100,
-              "weight": 0.4
             }
           ]
         },
         "price_context": {
-          "ma20": 159.24595,
-          "ma50": 157.87978,
-          "ma200": 156.45928,
+          "ma20": 159.25405,
+          "ma50": 157.88302,
+          "ma200": 156.49594,
           "w52_high": 160.231,
-          "w52_low": 151.507,
-          "atr": 0.67664
+          "w52_low": 151.549,
+          "atr": 0.68086
         },
         "notes": "Strong macro correlation. Risk-off = JPY strengthens.",
         "status": "ok",
@@ -3656,27 +3587,27 @@
       "GBPUSD=X": {
         "pair": "GBP/USD",
         "symbol": "GBPUSD=X",
-        "price": 1.3509,
-        "day_chg_pct": -0.005,
+        "price": 1.3506,
+        "day_chg_pct": -0.027,
         "direction": "LONG",
         "conviction": 27,
         "quality": "\ud83d\ude10 NEUTRAL",
         "alignment": "TECH ONLY",
-        "entry": 1.3509,
-        "target": 1.36785,
-        "stop": 1.34073,
+        "entry": 1.3506,
+        "target": 1.36648,
+        "stop": 1.34108,
         "rr_ratio": 1.67,
         "key_driver": "Price above MA50 > MA200 (uptrend)",
         "hold_period": "1-3 days",
         "tech": {
           "direction": "LONG",
           "conviction": 38,
-          "rsi": 70.4,
+          "rsi": 70.2,
           "trend": "UPTREND",
-          "perf_20d": 1.084,
+          "perf_20d": 1.068,
           "reasons": [
             "Price above MA50 > MA200 (uptrend)",
-            "RSI overbought: 70.4 \u2014 caution"
+            "RSI overbought: 70.2 \u2014 caution"
           ]
         },
         "macro": {
@@ -3685,12 +3616,12 @@
           "signals": []
         },
         "price_context": {
-          "ma20": 1.33894,
-          "ma50": 1.34142,
-          "ma200": 1.33907,
+          "ma20": 1.33893,
+          "ma50": 1.34141,
+          "ma200": 1.33909,
           "w52_high": 1.38468,
           "w52_low": 1.30117,
-          "atr": 0.00678
+          "atr": 0.00635
         },
         "notes": "High volatility. Strong news-driven moves.",
         "status": "ok",
@@ -3702,31 +3633,31 @@
         "pair": "USD/CAD",
         "symbol": "CAD=X",
         "price": 1.37,
-        "day_chg_pct": 0.069,
+        "day_chg_pct": 0.083,
         "direction": "SHORT",
-        "conviction": 35,
+        "conviction": 30,
         "quality": "\ud83d\udcca WEAK",
-        "alignment": "ALIGNED \u2705",
+        "alignment": "TECH ONLY",
         "entry": 1.37,
-        "target": 1.35828,
-        "stop": 1.37704,
-        "rr_ratio": 1.66,
+        "target": 1.35885,
+        "stop": 1.37669,
+        "rr_ratio": 1.67,
         "key_driver": "Price below MA50 < MA200 (downtrend)",
         "hold_period": "1-3 days",
         "tech": {
           "direction": "SHORT",
           "conviction": 43,
-          "rsi": 23.9,
+          "rsi": 24.3,
           "trend": "DOWNTREND",
-          "perf_20d": -1.066,
+          "perf_20d": -1.049,
           "reasons": [
             "Price below MA50 < MA200 (downtrend)",
-            "RSI oversold: 23.9 \u2014 potential bounce"
+            "RSI oversold: 24.3 \u2014 potential bounce"
           ]
         },
         "macro": {
-          "direction": "SHORT",
-          "conviction": 29.0,
+          "direction": "NEUTRAL",
+          "conviction": 11.0,
           "signals": [
             {
               "name": "Middle East Tension",
@@ -3735,26 +3666,26 @@
               "weight": 0.4
             },
             {
-              "name": "Oil Price Spike",
-              "direction": "SHORT",
-              "confidence": 100,
-              "weight": 0.7
-            },
-            {
               "name": "Trump Tariff Negative",
               "direction": "LONG",
               "confidence": 100,
               "weight": 0.6
+            },
+            {
+              "name": "Oil Price Spike",
+              "direction": "SHORT",
+              "confidence": 50,
+              "weight": 0.7
             }
           ]
         },
         "price_context": {
-          "ma20": 1.38139,
+          "ma20": 1.3814,
           "ma50": 1.37291,
-          "ma200": 1.38099,
+          "ma200": 1.38083,
           "w52_high": 1.41395,
           "w52_low": 1.3484,
-          "atr": 0.00469
+          "atr": 0.00446
         },
         "notes": "Oil-correlated. Most relevant to Canadian investor.",
         "status": "ok",
@@ -3765,32 +3696,32 @@
       "GC=F": {
         "pair": "XAU/USD (Gold)",
         "symbol": "GC=F",
-        "price": 4758.3,
-        "day_chg_pct": 1.275,
+        "price": 4728.7,
+        "day_chg_pct": -0.08,
         "direction": "LONG",
-        "conviction": 15,
-        "quality": "\ud83d\ude10 NEUTRAL",
+        "conviction": 63,
+        "quality": "\u2705 MODERATE",
         "alignment": "MACRO ONLY",
-        "entry": 4758.3,
-        "target": 4945.0143,
-        "stop": 4646.27142,
+        "entry": 4728.7,
+        "target": 4881.45007,
+        "stop": 4637.04995,
         "rr_ratio": 1.67,
-        "key_driver": "Strong 20d momentum: +8.16%",
+        "key_driver": "Strong 20d momentum: +3.932%",
         "hold_period": "1-3 days",
         "tech": {
           "direction": "NEUTRAL",
-          "conviction": 23,
-          "rsi": 48.3,
+          "conviction": 18,
+          "rsi": 56.6,
           "trend": "BELOW_MA50",
-          "perf_20d": 8.16,
+          "perf_20d": 3.932,
           "reasons": [
-            "Strong 20d momentum: +8.16%",
-            "RSI healthy: 48.3"
+            "Strong 20d momentum: +3.932%",
+            "RSI healthy: 56.6"
           ]
         },
         "macro": {
           "direction": "LONG",
-          "conviction": 22.0,
+          "conviction": 90,
           "signals": [
             {
               "name": "Middle East Tension",
@@ -3799,32 +3730,20 @@
               "weight": 0.8
             },
             {
-              "name": "Peace Deal",
-              "direction": "SHORT",
-              "confidence": 100,
-              "weight": 0.6
-            },
-            {
               "name": "Trump Tariff Negative",
               "direction": "LONG",
               "confidence": 100,
               "weight": 0.5
-            },
-            {
-              "name": "Earnings Beats",
-              "direction": "SHORT",
-              "confidence": 75,
-              "weight": 0.3
             }
           ]
         },
         "price_context": {
-          "ma20": 4695.83999,
-          "ma50": 4881.32198,
-          "ma200": 4580.96398,
+          "ma20": 4703.49502,
+          "ma50": 4875.30399,
+          "ma200": 4586.23199,
           "w52_high": 5586.2002,
           "w52_low": 3913.69995,
-          "atr": 74.68572
+          "atr": 61.10003
         },
         "notes": "Safe haven. Strong in risk-off, tariff, and war scenarios.",
         "status": "ok",
@@ -3835,28 +3754,29 @@
     },
     "active_calls": [
       {
-        "pair": "EUR/USD",
-        "symbol": "EURUSD=X",
-        "price": 1.171,
-        "day_chg_pct": -0.292,
+        "pair": "XAU/USD (Gold)",
+        "symbol": "GC=F",
+        "price": 4728.7,
+        "day_chg_pct": -0.08,
         "direction": "LONG",
-        "conviction": 65,
+        "conviction": 63,
         "quality": "\u2705 MODERATE",
-        "alignment": "ALIGNED \u2705",
-        "entry": 1.171,
-        "target": 1.18473,
-        "stop": 1.16277,
+        "alignment": "MACRO ONLY",
+        "entry": 4728.7,
+        "target": 4881.45007,
+        "stop": 4637.04995,
         "rr_ratio": 1.67,
-        "key_driver": "RSI healthy: 63.9",
+        "key_driver": "Strong 20d momentum: +3.932%",
         "hold_period": "1-3 days",
         "tech": {
-          "direction": "LONG",
-          "conviction": 35,
-          "rsi": 63.9,
-          "trend": "ABOVE_MA50",
-          "perf_20d": 1.281,
+          "direction": "NEUTRAL",
+          "conviction": 18,
+          "rsi": 56.6,
+          "trend": "BELOW_MA50",
+          "perf_20d": 3.932,
           "reasons": [
-            "RSI healthy: 63.9"
+            "Strong 20d momentum: +3.932%",
+            "RSI healthy: 56.6"
           ]
         },
         "macro": {
@@ -3864,22 +3784,28 @@
           "conviction": 90,
           "signals": [
             {
-              "name": "Peace Deal",
+              "name": "Middle East Tension",
               "direction": "LONG",
               "confidence": 100,
-              "weight": 0.3
+              "weight": 0.8
+            },
+            {
+              "name": "Trump Tariff Negative",
+              "direction": "LONG",
+              "confidence": 100,
+              "weight": 0.5
             }
           ]
         },
         "price_context": {
-          "ma20": 1.16548,
-          "ma50": 1.16621,
-          "ma200": 1.16753,
-          "w52_high": 1.20236,
-          "w52_low": 1.14157,
-          "atr": 0.00549
+          "ma20": 4703.49502,
+          "ma50": 4875.30399,
+          "ma200": 4586.23199,
+          "w52_high": 5586.2002,
+          "w52_low": 3913.69995,
+          "atr": 61.10003
         },
-        "notes": "Most liquid pair. Very signal-friendly. Tight spreads.",
+        "notes": "Safe haven. Strong in risk-off, tariff, and war scenarios.",
         "status": "ok",
         "hours_old": 0.0,
         "stale": false,
@@ -3888,28 +3814,29 @@
     ],
     "total_signals": 1,
     "top_call": {
-      "pair": "EUR/USD",
-      "symbol": "EURUSD=X",
-      "price": 1.171,
-      "day_chg_pct": -0.292,
+      "pair": "XAU/USD (Gold)",
+      "symbol": "GC=F",
+      "price": 4728.7,
+      "day_chg_pct": -0.08,
       "direction": "LONG",
-      "conviction": 65,
+      "conviction": 63,
       "quality": "\u2705 MODERATE",
-      "alignment": "ALIGNED \u2705",
-      "entry": 1.171,
-      "target": 1.18473,
-      "stop": 1.16277,
+      "alignment": "MACRO ONLY",
+      "entry": 4728.7,
+      "target": 4881.45007,
+      "stop": 4637.04995,
       "rr_ratio": 1.67,
-      "key_driver": "RSI healthy: 63.9",
+      "key_driver": "Strong 20d momentum: +3.932%",
       "hold_period": "1-3 days",
       "tech": {
-        "direction": "LONG",
-        "conviction": 35,
-        "rsi": 63.9,
-        "trend": "ABOVE_MA50",
-        "perf_20d": 1.281,
+        "direction": "NEUTRAL",
+        "conviction": 18,
+        "rsi": 56.6,
+        "trend": "BELOW_MA50",
+        "perf_20d": 3.932,
         "reasons": [
-          "RSI healthy: 63.9"
+          "Strong 20d momentum: +3.932%",
+          "RSI healthy: 56.6"
         ]
       },
       "macro": {
@@ -3917,22 +3844,28 @@
         "conviction": 90,
         "signals": [
           {
-            "name": "Peace Deal",
+            "name": "Middle East Tension",
             "direction": "LONG",
             "confidence": 100,
-            "weight": 0.3
+            "weight": 0.8
+          },
+          {
+            "name": "Trump Tariff Negative",
+            "direction": "LONG",
+            "confidence": 100,
+            "weight": 0.5
           }
         ]
       },
       "price_context": {
-        "ma20": 1.16548,
-        "ma50": 1.16621,
-        "ma200": 1.16753,
-        "w52_high": 1.20236,
-        "w52_low": 1.14157,
-        "atr": 0.00549
+        "ma20": 4703.49502,
+        "ma50": 4875.30399,
+        "ma200": 4586.23199,
+        "w52_high": 5586.2002,
+        "w52_low": 3913.69995,
+        "atr": 61.10003
       },
-      "notes": "Most liquid pair. Very signal-friendly. Tight spreads.",
+      "notes": "Safe haven. Strong in risk-off, tariff, and war scenarios.",
       "status": "ok",
       "hours_old": 0.0,
       "stale": false,
@@ -3992,44 +3925,44 @@
         "score": 65.4
       },
       {
-        "ticker": "TD.TO",
+        "ticker": "GRT-UN.TO",
         "weight_pct": 10.0,
         "dollar_amt": 1000.0,
-        "ml_prob": 0.894,
+        "ml_prob": 0.8,
         "vol_adj": 0.2,
         "score": 100
       },
       {
-        "ticker": "SLF.TO",
+        "ticker": "SU.TO",
         "weight_pct": 10.0,
         "dollar_amt": 1000.0,
-        "ml_prob": 0.566,
+        "ml_prob": 0.797,
         "vol_adj": 0.2,
         "score": 100
       },
       {
-        "ticker": "LUN.TO",
+        "ticker": "CNQ.TO",
         "weight_pct": 10.0,
         "dollar_amt": 1000.0,
-        "ml_prob": 0.913,
+        "ml_prob": 0.903,
         "vol_adj": 0.2,
         "score": 100
       },
       {
-        "ticker": "VICI",
+        "ticker": "O",
         "weight_pct": 10.0,
         "dollar_amt": 1000.0,
-        "ml_prob": 0.278,
+        "ml_prob": 0.427,
         "vol_adj": 0.2,
-        "score": 96
+        "score": 99
       },
       {
-        "ticker": "AGI.TO",
+        "ticker": "NTR.TO",
         "weight_pct": 10.0,
         "dollar_amt": 1000.0,
-        "ml_prob": 0.93,
+        "ml_prob": 0.735,
         "vol_adj": 0.2,
-        "score": 100
+        "score": 78.4
       }
     ],
     "backtest_summary": {
@@ -4156,15 +4089,6 @@
           "trend_signal": "\ud83d\udcc9 FALLING: -14 pts over 3 days"
         },
         {
-          "ticker": "NTR.TO",
-          "score_now": 70.4,
-          "score_start": 83.4,
-          "score_delta": -13.0,
-          "price_change_pct": -2.15,
-          "days_tracked": 92,
-          "trend_signal": "\ud83d\udcc9 FALLING: -13.0 pts over 3 days"
-        },
-        {
           "ticker": "STAG",
           "score_now": 80,
           "score_start": 92,
@@ -4172,6 +4096,15 @@
           "price_change_pct": 0.77,
           "days_tracked": 16,
           "trend_signal": "\ud83d\udcc9 FALLING: -12 pts over 3 days"
+        },
+        {
+          "ticker": "FM.TO",
+          "score_now": 52,
+          "score_start": 62,
+          "score_delta": -10,
+          "price_change_pct": -0.78,
+          "days_tracked": 50,
+          "trend_signal": "\ud83d\udcc9 FALLING: -10 pts over 3 days"
         }
       ]
     },
@@ -4207,19 +4140,9 @@
         }
       ],
       [
-        "CM.TO",
-        {
-          "rs_rating": 95,
-          "composite": 17.06,
-          "perf_30d": 13.0,
-          "perf_90d": 19.76,
-          "rs_signal": "\ud83d\udd25 TOP PERFORMER"
-        }
-      ],
-      [
         "SU.TO",
         {
-          "rs_rating": 92,
+          "rs_rating": 95,
           "composite": 16.77,
           "perf_30d": 0.02,
           "perf_90d": 27.93,
@@ -4229,7 +4152,7 @@
       [
         "EWZ",
         {
-          "rs_rating": 90,
+          "rs_rating": 92,
           "composite": 16.5,
           "perf_30d": 10.15,
           "perf_90d": 20.73,
@@ -4239,17 +4162,17 @@
       [
         "CNQ.TO",
         {
-          "rs_rating": 87,
+          "rs_rating": 90,
           "composite": 14.46,
           "perf_30d": -8.09,
           "perf_90d": 29.49,
-          "rs_signal": "\u2705 STRONG"
+          "rs_signal": "\ud83d\udd25 TOP PERFORMER"
         }
       ],
       [
         "NVDA",
         {
-          "rs_rating": 84,
+          "rs_rating": 87,
           "composite": 14.35,
           "perf_30d": 15.29,
           "perf_90d": 13.73,
@@ -4259,7 +4182,7 @@
       [
         "MG.TO",
         {
-          "rs_rating": 82,
+          "rs_rating": 85,
           "composite": 13.87,
           "perf_30d": 13.68,
           "perf_90d": 14.0,
@@ -4269,10 +4192,20 @@
       [
         "TIH.TO",
         {
-          "rs_rating": 79,
+          "rs_rating": 82,
           "composite": 13.39,
           "perf_30d": 6.08,
           "perf_90d": 18.26,
+          "rs_signal": "\u2705 STRONG"
+        }
+      ],
+      [
+        "SLF.TO",
+        {
+          "rs_rating": 81,
+          "composite": 12.2,
+          "perf_30d": 11.28,
+          "perf_90d": 12.81,
           "rs_signal": "\u2705 STRONG"
         }
       ]
@@ -4283,12 +4216,13 @@
       {
         "ticker": "TSLA",
         "data": {
-          "count": 2,
+          "count": 3,
           "sources": [
             "@amitisinvesting",
-            "@amitisinvesting"
+            "@clintoptions",
+            "@clintoptions"
           ],
-          "weight_score": 6
+          "weight_score": 5
         }
       },
       {
@@ -4312,7 +4246,7 @@
         }
       },
       {
-        "ticker": "CLF",
+        "ticker": "ETN",
         "data": {
           "count": 1,
           "sources": [
@@ -4332,17 +4266,7 @@
         }
       },
       {
-        "ticker": "HPS.A",
-        "data": {
-          "count": 1,
-          "sources": [
-            "@sjcapitalinvest"
-          ],
-          "weight_score": 3
-        }
-      },
-      {
-        "ticker": "GEV",
+        "ticker": "HUBB",
         "data": {
           "count": 1,
           "sources": [
@@ -4372,7 +4296,17 @@
         }
       },
       {
-        "ticker": "POWL",
+        "ticker": "PRYMF",
+        "data": {
+          "count": 1,
+          "sources": [
+            "@sjcapitalinvest"
+          ],
+          "weight_score": 3
+        }
+      },
+      {
+        "ticker": "CLF",
         "data": {
           "count": 1,
           "sources": [
@@ -4385,37 +4319,37 @@
     "account_summaries": [
       {
         "handle": "juliuselum",
-        "sentiment": "\ud83d\udfe1 Neutral",
+        "sentiment": "\ud83d\udfe2 Bullish",
         "tickers": [
-          "SPK",
-          "STO",
+          "SOPH",
           "NEWT",
-          "LA",
-          "MORPH"
+          "SAHAR",
+          "KERNE",
+          "UPS"
         ],
         "focus": "wealth_building",
-        "latest_post": "$SPK might be the next $STO\n\nBoth coins are in the same ecosystem.\n\nActually, $SPK is the father of $STO, $NEWT, $KERNEL, $LA, $MORPHO,\n\nYou know that fathers lead sons, daughters, mother, brothers, a"
+        "latest_post": "$UPS third exchange listing.\n\nTeam is building progressively... $UPS third exchange listing.\n\nTeam is building progressively...\n\n\nBTCC (@BTCCexchange)\n\n\ud83d\udce2 $UPS is landing on BTCC Spot!\n\n@upscreener  is"
       },
       {
         "handle": "amitisinvesting",
         "sentiment": "\ud83d\udfe1 Neutral",
         "tickers": [
-          "TSLA",
           "IGV",
+          "TSLA",
           "NOW"
         ],
         "focus": "stock_picks",
-        "latest_post": "$TSLA \n\nTESLA DELIVERS A TRIPLE BEAT.\n\nGROSS MARGINS 21% vs 17%\nREVENUE 22.39B vs $22.19B\nEPS $0.41C vs $0.34C \n\nSeems like the most important part from the deck is Elon's ambitions around building th"
+        "latest_post": "for those that just saw oil spike and the SPY dip hard, it was because of false news of an attack on Iran after hours\n\nif anything, we just saw how quickly this market is willing to flip if the US wer"
       },
       {
         "handle": "sjcapitalinvest",
         "sentiment": "\ud83d\udd34 Bearish",
         "tickers": [
-          "CLF",
-          "HUBB",
-          "CAMT",
+          "ETN",
           "NEXNY",
-          "GEV"
+          "HUBB",
+          "IQE",
+          "ABB"
         ],
         "focus": "capital_markets_picks",
         "latest_post": "The grid just became U.S. industrial policy.\n\nThe new White House action puts the U.S. grid supply chain into national-priority territory, with support aimed at transformers, substations, conductors, "
@@ -4424,10 +4358,11 @@
         "handle": "clintoptions",
         "sentiment": "\ud83d\udfe2 Bullish",
         "tickers": [
+          "TSLA",
           "BYND"
         ],
         "focus": "options_flow_trades",
-        "latest_post": "I\u2019m calling it early. The next massive meme stock breakout will be caused by a smaller company switch over to an AI company, similar to what we saw on $BYND, except no one will expect it I\u2019m calling i"
+        "latest_post": "RT by @clintoptions: I'm not anti $TSLA. I'm anti over-hyped Tesla\n\nThere's a difference between supporting the company and owning stock, compared to having unrealistic price targets while PE is alrea"
       }
     ]
   },
@@ -4487,39 +4422,55 @@
     {
       "date": "Apr 30, 2026",
       "title": "\ud83d\udcb0 GRT-UN.TO Ex-Dividend",
-      "desc": "Buy 4 days before to capture $3.46/share",
+      "desc": "Buy 3 days before to capture $3.46/share",
       "urgency": "urgent",
       "ticker": "GRT-UN.TO",
       "action": "BUY"
     },
     {
+      "date": "Apr 30, 2026",
+      "title": "\ud83d\udcb0 O Ex-Dividend",
+      "desc": "Buy 3 days before to capture $3.24/share",
+      "urgency": "urgent",
+      "ticker": "O",
+      "action": "BUY"
+    },
+    {
+      "date": "May 13, 2026",
+      "title": "\ud83d\udcb0 TGT Ex-Dividend",
+      "desc": "Buy 16 days before to capture $4.56/share",
+      "urgency": "soon",
+      "ticker": "TGT",
+      "action": "BUY"
+    },
+    {
       "date": "May 21, 2026",
       "title": "\ud83d\udcb0 MSFT Ex-Dividend",
-      "desc": "Buy 25 days before to capture $3.64/share",
+      "desc": "Buy 24 days before to capture $3.64/share",
       "urgency": "soon",
       "ticker": "MSFT",
       "action": "BUY"
     }
   ],
   "signal_accuracy": {
-    "total_signals": 9129,
-    "resolved": 8213,
-    "pending": 916,
-    "accuracy_3d": 35.4,
-    "accuracy_7d": 36.1,
-    "accuracy_14d": 35.1,
+    "total_signals": 9180,
+    "resolved": 8363,
+    "pending": 817,
+    "accuracy_3d": 35.5,
+    "accuracy_7d": 36.4,
+    "accuracy_14d": 35.2,
     "avg_move_pct": -0.84,
     "by_category": {
-      "FHSA Conservative Growth": 35.0,
+      "FHSA Conservative Growth": 34.9,
       "GROWTH CORE": 35.1,
-      "WATCH": 45.6,
-      "INCOME + GROWTH": 31.2,
-      "SWING": 21.8,
-      "INCOME": 13.3,
-      "DIVIDEND GROWTH": 39.7
+      "WATCH": 45.5,
+      "INCOME + GROWTH": 31.0,
+      "SWING": 22.9,
+      "INCOME": 15.2,
+      "DIVIDEND GROWTH": 40.4
     },
-    "recent_30d_acc": 47.9,
-    "older_acc": 30.3,
+    "recent_30d_acc": 47.0,
+    "older_acc": 31.0,
     "degrading": false,
     "best_call": {
       "ticker": "LUN.TO",
@@ -4532,62 +4483,62 @@
       "date": "2026-03-02"
     },
     "model_verdict": "\ud83d\udd34 DEGRADING \u2014 Model underperforming. Pause and review.",
-    "note": "8213 signals resolved \u00b7 916 pending \u00b7 fully automatic"
+    "note": "8363 signals resolved \u00b7 817 pending \u00b7 fully automatic"
   },
   "screen_stats": {
     "fhsa_passed": 28,
-    "tfsa_growth": 21,
+    "tfsa_growth": 22,
     "tfsa_income": 27,
     "tfsa_swing": 2,
     "universe": 177,
     "screened": 177
   },
   "crypto": {
-    "generated_at": "2026-04-22T21:54:06.279451",
-    "date": "April 22, 2026",
+    "generated_at": "2026-04-23T12:03:22.674856",
+    "date": "April 23, 2026",
     "assets": {
       "BTC-USD": {
         "name": "BTC/USD",
         "full_name": "Bitcoin",
         "symbol": "BTC-USD",
-        "price": 78777.03,
-        "day_chg_pct": 3.18,
+        "price": 77786.4,
+        "day_chg_pct": -0.53,
         "direction": "SHORT",
-        "verdict": "\ud83d\udfe1 MILD BEAR \u2014 REDUCE",
-        "action": "REDUCE EXPOSURE",
-        "conviction": 12,
-        "quality": "\ud83d\ude10 NEUTRAL",
+        "verdict": "\ud83d\udd34 BEAR \u2014 SELL/SHORT",
+        "action": "SELL / REDUCE",
+        "conviction": 55,
+        "quality": "\u2705 MODERATE",
         "alignment": "MACRO ONLY",
-        "entry": 78777.03,
-        "target": 69976.0,
-        "stop": 83806.19,
+        "entry": 77786.4,
+        "target": 69318.88,
+        "stop": 82624.98,
         "rr_ratio": 1.75,
         "hold_period": "7-14 days",
         "key_driver": "Below 200d MA \u2014 bearish structure",
         "sizing": {
-          "dollars": 0,
-          "pct": 0,
-          "note": "No position \u2014 wait for clearer signal"
+          "dollars": 0.25,
+          "pct": 2.5,
+          "note": "Max 2.5% \u2014 HIGH RISK"
         },
         "risk_warning": "\u26a0\ufe0f HIGH RISK \u2014 use hard stops, max 3% position size",
         "tech": {
           "direction": "NEUTRAL",
           "conviction": 25,
-          "rsi": 69.7,
+          "rsi": 66.2,
           "trend": "BELOW_200D",
-          "perf_7d": 5.31,
-          "perf_30d": 11.09,
-          "perf_90d": -11.94,
-          "ma200": 85888.68,
-          "vol_ratio": 0.98,
+          "perf_7d": 3.51,
+          "perf_30d": 10.31,
+          "perf_90d": -13.09,
+          "ma200": 85657.18,
+          "vol_ratio": 1.05,
           "reasons": [
             "Below 200d MA \u2014 bearish structure",
-            "RSI healthy: 70"
+            "RSI healthy: 66"
           ]
         },
         "macro": {
           "direction": "SHORT",
-          "conviction": 19,
+          "conviction": 85,
           "signals": [
             {
               "name": "Middle East Tension",
@@ -4595,19 +4546,9 @@
               "confidence": 100
             },
             {
-              "name": "Peace Deal",
-              "direction": "LONG",
-              "confidence": 100
-            },
-            {
               "name": "Trump Tariff Negative",
               "direction": "SHORT",
               "confidence": 100
-            },
-            {
-              "name": "Earnings Beats",
-              "direction": "LONG",
-              "confidence": 75
             }
           ]
         },
@@ -4619,44 +4560,44 @@
         "name": "SOL/USD",
         "full_name": "Solana",
         "symbol": "SOL-USD",
-        "price": 87.61,
-        "day_chg_pct": 1.84,
+        "price": 85.92,
+        "day_chg_pct": -1.15,
         "direction": "SHORT",
-        "verdict": "\ud83d\udfe1 MILD BEAR \u2014 REDUCE",
-        "action": "REDUCE EXPOSURE",
-        "conviction": 18,
-        "quality": "\ud83d\ude10 NEUTRAL",
+        "verdict": "\ud83d\udd34 BEAR \u2014 SELL/SHORT",
+        "action": "SELL / REDUCE",
+        "conviction": 59,
+        "quality": "\u2705 MODERATE",
         "alignment": "ALIGNED \u2705",
-        "entry": 87.61,
-        "target": 73.49,
-        "stop": 96.44,
+        "entry": 85.92,
+        "target": 72.48,
+        "stop": 94.32,
         "rr_ratio": 1.6,
-        "hold_period": "7-14 days",
+        "hold_period": "14-30 days",
         "key_driver": "Below 200d MA \u2014 bearish structure",
         "sizing": {
-          "dollars": 0,
-          "pct": 0,
-          "note": "No position \u2014 wait for clearer signal"
+          "dollars": 0.25,
+          "pct": 2.5,
+          "note": "Max 2.5% \u2014 HIGH RISK"
         },
         "risk_warning": "\u26a0\ufe0f HIGH RISK \u2014 use hard stops, max 3% position size",
         "tech": {
           "direction": "SHORT",
-          "conviction": 35,
-          "rsi": 58.8,
+          "conviction": 45,
+          "rsi": 54.7,
           "trend": "BELOW_200D",
-          "perf_7d": 3.17,
-          "perf_30d": -4.17,
-          "perf_90d": -31.71,
-          "ma200": 124.12,
-          "vol_ratio": 0.83,
+          "perf_7d": -3.45,
+          "perf_30d": -5.4,
+          "perf_90d": -32.54,
+          "ma200": 123.4,
+          "vol_ratio": 0.86,
           "reasons": [
             "Below 200d MA \u2014 bearish structure",
-            "RSI healthy: 59"
+            "RSI healthy: 55"
           ]
         },
         "macro": {
           "direction": "SHORT",
-          "conviction": 4,
+          "conviction": 70,
           "signals": [
             {
               "name": "Middle East Tension",
@@ -4664,19 +4605,9 @@
               "confidence": 100
             },
             {
-              "name": "Peace Deal",
-              "direction": "LONG",
-              "confidence": 100
-            },
-            {
               "name": "Trump Tariff Negative",
               "direction": "SHORT",
               "confidence": 100
-            },
-            {
-              "name": "Earnings Beats",
-              "direction": "LONG",
-              "confidence": 75
             },
             {
               "name": "BTC Dominance Rising",
@@ -4688,7 +4619,7 @@
         "dominance": {
           "signal": "BTC_DOMINANT",
           "sol_adj": -15,
-          "note": "BTC outperforming SOL by 15.3% \u2014 dominance rising, SOL lags"
+          "note": "BTC outperforming SOL by 15.7% \u2014 dominance rising, SOL lags"
         },
         "notes": "High beta to BTC. Underperforms when BTC dominance rises.",
         "status": "ok"
@@ -4697,7 +4628,7 @@
     "dominance_signal": {
       "signal": "BTC_DOMINANT",
       "sol_adj": -15,
-      "note": "BTC outperforming SOL by 15.3% \u2014 dominance rising, SOL lags"
+      "note": "BTC outperforming SOL by 15.7% \u2014 dominance rising, SOL lags"
     },
     "whale_alerts": [],
     "risk_note": "HIGH RISK \u2014 Never size crypto like a stock position."
@@ -4709,13 +4640,13 @@
     "splits": {
       "floor": {
         "dollars": 5.0,
-        "pick": "TD.TO",
+        "pick": "GRT-UN.TO",
         "category": "DIVIDEND GROWTH",
-        "price": 142.93,
-        "stop": 131.5,
+        "price": 90.54,
+        "stop": 83.3,
         "stop_pct": 8,
-        "score": 85,
-        "action": "Suggested: $300 | Hold 365 days for income cycle | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
+        "score": 82,
+        "action": "Suggested: $300 | Hold 365 days for income cycle | Buy before Apr 30, 2026 to capture $3.46/share dividend | \u23f3 51d old (earnings t\u00bd=30d) \u221215pts",
         "venue": "STOCK_ACCOUNT",
         "tag": "[TFSA]"
       }
@@ -4727,23 +4658,23 @@
     ],
     "uninvested": 5.0,
     "venue_map": {
-      "TD.TO": "STOCK_ACCOUNT"
+      "GRT-UN.TO": "STOCK_ACCOUNT"
     },
-    "generated_at": "2026-04-22T21:54:07.161509",
+    "generated_at": "2026-04-23T12:03:23.501087",
     "total_deployed": 5.0,
-    "summary": "DEPLOY $10.00 \u2014 BULL REGIME\n  [TFSA] TD.TO        $5.00 \u2192 stop $131.5 | Suggested: $300 | Hold 365 days for income cycle |\n  \u23f8  Skipped: model_picks, swing, crypto (no signal / below min)\n  \ud83d\udcb5 Uninvested: $5.00 \u2014 hold as cash"
+    "summary": "DEPLOY $10.00 \u2014 BULL REGIME\n  [TFSA] GRT-UN.TO    $5.00 \u2192 stop $83.3 | Suggested: $300 | Hold 365 days for income cycle |\n  \u23f8  Skipped: model_picks, swing, crypto (no signal / below min)\n  \ud83d\udcb5 Uninvested: $5.00 \u2014 hold as cash"
   },
   "risk_report": {
     "stress_test": {
-      "run_at": "2026-04-22T21:54:06.985481",
+      "run_at": "2026-04-23T12:03:23.352832",
       "scenarios": {
         "double_costs": {
           "name": "Double Transaction Costs",
           "normal_count": 17,
-          "survived": 13,
-          "survival_pct": 76.5,
+          "survived": 12,
+          "survival_pct": 70.6,
           "verdict": "\u2705 ROBUST",
-          "note": "4 picks unviable after doubling costs"
+          "note": "5 picks unviable after doubling costs"
         },
         "execution_delay": {
           "name": "2-Day Execution Delay",
@@ -4756,26 +4687,26 @@
         "ml_noise": {
           "name": "10% ML Prediction Noise",
           "normal_count": 17,
-          "survived": 16,
-          "survival_pct": 94.1,
-          "avg_score_change": 4.2,
+          "survived": 15,
+          "survival_pct": 88.2,
+          "avg_score_change": 3.9,
           "verdict": "\u2705 ROBUST",
-          "note": "Avg score change: \u00b14.2 pts with 10% noise"
+          "note": "Avg score change: \u00b13.9 pts with 10% noise"
         },
         "remove_top5": {
           "name": "Remove Top 5 Stocks",
-          "normal_avg": 85.8,
-          "stressed_avg": 79.9,
-          "score_drop": 5.9,
+          "normal_avg": 82.5,
+          "stressed_avg": 73.8,
+          "score_drop": 8.7,
           "removed": [
-            "NVDA",
-            "CM.TO",
             "CLS.TO",
-            "CNQ.TO",
-            "LUN.TO"
+            "SU.TO",
+            "TGT",
+            "NVDA",
+            "CNQ.TO"
           ],
           "verdict": "\u26a0\ufe0f FRAGILE",
-          "note": "Score drops 5.9 pts without top 5 \u2014 system depth check"
+          "note": "Score drops 8.7 pts without top 5 \u2014 system depth check"
         },
         "momentum_decay": {
           "name": "Momentum Factor -30%",
@@ -4789,7 +4720,7 @@
       },
       "summary": {
         "normal_picks": 17,
-        "normal_avg_score": 85.8,
+        "normal_avg_score": 82.5,
         "scenarios_robust": 4,
         "scenarios_fragile": 1,
         "scenarios_broken": 0,
@@ -4798,14 +4729,14 @@
       "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
     "decay_monitor": {
-      "date": "April 22, 2026",
+      "date": "April 23, 2026",
       "robustness_score": 15,
       "rolling_sharpe": {
-        "sharpe": -2.77,
-        "ann_ret_pct": -23.8,
-        "ann_vol_pct": 8.6,
-        "days_computed": 40,
-        "note": "Score-proxy Sharpe over 40 days (improves with live trade data)"
+        "sharpe": -2.507,
+        "ann_ret_pct": -21.4,
+        "ann_vol_pct": 8.5,
+        "days_computed": 41,
+        "note": "Score-proxy Sharpe over 41 days (improves with live trade data)"
       },
       "benchmark": {
         "ret_7d": 2.45,
@@ -4816,7 +4747,7 @@
         "sharpe": 0.69,
         "symbol": "^GSPC"
       },
-      "alpha": -3.46,
+      "alpha": -3.197,
       "neg_alpha_days": 91,
       "momentum_health": {
         "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
@@ -4832,7 +4763,7 @@
         },
         {
           "level": "\u26a0\ufe0f WARNING",
-          "message": "Rolling Sharpe -2.77 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+          "message": "Rolling Sharpe -2.51 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
         }
       ],
       "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
@@ -4849,24 +4780,24 @@
     "robustness_score": 15
   },
   "win_rate": {
-    "total_resolved": 622,
-    "wins": 261,
-    "losses": 301,
-    "flats": 60,
-    "win_rate": 42.0,
-    "avg_return": -0.02,
+    "total_resolved": 630,
+    "wins": 266,
+    "losses": 303,
+    "flats": 61,
+    "win_rate": 42.2,
+    "avg_return": 0.0,
     "best_return": 20.1,
     "worst_return": -19.06,
     "by_score_tier": {
       "90-100": {
-        "win_rate": 36.8,
-        "count": 421,
-        "avg_ret": -0.52
+        "win_rate": 37.4,
+        "count": 428,
+        "avg_ret": -0.48
       },
       "75-89": {
-        "win_rate": 40.8,
-        "count": 98,
-        "avg_ret": 0.02
+        "win_rate": 40.4,
+        "count": 99,
+        "avg_ret": 0.01
       },
       "60-74": {
         "win_rate": 71.2,
@@ -4880,21 +4811,17 @@
       }
     },
     "by_category": {
-      "INCOME": {
-        "win_rate": 100.0,
-        "count": 1
-      },
       "DIVIDEND GROWTH": {
         "win_rate": 52.2,
         "count": 23
       },
       "GROWTH CORE": {
-        "win_rate": 51.2,
-        "count": 41
+        "win_rate": 52.4,
+        "count": 42
       },
-      "WATCH": {
-        "win_rate": 52.7,
-        "count": 131
+      "INCOME": {
+        "win_rate": 100.0,
+        "count": 1
       },
       "SWING": {
         "win_rate": 38.5,
@@ -4905,11 +4832,71 @@
         "count": 43
       },
       "FHSA Conservative Growth": {
-        "win_rate": 34.4,
-        "count": 331
+        "win_rate": 34.9,
+        "count": 338
+      },
+      "WATCH": {
+        "win_rate": 52.7,
+        "count": 131
       }
     },
     "recent_10": [
+      {
+        "ticker": "SU.TO",
+        "date": "2026-03-18",
+        "ret": 3.1,
+        "outcome": "WIN",
+        "score": 100
+      },
+      {
+        "ticker": "SU.TO",
+        "date": "2026-03-19",
+        "ret": 1.87,
+        "outcome": "WIN",
+        "score": 100
+      },
+      {
+        "ticker": "SU.TO",
+        "date": "2026-03-23",
+        "ret": 0.57,
+        "outcome": "WIN",
+        "score": 96
+      },
+      {
+        "ticker": "SU.TO",
+        "date": "2026-03-24",
+        "ret": 0.02,
+        "outcome": "FLAT",
+        "score": 96
+      },
+      {
+        "ticker": "TGT",
+        "date": "2026-04-15",
+        "ret": 9.26,
+        "outcome": "WIN",
+        "score": 100
+      },
+      {
+        "ticker": "O",
+        "date": "2026-04-16",
+        "ret": -0.97,
+        "outcome": "LOSS",
+        "score": 82
+      },
+      {
+        "ticker": "CLS.TO",
+        "date": "2026-04-16",
+        "ret": 4.76,
+        "outcome": "WIN",
+        "score": 100
+      },
+      {
+        "ticker": "CNQ.TO",
+        "date": "2026-04-16",
+        "ret": -3.64,
+        "outcome": "LOSS",
+        "score": 100
+      },
       {
         "ticker": "META",
         "date": "2026-03-08",
@@ -4923,81 +4910,41 @@
         "ret": -5.4,
         "outcome": "LOSS",
         "score": 97
-      },
-      {
-        "ticker": "META",
-        "date": "2026-03-09",
-        "ret": 4.17,
-        "outcome": "WIN",
-        "score": 65
-      },
-      {
-        "ticker": "META",
-        "date": "2026-03-10",
-        "ret": 4.17,
-        "outcome": "WIN",
-        "score": 65
-      },
-      {
-        "ticker": "META",
-        "date": "2026-03-11",
-        "ret": 3.31,
-        "outcome": "WIN",
-        "score": 62
-      },
-      {
-        "ticker": "META",
-        "date": "2026-03-12",
-        "ret": 2.98,
-        "outcome": "WIN",
-        "score": 62
-      },
-      {
-        "ticker": "META",
-        "date": "2026-03-13",
-        "ret": 5.68,
-        "outcome": "WIN",
-        "score": 61
-      },
-      {
-        "ticker": "CM.TO",
-        "date": "2026-04-14",
-        "ret": 2.83,
-        "outcome": "WIN",
-        "score": 100
-      },
-      {
-        "ticker": "MFC.TO",
-        "date": "2026-04-14",
-        "ret": 0.17,
-        "outcome": "FLAT",
-        "score": 79
-      },
-      {
-        "ticker": "CNQ.TO",
-        "date": "2026-04-15",
-        "ret": -3.12,
-        "outcome": "LOSS",
-        "score": 100
       }
     ],
-    "streak": 1,
+    "streak": 3,
     "streak_type": "WIN",
     "time_weighted": {
-      "tw_win_rate": 46.4,
-      "tw_avg_return": 0.39,
+      "tw_win_rate": 46.8,
+      "tw_avg_return": 0.42,
       "tw_trend": "IMPROVING",
-      "tw_30d_win_rate": 52.0,
-      "tw_90d_win_rate": 42.0,
-      "tw_30d_count": 375,
-      "tw_90d_count": 622,
+      "tw_30d_win_rate": 55.1,
+      "tw_90d_win_rate": 42.2,
+      "tw_30d_count": 356,
+      "tw_90d_count": 630,
       "tw_lambda": 0.02,
       "tw_halflife_days": 35
     },
-    "message": "42% win rate on 622 picks"
+    "message": "42% win rate on 630 picks"
   },
   "shortlist": {
     "primary": {
+      "ticker": "SU.TO",
+      "score": 100,
+      "ml_prob": 80,
+      "signals": 3,
+      "category": "FHSA Conservative Growth",
+      "exp_low": 22.3,
+      "exp_high": 83.8,
+      "amount": 0.24,
+      "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (news t\u00bd=5d) \u221218pts",
+      "reasons": [
+        "\ud83d\ude80 Strong 90d: +27.93%",
+        "\ud83d\udcb0 Good yield: 2.77%",
+        "\ud83d\udcca Earnings growth: +87.6%"
+      ]
+    },
+    "backup": {
       "ticker": "CNQ.TO",
       "score": 100,
       "ml_prob": 90,
@@ -5005,54 +4952,38 @@
       "category": "FHSA Conservative Growth",
       "exp_low": 23.6,
       "exp_high": 88.5,
-      "amount": 0.24,
-      "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 51d old (news t\u00bd=5d) \u221218pts",
-      "reasons": [
-        "\ud83d\ude80 Strong 90d: +29.49%",
-        "\ud83d\udcb0 Strong yield: 4.13%",
-        "\ud83d\udcca Earnings growth: +371.8%"
-      ]
-    },
-    "backup": {
-      "ticker": "CM.TO",
-      "score": 100,
-      "ml_prob": 91,
-      "signals": 2,
-      "category": "FHSA Conservative Growth",
-      "exp_low": 15.8,
-      "exp_high": 59.3,
       "amount": 0.24
     },
     "fx_play": {
-      "pair": "EUR/USD",
+      "pair": "XAU/USD (Gold)",
       "direction": "LONG",
-      "conviction": 65,
-      "entry": 1.171,
-      "target": 1.18473,
-      "stop": 1.16277
+      "conviction": 63,
+      "entry": 4728.7,
+      "target": 4881.45007,
+      "stop": 4637.04995
     }
   },
   "content": {
-    "date": "April 22, 2026",
-    "generated_at": "2026-04-22T21:54:07.332629",
+    "date": "April 23, 2026",
+    "generated_at": "2026-04-23T12:03:23.680426",
     "handle": "@adejuwon_t",
-    "tweet": "\ud83d\udea8 7 risk signals today.\n\nMiddle East Tension + Peace Deal \u2014 all firing HIGH.\n\nCNQ.TO is the only name scoring 100/100 in this environment.\n\nNFA | Educational only \ud83c\udde8\ud83c\udde6",
+    "tweet": "\ud83d\udea8 5 risk signals today.\n\nMiddle East Tension + Trump Tariff Negative \u2014 all firing HIGH.\n\nSU.TO is the only name scoring 100/100 in this environment.\n\nNFA | Educational only \ud83c\udde8\ud83c\udde6",
     "tweet_hashtags": "#investing #TSX #macro",
-    "tweet_chars": 165,
+    "tweet_chars": 175,
     "tweet_situation": "risk_off_with_pick",
     "thread": [
-      "1/ RISK_OFF day.\n\nBefore you do anything in the market today \u2014 read this. \ud83e\uddf5\n\n94 articles. 177+ stocks. 7 signals.",
-      "2/ \u26a0\ufe0f MACRO REGIME: CAUTIOUS\n\nElevated uncertainty \u2014 slight defensive tilt\n\nKey signals: Middle East Tension + Peace Deal",
-      "3/ TOP SIGNAL: $CNQ.TO\n\nScore: 100/100 | 3 signals aligned\n\ud83d\ude80 Strong 90d: +29.49%\n\nCategory: FHSA Conservative Growth\nExpected: +23.6% \u2192 +88.5%\n\nNFA \u2014 do your own research.",
-      "4/ FX & GOLD\n\n\ud83d\udfe2 EUR/USD: LONG (65% conviction)\nDriver: RSI healthy: 63.9\n\nSignals ALIGNED \u2705\nNFA \u2014 manual execution only.",
-      "5/ WATCH THIS WEEK\n\n\u2022 \ud83d\udcb0 GRT-UN.TO Ex-Dividend\n\u2022 \ud83d\udcb0 MSFT Ex-Dividend\n\nCalendar drives prices.\nKnow the dates before they happen.",
+      "1/ RISK_OFF day.\n\nBefore you do anything in the market today \u2014 read this. \ud83e\uddf5\n\n94 articles. 177+ stocks. 5 signals.",
+      "2/ \ud83d\udea8 MACRO REGIME: RISK_OFF\n\nMultiple risk signals \u2014 defensive positioning recommended\n\nKey signals: Middle East Tension + Trump Tariff Negative",
+      "3/ TOP SIGNAL: $SU.TO\n\nScore: 100/100 | 3 signals aligned\n\ud83d\ude80 Strong 90d: +27.93%\n\nCategory: FHSA Conservative Growth\nExpected: +22.3% \u2192 +83.8%\n\nNFA \u2014 do your own research.",
+      "4/ FX & GOLD\n\n\ud83d\udfe2 XAU/USD (Gold): LONG (63% conviction)\nDriver: Strong 20d momentum: +3.932%\n\nSignals MACRO ONLY\nNFA \u2014 manual execution only.",
+      "5/ WATCH THIS WEEK\n\n\u2022 \ud83d\udcb0 GRT-UN.TO Ex-Dividend\n\u2022 \ud83d\udcb0 O Ex-Dividend\n\u2022 \ud83d\udcb0 TGT Ex-Dividend\n\nCalendar drives prices.\nKnow the dates before they happen.",
       "6/ System runs daily.\n\nNews feeds, price data, macro signals \u2014 all automated.\nI share what's worth knowing.\n\nNFA | Educational only \ud83c\udde8\ud83c\udde6\n\nFollow for more \ud83d\udcca"
     ],
     "thread_count": 6,
     "weekly_recap": null,
     "copy_paste": {
-      "tweet_full": "\ud83d\udea8 7 risk signals today.\n\nMiddle East Tension + Peace Deal \u2014 all firing HIGH.\n\nCNQ.TO is the only name scoring 100/100 in this environment.\n\nNFA | Educational only \ud83c\udde8\ud83c\udde6\n\n#investing #TSX #macro",
-      "thread_1": "1/ RISK_OFF day.\n\nBefore you do anything in the market today \u2014 read this. \ud83e\uddf5\n\n94 articles. 177+ stocks. 7 signals."
+      "tweet_full": "\ud83d\udea8 5 risk signals today.\n\nMiddle East Tension + Trump Tariff Negative \u2014 all firing HIGH.\n\nSU.TO is the only name scoring 100/100 in this environment.\n\nNFA | Educational only \ud83c\udde8\ud83c\udde6\n\n#investing #TSX #macro",
+      "thread_1": "1/ RISK_OFF day.\n\nBefore you do anything in the market today \u2014 read this. \ud83e\uddf5\n\n94 articles. 177+ stocks. 5 signals."
     }
   }
 }
