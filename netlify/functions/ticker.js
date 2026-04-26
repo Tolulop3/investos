@@ -23,7 +23,7 @@ function httpsGet(url, headers = {}) {
         'User-Agent': randomUA(),
         'Accept': 'application/json,text/html,*/*;q=0.9',
         'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
+        'identity': 'gzip, deflate, br',
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
         ...headers,
