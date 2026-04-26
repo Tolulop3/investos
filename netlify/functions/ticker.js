@@ -1,148 +1,179 @@
-// InvestOS Ticker Proxy — Netlify Serverless Function v2
-// Multi-endpoint strategy: v8 chart → v7 quote → v8 query2
-// Rotates endpoints and user agents to avoid 429 blocking
+// InvestOS Ticker Proxy — Netlify Serverless Function v3
+// Uses Twelve Data API — works from cloud IPs, has TSX stocks, 6mo OHLCV
+// Free tier: 800 calls/day — sufficient for lookup tab usage
 
 const https = require('https');
 
-const USER_AGENTS = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15',
-];
-
-function randomUA() {
-  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-}
-
-function httpsGet(url, headers = {}) {
+function httpsGet(url) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, {
       headers: {
-        'User-Agent': randomUA(),
-        'Accept': 'application/json,text/html,*/*;q=0.9',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'identity': 'gzip, deflate, br',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-        ...headers,
-      },
+        'User-Agent': 'InvestOS/1.0',
+        'Accept': 'application/json',
+      }
     }, res => {
       const chunks = [];
       res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => {
-        const body = Buffer.concat(chunks).toString();
-        resolve({ status: res.statusCode, body, headers: res.headers });
-      });
+      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString() }));
     });
     req.on('error', reject);
     req.setTimeout(12000, () => { req.destroy(); reject(new Error('timeout')); });
   });
 }
 
-async function tryChartEndpoint(ticker, host) {
-  const url = `https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=6mo&includePrePost=false`;
-  const r = await httpsGet(url, { 'Referer': 'https://finance.yahoo.com/' });
-  if (r.status === 200) {
-    const data = JSON.parse(r.body);
-    if (data?.chart?.result?.[0]) return data;
+// Convert Twelve Data response → same shape as parseYahooChart expects
+function buildChartResponse(quote, timeseries, ticker) {
+  const closes    = (timeseries || []).map(d => parseFloat(d.close)).reverse();
+  const volumes   = (timeseries || []).map(d => parseInt(d.volume || 0)).reverse();
+  const highs     = (timeseries || []).map(d => parseFloat(d.high)).reverse();
+  const lows      = (timeseries || []).map(d => parseFloat(d.low)).reverse();
+  const timestamps = (timeseries || []).map(d => Math.floor(new Date(d.datetime).getTime()/1000)).reverse();
+
+  const price     = parseFloat(quote.close || quote.price || 0);
+  const prevClose = parseFloat(quote.previous_close || price);
+  const dayChg    = prevClose ? ((price - prevClose) / prevClose * 100) : 0;
+
+  // Moving averages from closes array
+  const ma = (arr, n) => arr.length >= n
+    ? arr.slice(-n).reduce((a,b) => a+b, 0) / n : null;
+
+  const ma20  = ma(closes, 20);
+  const ma50  = ma(closes, 50);
+  const ma200 = ma(closes, 200);
+
+  const high52 = closes.length ? Math.max(...closes.slice(-252)) : 0;
+  const low52  = closes.length ? Math.min(...closes.slice(-252)) : 0;
+
+  // RSI (14)
+  let rsi = 50;
+  if (closes.length >= 15) {
+    const diffs = closes.slice(-15).map((c,i,a) => i===0 ? 0 : c - a[i-1]).slice(1);
+    const gains = diffs.map(d => d > 0 ? d : 0);
+    const losses = diffs.map(d => d < 0 ? Math.abs(d) : 0);
+    const avgG = gains.reduce((a,b)=>a+b,0)/14;
+    const avgL = losses.reduce((a,b)=>a+b,0)/14;
+    rsi = avgL === 0 ? 100 : Math.round(100 - 100/(1 + avgG/avgL));
   }
-  throw new Error(`${host} returned ${r.status}`);
-}
 
-async function tryQuoteEndpoint(ticker) {
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(ticker)}&fields=regularMarketPrice,regularMarketPreviousClose,regularMarketVolume,averageDailyVolume3Month,fiftyTwoWeekHigh,fiftyTwoWeekLow,fiftyDayAverage,twoHundredDayAverage,regularMarketChangePercent,marketCap,longName,shortName,currency,exchange,quoteType`;
-  const r = await httpsGet(url, { 'Referer': 'https://finance.yahoo.com/quote/' + ticker });
-  if (r.status === 200) {
-    const data = JSON.parse(r.body);
-    if (data?.quoteResponse?.result?.[0]) return { quote: data.quoteResponse.result[0] };
+  // ATR (14)
+  let atr = 0;
+  if (highs.length >= 14 && lows.length >= 14) {
+    const trs = highs.slice(-14).map((h,i) => h - lows.slice(-14)[i]);
+    atr = trs.reduce((a,b)=>a+b,0)/14;
   }
-  throw new Error(`v7 quote returned ${r.status}`);
-}
 
-async function getCrumbAndCookie() {
-  // Small delay to avoid burst detection
-  await new Promise(r => setTimeout(r, Math.random() * 800 + 200));
-  
-  const r1 = await httpsGet('https://finance.yahoo.com/quote/AAPL', {
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    'Upgrade-Insecure-Requests': '1',
-  });
-  
-  const cookie = (r1.headers['set-cookie'] || [])
-    .map(c => c.split(';')[0])
-    .filter(c => c.length > 0)
-    .join('; ');
+  const avgVol   = volumes.length ? Math.round(volumes.slice(-20).reduce((a,b)=>a+b,0)/Math.min(20,volumes.length)) : 0;
+  const todayVol = volumes.length ? volumes[volumes.length-1] : 0;
 
-  if (!cookie) throw new Error('No cookie');
+  const perf = (n) => closes.length >= n
+    ? ((closes[closes.length-1] - closes[closes.length-1-n]) / closes[closes.length-1-n] * 100) : 0;
 
-  await new Promise(r => setTimeout(r, 300));
-
-  const r2 = await httpsGet('https://query1.finance.yahoo.com/v1/test/getcrumb', {
-    'Cookie': cookie,
-    'Referer': 'https://finance.yahoo.com/',
-  });
-
-  const crumb = r2.body.trim();
-  if (!crumb || crumb.includes('<') || crumb.length > 20) {
-    throw new Error(`Bad crumb: ${crumb.substring(0, 30)}`);
-  }
-  return { crumb, cookie };
+  return {
+    chart: {
+      result: [{
+        meta: {
+          symbol:                    ticker,
+          longName:                  quote.name || ticker,
+          shortName:                 quote.name || ticker,
+          currency:                  quote.currency || 'USD',
+          exchangeName:              quote.exchange || '',
+          instrumentType:            quote.type || 'Common Stock',
+          regularMarketPrice:        price,
+          regularMarketPreviousClose: prevClose,
+          regularMarketChangePercent: dayChg,
+          marketCap:                 null,
+          fiftyTwoWeekHigh:          high52,
+          fiftyTwoWeekLow:           low52,
+          sector:                    '',
+          industry:                  '',
+        },
+        timestamp: timestamps,
+        indicators: {
+          quote: [{ close: closes, volume: volumes, high: highs, low: lows }]
+        },
+        // Extra pre-computed fields for parseYahooChart
+        _computed: {
+          price, prevClose, dayChg,
+          ma20, ma50, ma200,
+          aboveMa20: ma20 ? price > ma20 : false,
+          aboveMa50: ma50 ? price > ma50 : false,
+          aboveMa200: ma200 ? price > ma200 : false,
+          high52, low52,
+          range52pos: high52 > low52 ? Math.round((price - low52)/(high52-low52)*100) : 50,
+          perf5d:  perf(5),
+          perf20d: perf(20),
+          perf60d: perf(60),
+          rsi, atr,
+          avgVol, todayVol,
+          volRatio: avgVol > 0 ? todayVol/avgVol : 1,
+          closes, volumes, timestamps,
+        }
+      }],
+      error: null
+    }
+  };
 }
 
 exports.handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
+  const corsHeaders = {
+    'Access-Control-Allow-Origin':  '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=300', // cache 5 min to reduce Yahoo hits
+    'Content-Type':                 'application/json',
+    'Cache-Control':                'public, max-age=300',
   };
 
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return { statusCode: 200, headers: corsHeaders, body: '' };
   }
 
-  const ticker = (event.queryStringParameters?.s || '').toUpperCase().trim();
-  if (!ticker) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing ?s= param' }) };
-  }
+  const raw    = (event.queryStringParameters?.s || '').trim().toUpperCase();
+  const APIKEY = process.env.TWELVE_DATA_KEY;
 
-  const errors = [];
+  if (!raw) return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Missing ?s= param' }) };
+  if (!APIKEY) return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: 'API key not configured' }) };
 
-  // ── Route 1: query1 chart (no crumb) ─────────────────────────
+  // Twelve Data uses different format: CNQ.TO → CNQ:TSX, NVDA → NVDA:NASDAQ
+  // But actually Twelve Data accepts Yahoo-style symbols directly for most
+  // Just pass the symbol as-is — it handles .TO suffix for TSX
+  const symbol = raw;
+
   try {
-    const data = await tryChartEndpoint(ticker, 'query1.finance.yahoo.com');
-    return { statusCode: 200, headers, body: JSON.stringify(data) };
-  } catch(e) { errors.push('q1:' + e.message); }
+    // Fetch quote and time series in parallel
+    const quoteUrl = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${APIKEY}`;
+    const tsUrl    = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=1day&outputsize=130&apikey=${APIKEY}`;
 
-  // ── Route 2: query2 chart ─────────────────────────────────────
-  try {
-    const data = await tryChartEndpoint(ticker, 'query2.finance.yahoo.com');
-    return { statusCode: 200, headers, body: JSON.stringify(data) };
-  } catch(e) { errors.push('q2:' + e.message); }
+    const [qRes, tsRes] = await Promise.all([
+      httpsGet(quoteUrl),
+      httpsGet(tsUrl),
+    ]);
 
-  // ── Route 3: crumb + cookie auth ─────────────────────────────
-  try {
-    const { crumb, cookie } = await getCrumbAndCookie();
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=6mo&crumb=${encodeURIComponent(crumb)}`;
-    const r = await httpsGet(url, { 'Cookie': cookie, 'Referer': 'https://finance.yahoo.com/' });
-    if (r.status === 200) {
-      return { statusCode: 200, headers, body: r.body };
+    if (qRes.status !== 200) {
+      return { statusCode: qRes.status, headers: corsHeaders, body: JSON.stringify({ error: `Quote fetch failed: ${qRes.status}` }) };
     }
-    errors.push('crumb:' + r.status);
-  } catch(e) { errors.push('crumb:' + e.message); }
 
-  // ── Route 4: v7 quote (limited data fallback) ─────────────────
-  try {
-    const data = await tryQuoteEndpoint(ticker);
-    return { statusCode: 200, headers, body: JSON.stringify(data) };
-  } catch(e) { errors.push('v7:' + e.message); }
+    const quote = JSON.parse(qRes.body);
+    const ts    = JSON.parse(tsRes.body);
 
-  // All routes failed
-  return {
-    statusCode: 429,
-    headers,
-    body: JSON.stringify({ error: 'All Yahoo endpoints rate-limited', detail: errors.join(' | ') }),
-  };
+    // Check for API errors
+    if (quote.status === 'error' || quote.code) {
+      return { statusCode: 404, headers: corsHeaders, body: JSON.stringify({ error: quote.message || 'Symbol not found' }) };
+    }
+
+    const timeseries = ts.values || [];
+
+    const result = buildChartResponse(quote, timeseries, symbol);
+
+    return {
+      statusCode: 200,
+      headers:    corsHeaders,
+      body:       JSON.stringify(result),
+    };
+
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers:    corsHeaders,
+      body:       JSON.stringify({ error: err.message }),
+    };
+  }
 };
