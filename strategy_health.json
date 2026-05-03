@@ -9449,8 +9449,57 @@
         }
       ],
       "robustness_score": 15
+    },
+    {
+      "date": "2026-05-03",
+      "timestamp": "2026-05-03T22:21:23.765953",
+      "rolling_sharpe": {
+        "sharpe": -1.987,
+        "ann_ret_pct": -15.9,
+        "ann_vol_pct": 8.0,
+        "days_computed": 51,
+        "note": "Score-proxy Sharpe over 51 days (improves with live trade data)"
+      },
+      "benchmark_spx": {
+        "ret_7d": 1.71,
+        "ret_30d": 11.12,
+        "ret_90d": 5.11,
+        "ann_ret": 14.3,
+        "ann_vol": 13.7,
+        "sharpe": 1.05,
+        "symbol": "^GSPC"
+      },
+      "benchmark_tsx": {
+        "ret_7d": -0.06,
+        "ret_30d": 8.22,
+        "ret_90d": 5.91,
+        "ann_ret": 16.5,
+        "ann_vol": 15.8,
+        "sharpe": 1.05,
+        "symbol": "^GSPTSE"
+      },
+      "alpha_vs_spx": -3.037,
+      "neg_alpha_days": 91,
+      "momentum_health": {
+        "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
+        "decaying": false,
+        "alignment_pct": 84.6,
+        "momentum_picks": 13,
+        "note": "11/13 rising-score picks also rose in price"
+      },
+      "alerts": [
+        {
+          "level": "\ud83d\udea8 CRITICAL",
+          "message": "Strategy has underperformed S&P 500 for 91 days. Factor may be decaying. Review system."
+        },
+        {
+          "level": "\u26a0\ufe0f WARNING",
+          "message": "Rolling Sharpe -1.99 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        }
+      ],
+      "robustness_score": 15
     }
   ],
   "created": "2026-03-02T03:33:15.277905",
-  "last_updated": "2026-05-02T05:02:39.722850"
+  "last_updated": "2026-05-03T22:21:23.765953"
 }
