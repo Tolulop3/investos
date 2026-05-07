@@ -9,21 +9,21 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-05-07T13:00:12.871705",
+    "run_at": "2026-05-07T17:29:57.471035",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 15,
-        "survived": 11,
-        "survival_pct": 73.3,
+        "survived": 12,
+        "survival_pct": 80.0,
         "verdict": "\u2705 ROBUST",
-        "note": "4 picks unviable after doubling costs"
+        "note": "3 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 15,
-        "survived": 13,
-        "survival_pct": 86.7,
+        "survived": 15,
+        "survival_pct": 100.0,
         "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
@@ -32,72 +32,72 @@
         "normal_count": 15,
         "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_change": 3.6,
+        "avg_score_change": 4.0,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.6 pts with 10% noise"
+        "note": "Avg score change: \u00b14.0 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 84.9,
-        "stressed_avg": 74.9,
-        "score_drop": 10.0,
+        "normal_avg": 89.2,
+        "stressed_avg": 84.2,
+        "score_drop": 5.0,
         "removed": [
-          "REI-UN.TO",
-          "NVDA",
-          "BNS.TO",
+          "EEM",
+          "TIH.TO",
+          "AMZN",
           "GS",
           "GOOGL"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 10.0 pts without top 5 \u2014 system depth check"
+        "verdict": "\u2705 ROBUST",
+        "note": "Score drops 5.0 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 15,
         "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_drop": 2.6,
+        "avg_score_drop": 2.7,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.6 pts"
+        "note": "If momentum stops working: avg score drops 2.7 pts"
       }
     },
     "summary": {
       "normal_picks": 15,
-      "normal_avg_score": 84.9,
-      "scenarios_robust": 4,
-      "scenarios_fragile": 1,
+      "normal_avg_score": 89.2,
+      "scenarios_robust": 5,
+      "scenarios_fragile": 0,
       "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+      "overall_verdict": "\u2705 ROBUST \u2014 System survives stress well"
     },
-    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+    "verdict": "\u2705 ROBUST \u2014 System survives stress well"
   },
   "decay_monitor": {
     "date": "May 07, 2026",
     "robustness_score": 15,
     "rolling_sharpe": {
-      "sharpe": -0.444,
-      "ann_ret_pct": -3.6,
+      "sharpe": -0.344,
+      "ann_ret_pct": -2.8,
       "ann_vol_pct": 8.2,
       "days_computed": 55,
       "note": "Score-proxy Sharpe over 55 days (improves with live trade data)"
     },
     "benchmark": {
-      "ret_7d": 3.17,
-      "ret_30d": 11.73,
-      "ret_90d": 6.28,
-      "ann_ret": 17.6,
+      "ret_7d": 2.72,
+      "ret_30d": 13.16,
+      "ret_90d": 6.14,
+      "ann_ret": 17.2,
       "ann_vol": 13.9,
-      "sharpe": 1.27,
+      "sharpe": 1.24,
       "symbol": "^GSPC"
     },
-    "alpha": -1.714,
+    "alpha": -1.584,
     "neg_alpha_days": 91,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 93.3,
-      "momentum_picks": 15,
-      "note": "14/15 rising-score picks also rose in price"
+      "alignment_pct": 92.9,
+      "momentum_picks": 14,
+      "note": "13/14 rising-score picks also rose in price"
     },
     "alerts": [
       {
@@ -106,7 +106,7 @@
       },
       {
         "level": "\u26a0\ufe0f WARNING",
-        "message": "Rolling Sharpe -0.44 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        "message": "Rolling Sharpe -0.34 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
       }
     ],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
