@@ -9,15 +9,15 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-05-11T13:50:37.908375",
+    "run_at": "2026-05-11T17:48:23.702655",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 15,
-        "survived": 15,
-        "survival_pct": 100.0,
+        "survived": 14,
+        "survival_pct": 93.3,
         "verdict": "\u2705 ROBUST",
-        "note": "0 picks unviable after doubling costs"
+        "note": "1 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
@@ -38,31 +38,31 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 92.7,
-        "stressed_avg": 88.8,
-        "score_drop": 3.9,
+        "normal_avg": 90.7,
+        "stressed_avg": 86.7,
+        "score_drop": 4.0,
         "removed": [
-          "NA.TO",
-          "MG.TO",
-          "REI-UN.TO",
-          "NVDA"
+          "SU.TO",
+          "NVDA",
+          "RCI-B.TO",
+          "MG.TO"
         ],
         "verdict": "\u2705 ROBUST",
-        "note": "Score drops 3.9 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 4.0 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 15,
         "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_drop": 3.4,
+        "avg_score_drop": 3.5,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.4 pts"
+        "note": "If momentum stops working: avg score drops 3.5 pts"
       }
     },
     "summary": {
       "normal_picks": 15,
-      "normal_avg_score": 92.7,
+      "normal_avg_score": 90.7,
       "scenarios_robust": 5,
       "scenarios_fragile": 0,
       "scenarios_broken": 0,
@@ -74,22 +74,22 @@
     "date": "May 11, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 1.066,
+      "sharpe": 1.064,
       "ann_ret_pct": 10.8,
       "ann_vol_pct": 10.1,
       "days_computed": 59,
       "note": "Score-proxy Sharpe over 59 days (improves with live trade data)"
     },
     "benchmark": {
-      "ret_7d": 2.51,
-      "ret_30d": 16.84,
-      "ret_90d": 8.27,
-      "ann_ret": 23.2,
+      "ret_7d": 2.72,
+      "ret_30d": 17.07,
+      "ret_90d": 8.49,
+      "ann_ret": 23.8,
       "ann_vol": 13.9,
-      "sharpe": 1.66,
+      "sharpe": 1.7,
       "symbol": "^GSPC"
     },
-    "alpha": -0.594,
+    "alpha": -0.636,
     "neg_alpha_days": 91,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
