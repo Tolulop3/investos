@@ -1,5 +1,5 @@
 {
-  "date": "May 14, 2026",
+  "date": "May 15, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-05-14T22:14:33.006044",
+    "run_at": "2026-05-15T12:59:55.524071",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,38 +32,37 @@
         "normal_count": 15,
         "survived": 14,
         "survival_pct": 93.3,
-        "avg_score_change": 3.6,
+        "avg_score_change": 3.7,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.6 pts with 10% noise"
+        "note": "Avg score change: \u00b13.7 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 84.4,
-        "stressed_avg": 74.5,
-        "score_drop": 9.9,
+        "normal_avg": 85.5,
+        "stressed_avg": 77.6,
+        "score_drop": 7.9,
         "removed": [
-          "TRP.TO",
-          "POW.TO",
-          "NVDA",
           "GOOGL",
-          "GS"
+          "SU.TO",
+          "TRP.TO",
+          "TIH.TO"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 9.9 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 7.9 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 15,
         "survived": 14,
         "survival_pct": 93.3,
-        "avg_score_drop": 2.9,
+        "avg_score_drop": 2.7,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.9 pts"
+        "note": "If momentum stops working: avg score drops 2.7 pts"
       }
     },
     "summary": {
       "normal_picks": 15,
-      "normal_avg_score": 84.4,
+      "normal_avg_score": 85.5,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -72,14 +71,14 @@
     "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
-    "date": "May 14, 2026",
+    "date": "May 15, 2026",
     "robustness_score": 60,
     "rolling_sharpe": {
-      "sharpe": 0.888,
-      "ann_ret_pct": 8.9,
-      "ann_vol_pct": 10.1,
-      "days_computed": 62,
-      "note": "Score-proxy Sharpe over 62 days (improves with live trade data)"
+      "sharpe": 0.935,
+      "ann_ret_pct": 9.3,
+      "ann_vol_pct": 10.0,
+      "days_computed": 63,
+      "note": "Score-proxy Sharpe over 63 days (improves with live trade data)"
     },
     "benchmark": {
       "ret_7d": 1.85,
@@ -90,8 +89,8 @@
       "sharpe": 1.61,
       "symbol": "^GSPC"
     },
-    "alpha": -0.722,
-    "neg_alpha_days": 7,
+    "alpha": -0.675,
+    "neg_alpha_days": 8,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
