@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-05-16T02:25:02.704960",
+    "run_at": "2026-05-16T02:30:29.817925",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,49 +32,50 @@
         "normal_count": 15,
         "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_change": 3.8,
+        "avg_score_change": 3.7,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.8 pts with 10% noise"
+        "note": "Avg score change: \u00b13.7 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 90.2,
-        "stressed_avg": 85.3,
-        "score_drop": 4.9,
+        "normal_avg": 84.3,
+        "stressed_avg": 78.6,
+        "score_drop": 5.7,
         "removed": [
+          "AFRM",
           "AAPL",
-          "GS",
-          "CNQ.TO",
-          "TIH.TO"
+          "POW.TO",
+          "TIH.TO",
+          "TD.TO"
         ],
-        "verdict": "\u2705 ROBUST",
-        "note": "Score drops 4.9 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 5.7 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 15,
         "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_drop": 2.9,
+        "avg_score_drop": 2.7,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.9 pts"
+        "note": "If momentum stops working: avg score drops 2.7 pts"
       }
     },
     "summary": {
       "normal_picks": 15,
-      "normal_avg_score": 90.2,
-      "scenarios_robust": 5,
-      "scenarios_fragile": 0,
+      "normal_avg_score": 84.3,
+      "scenarios_robust": 4,
+      "scenarios_fragile": 1,
       "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ROBUST \u2014 System survives stress well"
+      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
-    "verdict": "\u2705 ROBUST \u2014 System survives stress well"
+    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
     "date": "May 16, 2026",
     "robustness_score": 65,
     "rolling_sharpe": {
-      "sharpe": 1.039,
+      "sharpe": 1.036,
       "ann_ret_pct": 10.3,
       "ann_vol_pct": 9.9,
       "days_computed": 64,
@@ -89,8 +90,8 @@
       "sharpe": 1.4,
       "symbol": "^GSPC"
     },
-    "alpha": -0.361,
-    "neg_alpha_days": 16,
+    "alpha": -0.364,
+    "neg_alpha_days": 17,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
