@@ -9,15 +9,15 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-05-16T02:30:29.817925",
+    "run_at": "2026-05-16T13:22:55.222094",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 15,
-        "survived": 11,
-        "survival_pct": 73.3,
+        "survived": 13,
+        "survival_pct": 86.7,
         "verdict": "\u2705 ROBUST",
-        "note": "4 picks unviable after doubling costs"
+        "note": "2 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
@@ -32,51 +32,51 @@
         "normal_count": 15,
         "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_change": 3.7,
+        "avg_score_change": 3.9,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.7 pts with 10% noise"
+        "note": "Avg score change: \u00b13.9 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 84.3,
-        "stressed_avg": 78.6,
-        "score_drop": 5.7,
+        "normal_avg": 89.5,
+        "stressed_avg": 85.9,
+        "score_drop": 3.6,
         "removed": [
-          "AFRM",
+          "GS",
           "AAPL",
-          "POW.TO",
-          "TIH.TO",
-          "TD.TO"
+          "CM.TO",
+          "TD.TO",
+          "TRP.TO"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 5.7 pts without top 5 \u2014 system depth check"
+        "verdict": "\u2705 ROBUST",
+        "note": "Score drops 3.6 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 15,
         "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_drop": 2.7,
+        "avg_score_drop": 2.8,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.7 pts"
+        "note": "If momentum stops working: avg score drops 2.8 pts"
       }
     },
     "summary": {
       "normal_picks": 15,
-      "normal_avg_score": 84.3,
-      "scenarios_robust": 4,
-      "scenarios_fragile": 1,
+      "normal_avg_score": 89.5,
+      "scenarios_robust": 5,
+      "scenarios_fragile": 0,
       "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+      "overall_verdict": "\u2705 ROBUST \u2014 System survives stress well"
     },
-    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+    "verdict": "\u2705 ROBUST \u2014 System survives stress well"
   },
   "decay_monitor": {
     "date": "May 16, 2026",
-    "robustness_score": 65,
+    "robustness_score": 70,
     "rolling_sharpe": {
-      "sharpe": 1.036,
-      "ann_ret_pct": 10.3,
+      "sharpe": 1.056,
+      "ann_ret_pct": 10.5,
       "ann_vol_pct": 9.9,
       "days_computed": 64,
       "note": "Score-proxy Sharpe over 64 days (improves with live trade data)"
@@ -90,8 +90,8 @@
       "sharpe": 1.4,
       "symbol": "^GSPC"
     },
-    "alpha": -0.364,
-    "neg_alpha_days": 17,
+    "alpha": -0.344,
+    "neg_alpha_days": 18,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
