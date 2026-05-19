@@ -1,5 +1,5 @@
 {
-  "date": "May 18, 2026",
+  "date": "May 19, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-05-18T22:05:13.620309",
+    "run_at": "2026-05-19T13:57:21.763305",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,36 +32,37 @@
         "normal_count": 15,
         "survived": 14,
         "survival_pct": 93.3,
-        "avg_score_change": 3.6,
+        "avg_score_change": 3.5,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.6 pts with 10% noise"
+        "note": "Avg score change: \u00b13.5 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 76.1,
-        "stressed_avg": 69.3,
-        "score_drop": 6.8,
+        "normal_avg": 75.2,
+        "stressed_avg": 67.2,
+        "score_drop": 8.0,
         "removed": [
           "KO",
-          "POW.TO",
-          "MFC.TO"
+          "TIH.TO",
+          "TD.TO",
+          "GOOGL"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 6.8 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 8.0 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 15,
         "survived": 14,
         "survival_pct": 93.3,
-        "avg_score_drop": 2.8,
+        "avg_score_drop": 2.9,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.8 pts"
+        "note": "If momentum stops working: avg score drops 2.9 pts"
       }
     },
     "summary": {
       "normal_picks": 15,
-      "normal_avg_score": 76.1,
+      "normal_avg_score": 75.2,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -70,26 +71,26 @@
     "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
-    "date": "May 18, 2026",
+    "date": "May 19, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 0.439,
-      "ann_ret_pct": 4.4,
+      "sharpe": 0.425,
+      "ann_ret_pct": 4.2,
       "ann_vol_pct": 9.9,
-      "days_computed": 66,
-      "note": "Score-proxy Sharpe over 66 days (improves with live trade data)"
+      "days_computed": 67,
+      "note": "Score-proxy Sharpe over 67 days (improves with live trade data)"
     },
     "benchmark": {
-      "ret_7d": 0.06,
-      "ret_30d": 11.88,
-      "ret_90d": 6.96,
-      "ann_ret": 19.5,
-      "ann_vol": 14.0,
-      "sharpe": 1.39,
+      "ret_7d": -0.5,
+      "ret_30d": 8.75,
+      "ret_90d": 5.88,
+      "ann_ret": 16.5,
+      "ann_vol": 14.1,
+      "sharpe": 1.17,
       "symbol": "^GSPC"
     },
-    "alpha": -0.951,
-    "neg_alpha_days": 28,
+    "alpha": -0.745,
+    "neg_alpha_days": 29,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
