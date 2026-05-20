@@ -11993,8 +11993,53 @@
       },
       "alerts": [],
       "robustness_score": 50
+    },
+    {
+      "date": "2026-05-20",
+      "timestamp": "2026-05-20T13:44:32.054148",
+      "rolling_sharpe": {
+        "sharpe": 0.299,
+        "ann_ret_pct": 2.9,
+        "ann_vol_pct": 9.8,
+        "days_computed": 68,
+        "note": "Score-proxy Sharpe over 68 days (improves with live trade data)"
+      },
+      "benchmark_spx": {
+        "ret_7d": -0.37,
+        "ret_30d": 8.04,
+        "ret_90d": 5.68,
+        "ann_ret": 15.9,
+        "ann_vol": 14.1,
+        "sharpe": 1.13,
+        "symbol": "^GSPC"
+      },
+      "benchmark_tsx": {
+        "ret_7d": -0.8,
+        "ret_30d": 0.73,
+        "ret_90d": 3.01,
+        "ann_ret": 8.4,
+        "ann_vol": 15.9,
+        "sharpe": 0.53,
+        "symbol": "^GSPTSE"
+      },
+      "alpha_vs_spx": -0.831,
+      "neg_alpha_days": 33,
+      "momentum_health": {
+        "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
+        "decaying": false,
+        "alignment_pct": 92.9,
+        "momentum_picks": 14,
+        "note": "13/14 rising-score picks also rose in price"
+      },
+      "alerts": [
+        {
+          "level": "\u26a0\ufe0f WARNING",
+          "message": "Rolling Sharpe 0.30 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        }
+      ],
+      "robustness_score": 50
     }
   ],
   "created": "2026-03-02T03:33:15.277905",
-  "last_updated": "2026-05-19T23:06:31.405179"
+  "last_updated": "2026-05-20T13:44:32.054148"
 }
