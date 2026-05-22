@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-22T17:30:27.781569",
+  "timestamp": "2026-05-22T22:09:59.328109",
   "date": "May 22, 2026",
   "articles_fetched": 110,
   "feeds_online": 9,
@@ -22,13 +22,13 @@
       "confidence": 50,
       "note": "War = risk-off. Boost gold, defense, energy. Reduce growth exposure."
     },
+    "oil_price_spike": {
+      "confidence": 100,
+      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
+    },
     "russia_ukraine": {
       "confidence": 100,
       "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
-    },
-    "oil_price_spike": {
-      "confidence": 50,
-      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
     }
   },
   "sector_sentiment": {
@@ -51,9 +51,9 @@
       ]
     },
     "CANADIAN_ENERGY": {
-      "bullish_score": 300,
+      "bullish_score": 400,
       "bearish_score": 200,
-      "net_score": 100,
+      "net_score": 200,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -69,7 +69,7 @@
         {
           "name": "oil_price_spike",
           "direction": "bullish",
-          "confidence": 50
+          "confidence": 100
         }
       ]
     },
@@ -121,8 +121,8 @@
     },
     "AIRLINES": {
       "bullish_score": 0,
-      "bearish_score": 500,
-      "net_score": -500,
+      "bearish_score": 600,
+      "net_score": -600,
       "sentiment": "BEARISH",
       "signals": [
         {
@@ -138,7 +138,7 @@
         {
           "name": "oil_price_spike",
           "direction": "bearish",
-          "confidence": 50
+          "confidence": 100
         }
       ]
     },
@@ -355,6 +355,58 @@
         }
       ]
     },
+    "OIL_PRODUCERS": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
     "EUROPEAN_ENERGY": {
       "bullish_score": 150.0,
       "bearish_score": 0,
@@ -406,63 +458,11 @@
           "confidence": 100
         }
       ]
-    },
-    "OIL_PRODUCERS": {
-      "bullish_score": 100,
-      "bearish_score": 0,
-      "net_score": 100,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 50
-        }
-      ]
-    },
-    "PIPELINES": {
-      "bullish_score": 100,
-      "bearish_score": 0,
-      "net_score": 100,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 50
-        }
-      ]
-    },
-    "CONSUMER": {
-      "bullish_score": 0,
-      "bearish_score": 100,
-      "net_score": -100,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
-          "confidence": 50
-        }
-      ]
-    },
-    "TRANSPORT": {
-      "bullish_score": 0,
-      "bearish_score": 100,
-      "net_score": -100,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
-          "confidence": 50
-        }
-      ]
     }
   },
   "ticker_adjustments": {
     "ENB.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -470,7 +470,7 @@
       "news_sentiment": "BULLISH"
     },
     "TRP.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -478,7 +478,7 @@
       "news_sentiment": "BULLISH"
     },
     "CNQ.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -486,7 +486,7 @@
       "news_sentiment": "BULLISH"
     },
     "SU.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -494,7 +494,7 @@
       "news_sentiment": "BULLISH"
     },
     "CVE.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -502,7 +502,7 @@
       "news_sentiment": "BULLISH"
     },
     "PPL.TO": {
-      "adjustment": 13.3,
+      "adjustment": 25,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -818,8 +818,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "Wall Street bets on 2026 rate rise as Kevin Warsh takes charge of the Fed",
-          "Regional mediators travel to Tehran in push for US-Iran deal"
+          "Tulsi Gabbard resigns as Donald Trump\u2019s US intelligence chief",
+          "Pakistan army chief travels to Tehran in push for US-Iran deal"
         ]
       },
       {
@@ -845,6 +845,17 @@
         ]
       },
       {
+        "signal": "Oil Price Spike",
+        "magnitude": "HIGH",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
+        "articles": [
+          "Colombia's Natural Gas Crisis Deepens as Strait of Hormuz Closure Cuts Supply",
+          "Oil Markets Ignore Red Flags as Global Energy Crisis Deepens"
+        ]
+      },
+      {
         "signal": "Russia Ukraine",
         "magnitude": "MODERATE",
         "confidence": 100,
@@ -864,21 +875,15 @@
         "articles": [
           "Joint call by the President of the ICRC, the Director-General of WHO and the International President of MSF"
         ]
-      },
-      {
-        "signal": "Oil Price Spike",
-        "magnitude": "HIGH",
-        "confidence": 50,
-        "bars": "\u2588\u2588",
-        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
-        "articles": [
-          "Oil Markets Ignore Red Flags as Global Energy Crisis Deepens"
-        ]
       }
     ],
     "top_headlines": [
       {
-        "title": "Wall Street bets on 2026 rate rise as Kevin Warsh takes charge of the Fed",
+        "title": "Tulsi Gabbard resigns as Donald Trump\u2019s US intelligence chief",
+        "source": "Financial Times"
+      },
+      {
+        "title": "America\u2019s \u2018simultaneity\u2019 nightmare",
         "source": "Financial Times"
       },
       {
@@ -894,7 +899,7 @@
         "source": "Financial Times"
       },
       {
-        "title": "Regional mediators travel to Tehran in push for US-Iran deal",
+        "title": "Pakistan army chief travels to Tehran in push for US-Iran deal",
         "source": "Financial Times"
       },
       {
@@ -906,15 +911,11 @@
         "source": "Financial Times"
       },
       {
+        "title": "Wall Street bets on 2026 rate rise as Kevin Warsh takes charge of the Fed",
+        "source": "Financial Times"
+      },
+      {
         "title": "US parks dozens of military aircraft at Israel\u2019s Ben Gurion airport",
-        "source": "Financial Times"
-      },
-      {
-        "title": "France seeks to join UK-German long-range missile plan",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Europe needs plan to replace US forces, says Czech president",
         "source": "Financial Times"
       }
     ]
