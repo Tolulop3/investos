@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-06-02T19:33:46.320495",
+  "timestamp": "2026-06-02T23:03:39.858273",
   "date": "June 02, 2026",
-  "articles_fetched": 111,
+  "articles_fetched": 112,
   "feeds_online": 9,
   "feeds_total": 15,
   "signals_detected": 6,
@@ -14,9 +14,13 @@
       "confidence": 100,
       "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
     },
-    "earnings_beats": {
+    "trump_tariff_canada_specific": {
       "confidence": 75,
-      "note": "Strong earnings season = risk-on, growth picks benefit"
+      "note": "Direct Canada tariff \u2014 defensive FHSA positioning, reduce TSX exporters"
+    },
+    "peace_deal": {
+      "confidence": 100,
+      "note": "Peace = risk-on. Growth and consumer stocks benefit."
     },
     "russia_ukraine": {
       "confidence": 100,
@@ -25,10 +29,6 @@
     "health_outbreak": {
       "confidence": 100,
       "note": "Health outbreak = defensive positioning. Pharma, staples, ecommerce."
-    },
-    "peace_deal": {
-      "confidence": 100,
-      "note": "Peace = risk-on. Growth and consumer stocks benefit."
     }
   },
   "sector_sentiment": {
@@ -75,13 +75,13 @@
           "confidence": 100
         },
         {
-          "name": "russia_ukraine",
-          "direction": "bullish",
+          "name": "peace_deal",
+          "direction": "bearish",
           "confidence": 100
         },
         {
-          "name": "peace_deal",
-          "direction": "bearish",
+          "name": "russia_ukraine",
+          "direction": "bullish",
           "confidence": 100
         }
       ]
@@ -98,13 +98,13 @@
           "confidence": 100
         },
         {
-          "name": "russia_ukraine",
-          "direction": "bullish",
+          "name": "peace_deal",
+          "direction": "bearish",
           "confidence": 100
         },
         {
-          "name": "peace_deal",
-          "direction": "bearish",
+          "name": "russia_ukraine",
+          "direction": "bullish",
           "confidence": 100
         }
       ]
@@ -142,14 +142,19 @@
     },
     "TSX_EXPORTERS": {
       "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
+      "bearish_score": 425,
+      "net_score": -425,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "trump_tariff_negative",
           "direction": "bearish",
           "confidence": 100
+        },
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 75
         }
       ]
     },
@@ -179,16 +184,125 @@
         }
       ]
     },
-    "REPORTING_SECTOR": {
-      "bullish_score": 112.0,
+    "US_DEFENSE": {
+      "bullish_score": 225,
       "bearish_score": 0,
-      "net_score": 112.0,
+      "net_score": 225,
       "sentiment": "BULLISH",
       "signals": [
         {
-          "name": "earnings_beats",
+          "name": "trump_tariff_canada_specific",
           "direction": "bullish",
           "confidence": 75
+        }
+      ]
+    },
+    "US_DOMESTIC": {
+      "bullish_score": 225,
+      "bearish_score": 0,
+      "net_score": 225,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bullish",
+          "confidence": 75
+        }
+      ]
+    },
+    "TSX_MATERIALS": {
+      "bullish_score": 0,
+      "bearish_score": 225,
+      "net_score": -225,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 75
+        }
+      ]
+    },
+    "TSX_ENERGY": {
+      "bullish_score": 0,
+      "bearish_score": 225,
+      "net_score": -225,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 75
+        }
+      ]
+    },
+    "TSX_AUTOS": {
+      "bullish_score": 0,
+      "bearish_score": 225,
+      "net_score": -225,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 75
+        }
+      ]
+    },
+    "TRAVEL": {
+      "bullish_score": 150.0,
+      "bearish_score": 200,
+      "net_score": -50.0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        },
+        {
+          "name": "health_outbreak",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "EMERGING_MARKETS": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "INDUSTRIALS": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
         }
       ]
     },
@@ -309,24 +423,6 @@
         }
       ]
     },
-    "TRAVEL": {
-      "bullish_score": 150.0,
-      "bearish_score": 200,
-      "net_score": -50.0,
-      "sentiment": "NEUTRAL",
-      "signals": [
-        {
-          "name": "health_outbreak",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
     "HOSPITALITY": {
       "bullish_score": 0,
       "bearish_score": 200,
@@ -362,45 +458,6 @@
         {
           "name": "health_outbreak",
           "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "CONSUMER": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "EMERGING_MARKETS": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "INDUSTRIALS": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
           "confidence": 100
         }
       ]
@@ -511,28 +568,28 @@
       "news_sentiment": "BEARISH"
     },
     "CNR.TO": {
-      "adjustment": -13.3,
+      "adjustment": -20,
       "reasons": [
         "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
       ],
       "news_sentiment": "BEARISH"
     },
     "CP.TO": {
-      "adjustment": -13.3,
+      "adjustment": -20,
       "reasons": [
         "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
       ],
       "news_sentiment": "BEARISH"
     },
     "MG.TO": {
-      "adjustment": -13.3,
+      "adjustment": -20,
       "reasons": [
         "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
       ],
       "news_sentiment": "BEARISH"
     },
     "ATD.TO": {
-      "adjustment": -13.3,
+      "adjustment": -20,
       "reasons": [
         "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
       ],
@@ -572,6 +629,27 @@
         "\ud83d\udcc9 AUTOS (BEARISH)"
       ],
       "news_sentiment": "BEARISH"
+    },
+    "SPY": {
+      "adjustment": 15.0,
+      "reasons": [
+        "\ud83d\udcc8 US_DOMESTIC (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "VOO": {
+      "adjustment": 15.0,
+      "reasons": [
+        "\ud83d\udcc8 US_DOMESTIC (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "VTI": {
+      "adjustment": 15.0,
+      "reasons": [
+        "\ud83d\udcc8 US_DOMESTIC (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "JNJ": {
       "adjustment": 13.3,
@@ -729,13 +807,13 @@
     }
   },
   "weight_adjustments": {
-    "safety_weight": 7,
-    "momentum_weight": 4,
-    "growth_weight": 2,
+    "safety_weight": 10,
+    "momentum_weight": 1,
+    "growth_weight": 0,
     "dividend_weight": 0,
     "value_weight": 0,
-    "regime": "CAUTIOUS",
-    "regime_note": "Elevated uncertainty \u2014 slight defensive tilt"
+    "regime": "RISK_OFF",
+    "regime_note": "Multiple risk signals \u2014 defensive positioning recommended"
   },
   "headline_summary": {
     "active_signals": [
@@ -762,6 +840,17 @@
         ]
       },
       {
+        "signal": "Peace Deal",
+        "magnitude": "MODERATE",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Peace = risk-on. Growth and consumer stocks benefit.",
+        "articles": [
+          "Oil Swings Higher as Traders Weigh Prospects of US-Iran Deal",
+          "Gold Seesaws on Ceasefire Headlines as NFP, Rate Hike Fears Loom"
+        ]
+      },
+      {
         "signal": "Russia Ukraine",
         "magnitude": "MODERATE",
         "confidence": 100,
@@ -769,7 +858,7 @@
         "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported",
         "articles": [
           "Canada's cloud market is 'broken,' report warns",
-          "Ceasefire Uncertainty Remains the Biggest Driver for Oil Markets"
+          "Russia\u2019s China Energy Lifeline Is Becoming a Noose"
         ]
       },
       {
@@ -784,30 +873,23 @@
         ]
       },
       {
-        "signal": "Peace Deal",
-        "magnitude": "MODERATE",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Peace = risk-on. Growth and consumer stocks benefit.",
-        "articles": [
-          "Gold Seesaws on Ceasefire Headlines as NFP, Rate Hike Fears Loom",
-          "Ceasefire Uncertainty Remains the Biggest Driver for Oil Markets"
-        ]
-      },
-      {
-        "signal": "Earnings Beats",
-        "magnitude": "MODERATE",
+        "signal": "Trump Tariff Canada Specific",
+        "magnitude": "CRITICAL",
         "confidence": 75,
         "bars": "\u2588\u2588\u2588",
-        "note": "Strong earnings season = risk-on, growth picks benefit",
+        "note": "Direct Canada tariff \u2014 defensive FHSA positioning, reduce TSX exporters",
         "articles": [
-          "HPE shares soar 28% as demand for AI infrastructure powers stellar quarter"
+          "Six Canadian companies insulated from trade uncertainty"
         ]
       }
     ],
     "top_headlines": [
       {
         "title": "Trump appoints real estate heir Bill Pulte as national intelligence chief",
+        "source": "Financial Times"
+      },
+      {
+        "title": "Trump signs watered-down AI vetting order after Maga infighting",
         "source": "Financial Times"
       },
       {
@@ -823,15 +905,15 @@
         "source": "Financial Times"
       },
       {
+        "title": "Cliffwater\u2019s flagship private credit fund redemption requests hit 17%",
+        "source": "Financial Times"
+      },
+      {
         "title": "Goldman\u2019s David Solomon sees \u2018more greed than fear\u2019 on Wall Street",
         "source": "Financial Times"
       },
       {
         "title": "US convertible bonds set for record year as issuers harness AI boom",
-        "source": "Financial Times"
-      },
-      {
-        "title": "Trump signs watered-down AI vetting order after Maga infighting",
         "source": "Financial Times"
       },
       {
@@ -841,13 +923,9 @@
       {
         "title": "BP held talks about selling \u00a32bn of UK North Sea assets to Ithaca",
         "source": "Financial Times"
-      },
-      {
-        "title": "Microsoft targets Anthropic with new model releases",
-        "source": "Financial Times"
       }
     ]
   },
-  "macro_regime": "CAUTIOUS",
-  "regime_note": "Elevated uncertainty \u2014 slight defensive tilt"
+  "macro_regime": "RISK_OFF",
+  "regime_note": "Multiple risk signals \u2014 defensive positioning recommended"
 }
