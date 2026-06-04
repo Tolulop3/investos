@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-04T18:06:17.643640",
+    "run_at": "2026-06-04T22:23:32.183637",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -22,8 +22,8 @@
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 15,
-        "survived": 12,
-        "survival_pct": 80.0,
+        "survived": 13,
+        "survival_pct": 86.7,
         "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
@@ -32,38 +32,37 @@
         "normal_count": 15,
         "survived": 14,
         "survival_pct": 93.3,
-        "avg_score_change": 3.3,
+        "avg_score_change": 3.1,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.3 pts with 10% noise"
+        "note": "Avg score change: \u00b13.1 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 75.7,
-        "stressed_avg": 66.7,
-        "score_drop": 9.0,
+        "normal_avg": 73.7,
+        "stressed_avg": 67.3,
+        "score_drop": 6.4,
         "removed": [
-          "REI-UN.TO",
-          "AAPL",
-          "POW.TO",
-          "FM.TO",
-          "RY.TO"
+          "GOOGL",
+          "AMT",
+          "CVE.TO",
+          "NVDA"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 9.0 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 6.4 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 15,
         "survived": 15,
         "survival_pct": 100.0,
-        "avg_score_drop": 2.4,
+        "avg_score_drop": 2.7,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.4 pts"
+        "note": "If momentum stops working: avg score drops 2.7 pts"
       }
     },
     "summary": {
       "normal_picks": 15,
-      "normal_avg_score": 75.7,
+      "normal_avg_score": 73.7,
       "scenarios_robust": 3,
       "scenarios_fragile": 2,
       "scenarios_broken": 0,
@@ -73,33 +72,38 @@
   },
   "decay_monitor": {
     "date": "June 04, 2026",
-    "robustness_score": 50,
+    "robustness_score": 15,
     "rolling_sharpe": {
-      "sharpe": 0.427,
-      "ann_ret_pct": 4.6,
-      "ann_vol_pct": 10.7,
+      "sharpe": -0.054,
+      "ann_ret_pct": -0.5,
+      "ann_vol_pct": 10.1,
       "days_computed": 79,
       "note": "Score-proxy Sharpe over 79 days (improves with live trade data)"
     },
     "benchmark": {
-      "ret_7d": 0.97,
-      "ret_30d": 6.82,
-      "ret_90d": 8.81,
-      "ann_ret": 24.7,
-      "ann_vol": 13.7,
-      "sharpe": 1.81,
+      "ret_7d": 0.85,
+      "ret_30d": 6.7,
+      "ret_90d": 8.68,
+      "ann_ret": 24.3,
+      "ann_vol": 13.6,
+      "sharpe": 1.78,
       "symbol": "^GSPC"
     },
-    "alpha": -1.383,
-    "neg_alpha_days": 70,
+    "alpha": -1.834,
+    "neg_alpha_days": 71,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 93.8,
-      "momentum_picks": 16,
-      "note": "15/16 rising-score picks also rose in price"
+      "alignment_pct": 93.3,
+      "momentum_picks": 15,
+      "note": "14/15 rising-score picks also rose in price"
     },
-    "alerts": [],
+    "alerts": [
+      {
+        "level": "\u26a0\ufe0f WARNING",
+        "message": "Rolling Sharpe -0.05 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+      }
+    ],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
     "when_this_fails": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nCONDITIONS UNDER WHICH THIS STRATEGY WILL FAIL\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nBe honest with yourself about these before trading:\n\n1. MOMENTUM FACTOR DECAY\n   If momentum stops working as a factor (happened 2009,\n   2020 recovery), the ML model loses its strongest\n   feature. Rolling Sharpe monitor will catch this.\n   Response: reduce position sizes, wait for regime clarity.\n\n2. EXTENDED LOW-VOLATILITY GRINDING BEAR\n   The regime filter catches sharp crashes. But a slow,\n   grinding bear (like 2022 rate hike cycle) can erode\n   capital before the filter triggers. \n   Response: check 50d vs 200d MA weekly manually.\n\n3. CANADIAN MARKET CONCENTRATION\n   TSX is ~35% financials + ~20% energy. If both sectors\n   face simultaneous headwinds (e.g. rate hikes + oil crash),\n   the Canadian watchlist has nowhere to hide.\n   Response: FHSA ETFs (XGRO, XEQT) provide global exposure.\n\n4. YOUR OWN PSYCHOLOGY\n   The #1 failure mode. When the system is down 8% and\n   your gut says to override it, the override almost\n   always makes it worse. The drawdown lock exists for\n   this reason \u2014 respect it.\n   Response: Written investment policy statement.\n             Commit to it before you're in a drawdown.\n\n5. TARIFF/GEOPOLITICAL SHOCK TO CANADA\n   Your system detects tariff signals. It cannot predict\n   their severity or duration. A sustained US-Canada trade\n   war could structurally impair Canadian equity returns\n   for 12\u201324 months.\n   Response: Shift FHSA to VFV.TO (S&P 500 exposure)\n             if tariff signals persist >90 days.\n\n6. NEWS FEED LAG\n   RSS feeds lag 1\u20133 hours in fast-moving crises. The\n   system may generate a LONG signal while a crash is\n   already underway. Manual override allowed ONLY for\n   regime changes, never for individual picks.\n\n7. INTEREST RATE NORMALIZATION\n   2010\u20132021 was an extraordinary low-rate environment.\n   In a structurally higher rate world (3\u20135%), dividend\n   stocks face real competition from fixed income.\n   The income bucket may underperform its own history.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
   },
