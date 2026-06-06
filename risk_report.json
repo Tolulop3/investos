@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-06T16:28:06.690259",
+    "run_at": "2026-06-06T16:38:57.384832",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,31 +30,31 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
+        "survived": 15,
+        "survival_pct": 83.3,
         "avg_score_change": 4.2,
         "verdict": "\u2705 ROBUST",
         "note": "Avg score change: \u00b14.2 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 79.4,
-        "stressed_avg": 72.3,
-        "score_drop": 7.1,
+        "normal_avg": 76.2,
+        "stressed_avg": 67.4,
+        "score_drop": 8.8,
         "removed": [
-          "BMO.TO",
+          "GS",
           "AAPL",
           "MS",
-          "GS"
+          "KXS.TO"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 7.1 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 8.8 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
-        "survived": 18,
-        "survival_pct": 100.0,
+        "survived": 17,
+        "survival_pct": 94.4,
         "avg_score_drop": 2.4,
         "verdict": "\u2705 ROBUST",
         "note": "If momentum stops working: avg score drops 2.4 pts"
@@ -62,7 +62,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 79.4,
+      "normal_avg_score": 76.2,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -74,8 +74,8 @@
     "date": "June 06, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 0.485,
-      "ann_ret_pct": 4.7,
+      "sharpe": 0.45,
+      "ann_ret_pct": 4.4,
       "ann_vol_pct": 9.8,
       "days_computed": 81,
       "note": "Score-proxy Sharpe over 81 days (improves with live trade data)"
@@ -89,8 +89,8 @@
       "sharpe": 1.13,
       "symbol": "^GSPC"
     },
-    "alpha": -0.645,
-    "neg_alpha_days": 77,
+    "alpha": -0.68,
+    "neg_alpha_days": 78,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
