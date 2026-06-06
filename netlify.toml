@@ -1,0 +1,25 @@
+[build]
+  functions = "netlify/functions"
+
+# ── Security headers on all pages ────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options            = "DENY"
+    X-Content-Type-Options     = "nosniff"
+    Referrer-Policy            = "no-referrer"
+    Permissions-Policy         = "geolocation=(), camera=(), microphone=()"
+
+# ── API routes: restricted CORS — only your own site ─────────────────────────
+# Note: origin check is also enforced inside ticker.js itself (double protection)
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin  = "https://investos-proxy.netlify.app"
+    Access-Control-Allow-Methods = "GET, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, x-investos-key"
+
+[[redirects]]
+  from   = "/api/ticker"
+  to     = "/.netlify/functions/ticker"
+  status = 200
