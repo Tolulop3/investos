@@ -1,198 +1,130 @@
-// InvestOS Ticker Proxy — Netlify Serverless Function v4
-// Twelve Data API — handles TSX (.TO), US stocks, crypto, ETFs
-// Free tier: 800 calls/day
+// netlify/functions/ticker.js
+// InvestOS Yahoo Finance proxy — server-side fetch bypasses CORS + crumb requirement
+//
+// SECURITY:
+//   - Requires x-investos-key header matching INVESTOS_API_KEY env var
+//   - CORS restricted to investos-proxy.netlify.app only
+//   - Input sanitized: uppercase, whitespace stripped, length capped
+//   - No stack traces in error responses
+//   - Set INVESTOS_API_KEY in Netlify → Site Settings → Environment Variables
 
 const https = require('https');
 
-function httpsGet(url) {
+// ── Allowed origin (your Netlify site only) ──────────────────────────────────
+const ALLOWED_ORIGIN = 'https://investos-proxy.netlify.app';
+
+function httpsGet(url, headers) {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, {
-      headers: { 'User-Agent': 'InvestOS/1.0', 'Accept': 'application/json' }
-    }, res => {
-      const chunks = [];
-      res.on('data', c => chunks.push(c));
-      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString() }));
+    const req = https.get(url, { headers }, (res) => {
+      let data = '';
+      const cookies = res.headers['set-cookie'] || [];
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve({ status: res.statusCode, data, cookies }));
     });
     req.on('error', reject);
     req.setTimeout(12000, () => { req.destroy(); reject(new Error('timeout')); });
   });
 }
 
-// Parse ticker → Twelve Data symbol + exchange params
-// CNQ.TO → symbol=CNQ&exchange=TSX
-// NVDA   → symbol=NVDA
-// BTC-USD → symbol=BTC/USD (crypto)
-function parseSymbol(raw) {
-  const upper = raw.toUpperCase();
+exports.handler = async function(event) {
+  // ── CORS headers — restricted to your site only ──────────────────────────
+  const origin = event.headers && (event.headers.origin || event.headers.Origin);
+  const corsOrigin = (origin === ALLOWED_ORIGIN) ? ALLOWED_ORIGIN : 'null';
 
-  // Crypto: BTC-USD → BTC/USD
-  if (upper.endsWith('-USD') || upper.endsWith('-USDT')) {
-    return { symbol: upper.replace('-', '/'), exchange: '' };
-  }
-
-  // TSX: CNQ.TO → CNQ + exchange=TSX
-  if (upper.endsWith('.TO')) {
-    return { symbol: upper.replace('.TO', ''), exchange: 'TSX' };
-  }
-
-  // TSX Venture: CNQ.V → CNQ + exchange=TSXV
-  if (upper.endsWith('.V')) {
-    return { symbol: upper.replace('.V', ''), exchange: 'TSXV' };
-  }
-
-  // US stock — no exchange needed
-  return { symbol: upper, exchange: '' };
-}
-
-function buildURL(base, params) {
-  const q = Object.entries(params)
-    .filter(([, v]) => v)
-    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-    .join('&');
-  return `${base}?${q}`;
-}
-
-function computeFields(closes, highs, lows, volumes) {
-  const price     = closes.length ? closes[closes.length - 1] : 0;
-  const prevClose = closes.length > 1 ? closes[closes.length - 2] : price;
-  const dayChg    = prevClose ? ((price - prevClose) / prevClose * 100) : 0;
-
-  const ma = (arr, n) => arr.length >= n
-    ? arr.slice(-n).reduce((a, b) => a + b, 0) / n : null;
-
-  const ma20  = ma(closes, 20);
-  const ma50  = ma(closes, 50);
-  const ma200 = ma(closes, 200);
-
-  const c252  = closes.slice(-252);
-  const high52 = c252.length ? Math.max(...c252) : price;
-  const low52  = c252.length ? Math.min(...c252) : price;
-
-  // RSI 14
-  let rsi = 50;
-  if (closes.length >= 15) {
-    const diffs  = closes.slice(-15).map((c, i, a) => i === 0 ? 0 : c - a[i - 1]).slice(1);
-    const gains  = diffs.map(d => d > 0 ? d : 0);
-    const losses = diffs.map(d => d < 0 ? Math.abs(d) : 0);
-    const avgG   = gains.reduce((a, b) => a + b, 0) / 14;
-    const avgL   = losses.reduce((a, b) => a + b, 0) / 14;
-    rsi = avgL === 0 ? 100 : Math.round(100 - 100 / (1 + avgG / avgL));
-  }
-
-  // ATR 14
-  let atr = 0;
-  if (highs.length >= 14 && lows.length >= 14) {
-    const trs = highs.slice(-14).map((h, i) => h - lows.slice(-14)[i]);
-    atr = trs.reduce((a, b) => a + b, 0) / 14;
-  }
-
-  const avgVol   = volumes.length
-    ? Math.round(volumes.slice(-20).reduce((a, b) => a + b, 0) / Math.min(20, volumes.length))
-    : 0;
-  const todayVol = volumes.length ? volumes[volumes.length - 1] : 0;
-
-  const perf = n => closes.length > n
-    ? ((closes[closes.length - 1] - closes[closes.length - 1 - n]) / closes[closes.length - 1 - n] * 100)
-    : 0;
-
-  return {
-    price, prevClose, dayChg,
-    ma20, ma50, ma200,
-    aboveMa20: ma20 != null ? price > ma20 : false,
-    aboveMa50: ma50 != null ? price > ma50 : false,
-    aboveMa200: ma200 != null ? price > ma200 : false,
-    high52, low52,
-    range52pos: high52 > low52 ? Math.round((price - low52) / (high52 - low52) * 100) : 50,
-    perf5d: perf(5), perf20d: perf(20), perf60d: perf(60),
-    rsi, atr,
-    avgVol, todayVol,
-    volRatio: avgVol > 0 ? todayVol / avgVol : 1,
-  };
-}
-
-exports.handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+  const cors = {
+    'Access-Control-Allow-Origin':  corsOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, x-investos-key',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=300',
   };
 
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  // ── Handle CORS preflight ─────────────────────────────────────────────────
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: cors, body: '' };
+  }
 
-  const raw    = (event.queryStringParameters?.s || '').trim();
-  const APIKEY = process.env.TWELVE_DATA_KEY;
+  // ── AUTH CHECK: require secret key header ────────────────────────────────
+  // Set INVESTOS_API_KEY in Netlify → Site Settings → Environment Variables
+  // Dashboard must send: fetch(url, { headers: { 'x-investos-key': 'YOUR_KEY' } })
+  const expectedKey = process.env.INVESTOS_API_KEY;
+  const providedKey = event.headers && (
+    event.headers['x-investos-key'] ||
+    event.headers['X-Investos-Key']
+  );
 
-  if (!raw)    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing ?s= param' }) };
-  if (!APIKEY) return { statusCode: 500, headers, body: JSON.stringify({ error: 'TWELVE_DATA_KEY not set' }) };
+  if (!expectedKey) {
+    // INVESTOS_API_KEY not set in Netlify env — block all requests until configured
+    return {
+      statusCode: 503,
+      headers: cors,
+      body: JSON.stringify({ error: 'Service not configured' }),
+    };
+  }
 
-  const { symbol, exchange } = parseSymbol(raw);
+  if (!providedKey || providedKey !== expectedKey) {
+    return {
+      statusCode: 401,
+      headers: cors,
+      body: JSON.stringify({ error: 'Unauthorised' }),
+    };
+  }
+
+  // ── Input sanitization ────────────────────────────────────────────────────
+  const raw    = ((event.queryStringParameters || {}).s || '');
+  const ticker = raw.toUpperCase().replace(/[^A-Z0-9.\-]/g, '').slice(0, 20);
+  if (!ticker) {
+    return { statusCode: 400, headers: cors, body: JSON.stringify({ error: 'Missing ?s=TICKER' }) };
+  }
+
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
   try {
-    // Fetch quote + time_series in parallel
-    const baseParams = { symbol, apikey: APIKEY };
-    if (exchange) baseParams.exchange = exchange;
+    // Step 1 — get crumb + session cookie from Yahoo
+    const crumbRes = await httpsGet(
+      'https://query2.finance.yahoo.com/v1/test/getcrumb',
+      { 'User-Agent': UA, 'Accept': '*/*', 'Accept-Language': 'en-US,en;q=0.9' }
+    );
+    const crumb     = (crumbRes.data || '').trim();
+    const cookieStr = crumbRes.cookies.map(c => c.split(';')[0]).join('; ');
 
-    const quoteURL = buildURL('https://api.twelvedata.com/quote', baseParams);
-    const tsURL    = buildURL('https://api.twelvedata.com/time_series', {
-      ...baseParams, interval: '1day', outputsize: '130',
+    if (!crumb || crumb.length < 3) throw new Error('Yahoo crumb unavailable — try again');
+
+    // Step 2 — fetch chart data with crumb
+    const chartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
+      encodeURIComponent(ticker) +
+      '?interval=1d&range=1y&events=div%2Csplit&crumb=' +
+      encodeURIComponent(crumb);
+
+    const chartRes = await httpsGet(chartUrl, {
+      'User-Agent':      UA,
+      'Accept':          'application/json',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Cookie':          cookieStr,
     });
 
-    const [qRes, tsRes] = await Promise.all([httpsGet(quoteURL), httpsGet(tsURL)]);
-
-    const quote = JSON.parse(qRes.body);
-    const ts    = JSON.parse(tsRes.body);
-
-    // Twelve Data returns {code, message} on error
-    if (quote.code || quote.status === 'error') {
-      return {
-        statusCode: 404, headers,
-        body: JSON.stringify({ error: quote.message || `Symbol not found: ${raw}` }),
-      };
+    if (chartRes.status === 404) {
+      return { statusCode: 404, headers: cors, body: JSON.stringify({ error: 'Ticker not found: ' + ticker }) };
+    }
+    if (chartRes.status !== 200) {
+      throw new Error('Yahoo HTTP ' + chartRes.status);
     }
 
-    // Build closes/volumes arrays (Twelve Data returns newest first → reverse)
-    const values   = (ts.values || []).reverse();
-    const closes   = values.map(d => parseFloat(d.close));
-    const volumes  = values.map(d => parseInt(d.volume || 0));
-    const highs    = values.map(d => parseFloat(d.high));
-    const lows     = values.map(d => parseFloat(d.low));
-    const timestamps = values.map(d => Math.floor(new Date(d.datetime).getTime() / 1000));
+    const json   = JSON.parse(chartRes.data);
+    const result = json && json.chart && json.chart.result && json.chart.result[0];
+    if (!result) throw new Error('No chart data returned');
 
-    const computed = computeFields(closes, highs, lows, volumes);
-
-    // Return in Yahoo chart shape so parseYahooChart works
-    const result = {
-      chart: {
-        result: [{
-          meta: {
-            symbol:                     raw.toUpperCase(),
-            longName:                   quote.name || raw,
-            shortName:                  quote.name || raw,
-            currency:                   quote.currency || 'USD',
-            exchangeName:               quote.exchange || exchange || '',
-            instrumentType:             quote.type || 'Common Stock',
-            regularMarketPrice:         computed.price,
-            regularMarketPreviousClose: computed.prevClose,
-            regularMarketChangePercent: computed.dayChg,
-            marketCap:                  null,
-            fiftyTwoWeekHigh:           computed.high52,
-            fiftyTwoWeekLow:            computed.low52,
-            sector: '', industry: '',
-          },
-          timestamp: timestamps,
-          indicators: {
-            quote: [{ close: closes, volume: volumes, high: highs, low: lows }]
-          },
-          _computed: { ...computed, closes, volumes, timestamps },
-        }],
-        error: null,
-      }
+    return {
+      statusCode: 200,
+      headers: { ...cors, 'Cache-Control': 'public, max-age=300' },
+      body: chartRes.data,
     };
 
-    return { statusCode: 200, headers, body: JSON.stringify(result) };
-
   } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+    // Safe error — no stack trace exposed
+    return {
+      statusCode: 502,
+      headers: cors,
+      body: JSON.stringify({ error: err.message || 'Proxy error' }),
+    };
   }
 };
