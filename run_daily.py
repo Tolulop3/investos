@@ -56,6 +56,7 @@ from risk_engine         import (run_stress_simulation, run_decay_monitor, run_r
                                   compute_position_size_guardrail,
                                   SURVIVORSHIP_NOTE, WHEN_THIS_FAILS)
 from news_analyzer       import run_news_analysis
+from insider_engine      import run_insider_engine
 from etf_engine          import run_etf_engine
 from intelligence_layers import run_all_intelligence_layers, detect_trending_stocks, update_score_history, load_score_history, apply_score_decay
 from ml_engine           import run_ml_engine, get_market_regime
@@ -522,6 +523,19 @@ def run_daily(test_mode=False):
     # ── 4. News Adjustment ───────────────────────────────────
     print(f"\n[4/10] 🔗 APPLYING NEWS TO SCORES")
     screener = apply_news_to_screener(screener, news)
+
+    # ── 4b. Insider Signal Engine ─────────────────────────────
+    # SEC EDGAR Form 4 + SEDI Canada — applied as a tilt (±10pts max)
+    try:
+        all_picks = []
+        for acct_picks in screener.values():
+            if isinstance(acct_picks, list):
+                all_picks.extend(acct_picks)
+        updated_picks, insider_scores = run_insider_engine(all_picks, verbose=True)
+        # Store insider scores for baking into brief
+        screener["insider_scores"] = insider_scores
+    except Exception as _ie:
+        print(f"  ⚠️  Insider engine error: {_ie} — continuing without")
 
     # ── 4.5 Regime Authority Filter ───────────────────────────
     # Regime filters universe BEFORE ML — regime is law, not suggestion.

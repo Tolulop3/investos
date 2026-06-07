@@ -199,7 +199,7 @@ SIGNAL_MAP = {
                      "tiff macklem hike", "boc hawkish"],
         "sectors_bullish":  ["CANADIAN_BANKS", "CAD_CURRENCY"],
         "sectors_bearish":  ["CANADIAN_REITS", "CANADIAN_UTILITIES", "CANADIAN_HOUSING",
-                             "GROWTH_STOCKS"],
+                             "GROWTH_STOCKS", "TELECOM"],
         "macro_effects":    {"CAD_USD": "positive", "TSX_REITS": "negative"},
         "score_adjust":     {"safety_weight": +5, "reit_penalty": +8, "bank_boost": +5},
         "magnitude":        "HIGH",
@@ -222,7 +222,7 @@ SIGNAL_MAP = {
         "keywords": ["federal reserve hike", "fed raises", "fomc hike", "powell hike",
                      "fed hawkish", "rate increase fed", "fed tightening"],
         "sectors_bullish":  ["FINANCIALS", "USD"],
-        "sectors_bearish":  ["REITS", "UTILITIES", "GROWTH", "TECH", "BONDS"],
+        "sectors_bearish":  ["REITS", "UTILITIES", "GROWTH", "TECH", "BONDS", "TELECOM"],
         "macro_effects":    {"USD": "positive", "GROWTH_STOCKS": "negative"},
         "score_adjust":     {"safety_weight": +5, "value_weight": +3, "growth_weight": -4},
         "magnitude":        "HIGH",
@@ -351,6 +351,7 @@ SECTOR_TICKERS = {
     "SMALL_CAP":                ["IWM"],
     "ECOMMERCE":                ["AMZN", "SHOP.TO"],
     "AIRLINES":                 ["AC.TO"],
+    "TELECOM":                  ["BCE.TO", "RCI-B.TO", "T.TO", "TELUS"],
     "AUTOS":                    ["GM", "F", "TM"],
 }
 

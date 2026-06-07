@@ -700,7 +700,7 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
     # Uses sector_sentiment passed through picks data (set in apply_news_to_screener)
     sector_sentiment = sector_sentiment or kwargs.get("sector_sentiment", {})
     SECTOR_MAP_BLOCK = {
-        "Communication Services": "SHIPPING",
+        "Communication Services": "TELECOM",      # Bell, Rogers, RCI-B.TO
         "Industrials":            "AIRLINES",
         "Consumer Discretionary": "CONSUMER_DISCRETIONARY",
         "Consumer Cyclical":      "CONSUMER_DISCRETIONARY",
