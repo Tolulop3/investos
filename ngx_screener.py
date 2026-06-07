@@ -290,9 +290,30 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
 
     # Score all 30 NGX stocks
     scored = []
+
+    # ── NGN/USD exchange rate for ₦ position sizing context ──────────────────
+    ngn_usd = None
+    cad_usd = 0.74   # approximate — close enough for sizing guidance
+    try:
+        ngn_data = fetch_macro_asset("NGN=X", period="5d")
+        if ngn_data is not None and not ngn_data.empty:
+            ngn_usd = round(float(ngn_data["Close"].iloc[-1]), 2)
+        if verbose and ngn_usd:
+            print(f"  NGN/USD: {ngn_usd:.1f} | ₦10,000 ≈ ${10000/ngn_usd:.2f} USD ≈ ${10000*cad_usd/ngn_usd:.2f} CAD")
+    except Exception:
+        pass
+
     for ticker in NGX_ALL:
         tier  = 1 if ticker in NGX_TIER1 else 2
         score, reasons, flags = score_ngx_macro(ticker, tier, regime, macro_score, fx_stress)
+        ngn_context = {}
+        if ngn_usd:
+            ngn_context = {
+                "ngn_usd_rate":    ngn_usd,
+                "ngn_cad_rate":    round(ngn_usd * cad_usd, 4),
+                "fx_note":         f"₦1 = ${1/ngn_usd:.6f} USD",
+                "conversion_note": f"₦10,000 ≈ ${10000/ngn_usd:.2f} USD ≈ ${10000*cad_usd/ngn_usd:.2f} CAD",
+            }
         scored.append({
             "ticker": ticker, "name": ticker.replace(".LG",""),
             "tier": tier, "score": score,
@@ -300,6 +321,7 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
             "reasons": reasons, "flags": flags,
             "action": "SIGNAL", "size_label": "FULL SIZE",
             "actionable": True, "persistence": "—",
+            "ngn_context": ngn_context,
         })
     scored.sort(key=lambda x: x["score"], reverse=True)
 
