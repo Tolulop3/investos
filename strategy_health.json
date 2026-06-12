@@ -14908,8 +14908,57 @@
         }
       ],
       "robustness_score": 60
+    },
+    {
+      "date": "2026-06-12",
+      "timestamp": "2026-06-12T14:12:56.362820",
+      "rolling_sharpe": {
+        "sharpe": 0.228,
+        "ann_ret_pct": 2.2,
+        "ann_vol_pct": 9.7,
+        "days_computed": 87,
+        "note": "Score-proxy Sharpe over 87 days (improves with live trade data)"
+      },
+      "benchmark_spx": {
+        "ret_7d": -2.35,
+        "ret_30d": 2.44,
+        "ret_90d": 7.61,
+        "ann_ret": 21.3,
+        "ann_vol": 14.8,
+        "sharpe": 1.44,
+        "symbol": "^GSPC"
+      },
+      "benchmark_tsx": {
+        "ret_7d": -0.92,
+        "ret_30d": 2.96,
+        "ret_90d": 7.13,
+        "ann_ret": 20.0,
+        "ann_vol": 16.0,
+        "sharpe": 1.25,
+        "symbol": "^GSPTSE"
+      },
+      "alpha_vs_spx": -1.212,
+      "neg_alpha_days": 91,
+      "momentum_health": {
+        "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
+        "decaying": false,
+        "alignment_pct": 90.9,
+        "momentum_picks": 22,
+        "note": "20/22 rising-score picks also rose in price"
+      },
+      "alerts": [
+        {
+          "level": "\u2139\ufe0f NOTE",
+          "message": "Alpha vs SPX negative for 91 days but Sharpe 0.23 is positive \u2014 system recovering, monitor."
+        },
+        {
+          "level": "\u26a0\ufe0f WARNING",
+          "message": "Rolling Sharpe 0.23 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        }
+      ],
+      "robustness_score": 50
     }
   ],
   "created": "2026-03-02T03:33:15.277905",
-  "last_updated": "2026-06-11T22:51:19.534301"
+  "last_updated": "2026-06-12T14:12:56.362820"
 }
