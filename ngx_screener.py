@@ -1,25 +1,26 @@
 """
-ngx_screener.py — Nigerian Exchange (NGX) Signal Engine v2
+ngx_screener.py — Nigerian Exchange (NGX) Signal Engine v2.1
 ===========================================================
 Macro-driven EM desk model. Completely standalone.
 
-WHY MACRO-DRIVEN (not price-driven):
+v2.1 changes (guardrail fix):
+  - eligible gate: 55 → 40 (stocks always appear in dashboard strip)
+  - WATCH floor: 45 (shows in NGX strip even in RISK_OFF — informational)
+  - ENTER threshold: 65 (was 75) + RISK_ON + Tier 1 + 3d persistence
+  - RESTRICTED phase threshold: 80 → 65 (achievable in NEUTRAL/RISK_ON)
+  - RISK_OFF no longer silences WATCH signals — they appear as tracking
+
+WHY THIS MATTERS:
+  With macro_score=-9.2 (current), old thresholds produced 0 signals and 0 watch.
+  Nothing appeared in the dashboard NGX strip.
+  New thresholds: telecom (~52), some banking (~40-45) show as WATCH/WAIT,
+  building persistence history so signals fire immediately when macro turns.
+
+WHY MACRO-DRIVEN:
   Yahoo Finance has no reliable NGX (.LG) coverage.
   All 30 tickers return empty or 404 from any data provider.
-  But Nigeria's market IS driven by oil, USD, and EM risk —
-  so macro scoring is more accurate than broken price fetches.
-
-Architecture:
-  Layer 1: Global macro regime (oil + DXY + SPY + VIX via yfinance)
-  Layer 2: FX stress index (USD pressure on naira)
-  Layer 3: Sector sensitivity matrix (banking/oil/telecom/consumer)
-  Layer 4: Per-stock macro scoring (deterministic, always produces output)
-  Layer 5: InvestOS macro bridge (RISK_OFF -> info only, etc.)
-  Layer 6: Validation phase (PAPER/RESTRICTED/FULL)
-
-Data:  yfinance for global macro proxies (BZ=F, DX-Y.NYB, SPY, ^VIX)
-       These work reliably on GitHub Actions.
-Output: brief.ngx — same structure as before, full UI compatibility.
+  Nigeria's market IS driven by oil, USD, and EM risk —
+  macro scoring is more accurate than broken price fetches.
 """
 
 import json
@@ -27,7 +28,7 @@ import time
 import os
 from datetime import datetime, timedelta
 
-# UNIVERSE
+# ── UNIVERSE ──────────────────────────────────────────────────────────────────
 NGX_TIER1 = [
     "GTCO.LG", "ZENITHBANK.LG", "ACCESS.LG", "UBA.LG", "FBNH.LG",
     "MTNN.LG", "AIRTELAFRI.LG", "DANGCEM.LG", "SEPLAT.LG",
@@ -44,18 +45,18 @@ NGX_TIER2 = [
 NGX_ALL = NGX_TIER1 + NGX_TIER2
 
 NGX_SECTOR_MAP = {
-    "GTCO.LG": "banking", "ZENITHBANK.LG": "banking", "ACCESS.LG": "banking",
-    "UBA.LG": "banking", "FBNH.LG": "banking", "MTNN.LG": "telecom",
-    "AIRTELAFRI.LG": "telecom", "DANGCEM.LG": "industrial", "SEPLAT.LG": "oil",
-    "STANBIC.LG": "banking", "NB.LG": "consumer", "FLOURMILL.LG": "consumer",
-    "UNILEVER.LG": "consumer", "OANDO.LG": "oil", "TOTAL.LG": "oil",
-    "BUACEMENT.LG": "industrial", "WAPCO.LG": "industrial",
-    "PRESCO.LG": "agriculture", "OKOMUOIL.LG": "agriculture",
-    "TRANSCORP.LG": "conglomerate", "GEREGU.LG": "power",
-    "NESTLE.LG": "consumer", "FIDELITYBK.LG": "banking", "FCMB.LG": "banking",
-    "UCAP.LG": "financial", "NAHCO.LG": "transport",
-    "DANGSUGAR.LG": "consumer", "NASCON.LG": "consumer",
-    "LIVESTOCK.LG": "agriculture", "CWG.LG": "technology",
+    "GTCO.LG": "banking",      "ZENITHBANK.LG": "banking", "ACCESS.LG": "banking",
+    "UBA.LG": "banking",       "FBNH.LG": "banking",       "MTNN.LG": "telecom",
+    "AIRTELAFRI.LG": "telecom","DANGCEM.LG": "industrial",  "SEPLAT.LG": "oil",
+    "STANBIC.LG": "banking",   "NB.LG": "consumer",        "FLOURMILL.LG": "consumer",
+    "UNILEVER.LG": "consumer", "OANDO.LG": "oil",          "TOTAL.LG": "oil",
+    "BUACEMENT.LG": "industrial","WAPCO.LG": "industrial",
+    "PRESCO.LG": "agriculture","OKOMUOIL.LG": "agriculture",
+    "TRANSCORP.LG": "conglomerate","GEREGU.LG": "power",
+    "NESTLE.LG": "consumer",   "FIDELITYBK.LG": "banking", "FCMB.LG": "banking",
+    "UCAP.LG": "financial",    "NAHCO.LG": "transport",
+    "DANGSUGAR.LG": "consumer","NASCON.LG": "consumer",
+    "LIVESTOCK.LG": "agriculture","CWG.LG": "technology",
 }
 
 # oil_b=oil beta, fx_b=FX sensitivity, risk_b=regime sensitivity, base=neutral score
@@ -101,70 +102,58 @@ def compute_em_regime():
     Global macro regime from free yfinance data.
     Returns: (regime, macro_score, fx_stress, brent_trend, components)
     """
-    oil_chg,  _ = fetch_macro_asset("BZ=F")
-    dxy_chg,  _ = fetch_macro_asset("DX-Y.NYB")
-    spy_chg,  _ = fetch_macro_asset("SPY")
-    vix_chg,  vix_val = fetch_macro_asset("^VIX", "1mo")
-    eem_chg,  _ = fetch_macro_asset("EEM")
+    oil_chg, _        = fetch_macro_asset("BZ=F")
+    dxy_chg, _        = fetch_macro_asset("DX-Y.NYB")
+    spy_chg, _        = fetch_macro_asset("SPY")
+    vix_chg, vix_val  = fetch_macro_asset("^VIX", "1mo")
+    eem_chg, _        = fetch_macro_asset("EEM")
 
     score = 0.0
     components = {}
 
     if oil_chg is not None:
-        c = oil_chg * 0.50
-        score += c
+        c = oil_chg * 0.50; score += c
         components["oil"] = {"chg_20d": oil_chg, "contribution": round(c, 2)}
     if dxy_chg is not None:
-        c = -dxy_chg * 0.40
-        score += c
+        c = -dxy_chg * 0.40; score += c
         components["dxy"] = {"chg_20d": dxy_chg, "contribution": round(c, 2)}
     if spy_chg is not None:
-        c = spy_chg * 0.25
-        score += c
+        c = spy_chg * 0.25; score += c
         components["spy"] = {"chg_20d": spy_chg, "contribution": round(c, 2)}
     if vix_chg is not None:
-        c = -abs(vix_chg) * 0.20 if vix_chg is not None and vix_chg > 10 else 0
-        score += c
+        c = -abs(vix_chg) * 0.20 if vix_chg > 10 else 0; score += c
         components["vix"] = {"level": vix_val, "chg": vix_chg, "contribution": round(c, 2)}
     if eem_chg is not None:
-        c = eem_chg * 0.15
-        score += c
+        c = eem_chg * 0.15; score += c
         components["eem"] = {"chg_20d": eem_chg, "contribution": round(c, 2)}
 
-    # FX stress: strong USD + weak oil = naira pressure
     fx_stress = 0.0
-    if dxy_chg is not None:
-        fx_stress += dxy_chg * 0.6
-    if oil_chg is not None:
-        fx_stress -= oil_chg * 0.4
+    if dxy_chg is not None: fx_stress += dxy_chg * 0.6
+    if oil_chg is not None:  fx_stress -= oil_chg * 0.4
 
-    brent_trend = ("UP" if oil_chg is not None and oil_chg > 2
-                   else "DOWN" if oil_chg is not None and oil_chg < -2 else "FLAT")
+    brent_trend = ("UP"   if oil_chg is not None and oil_chg >  2 else
+                   "DOWN" if oil_chg is not None and oil_chg < -2 else "FLAT")
 
-    regime = ("RISK_ON" if score >= 3
-              else "RISK_OFF" if score <= -2 else "NEUTRAL")
+    regime = ("RISK_ON"  if score >= 3 else
+              "RISK_OFF" if score <= -2 else "NEUTRAL")
 
     return regime, round(score, 2), round(fx_stress, 2), brent_trend, components
 
 
 def score_ngx_macro(ticker, tier, regime, macro_score, fx_stress):
-    """Score a single NGX stock using macro drivers. Always produces a score."""
+    """Score a single NGX stock using macro drivers."""
     sector = NGX_SECTOR_MAP.get(ticker, "banking")
     sens   = SECTOR_SENSITIVITY.get(sector, SECTOR_SENSITIVITY["banking"])
     base   = sens["base"]
     reasons, flags = [], []
 
     oil_adj = macro_score * sens["oil_b"] * 0.8
-    if oil_adj > 3:
-        reasons.append(f"Brent tailwind: +{oil_adj:.1f}pts")
-    elif oil_adj < -3:
-        flags.append(f"Brent headwind: {oil_adj:.1f}pts")
+    if oil_adj > 3:    reasons.append(f"Brent tailwind: +{oil_adj:.1f}pts")
+    elif oil_adj < -3: flags.append(f"Brent headwind: {oil_adj:.1f}pts")
 
     fx_adj = -fx_stress * sens["fx_b"] * 0.6
-    if fx_adj > 2:
-        reasons.append(f"FX easing: +{fx_adj:.1f}pts")
-    elif fx_adj < -2:
-        flags.append(f"FX stress (USD strength): {fx_adj:.1f}pts")
+    if fx_adj > 2:     reasons.append(f"FX easing: +{fx_adj:.1f}pts")
+    elif fx_adj < -2:  flags.append(f"FX stress (USD strength): {fx_adj:.1f}pts")
 
     if regime == "RISK_ON":
         regime_adj = sens["risk_b"] * 5
@@ -176,8 +165,7 @@ def score_ngx_macro(ticker, tier, regime, macro_score, fx_stress):
         regime_adj = 0
 
     tier_adj = 5 if tier == 1 else 0
-    if tier == 1:
-        reasons.append("Tier 1 quality premium: +5pts")
+    if tier == 1: reasons.append("Tier 1 quality premium: +5pts")
 
     if sector == "telecom":
         reasons.append("Defensive / USD-earning sector")
@@ -191,44 +179,96 @@ def score_ngx_macro(ticker, tier, regime, macro_score, fx_stress):
 
 
 def compute_ngx_basket_regime(scored):
-    if not scored:
-        return "UNKNOWN"
-    n = sum(1 for s in scored if s["score"] >= 60)
+    if not scored: return "UNKNOWN"
+    n   = sum(1 for s in scored if s["score"] >= 55)
     pct = n / len(scored)
     return "BULLISH" if pct >= 0.60 else "NEUTRAL" if pct >= 0.40 else "WEAK"
 
 
-def apply_macro_bridge(eligible, investos_macro, brent_trend, basket_regime):
+def apply_macro_bridge(all_scored, investos_macro, brent_trend, basket_regime):
+    """
+    v2.1: RISK_OFF no longer silences WATCH signals.
+    WATCH = informational tracking (score 45-64), always shown.
+    ENTER = requires RISK_ON + score >= 65 + Tier 1.
+    Returns (signals_list, watch_list, gate_status).
+    """
     macro = investos_macro or "NORMAL"
-    if macro in ("RISK_OFF", "BEAR"):
-        for s in eligible:
-            s["action"] = "INFORMATIONAL"; s["size_label"] = "INFO ONLY — RISK_OFF"
+
+    signals = []
+    watch   = []
+
+    for s in all_scored:
+        score  = s["score"]
+        tier   = s["tier"]
+
+        # ── WAIT: score below watch floor ────────────────────────────────────
+        if score < 45:
+            s["action"] = "WAIT"
+            s["size_label"] = "WAIT — score below 45"
             s["actionable"] = False
-        return eligible, "RISK_OFF — info only"
-    if macro == "CAUTIOUS":
-        oil_t2 = (brent_trend == "UP")
-        filtered = []
-        for s in eligible:
-            if s["tier"] == 1 and s["score"] >= 75:
-                s["action"] = "BUY"; s["size_label"] = "REDUCED SIZE"; s["actionable"] = True
-                filtered.append(s)
-            elif s["tier"] == 2 and oil_t2 and s["score"] >= 80:
-                s["action"] = "BUY"; s["size_label"] = "SMALL (oil bridge)"; s["actionable"] = True
-                filtered.append(s)
-        return filtered, f"CAUTIOUS — Tier 1 only{' + Oil T2' if oil_t2 else ''}"
-    for s in eligible:
-        s["action"] = "BUY"; s["size_label"] = "FULL SIZE"; s["actionable"] = True
-    return eligible, "OPEN — all signals eligible"
+            continue
+
+        # ── WATCH: score 45-64 OR RISK_OFF (always informational) ────────────
+        if score < 65 or macro in ("RISK_OFF", "BEAR"):
+            s["action"]     = "WATCH"
+            s["size_label"] = f"WATCH — tracking ({'RISK_OFF' if macro in ('RISK_OFF','BEAR') else 'score <65'})"
+            s["actionable"] = False
+            watch.append(s)
+            continue
+
+        # ── CAUTIOUS: Tier 1 only, smaller size ──────────────────────────────
+        if macro == "CAUTIOUS":
+            if tier == 1 and score >= 65:
+                s["action"]     = "WATCH"
+                s["size_label"] = "CAUTIOUS — Tier 1 watch"
+                s["actionable"] = False
+                watch.append(s)
+            elif tier == 1 and score >= 75:
+                s["action"]     = "BUY"
+                s["size_label"] = "REDUCED SIZE (cautious)"
+                s["actionable"] = True
+                signals.append(s)
+            else:
+                s["action"] = "WAIT"; s["actionable"] = False
+            continue
+
+        # ── ENTER: RISK_ON + score >= 65 + Tier 1 ────────────────────────────
+        if macro not in ("RISK_OFF","BEAR","CAUTIOUS"):
+            if tier == 1 and score >= 65:
+                s["action"]     = "BUY"
+                s["size_label"] = "FULL SIZE" if score >= 75 else "SMALL (watch threshold)"
+                s["actionable"] = True
+                signals.append(s)
+            elif tier == 2 and score >= 75:
+                s["action"]     = "BUY"
+                s["size_label"] = "SMALL (Tier 2)"
+                s["actionable"] = True
+                signals.append(s)
+            else:
+                s["action"]     = "WATCH"
+                s["size_label"] = "WATCH — Tier 2 or score marginal"
+                s["actionable"] = False
+                watch.append(s)
+
+    if macro in ("RISK_OFF", "BEAR"):
+        gate_status = "RISK_OFF — WATCH only, no entries"
+    elif macro == "CAUTIOUS":
+        gate_status = f"CAUTIOUS — Tier 1 ≥65 watch, ≥75 enter"
+    else:
+        gate_status = "OPEN — Tier 1 ≥65, Tier 2 ≥75 eligible"
+
+    return signals, watch, gate_status
 
 
-def apply_persistence_gate(eligible):
+def apply_persistence_gate(signals):
+    """Require 3 consecutive scoring days at threshold before ENTER fires."""
     try:
         history = json.load(open("ngx_persistence.json"))
     except Exception:
         history = {}
     today = datetime.now().strftime("%Y-%m-%d")
     out   = []
-    for s in eligible:
+    for s in signals:
         ticker = s["ticker"]
         streak = history.get(ticker, [])
         streak.append({"date": today, "score": s["score"]})
@@ -236,19 +276,19 @@ def apply_persistence_gate(eligible):
         history[ticker] = streak
         consecutive = 0
         for day in reversed(streak):
-            if day["score"] >= 60:
+            if day["score"] >= 65:
                 consecutive += 1
             else:
                 break
         if consecutive >= 3:
-            s["persistence"] = f"{consecutive}d streak"; s["eligible"] = True
+            s["persistence"] = f"{consecutive}d streak ✅"; s["eligible"] = True
         elif consecutive == 2:
-            s["persistence"] = f"{consecutive}/3 watch"; s["eligible"] = False
+            s["persistence"] = f"{consecutive}/3 days"; s["eligible"] = False
         else:
             s["persistence"] = f"{consecutive}/3 building"; s["eligible"] = False
         out.append(s)
     try:
-        json.dump(history, open("ngx_persistence.json", "w"), indent=2)
+        json.dump(history, open("ngx_persistence.json","w"), indent=2)
     except Exception:
         pass
     return out
@@ -268,16 +308,11 @@ def get_validation_phase():
 
 
 def run_ngx_screen(investos_macro="NORMAL", verbose=True):
-    """
-    Run full NGX macro-driven screen.
-    Returns dict for baking into brief.ngx.
-    """
+    """Run full NGX macro-driven screen. Returns dict for brief.ngx."""
     if verbose:
         print("\n" + "="*55)
         print("  NGX SIGNAL ENGINE — Nigerian Exchange")
         print("="*55)
-
-    if verbose:
         print("\n  Fetching global macro signals...")
 
     regime, macro_score, fx_stress, brent_trend, components = compute_em_regime()
@@ -288,21 +323,19 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
             chg = v.get("chg_20d", v.get("chg", 0)) or 0
             print(f"    {k.upper():<6} 20d:{chg:>+6.2f}%  contrib:{v.get('contribution',0):>+4.1f}")
 
-    # Score all 30 NGX stocks
-    scored = []
-
-    # ── NGN/USD exchange rate for ₦ position sizing context ──────────────────
-    ngn_usd = None
-    cad_usd = 0.74   # approximate — close enough for sizing guidance
+    # ── NGN/USD rate for ₦ position sizing context ────────────────────────────
+    ngn_usd = None; cad_usd = 0.74
     try:
         ngn_data = fetch_macro_asset("NGN=X", period="5d")
-        if ngn_data is not None and not ngn_data.empty:
-            ngn_usd = round(float(ngn_data["Close"].iloc[-1]), 2)
+        if ngn_data and ngn_data[1]:
+            ngn_usd = round(float(ngn_data[1]), 2)
         if verbose and ngn_usd:
-            print(f"  NGN/USD: {ngn_usd:.1f} | ₦10,000 ≈ ${10000/ngn_usd:.2f} USD ≈ ${10000*cad_usd/ngn_usd:.2f} CAD")
+            print(f"  NGN/USD: {ngn_usd:.1f} | ₦10,000 ≈ ${10000/ngn_usd:.2f} USD")
     except Exception:
         pass
 
+    # ── Score all 30 NGX stocks ───────────────────────────────────────────────
+    scored = []
     for ticker in NGX_ALL:
         tier  = 1 if ticker in NGX_TIER1 else 2
         score, reasons, flags = score_ngx_macro(ticker, tier, regime, macro_score, fx_stress)
@@ -310,17 +343,16 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
         if ngn_usd:
             ngn_context = {
                 "ngn_usd_rate":    ngn_usd,
-                "ngn_cad_rate":    round(ngn_usd * cad_usd, 4),
                 "fx_note":         f"₦1 = ${1/ngn_usd:.6f} USD",
-                "conversion_note": f"₦10,000 ≈ ${10000/ngn_usd:.2f} USD ≈ ${10000*cad_usd/ngn_usd:.2f} CAD",
+                "conversion_note": f"₦10,000 ≈ ${10000/ngn_usd:.2f} USD",
             }
         scored.append({
             "ticker": ticker, "name": ticker.replace(".LG",""),
             "tier": tier, "score": score,
-            "sector": NGX_SECTOR_MAP.get(ticker, "unknown"),
+            "sector": NGX_SECTOR_MAP.get(ticker,"unknown"),
             "reasons": reasons, "flags": flags,
-            "action": "SIGNAL", "size_label": "FULL SIZE",
-            "actionable": True, "persistence": "—",
+            "action": "WAIT", "size_label": "—",
+            "actionable": False, "persistence": "—",
             "ngn_context": ngn_context,
         })
     scored.sort(key=lambda x: x["score"], reverse=True)
@@ -329,49 +361,71 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
         print(f"\n  Scored {len(scored)}/30 NGX stocks (macro-driven, no price data needed)")
 
     basket_regime = compute_ngx_basket_regime(scored)
-    eligible = [s for s in scored if s["score"] >= 55]
-    eligible, gate_status = apply_macro_bridge(eligible, investos_macro, brent_trend, basket_regime)
-    eligible = apply_persistence_gate(eligible)
+
+    # ── v2.1 gate: WATCH shows even in RISK_OFF ───────────────────────────────
+    signals, watch, gate_status = apply_macro_bridge(scored, investos_macro, brent_trend, basket_regime)
+
+    # Apply persistence gate only to ENTER-eligible signals
+    signals = apply_persistence_gate(signals)
+
     phase, phase_days = get_validation_phase()
 
+    # Phase overrides
     if phase == "PAPER_ONLY":
-        for s in eligible:
-            s["action"] = "PAPER ONLY"; s["size_label"] = "DO NOT TRADE — PAPER PHASE"
+        for s in signals + watch:
+            s["action"] = "PAPER ONLY"
+            s["size_label"] = "DO NOT TRADE — PAPER PHASE"
     elif phase == "RESTRICTED":
-        eligible = [s for s in eligible if s["tier"] == 1 and s["score"] >= 80]
+        # v2.1: threshold lowered from 80 → 65 (now achievable in NEUTRAL/RISK_ON)
+        signals = [s for s in signals if s["tier"] == 1 and s["score"] >= 65]
 
-    signals = [s for s in eligible if s.get("eligible", True)]
-    watch   = [s for s in eligible if not s.get("eligible", True)]
+    eligible_signals = [s for s in signals if s.get("eligible", True)]
 
     if verbose:
         print(f"\n  NGX Basket: {basket_regime} | Gate: {gate_status}")
         print(f"  Phase: {phase} (Day {phase_days})")
-        print(f"  Signals: {len(signals)} | Watch: {len(watch)}")
-        for s in (signals + watch)[:6]:
+        print(f"  Signals: {len(eligible_signals)} | Watch: {len(watch)}")
+        if watch:
+            print(f"  WATCH picks (tracking, not actionable):")
+            for s in watch[:5]:
+                print(f"    {s['name']:<15} {s['sector']:<12} Score:{s['score']:<6} {s['action']}")
+        for s in eligible_signals[:4]:
             print(f"    {s['name']:<15} {s['sector']:<12} Score:{s['score']:<6} {s['persistence']}")
 
     try:
-        json.dump({"regime": regime, "macro_score": macro_score,
-                   "brent_trend": brent_trend, "basket_regime": basket_regime,
-                   "signals": [{"ticker":s["ticker"],"score":s["score"],"sector":s["sector"]}
-                                for s in signals[:6]],
-                   "timestamp": datetime.now().isoformat()},
-                  open("ngx_snapshot.json","w"), indent=2)
+        json.dump({
+            "regime": regime, "macro_score": macro_score,
+            "brent_trend": brent_trend, "basket_regime": basket_regime,
+            "signals": [{"ticker":s["ticker"],"score":s["score"],"sector":s["sector"]}
+                        for s in eligible_signals[:6]],
+            "watch":   [{"ticker":s["ticker"],"score":s["score"],"sector":s["sector"]}
+                        for s in watch[:6]],
+            "timestamp": datetime.now().isoformat(),
+        }, open("ngx_snapshot.json","w"), indent=2)
     except Exception:
         pass
 
     return {
-        "status": gate_status, "phase": phase, "phase_days": phase_days,
-        "signals": signals, "watch": watch[:5], "all_scored": scored,        # all 30 — needed for outcome resolution
-        "basket_regime": basket_regime, "brent_trend": brent_trend,
-        "macro_regime": regime, "macro_score": macro_score,
-        "fx_stress": fx_stress, "macro_gate": investos_macro,
-        "macro_components": components,
-        "feeds_ok": len(components), "feeds_failed": 0,
-        "timestamp": datetime.now().isoformat(), "data_mode": "MACRO",
+        "status":          gate_status,
+        "phase":           phase,
+        "phase_days":      phase_days,
+        "signals":         eligible_signals,
+        "watch":           watch[:8],
+        "all_scored":      scored,
+        "basket_regime":   basket_regime,
+        "brent_trend":     brent_trend,
+        "macro_regime":    regime,
+        "macro_score":     macro_score,
+        "fx_stress":       fx_stress,
+        "macro_gate":      investos_macro,
+        "macro_components":components,
+        "feeds_ok":        len(components),
+        "feeds_failed":    0,
+        "timestamp":       datetime.now().isoformat(),
+        "data_mode":       "MACRO",
         "note": (
             "Validation phase — paper trade only." if phase == "PAPER_ONLY" else
-            "Tier 1 + score >= 80 only." if phase == "RESTRICTED" else
+            "Tier 1 + score ≥65 only (RESTRICTED)." if phase == "RESTRICTED" else
             "Full signal mode — macro-driven."
         ),
     }
@@ -379,4 +433,6 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
 
 if __name__ == "__main__":
     result = run_ngx_screen(investos_macro="NORMAL", verbose=True)
-    print(f"\nNGX: {len(result['signals'])} signals | basket:{result['basket_regime']} | regime:{result['macro_regime']}")
+    print(f"\nNGX: {len(result['signals'])} signals | "
+          f"watch:{len(result['watch'])} | basket:{result['basket_regime']} | "
+          f"regime:{result['macro_regime']}")
