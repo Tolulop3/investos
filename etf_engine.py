@@ -1,35 +1,20 @@
 """
-etf_engine.py — InvestOS ETF Signal Engine v2
+etf_engine.py — InvestOS ETF Signal Engine v2.1
 ==============================================
 Scores 32 ETFs (+ XOM/CVX as energy confirmation signals).
 
-New in v2:
-  - MER (management expense ratio) per ETF
-  - Thesis type: commodity | earnings | theme | bond | index
-  - 52-week range position → overextended warning
-  - DCA vs lump sum recommendation
-  - Dividend yield + sustainability check
-  - Overlap deduplication within each account
-  - XOM + CVX as underlying confirmation for XLE/XEG
-
-Two scoring tracks:
-  - core:     regime + momentum + fundamentals
-  - thematic: regime + news signal + momentum only
-
-Account routing:
-  - RRSP → US-listed preferred (IRS withholding treaty)
-  - TFSA → .TO preferred, sector/thematic OK
-  - FHSA → conservative Canadian-focused only
+v2.1: Score cap by category — prevents RISK_ON multiplier from inflating
+thematic ETFs to 100 regardless of actual quality difference.
+  THEMATIC (ARKG, BOTZ, CIBR etc.): capped at 85
+  SECTOR commodity (XLE, XEG, GLD): capped at 88
+  CORE, DEFENSIVE: uncapped
 """
 
 import yfinance as yf
 from datetime import datetime, date
 import traceback
 
-# ── ETF UNIVERSE ──────────────────────────────────────────────────────────────
-# ticker, name, category, track, acct_pref, sector_signal, mer, thesis, overlap_group
 ETF_UNIVERSE = [
-    # ── CORE EQUITY ───────────────────────────────────────────────────────────
     ("VFV.TO",  "S&P 500 (CAD)",         "CORE",      "core",     "ALL",  None,              0.09, "index",     "sp500"),
     ("VOO",     "S&P 500 (USD)",          "CORE",      "core",     "RRSP", None,              0.03, "index",     "sp500"),
     ("XIC.TO",  "TSX Composite",          "CORE",      "core",     "ALL",  "TSX_BROAD",       0.06, "index",     "tsx_broad"),
@@ -37,8 +22,6 @@ ETF_UNIVERSE = [
     ("QQQ",     "NASDAQ 100",             "CORE",      "core",     "RRSP", "TECH",            0.20, "index",     "nasdaq"),
     ("XEF.TO",  "Intl Developed",         "CORE",      "core",     "TFSA", None,              0.22, "index",     "intl_dev"),
     ("VWO",     "Emerging Markets",       "CORE",      "core",     "RRSP", None,              0.08, "index",     "em"),
-
-    # ── SECTOR ────────────────────────────────────────────────────────────────
     ("XEG.TO",  "Canadian Energy",        "SECTOR",    "core",     "TFSA", "CANADIAN_ENERGY", 0.61, "commodity", "cdn_energy"),
     ("XLE",     "US Energy",              "SECTOR",    "core",     "RRSP", "OIL_PRODUCERS",   0.09, "commodity", "us_energy"),
     ("ZEB.TO",  "Canadian Banks",         "SECTOR",    "core",     "FHSA", "CANADIAN_BANKS",  0.28, "earnings",  "cdn_banks"),
@@ -46,58 +29,36 @@ ETF_UNIVERSE = [
     ("GLD",     "Gold",                   "SECTOR",    "core",     "RRSP", "GOLD",            0.40, "commodity", "gold"),
     ("XRE.TO",  "Canadian REITs",         "SECTOR",    "core",     "TFSA", "CANADIAN_REITS",  0.61, "earnings",  "cdn_reit"),
     ("ZLB.TO",  "Canadian Low-Vol",       "SECTOR",    "core",     "FHSA", None,              0.39, "index",     "cdn_lowvol"),
-
-    # ── THEMATIC — AI / TECH ──────────────────────────────────────────────────
     ("BOTZ",    "Robotics & AI",          "THEMATIC",  "thematic", "RRSP", "TECH",            0.69, "theme",     "ai_tech"),
     ("SMH",     "Semiconductors",         "THEMATIC",  "thematic", "RRSP", "TECH",            0.35, "earnings",  "semis"),
     ("SKYY",    "Cloud Computing",        "THEMATIC",  "thematic", "RRSP", "TECH",            0.68, "theme",     "cloud"),
     ("CIBR",    "Cybersecurity",          "THEMATIC",  "thematic", "RRSP", "CYBERSECURITY",   0.60, "theme",     "cyber"),
-
-    # ── THEMATIC — DEFENSE ────────────────────────────────────────────────────
     ("ITA",     "Aerospace & Defense",    "THEMATIC",  "thematic", "RRSP", "DEFENSE",         0.40, "earnings",  "defense"),
     ("PPA",     "Aerospace & Defense",    "THEMATIC",  "thematic", "RRSP", "DEFENSE",         0.20, "earnings",  "defense"),
     ("SHLD",    "Defense Tech",           "THEMATIC",  "thematic", "RRSP", "DEFENSE",         0.50, "theme",     "defense"),
-
-    # ── THEMATIC — EMERGING TECH ──────────────────────────────────────────────
     ("QTUM",    "Quantum Computing",      "THEMATIC",  "thematic", "RRSP", "TECH",            0.76, "theme",     "quantum"),
     ("ARKG",    "Genomics",               "THEMATIC",  "thematic", "RRSP", "BIOTECH",         0.75, "theme",     "genomics"),
     ("BLOK",    "Blockchain",             "THEMATIC",  "thematic", "RRSP", "TECH",            0.76, "theme",     "blockchain"),
-
-    # ── DEFENSIVE / BOND ──────────────────────────────────────────────────────
     ("ZAG.TO",  "Canadian Agg Bonds",     "DEFENSIVE", "core",     "FHSA", None,              0.14, "bond",      "cdn_bond"),
     ("XBB.TO",  "Canadian Bond Universe", "DEFENSIVE", "core",     "FHSA", None,              0.10, "bond",      "cdn_bond"),
     ("TLT",     "US Long Bonds",          "DEFENSIVE", "core",     "RRSP", None,              0.15, "bond",      "us_ltbond"),
     ("ZLB.TO",  "Canadian Low-Vol Eq",    "DEFENSIVE", "core",     "FHSA", None,              0.39, "index",     "cdn_lowvol"),
-
-    # ── INTERNATIONAL ─────────────────────────────────────────────────────────
     ("EFA",     "Intl Developed",         "INTL",      "core",     "RRSP", None,              0.32, "index",     "intl_dev"),
     ("EEM",     "Emerging Markets",       "INTL",      "core",     "RRSP", None,              0.68, "index",     "em"),
-
-    # ── ENERGY CONFIRMATION STOCKS (feed XLE/XEG scoring) ────────────────────
     ("XOM",     "ExxonMobil",             "SIGNAL",    "core",     "RRSP", "OIL_PRODUCERS",   0.00, "earnings",  "us_energy"),
     ("CVX",     "Chevron",                "SIGNAL",    "core",     "RRSP", "OIL_PRODUCERS",   0.00, "earnings",  "us_energy"),
 ]
 
-# ── FHSA FILTERS ──────────────────────────────────────────────────────────────
 FHSA_PREFERRED = {"XEQT.TO","VFV.TO","XIC.TO","ZEB.TO","ZAG.TO","XBB.TO","ZLB.TO","XEF.TO"}
 FHSA_AVOID     = {"BOTZ","SMH","SKYY","CIBR","ITA","SHLD","PPA","QTUM","ARKG","BLOK",
                    "GLD","TLT","VWO","EEM","XLE","QQQ","VOO","XOM","CVX"}
 
-# ── OVERLAP GROUPS — only keep best per group per account ─────────────────────
-# Same group = same/very-similar exposure → deduplicate
 OVERLAP_GROUPS = {
-    "sp500":       "S&P 500 (pick one wrapper)",
-    "tsx_broad":   "TSX broad (pick one)",
-    "cdn_energy":  "Canadian energy",
-    "us_energy":   "US energy",
-    "gold":        "Gold (pick one wrapper)",
-    "cdn_bond":    "Canadian bonds",
-    "defense":     "Defense (pick one)",
-    "intl_dev":    "International developed",
-    "em":          "Emerging markets",
+    "sp500": "S&P 500 (pick one)", "tsx_broad": "TSX broad", "cdn_energy": "Canadian energy",
+    "us_energy": "US energy", "gold": "Gold", "cdn_bond": "Canadian bonds",
+    "defense": "Defense", "intl_dev": "International developed", "em": "Emerging markets",
 }
 
-# ── SECTOR SIGNAL → ETF BOOST ─────────────────────────────────────────────────
 SECTOR_ETF_BOOST = {
     "DEFENSE":         [("ITA",+25),("SHLD",+20),("PPA",+20)],
     "GOLD":            [("GLD",+25),("ZGD.TO",+25)],
@@ -111,7 +72,6 @@ SECTOR_ETF_BOOST = {
     "AIRLINES":        [("ITA",-10)],
 }
 
-# ── REGIME → CATEGORY WEIGHTS ─────────────────────────────────────────────────
 REGIME_WEIGHTS = {
     "RISK_ON":  {"CORE":1.0,"SECTOR":1.0,"THEMATIC":1.0,"DEFENSIVE":0.3,"INTL":1.0,"SIGNAL":1.0},
     "NEUTRAL":  {"CORE":0.8,"SECTOR":0.7,"THEMATIC":0.6,"DEFENSIVE":0.8,"INTL":0.7,"SIGNAL":0.8},
@@ -126,7 +86,6 @@ ACCOUNT_ALLOCATION = {
 
 
 def _fetch_etf_data(ticker):
-    """Fetch price, momentum, MA, 52wk range, and dividend data."""
     try:
         t    = yf.Ticker(ticker)
         hist = t.history(period="12mo", interval="1d", auto_adjust=True)
@@ -142,98 +101,70 @@ def _fetch_etf_data(ticker):
         ma50   = sum(closes[-50:])/50   if len(closes)>=50  else None
         ma200  = sum(closes[-200:])/200 if len(closes)>=200 else None
 
-        # 52-week range position
-        hi52  = max(closes)
-        lo52  = min(closes)
-        rng   = hi52 - lo52
-        range_pct = round((price - lo52) / rng * 100) if rng > 0 else 50
-
-        # Overextended: top 20% of 52wk range = possible profit-taking zone
+        hi52  = max(closes); lo52 = min(closes); rng = hi52 - lo52
+        range_pct    = round((price - lo52) / rng * 100) if rng > 0 else 50
         overextended = range_pct >= 80
-
-        # DCA recommended when overextended or above 200MA and >70th pct
         dca_recommended = overextended or (price > (ma200 or 0) and range_pct >= 70)
 
-        # Dividend yield from info (best-effort, fails gracefully)
-        div_yield     = None
-        div_5yr_avg   = None
-        div_flag      = None   # "HIGH" "NORMAL" "LOW" "NONE"
+        div_yield = div_5yr_avg = div_flag = None
         try:
             info = t.info
             div_yield   = info.get("dividendYield") or info.get("trailingAnnualDividendYield")
             div_5yr_avg = info.get("fiveYearAvgDividendYield")
-            if div_yield:
-                div_yield = round(div_yield * 100, 2)
-            if div_5yr_avg:
-                div_5yr_avg = round(div_5yr_avg, 2)
-            # Sustainability flag
+            if div_yield:   div_yield   = round(div_yield * 100, 2)
+            if div_5yr_avg: div_5yr_avg = round(div_5yr_avg, 2)
             if div_yield and div_5yr_avg and div_5yr_avg > 0:
                 ratio = div_yield / div_5yr_avg
-                if ratio > 1.5:   div_flag = "HIGH"    # yield spiked = price drop warning
-                elif ratio > 0.8: div_flag = "NORMAL"
-                else:             div_flag = "LOW"
-            elif div_yield and div_yield > 0:
-                div_flag = "NORMAL"
-            else:
-                div_flag = "NONE"
-        except Exception:
-            pass
+                div_flag = "HIGH" if ratio > 1.5 else "NORMAL" if ratio > 0.8 else "LOW"
+            elif div_yield and div_yield > 0: div_flag = "NORMAL"
+            else: div_flag = "NONE"
+        except: pass
 
         return {
-            "price":           round(price, 2),
-            "ret_30":          round(ret_30, 1),
-            "ret_90":          round(ret_90, 1),
-            "above_ma50":      price > ma50   if ma50  else False,
-            "above_ma200":     price > ma200  if ma200 else False,
-            "ma50":            round(ma50,  2) if ma50  else None,
-            "ma200":           round(ma200, 2) if ma200 else None,
-            "hi52":            round(hi52, 2),
-            "lo52":            round(lo52, 2),
-            "range_pct":       range_pct,
-            "overextended":    overextended,
+            "price": round(price, 2), "ret_30": round(ret_30, 1), "ret_90": round(ret_90, 1),
+            "above_ma50": price > ma50 if ma50 else False,
+            "above_ma200": price > ma200 if ma200 else False,
+            "ma50": round(ma50, 2) if ma50 else None,
+            "ma200": round(ma200, 2) if ma200 else None,
+            "hi52": round(hi52, 2), "lo52": round(lo52, 2),
+            "range_pct": range_pct, "overextended": overextended,
             "dca_recommended": dca_recommended,
-            "div_yield":       div_yield,
-            "div_5yr_avg":     div_5yr_avg,
-            "div_flag":        div_flag,
+            "div_yield": div_yield, "div_5yr_avg": div_5yr_avg, "div_flag": div_flag,
         }
-    except Exception:
-        return None
+    except: return None
 
 
 def _score_etf(ticker, name, category, track, sector_signal,
                price_data, sector_sentiment, unified_regime, breadth):
-    """Score one ETF 0-100 with reasoning."""
     if not price_data:
         return None
 
-    score   = 50.0
+    score = 50.0
     reasons = []
-
-    # ── MOMENTUM ──────────────────────────────────────────────────────────────
     r90 = price_data["ret_90"]
     r30 = price_data["ret_30"]
 
+    # Momentum
     if r90 > 15:    score += 15; reasons.append(f"Strong 90d: +{r90:.1f}%")
     elif r90 > 5:   score += 8;  reasons.append(f"Positive 90d: +{r90:.1f}%")
     elif r90 < -10: score -= 12; reasons.append(f"Weak 90d: {r90:.1f}%")
     elif r90 < 0:   score -= 5;  reasons.append(f"Negative 90d: {r90:.1f}%")
-
     if r30 > 8:     score += 8;  reasons.append(f"Strong 30d: +{r30:.1f}%")
     elif r30 > 2:   score += 4
     elif r30 < -5:  score -= 8
 
-    # ── OVEREXTENDED PENALTY ──────────────────────────────────────────────────
+    # Overextended
     if price_data.get("overextended"):
         score -= 8
         reasons.append(f"Overextended: top {100-price_data['range_pct']}% of 52wk range")
 
-    # ── MA POSITION ───────────────────────────────────────────────────────────
+    # MA position
     if price_data["above_ma200"]:  score += 10; reasons.append("Above 200MA ✅")
     else:                          score -= 10; reasons.append("Below 200MA ⚠️")
     if price_data["above_ma50"]:   score += 5
     else:                          score -= 5
 
-    # ── SECTOR SIGNAL ─────────────────────────────────────────────────────────
+    # Sector signal
     if sector_signal and sector_sentiment:
         net = sector_sentiment.get(sector_signal, {}).get("net_score", 0)
         if net > 200:    score += 20; reasons.append(f"{sector_signal} strongly bullish")
@@ -242,7 +173,7 @@ def _score_etf(ticker, name, category, track, sector_signal,
         elif net < -100: score -= 15; reasons.append(f"{sector_signal} bearish")
         elif net < -50:  score -= 8
 
-    # ── BREADTH OVERLAY ───────────────────────────────────────────────────────
+    # Breadth overlay
     if breadth:
         sig = breadth.get("signal","MODERATE")
         if category == "THEMATIC":
@@ -252,38 +183,52 @@ def _score_etf(ticker, name, category, track, sector_signal,
         elif category == "DEFENSIVE":
             if sig == "BEAR_BREADTH":  score += 8;  reasons.append("Weak breadth — defensive preferred")
 
-    # ── REGIME WEIGHT ─────────────────────────────────────────────────────────
-    rk  = unified_regime if unified_regime in REGIME_WEIGHTS else "NEUTRAL"
+    # Regime weight
+    rk    = unified_regime if unified_regime in REGIME_WEIGHTS else "NEUTRAL"
     score = score * REGIME_WEIGHTS[rk].get(category, 1.0)
 
+    # ── SCORE CAP v2.1 — prevent RISK_ON multiplier from inflating to 100 ────
+    # In RISK_ON, regime weight=1.0 + strong momentum + sector boost can push
+    # thematic ETFs to 100, making them indistinguishable from each other.
+    # Caps force meaningful ranking within each category.
+    #   THEMATIC: max 85 — ARKG, ITA, CIBR, SKYY, BOTZ, SHLD, QTUM, BLOK
+    #   SECTOR commodity: max 88 — XLE, XEG.TO, GLD, ZGD.TO
+    #   CORE, DEFENSIVE, INTL: uncapped — anchor positions, let them score freely
+    if category == "THEMATIC":
+        score = min(score, 85)
+    elif category == "SECTOR" and track == "core":
+        # Only cap commodity sector ETFs, not earnings-driven sector ETFs
+        thesis_map = {t[0]: t[7] for t in ETF_UNIVERSE}
+        if thesis_map.get(ticker) == "commodity":
+            score = min(score, 88)
+
     return {
-        "score":   min(100, max(0, round(score, 1))),
-        "reasons": reasons[:3],
-        "ret_30":  r30,
-        "ret_90":  r90,
-        "price":   price_data["price"],
-        "above_ma200": price_data["above_ma200"],
+        "score":      min(100, max(0, round(score, 1))),
+        "reasons":    reasons[:3],
+        "ret_30":     r30,
+        "ret_90":     r90,
+        "price":      price_data["price"],
+        "above_ma200":price_data["above_ma200"],
     }
 
 
 def run_etf_engine(sector_sentiment, unified_regime, breadth, verbose=True):
-    """Score all ETFs, return ranked picks per account type."""
     if verbose:
         print("\n=======================================================")
         print("  ETF SIGNAL ENGINE")
         print("=======================================================")
         print(f"  Regime: {unified_regime} | Breadth: {breadth.get('signal','?') if breadth else '?'}")
-        print(f"  Scoring {len([e for e in ETF_UNIVERSE if e[3]!='SIGNAL'])} ETFs + XOM/CVX confirmation...\n")
+        n_etfs = len([e for e in ETF_UNIVERSE if e[2] != 'SIGNAL'])
+        print(f"  Scoring {n_etfs} ETFs + XOM/CVX confirmation...\n")
 
     rk         = unified_regime if unified_regime in REGIME_WEIGHTS else "NEUTRAL"
     allocation = ACCOUNT_ALLOCATION.get(rk, ACCOUNT_ALLOCATION["NEUTRAL"])
 
-    # ── Fetch energy confirmation stocks first ────────────────────────────────
+    # Energy confirmation
     energy_confirmed = False
     xom_data = _fetch_etf_data("XOM")
     cvx_data = _fetch_etf_data("CVX")
     if xom_data and cvx_data:
-        # Both above 200MA AND positive 90d = energy thesis confirmed
         energy_confirmed = (
             xom_data["above_ma200"] and cvx_data["above_ma200"] and
             xom_data["ret_90"] > 0   and cvx_data["ret_90"] > 0
@@ -291,24 +236,22 @@ def run_etf_engine(sector_sentiment, unified_regime, breadth, verbose=True):
         if verbose:
             xom_ok = "✅" if xom_data["above_ma200"] else "❌"
             cvx_ok = "✅" if cvx_data["above_ma200"] else "❌"
-            conf   = "CONFIRMED ✅" if energy_confirmed else "NOT confirmed ⚠️"
             print(f"  Energy confirmation: XOM {xom_ok} {xom_data['ret_90']:+.1f}% | "
-                  f"CVX {cvx_ok} {cvx_data['ret_90']:+.1f}% | {conf}")
+                  f"CVX {cvx_ok} {cvx_data['ret_90']:+.1f}% | "
+                  f"{'CONFIRMED ✅' if energy_confirmed else 'NOT confirmed ⚠️'}")
 
-    # ── Score all ETFs ────────────────────────────────────────────────────────
+    # Score all ETFs
     scored = []
     for row in ETF_UNIVERSE:
         ticker, name, category, track, acct_pref, sector_signal, mer, thesis, overlap_group = row
-        if category == "SIGNAL":   # XOM/CVX — confirmation only, not picks
+        if category == "SIGNAL":
             continue
-
         price_data = _fetch_etf_data(ticker)
         result     = _score_etf(ticker, name, category, track, sector_signal,
                                 price_data, sector_sentiment, unified_regime, breadth)
         if not result:
             continue
 
-        # Sector boost from news signals
         boost = 0
         for sector, boosts in SECTOR_ETF_BOOST.items():
             net = (sector_sentiment or {}).get(sector, {}).get("net_score", 0)
@@ -317,51 +260,41 @@ def run_etf_engine(sector_sentiment, unified_regime, breadth, verbose=True):
                     if net > 50  and b > 0: boost += b
                     if net < -50 and b < 0: boost += b
 
-        # Energy boost from XOM/CVX confirmation
         if overlap_group in ("cdn_energy","us_energy") and energy_confirmed:
             boost += 10
 
         final_score = min(100, max(0, round(result["score"] + boost * 0.5, 1)))
+        # Re-apply cap after boost (boost can push capped scores over limit)
+        if category == "THEMATIC":
+            final_score = min(final_score, 85)
+        elif category == "SECTOR" and thesis == "commodity":
+            final_score = min(final_score, 88)
 
-        pd = price_data or {}
+        pd_data = price_data or {}
         scored.append({
-            "ticker":          ticker,
-            "name":            name,
-            "category":        category,
-            "track":           track,
-            "acct_pref":       acct_pref,
-            "sector_signal":   sector_signal,
-            "overlap_group":   overlap_group,
-            "mer":             mer,
-            "thesis":          thesis,
-            "score":           final_score,
-            "reasons":         result["reasons"],
-            "ret_30":          result["ret_30"],
-            "ret_90":          result["ret_90"],
-            "price":           result["price"],
-            "above_ma200":     result["above_ma200"],
-            "signal_boost":    boost,
-            "range_pct":       pd.get("range_pct", 50),
-            "overextended":    pd.get("overextended", False),
-            "dca_recommended": pd.get("dca_recommended", False),
-            "div_yield":       pd.get("div_yield"),
-            "div_flag":        pd.get("div_flag"),
-            "energy_confirmed":energy_confirmed if overlap_group in ("cdn_energy","us_energy") else None,
+            "ticker": ticker, "name": name, "category": category,
+            "track": track, "acct_pref": acct_pref, "sector_signal": sector_signal,
+            "overlap_group": overlap_group, "mer": mer, "thesis": thesis,
+            "score": final_score, "reasons": result["reasons"],
+            "ret_30": result["ret_30"], "ret_90": result["ret_90"],
+            "price": result["price"], "above_ma200": result["above_ma200"],
+            "signal_boost": boost,
+            "range_pct": pd_data.get("range_pct", 50),
+            "overextended": pd_data.get("overextended", False),
+            "dca_recommended": pd_data.get("dca_recommended", False),
+            "div_yield": pd_data.get("div_yield"),
+            "div_flag": pd_data.get("div_flag"),
+            "energy_confirmed": energy_confirmed if overlap_group in ("cdn_energy","us_energy") else None,
         })
 
     scored.sort(key=lambda x: x["score"], reverse=True)
 
-    # ── Deduplicate by overlap group within each account ─────────────────────
     def dedupe(picks):
-        """Keep only the highest-scoring ETF per overlap group."""
-        seen_groups = set()
-        out = []
+        seen_groups = set(); out = []
         for p in picks:
             grp = p.get("overlap_group")
-            if grp and grp in seen_groups:
-                continue  # already have a better one from this group
-            if grp:
-                seen_groups.add(grp)
+            if grp and grp in seen_groups: continue
+            if grp: seen_groups.add(grp)
             out.append(p)
         return out
 
@@ -373,11 +306,10 @@ def run_etf_engine(sector_sentiment, unified_regime, breadth, verbose=True):
                 preferred = not ticker.endswith(".TO") or e["acct_pref"] == "RRSP"
             elif acct == "TFSA":
                 preferred = ticker.endswith(".TO") or e["acct_pref"] == "TFSA"
-            else:  # FHSA
+            else:
                 if ticker in FHSA_AVOID: continue
                 preferred = ticker in FHSA_PREFERRED
             picks.append({**e, "preferred": preferred})
-
         picks.sort(key=lambda x: (not x["preferred"], -x["score"]))
         return dedupe(picks)[:n]
 
@@ -392,17 +324,14 @@ def run_etf_engine(sector_sentiment, unified_regime, breadth, verbose=True):
                 star = "⭐" if p["preferred"] else "  "
                 dca  = " [DCA]" if p.get("dca_recommended") else ""
                 ext  = " ⚠️OVEREXTENDED" if p.get("overextended") else ""
+                cap  = " [CAPPED]" if p["category"] in ("THEMATIC",) and p["score"] == 85 else ""
                 print(f"  {star} {p['ticker']:10s} Score:{p['score']:5.1f}  "
-                      f"90d:{p['ret_90']:+.1f}%  MER:{p['mer']:.2f}%{dca}{ext}")
+                      f"90d:{p['ret_90']:+.1f}%  MER:{p['mer']:.2f}%{dca}{ext}{cap}")
             print()
 
     return {
-        "scored":            scored,
-        "rrsp_picks":        rrsp_picks,
-        "tfsa_picks":        tfsa_picks,
-        "fhsa_picks":        fhsa_picks,
-        "allocation":        allocation,
-        "regime":            unified_regime,
-        "etf_count":         len(scored),
-        "energy_confirmed":  energy_confirmed,
+        "scored": scored, "rrsp_picks": rrsp_picks,
+        "tfsa_picks": tfsa_picks, "fhsa_picks": fhsa_picks,
+        "allocation": allocation, "regime": unified_regime,
+        "etf_count": len(scored), "energy_confirmed": energy_confirmed,
     }

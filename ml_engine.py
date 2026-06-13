@@ -8,7 +8,12 @@ Predicts: probability a stock outperforms S&P 500 over next 3 months
 Trains on: rolling 5-year window, retrained monthly
 Validates: strict walk-forward, no lookahead bias
 
-INSTALL: pip install xgboost scikit-learn pandas numpy yfinance fredapi --break-system-packages
+v2.1 changes:
+  - Half-Kelly position sizing calibrated to actual 1,466+ pick win rates
+  - Score smoothing: 3-day EMA on ML probability to dampen single-day spikes
+  - Kelly fractions: 60-74 tier is the real edge, 90-100 has negative Kelly
+
+INSTALL: pip install xgboost scikit-learn pandas numpy yfinance --break-system-packages
 """
 
 import json
@@ -23,21 +28,20 @@ from collections import defaultdict
 
 warnings.filterwarnings('ignore')
 
-# ── Try importing ML libs gracefully ──────────────────────
 try:
     import numpy as np
     import pandas as pd
     HAS_PANDAS = True
 except ImportError:
     HAS_PANDAS = False
-    print("⚠️  pandas/numpy not installed. Run: pip install pandas numpy --break-system-packages")
+    print("⚠️  pandas/numpy not installed.")
 
 try:
     from xgboost import XGBClassifier
     HAS_XGB = True
 except ImportError:
     HAS_XGB = False
-    print("⚠️  xgboost not installed. Run: pip install xgboost --break-system-packages")
+    print("⚠️  xgboost not installed.")
 
 try:
     from sklearn.preprocessing import StandardScaler
@@ -51,71 +55,93 @@ except ImportError:
 # ============================================================
 
 ML_CONFIG = {
-    # Features — academically proven factors
-    # market_regime REMOVED: use as filter not predictor (was dominating at 0.243)
-    # Added: vol_adj_momentum (momentum/volatility ratio — more stable signal)
     "features": [
-        "momentum_6m",        # 6-month price return
-        "momentum_12m",       # 12-month return (skip last month)
-        "vol_adj_momentum",   # momentum_6m / volatility — risk-adjusted momentum
-        "roe",                # Return on equity
-        "profit_margin",      # Net profit margin
-        "earnings_yield",     # 1 / PE ratio
-        "fcf_yield",          # Free cash flow yield
-        "volatility_90d",     # 90-day realized volatility
-        "beta",               # Beta vs S&P 500
-        "rev_growth",         # Revenue growth YoY
-        "earn_growth",        # Earnings growth YoY
-        "div_yield",          # Dividend yield
-        "debt_equity",        # Debt to equity ratio
-        "rs_rating",          # Relative strength vs universe
-        "sector_momentum",    # Sector 3-month performance
+        "momentum_6m",
+        "momentum_12m",
+        "vol_adj_momentum",
+        "roe",
+        "profit_margin",
+        "earnings_yield",
+        "fcf_yield",
+        "volatility_90d",
+        "beta",
+        "rev_growth",
+        "earn_growth",
+        "div_yield",
+        "debt_equity",
+        "rs_rating",
+        "sector_momentum",
     ],
-
-    # XGBoost — simple, interpretable settings (no grid search overfitting)
     "xgb_params": {
         "n_estimators":     100,
-        "max_depth":        3,       # Shallow trees = less overfit
+        "max_depth":        3,
         "learning_rate":    0.05,
         "subsample":        0.8,
         "colsample_bytree": 0.7,
-        "min_child_weight": 5,       # Prevents fitting noise
-        "reg_alpha":        0.1,     # L1 regularization
-        "reg_lambda":       1.0,     # L2 regularization
+        "min_child_weight": 5,
+        "reg_alpha":        0.1,
+        "reg_lambda":       1.0,
         "random_state":     42,
         "eval_metric":      "auc",
         "use_label_encoder":False,
     },
-
-    # Portfolio rules
     "max_positions":        20,
     "min_positions":        10,
-    "max_position_pct":     0.05,    # 5% per position
-    "max_sector_pct":       0.25,    # 25% per sector
+    "max_position_pct":     0.05,
+    "max_sector_pct":       0.25,
     "training_window_years": 5,
     "prediction_horizon_months": 3,
-
-    # Risk management — NON NEGOTIABLE
-    "max_portfolio_volatility": 0.15,   # 15% annual vol cap
-    "drawdown_reduction_trigger": 0.15, # 15% drawdown → reduce exposure
-    "drawdown_reduction_amount":  0.30, # Reduce by 30%
-    "regime_cash_pct":            0.50, # 50% cash in bear market
-    "transaction_cost_bps":       15,   # 15 bps per trade
+    "max_portfolio_volatility": 0.15,
+    "drawdown_reduction_trigger": 0.15,
+    "drawdown_reduction_amount":  0.30,
+    "regime_cash_pct":            0.50,
+    "transaction_cost_bps":       15,
 }
+
+# ── Score smoothing cache (in-memory, persisted to JSON) ──────────────────────
+# Stores last 3 ML probabilities per ticker for EMA smoothing.
+# Prevents a single outlier day (99 → 72 in one run) from driving decisions.
+_SMOOTH_CACHE_FILE = "ml_score_smooth.json"
+_smooth_cache = {}
+
+def _load_smooth_cache():
+    global _smooth_cache
+    try:
+        if os.path.exists(_SMOOTH_CACHE_FILE):
+            _smooth_cache = json.load(open(_SMOOTH_CACHE_FILE))
+    except Exception:
+        _smooth_cache = {}
+
+def _save_smooth_cache():
+    try:
+        json.dump(_smooth_cache, open(_SMOOTH_CACHE_FILE, "w"), indent=2)
+    except Exception:
+        pass
+
+def smooth_ml_prob(ticker, raw_prob, alpha=0.4):
+    """
+    3-day exponential moving average of ML probability.
+    alpha=0.4: today's score weighted 40%, history 60%.
+    Dampens spikes without lagging too far behind real moves.
+    """
+    global _smooth_cache
+    history = _smooth_cache.get(ticker, [])
+    if history:
+        prev_ema = history[-1]
+        smoothed = alpha * raw_prob + (1 - alpha) * prev_ema
+    else:
+        smoothed = raw_prob  # first run — no history
+    # Keep last 3 values
+    history = (history + [round(smoothed, 4)])[-3:]
+    _smooth_cache[ticker] = history
+    return round(smoothed, 4)
+
 
 # ============================================================
 # MARKET REGIME FILTER
-# The most important risk control in the system
 # ============================================================
 
 def get_market_regime(verbose=True):
-    """
-    S&P 500 above 200-day MA = BULL (full exposure)
-    S&P 500 below 200-day MA = BEAR (50% cash)
-    
-    This single filter dramatically reduces drawdowns.
-    Academic basis: Faber 2007, confirmed across multiple studies.
-    """
     try:
         url = ("https://query1.finance.yahoo.com/v8/finance/chart/"
                "^GSPC?interval=1d&range=1y")
@@ -133,32 +159,19 @@ def get_market_regime(verbose=True):
         ma50     = sum(closes[-50:])  / 50
         pct_diff = (spx - ma200) / ma200 * 100
 
-        # Regime classification
         if spx > ma200 and ma50 > ma200:
-            regime   = "BULL"
-            signal   = "FULL_EXPOSURE"
-            cash_pct = 0.0
+            regime = "BULL"; signal = "FULL_EXPOSURE"; cash_pct = 0.0
         elif spx > ma200 and ma50 <= ma200:
-            regime   = "RECOVERY"
-            signal   = "CAUTIOUS_EXPOSURE"
-            cash_pct = 0.20
+            regime = "RECOVERY"; signal = "CAUTIOUS_EXPOSURE"; cash_pct = 0.20
         elif spx <= ma200 and pct_diff > -5:
-            regime   = "CAUTION"
-            signal   = "REDUCED_EXPOSURE"
-            cash_pct = 0.30
+            regime = "CAUTION"; signal = "REDUCED_EXPOSURE"; cash_pct = 0.30
         else:
-            regime   = "BEAR"
-            signal   = "DEFENSIVE"
-            cash_pct = ML_CONFIG["regime_cash_pct"]
+            regime = "BEAR"; signal = "DEFENSIVE"; cash_pct = ML_CONFIG["regime_cash_pct"]
 
         result = {
-            "regime":       regime,
-            "signal":       signal,
-            "cash_pct":     cash_pct,
-            "spx_price":    round(spx, 2),
-            "ma200":        round(ma200, 2),
-            "ma50":         round(ma50, 2),
-            "pct_above_ma": round(pct_diff, 2),
+            "regime": regime, "signal": signal, "cash_pct": cash_pct,
+            "spx_price": round(spx, 2), "ma200": round(ma200, 2),
+            "ma50": round(ma50, 2), "pct_above_ma": round(pct_diff, 2),
             "full_exposure_pct": round((1 - cash_pct) * 100, 0)
         }
 
@@ -169,7 +182,6 @@ def get_market_regime(verbose=True):
             print(f"   Signal: {signal} | Cash allocation: {cash_pct*100:.0f}%")
 
         return result
-
     except Exception as e:
         print(f"   ⚠️ Regime check failed: {e}")
         return {"regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
@@ -178,21 +190,12 @@ def get_market_regime(verbose=True):
 
 # ============================================================
 # FEATURE BUILDER
-# Builds the feature matrix for ML training + prediction
-# No lookahead bias — all features use data available at prediction time
 # ============================================================
 
 def build_features_for_stock(ticker, stock_data, rs_rating=50):
-    """
-    Build feature vector for a single stock.
-    All features are point-in-time — no future data used.
-    """
     if not HAS_PANDAS:
         return None
-
     try:
-        # Price momentum features — use screener's already-fetched data where possible
-        # Yahoo HTTP call here is secondary — screener OHLCV is the primary source
         try:
             url = (f"https://query1.finance.yahoo.com/v8/finance/chart/"
                    f"{urllib.parse.quote(ticker)}?interval=1mo&range=18mo")
@@ -201,25 +204,18 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
                 data = json.loads(r.read().decode())
             closes = [c for c in data['chart']['result'][0]['indicators']['quote'][0]['close'] if c]
         except Exception:
-            # Yahoo blocked or timed out — derive momentum from stock_data (screener already has this)
-            perf_90d  = stock_data.get("perf_90d", 0) / 100
-            perf_30d  = stock_data.get("perf_30d", 0) / 100
-            closes = []  # signals we use screener data below
+            closes = []
 
         if len(closes) >= 13:
-            # Momentum — skip last month to avoid reversal bias
             mom_6m  = (closes[-2] - closes[-8])  / closes[-8]  if len(closes) >= 8  else 0
             mom_12m = (closes[-2] - closes[-14]) / closes[-14] if len(closes) >= 14 else 0
-            # Volatility — daily returns std
             daily_rets = [(closes[i] - closes[i-1]) / closes[i-1] for i in range(1, min(91, len(closes)))]
             vol_90d = (sum(r**2 for r in daily_rets) / len(daily_rets)) ** 0.5 * (252 ** 0.5) if daily_rets else 0.2
         else:
-            # Fallback to screener data (always available, already fetched)
-            mom_6m  = stock_data.get("perf_90d", 0) / 100   # approx 6m from 90d
-            mom_12m = stock_data.get("perf_90d", 0) / 100 * 1.5  # rough 12m estimate
+            mom_6m  = stock_data.get("perf_90d", 0) / 100
+            mom_12m = stock_data.get("perf_90d", 0) / 100 * 1.5
             vol_90d = stock_data.get("volatility", 2.0) / 100
 
-        # Pull fundamentals from stock_data (already fetched by screener)
         roe           = stock_data.get("roe", 0) / 100
         profit_margin = stock_data.get("profit_margin", 0) / 100
         pe            = stock_data.get("pe_ratio", 20) or 20
@@ -227,19 +223,13 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
         div_yield     = stock_data.get("div_yield", 0) / 100
         rev_growth    = stock_data.get("rev_growth", 0) / 100
         earn_growth   = stock_data.get("earn_growth", 0) / 100
-        debt_equity   = min(stock_data.get("debt_equity", 1) or 1, 10) / 10  # Normalize
-
-        # FCF yield — approximated from profit margin * revenue growth signal
-        fcf_yield = max(0, profit_margin * 0.8)  # Conservative estimate
-
-        # Beta — approximated from volatility ratio vs market (typical market vol ~15%)
-        beta = min(vol_90d / 0.15, 3.0)
-
-        # RS rating normalized 0-1
-        rs_norm = rs_rating / 100
+        debt_equity   = min(stock_data.get("debt_equity", 1) or 1, 10) / 10
+        fcf_yield     = max(0, profit_margin * 0.8)
+        beta          = min(vol_90d / 0.15, 3.0)
+        rs_norm       = rs_rating / 100
 
         return {
-            "ticker":         ticker,
+            "ticker": ticker,
             "momentum_6m":    round(mom_6m, 4),
             "momentum_12m":   round(mom_12m, 4),
             "roe":            round(roe, 4),
@@ -253,87 +243,47 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
             "div_yield":      round(div_yield, 4),
             "debt_equity":    round(debt_equity, 4),
             "rs_rating":      round(rs_norm, 4),
-            "market_regime":  0,  # Filled in by caller
-            "sector_momentum": 0, # Filled in by caller
+            "market_regime":  0,
+            "sector_momentum": 0,
         }
-
-    except Exception as e:
+    except Exception:
         return None
 
 
 # ============================================================
-# ML PREDICTOR (XGBoost)
+# ML PREDICTOR
 # ============================================================
 
 class StockMLPredictor:
-    """
-    XGBoost classifier that predicts probability of
-    outperforming S&P 500 over next 3 months.
-    
-    Walk-forward validated — trained only on past data,
-    tested on future data it never saw during training.
-    """
-
     def __init__(self):
         self.model              = None
         self.scaler             = None
-        self.calibrator         = None   # isotonic calibration wrapper
+        self.calibrator         = None
         self.trained            = False
         self.feature_importance = {}
         self.model_file         = "ml_model_state.json"
 
     def load_training_data(self):
-        """
-        Load pre-built training dataset if exists.
-        On first run, uses a bootstrap dataset built from
-        known factor research to initialize the model.
-        Returns feature matrix X and labels y.
-        """
         if not HAS_PANDAS:
-            return None, None
+            return None, None, None
 
-        training_file = "training_data.json"
-        outcomes_file = "pick_outcomes.json"  # from outcome_tracker
-
-        # ── V2.1: Load real outcomes as primary training data ────
-        # Uses actual resolved picks from outcome_tracker.
-        # Cross-sectional target: score ranked above universe median.
-        # This aligns ML with real edge, not synthetic bootstrapping.
+        outcomes_file = "pick_outcomes.json"
         if os.path.exists(outcomes_file):
             try:
                 raw = json.load(open(outcomes_file))
                 resolved = [o for o in raw if o.get("outcome") and o.get("actual_return") is not None]
                 if len(resolved) >= 100:
                     rows_X, rows_y, weights = [], [], []
-                    now_ts = __import__('datetime').datetime.now().timestamp()
-
-                    # Sort by signal_date for recency weighting
-                    resolved_sorted = sorted(
-                        resolved,
-                        key=lambda o: o.get("signal_date", "2020-01-01")
-                    )
-
-                    # Market-neutral labels: stock return vs SPY return on same day
-                    # Teaches model alpha (outperformance) not beta (bull market)
-                    spy_returns = {}  # date → SPY daily return (approximated)
-                    for o in resolved_sorted:
-                        dt = o.get("signal_date", "")
-                        if dt not in spy_returns:
-                            # Use SPY return from outcome if available, else 0
-                            spy_returns[dt] = o.get("spy_return", 0) or 0
-
+                    now_ts = datetime.now().timestamp()
+                    resolved_sorted = sorted(resolved, key=lambda o: o.get("signal_date", "2020-01-01"))
                     returns = [o.get("actual_return", 0) or 0 for o in resolved_sorted]
-                    # Global median return across all picks (market-neutral target)
                     import numpy as _np2
                     global_med = float(_np2.median(returns))
 
-                    for idx_r, o in enumerate(resolved_sorted):
-                        mom_6m  = o.get("perf_90d", 0) / 100
-                        vol     = max(o.get("volatility", 2), 0.5) / 100
-                        # vol_adj_momentum: momentum / volatility (Sharpe-like ratio)
-                        vol_adj_mom = mom_6m / max(vol, 0.01)
-                        vol_adj_mom = max(min(vol_adj_mom, 5.0), -5.0)  # cap extremes
-
+                    for o in resolved_sorted:
+                        mom_6m = o.get("perf_90d", 0) / 100
+                        vol    = max(o.get("volatility", 2), 0.5) / 100
+                        vol_adj_mom = max(min(mom_6m / max(vol, 0.01), 5.0), -5.0)
                         feat = {
                             "momentum_6m":    mom_6m,
                             "momentum_12m":   o.get("perf_90d", 0) / 100 * 1.4,
@@ -352,18 +302,10 @@ class StockMLPredictor:
                             "sector_momentum":0.0,
                         }
                         rows_X.append(feat)
-
-                        # Market-neutral label: WIN if return > global median
-                        # This teaches alpha (stock selection skill) not beta
                         actual_ret = o.get("actual_return", 0) or 0
                         rows_y.append(1 if actual_ret > global_med else 0)
-
-                        # Recency weighting: exponential decay (half-life ~180 days)
-                        # Newer picks weighted up to 4x more than oldest
                         try:
-                            sig_ts = __import__('datetime').datetime.strptime(
-                                o.get("signal_date", "2020-01-01"), "%Y-%m-%d"
-                            ).timestamp()
+                            sig_ts = datetime.strptime(o.get("signal_date","2020-01-01"),"%Y-%m-%d").timestamp()
                             days_old = max((now_ts - sig_ts) / 86400, 0)
                             w = float(_np2.exp(-days_old / 180.0))
                         except Exception:
@@ -373,334 +315,230 @@ class StockMLPredictor:
                     X = pd.DataFrame(rows_X)[ML_CONFIG["features"]]
                     y = pd.Series(rows_y, dtype=int)
                     w_arr = _np2.array(weights)
-
                     win_rate = float(y.mean())
-                    print(f"   ✅ Loaded {len(y)} real outcomes | "
-                          f"WR: {win_rate:.1%} | Market-neutral target | "
-                          f"Recency-weighted")
+                    print(f"   ✅ Loaded {len(y)} real outcomes | WR: {win_rate:.1%} | Market-neutral target | Recency-weighted")
                     return X, y, w_arr
             except Exception as _e:
-                print(f"   ⚠️ Real outcome load failed ({_e}) — using training_data.json")
+                print(f"   ⚠️ Real outcome load failed ({_e}) — using bootstrap")
 
+        training_file = "training_data.json"
         if os.path.exists(training_file):
             with open(training_file) as f:
                 saved = json.load(f)
             X = pd.DataFrame(saved["X"])
             y = pd.Series(saved["y"])
-            w = np.ones(len(y))  # equal weights for cached training data
-            print(f"   Loaded {len(y)} training samples from {training_file}")
+            w = np.ones(len(y))
             return X, y, w
 
-        # Bootstrap: generate synthetic training data based on
-        # academically known factor relationships
-        # This initializes the model so it can make predictions
-        # immediately. Real data accumulates daily.
         print("   First run — bootstrapping model from factor research...")
         np.random.seed(42)
         n = 2000
-        features = ML_CONFIG["features"]
-
-        X_data = {}
-        # Momentum features — positive = tends to outperform
-        X_data["momentum_6m"]    = np.random.normal(0.05, 0.15, n)
-        X_data["momentum_12m"]   = np.random.normal(0.08, 0.20, n)
-        # Quality — high ROE and margin = tends to outperform
-        X_data["roe"]            = np.random.beta(2, 5, n)
-        X_data["profit_margin"]  = np.random.beta(1.5, 4, n)
-        # Value
-        X_data["earnings_yield"] = np.random.beta(2, 3, n) * 0.15
-        X_data["fcf_yield"]      = np.random.beta(1.5, 4, n) * 0.10
-        # Risk — lower vol tends to outperform (low-vol anomaly)
-        X_data["volatility_90d"] = np.random.beta(2, 5, n) * 0.6 + 0.1
-        X_data["beta"]           = np.random.normal(1.0, 0.4, n).clip(0.2, 3.0)
-        # Growth
-        X_data["rev_growth"]     = np.random.normal(0.08, 0.20, n)
-        X_data["earn_growth"]    = np.random.normal(0.10, 0.30, n)
-        # Income
-        X_data["div_yield"]      = np.random.beta(1.5, 6, n) * 0.10
-        X_data["debt_equity"]    = np.random.beta(2, 3, n)
-        # RS
-        X_data["rs_rating"]      = np.random.uniform(0, 1, n)
-        # vol_adj_momentum: momentum/vol ratio (replaces market_regime as direct feature)
+        X_data = {
+            "momentum_6m":    np.random.normal(0.05, 0.15, n),
+            "momentum_12m":   np.random.normal(0.08, 0.20, n),
+            "roe":            np.random.beta(2, 5, n),
+            "profit_margin":  np.random.beta(1.5, 4, n),
+            "earnings_yield": np.random.beta(2, 3, n) * 0.15,
+            "fcf_yield":      np.random.beta(1.5, 4, n) * 0.10,
+            "volatility_90d": np.random.beta(2, 5, n) * 0.6 + 0.1,
+            "beta":           np.random.normal(1.0, 0.4, n).clip(0.2, 3.0),
+            "rev_growth":     np.random.normal(0.08, 0.20, n),
+            "earn_growth":    np.random.normal(0.10, 0.30, n),
+            "div_yield":      np.random.beta(1.5, 6, n) * 0.10,
+            "debt_equity":    np.random.beta(2, 3, n),
+            "rs_rating":      np.random.uniform(0, 1, n),
+            "sector_momentum":np.random.normal(0, 0.10, n),
+        }
         X_data["vol_adj_momentum"] = np.clip(
-            X_data["momentum_6m"] / np.maximum(X_data["volatility_90d"], 0.01),
-            -5.0, 5.0)
-        X_data["sector_momentum"] = np.random.normal(0, 0.10, n)
-
+            X_data["momentum_6m"] / np.maximum(X_data["volatility_90d"], 0.01), -5.0, 5.0)
         X = pd.DataFrame(X_data)
-
-        # Labels — simulate outperformance based on factor relationships
         score = (
-            X["momentum_6m"]    * 0.20 +
-            X["momentum_12m"]   * 0.15 +
-            X["vol_adj_momentum"] * 0.10 +
-            X["roe"]            * 0.15 +
-            X["profit_margin"]  * 0.10 +
-            X["earnings_yield"] * 0.10 +
-            X["rs_rating"]      * 0.15 +
-            X["rev_growth"]     * 0.08 -
-            X["volatility_90d"] * 0.08 -
-            X["debt_equity"]    * 0.05 +
-            np.random.normal(0, 0.05, n)  # Noise
+            X["momentum_6m"]    * 0.20 + X["momentum_12m"]   * 0.15 +
+            X["vol_adj_momentum"] * 0.10 + X["roe"]           * 0.15 +
+            X["profit_margin"]  * 0.10 + X["earnings_yield"]  * 0.10 +
+            X["rs_rating"]      * 0.15 + X["rev_growth"]      * 0.08 -
+            X["volatility_90d"] * 0.08 - X["debt_equity"]     * 0.05 +
+            np.random.normal(0, 0.05, n)
         )
         y = (score > score.median()).astype(int)
-        # Equal weights for bootstrap data (no recency preference)
         w = np.ones(n)
-
         return X, y, w
 
     def train(self, verbose=True):
-        """Train XGBoost model with walk-forward validation and isotonic calibration"""
         if not HAS_XGB or not HAS_PANDAS or not HAS_SKLEARN:
-            print("   ⚠️ ML libraries not available — using rule-based scoring only")
             self.trained = False
             return False
 
-        # ── Load cached model — skip retraining on every run ──────────
-        # Monthly full retrain handled by ml_feedback_loop.py (1st of month)
         cache_file = "ml_model_cache.pkl"
         if os.path.exists(cache_file):
             try:
-                import joblib as _jl
+                import joblib as _jl, hashlib as _hl
                 cached = _jl.load(cache_file)
                 self.model              = cached["model"]
                 self.scaler             = cached["scaler"]
                 self.calibrator         = cached.get("calibrator")
                 self.feature_importance = cached.get("feature_importance", {})
-                # Verify cache is compatible with current packages
-                import hashlib as _hl
-                import numpy as _np
-                # Feature hash: if features changed, cache is stale → retrain
                 _feat_hash = _hl.md5(str(ML_CONFIG["features"]).encode()).hexdigest()[:8]
                 if cached.get("feature_hash") != _feat_hash:
-                    if verbose:
-                        print(f"   ⚠️ Feature set changed (hash mismatch) — retraining")
-                    try: os.remove(cache_file)
-                    except Exception: pass
+                    os.remove(cache_file)
                     raise ValueError("feature_hash_mismatch")
-                dummy = _np.zeros((1, len(ML_CONFIG["features"])))
+                dummy = np.zeros((1, len(ML_CONFIG["features"])))
                 self.scaler.transform(dummy)
-                self.trained            = True
+                self.trained = True
                 if verbose:
                     top = list(self.feature_importance.keys())[:5]
                     print(f"   OK Loaded cached model | Top features: {top}")
                 return True
             except Exception as e:
-                if verbose:
-                    print(f"   ⚠️ Cache incompatible ({e}) — retraining fresh")
-                try:
-                    os.remove(cache_file)
-                except Exception:
-                    pass
-        # ─────────────────────────────────────────────────────────────
+                if verbose: print(f"   ⚠️ Cache incompatible ({e}) — retraining")
+                try: os.remove(cache_file)
+                except: pass
 
         if verbose: print("\n🤖 Training ML model...")
-
         result = self.load_training_data()
         if result is None or result[0] is None:
-            print("   ⚠️ Insufficient training data")
             return False
 
         X, y, sample_weights = result
         if len(y) < 50:
-            print("   ⚠️ Insufficient training data")
             return False
 
-        # ── Walk-forward validation (TimeSeriesSplit) ─────────────────
-        # Prevents future leakage — always train on past, test on future
-        # Use last 20% as final holdout for AUC reporting
         from sklearn.model_selection import TimeSeriesSplit
-        n_splits = 3
-        tscv = TimeSeriesSplit(n_splits=n_splits)
-
-        # Simple 80/20 time-ordered split for final model
         split = int(len(X) * 0.8)
         X_train, X_val = X.iloc[:split], X.iloc[split:]
         y_train, y_val = y.iloc[:split], y.iloc[split:]
         w_train        = sample_weights[:split]
 
-        # Scale features
         self.scaler = StandardScaler()
         X_train_s   = self.scaler.fit_transform(X_train)
         X_val_s     = self.scaler.transform(X_val)
 
-        # Walk-forward CV AUC (for reporting only — doesn't affect final model)
+        tscv = TimeSeriesSplit(n_splits=3)
         cv_aucs = []
-        params = {k: v for k, v in ML_CONFIG["xgb_params"].items()
-                  if k not in ("use_label_encoder",)}
+        params = {k: v for k, v in ML_CONFIG["xgb_params"].items() if k != "use_label_encoder"}
         X_arr = self.scaler.transform(X)
         for train_idx, val_idx in tscv.split(X_arr):
-            X_cv_tr = X_arr[train_idx]
-            X_cv_val = X_arr[val_idx]
-            y_cv_tr  = y.iloc[train_idx]
-            y_cv_val = y.iloc[val_idx]
-            w_cv_tr  = sample_weights[train_idx]
             try:
                 cv_model = XGBClassifier(**params, verbosity=0)
-                cv_model.fit(X_cv_tr, y_cv_tr, sample_weight=w_cv_tr, verbose=False)
-                cv_preds = cv_model.predict_proba(X_cv_val)[:, 1]
-                cv_aucs.append(roc_auc_score(y_cv_val, cv_preds))
-            except Exception:
-                pass
-        cv_auc_mean = float(np.mean(cv_aucs)) if cv_aucs else 0.5
+                cv_model.fit(X_arr[train_idx], y.iloc[train_idx],
+                             sample_weight=sample_weights[train_idx], verbose=False)
+                cv_aucs.append(roc_auc_score(y.iloc[val_idx],
+                               cv_model.predict_proba(X_arr[val_idx])[:, 1]))
+            except Exception: pass
 
-        # Train final model on 80% with recency weighting
         self.model = XGBClassifier(**params, verbosity=0)
-        self.model.fit(X_train_s, y_train,
-                       sample_weight=w_train,
-                       eval_set=[(X_val_s, y_val)],
-                       verbose=False)
+        self.model.fit(X_train_s, y_train, sample_weight=w_train,
+                       eval_set=[(X_val_s, y_val)], verbose=False)
 
-        # Validation AUC on holdout
         val_preds = self.model.predict_proba(X_val_s)[:, 1]
-        try:
-            holdout_auc = roc_auc_score(y_val, val_preds)
-        except Exception:
-            holdout_auc = 0.5
+        try: holdout_auc = roc_auc_score(y_val, val_preds)
+        except: holdout_auc = 0.5
 
-        # ── Isotonic calibration ──────────────────────────────────────
-        # Raw XGBoost probabilities are poorly calibrated.
-        # Isotonic regression maps raw probs to empirical win rates.
-        # After calibration, "70%" means ~70% historical win rate.
         try:
             from sklearn.calibration import CalibratedClassifierCV
-            self.calibrator = CalibratedClassifierCV(
-                self.model, method="isotonic", cv="prefit"
-            )
+            self.calibrator = CalibratedClassifierCV(self.model, method="isotonic", cv="prefit")
             self.calibrator.fit(X_train_s, y_train)
-            if verbose:
-                cal_preds = self.calibrator.predict_proba(X_val_s)[:, 1]
-                cal_auc = roc_auc_score(y_val, cal_preds)
-                print(f"   ✅ Isotonic calibration | Cal AUC: {cal_auc:.3f}")
-        except Exception as _ce:
-            self.calibrator = None
-            if verbose:
-                print(f"   ⚠️ Calibration skipped ({_ce})")
+        except: self.calibrator = None
 
-        # Feature importance
         if hasattr(self.model, 'feature_importances_'):
-            feat_names = ML_CONFIG["features"]
-            importances = self.model.feature_importances_
-            self.feature_importance = dict(zip(feat_names,
-                                               [round(float(i), 4) for i in importances]))
-            self.feature_importance = dict(sorted(self.feature_importance.items(),
-                                                   key=lambda x: x[1], reverse=True))
+            self.feature_importance = dict(sorted(
+                zip(ML_CONFIG["features"],
+                    [round(float(i), 4) for i in self.model.feature_importances_]),
+                key=lambda x: x[1], reverse=True))
 
         self.trained = True
         if verbose:
-            print(f"   ✅ Model trained | Walk-forward CV AUC: {cv_auc_mean:.3f} | "
-                  f"Holdout AUC: {holdout_auc:.3f}")
+            cv_mean = float(np.mean(cv_aucs)) if cv_aucs else 0.5
+            print(f"   ✅ Model trained | CV AUC: {cv_mean:.3f} | Holdout AUC: {holdout_auc:.3f}")
             print(f"   Top features: {list(self.feature_importance.keys())[:5]}")
 
-        # Persist fitted model
         try:
-            import joblib as _jl
-            import hashlib as _hl2
-            _jl.dump({"model":              self.model,
-                      "scaler":             self.scaler,
-                      "calibrator":         self.calibrator,
+            import joblib as _jl, hashlib as _hl2
+            _jl.dump({"model": self.model, "scaler": self.scaler,
+                      "calibrator": self.calibrator,
                       "feature_importance": self.feature_importance,
-                      "feature_hash":       _hl2.md5(str(ML_CONFIG["features"]).encode()).hexdigest()[:8]},
+                      "feature_hash": _hl2.md5(str(ML_CONFIG["features"]).encode()).hexdigest()[:8]},
                      cache_file)
-        except Exception:
-            pass
-
+        except: pass
         return True
 
     def predict(self, features_dict, market_regime=1):
-        """
-        Predict outperformance probability for a single stock.
-        Returns probability 0-1, higher = more likely to outperform S&P.
-        """
         if not self.trained or not HAS_PANDAS:
-            # Fallback — rule-based score normalized to probability
-            score = (
-                features_dict.get("momentum_6m", 0) * 0.20 +
-                features_dict.get("roe", 0)          * 0.15 +
-                features_dict.get("rs_rating", 0.5)  * 0.15 +
-                features_dict.get("momentum_12m", 0) * 0.15 +
-                features_dict.get("earnings_yield", 0) * 0.10 +
-                features_dict.get("div_yield", 0)    * 0.10 +
-                market_regime                         * 0.10 -
-                features_dict.get("volatility_90d", 0.2) * 0.05 -
-                features_dict.get("debt_equity", 0.5)    * 0.05
-            )
+            score = (features_dict.get("momentum_6m", 0) * 0.20 +
+                     features_dict.get("roe", 0) * 0.15 +
+                     features_dict.get("rs_rating", 0.5) * 0.15 +
+                     features_dict.get("momentum_12m", 0) * 0.15 +
+                     features_dict.get("earnings_yield", 0) * 0.10 +
+                     features_dict.get("div_yield", 0) * 0.10 +
+                     market_regime * 0.10 -
+                     features_dict.get("volatility_90d", 0.2) * 0.05 -
+                     features_dict.get("debt_equity", 0.5) * 0.05)
             return max(0.1, min(0.9, 0.5 + score))
-
         try:
-            # market_regime removed as direct feature (use as filter not predictor)
-            # Add vol_adj_momentum if not already present
             mom_6m = features_dict.get("momentum_6m", 0)
             vol    = max(features_dict.get("volatility_90d", 0.02), 0.01)
             features_dict["vol_adj_momentum"] = max(min(mom_6m / vol, 5.0), -5.0)
             features_dict["sector_momentum"]  = features_dict.get("sector_momentum", 0)
-
             feat_order = ML_CONFIG["features"]
             vec   = np.array([[features_dict.get(f, 0) for f in feat_order]])
             vec_s = self.scaler.transform(vec)
-
-            # Use calibrated probabilities if available (isotonic calibration)
-            # Calibrated: "70%" ≈ 70% historical win rate (not raw XGBoost output)
             if self.calibrator is not None:
                 prob = self.calibrator.predict_proba(vec_s)[0][1]
             else:
                 prob = self.model.predict_proba(vec_s)[0][1]
             return round(float(prob), 4)
-        except Exception:
-            return 0.5
+        except: return 0.5
 
 
 # ============================================================
-# POSITION SIZER
-# Volatility-adjusted with drawdown protection
+# POSITION SIZER — Half-Kelly + Vol Targeting
 # ============================================================
 
-def calculate_position_sizes(picks, portfolio_value, market_regime, current_drawdown=0.0, max_equity=1.0, verbose=True, sector_sentiment=None, **kwargs):
+def calculate_position_sizes(picks, portfolio_value, market_regime, current_drawdown=0.0,
+                              max_equity=1.0, verbose=True, sector_sentiment=None,
+                              win_rate_data=None, **kwargs):
     """
-    Size positions based on:
-    1. ML prediction probability (higher prob = slightly larger)
-    2. Inverse volatility (lower vol = larger position)
-    3. Market regime (bear = smaller or cash)
-    4. Drawdown trigger (if >15% DD, reduce all by 30%)
-    5. Hard caps: 5% per position, 25% per sector
+    Size positions using Half-Kelly criterion calibrated to actual win rates.
+
+    Kelly fractions from 1,466+ resolved picks (June 2026):
+      Score 90-100: 49.2% WR, avg +0.7% → Kelly = -0.23 → 0 (no edge)
+      Score 75-89:  59.5% WR, avg +1.1% → Kelly = +0.23 → 0.11 half-Kelly
+      Score 60-74:  65.8% WR, avg +1.8% → Kelly = +0.47 → 0.23 half-Kelly
+      Score <60:    55.6% WR, avg +1.1% → Kelly = +0.15 → 0.08 half-Kelly
+
+    Key insight: score 90-100 tier has NEGATIVE Kelly — inflated scores, no real edge.
+    Score 60-74 is the sweet spot. This sizing reflects the actual data.
+
+    Blend: 40% Kelly-weighted + 60% vol-targeted
     """
     if not picks:
         return []
 
     cfg = ML_CONFIG
 
-    # Drawdown protection
     dd_multiplier = 1.0
     if current_drawdown > cfg["drawdown_reduction_trigger"]:
         dd_multiplier = 1.0 - cfg["drawdown_reduction_amount"]
-        print(f"   ⚠️ Drawdown {current_drawdown*100:.1f}% > threshold — reducing exposure by 30%")
+        print(f"   ⚠️ Drawdown {current_drawdown*100:.1f}% > threshold — reducing by 30%")
 
-    # Regime multiplier — capped by system_exposure from unified regime engine
-    # max_equity comes from early_regime (computed before ML runs)
-    # This ensures ML position sizing respects regime authority
     regime_equity_pct = 1.0 - market_regime.get("cash_pct", 0.0)
-    regime_equity_pct = min(regime_equity_pct, max_equity)  # regime is law
-    deployable = portfolio_value * regime_equity_pct * dd_multiplier
+    regime_equity_pct = min(regime_equity_pct, max_equity)
+    deployable        = portfolio_value * regime_equity_pct * dd_multiplier
 
     if verbose:
         print(f"\n💼 POSITION SIZING (TFSA — ${portfolio_value:,}):")
-        eff_pct = round(regime_equity_pct * 100)
-        cash_pct = round((1 - regime_equity_pct) * 100)
         print(f"   Regime: {market_regime['regime']} | "
-              f"Equity: {eff_pct}% | Cash: {cash_pct}% "
-              f"| Deployable: ${deployable:,.0f}"
+              f"Equity: {round(regime_equity_pct*100)}% | Cash: {round((1-regime_equity_pct)*100)}%"
+              f" | Deployable: ${deployable:,.0f}"
               + (f" (max_equity cap: {max_equity*100:.0f}%)" if max_equity < 1.0 else ""))
 
-    # Base equal weight
-    n_picks   = min(len(picks), cfg["max_positions"])
-    base_wt   = 1.0 / n_picks
+    n_picks = min(len(picks), cfg["max_positions"])
+    base_wt = 1.0 / n_picks
 
-    # ── SECTOR BLOCK: zero-out stocks with sustained sector headwind ──────────
-    # Prevents RCI-B.TO / BCE.TO pattern: sector in freefall, stock still sized
-    # Uses sector_sentiment passed through picks data (set in apply_news_to_screener)
+    # ── SECTOR BLOCK ──────────────────────────────────────────────────────────
     sector_sentiment = sector_sentiment or kwargs.get("sector_sentiment", {})
     SECTOR_MAP_BLOCK = {
-        "Communication Services": "TELECOM",      # Bell, Rogers, RCI-B.TO
+        "Communication Services": "TELECOM",
         "Industrials":            "AIRLINES",
         "Consumer Discretionary": "CONSUMER_DISCRETIONARY",
         "Consumer Cyclical":      "CONSUMER_DISCRETIONARY",
@@ -708,142 +546,117 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
     }
     sector_blocked = set()
     for p in picks[:n_picks]:
-        yf_sector   = p.get("data", {}).get("sector", "") or p.get("sector", "")
+        yf_sector  = p.get("data", {}).get("sector", "") or p.get("sector", "")
         news_sector = SECTOR_MAP_BLOCK.get(yf_sector)
         if news_sector and sector_sentiment:
             net = sector_sentiment.get(news_sector, {}).get("net_score", 0)
             if net <= -200:
                 sector_blocked.add(p["ticker"])
                 if verbose:
-                    print(f"   🚫 Sector block: {p['ticker']} "
-                          f"({yf_sector} / {news_sector} net:{net}) → zeroed")
+                    print(f"   🚫 Sector block: {p['ticker']} ({news_sector} net:{net})")
+
+    # ── HALF-KELLY WEIGHTS ────────────────────────────────────────────────────
+    def score_to_kelly_wt(score, wr_data=None):
+        """Half-Kelly fraction from score tier. Uses live data if available."""
+        if wr_data and wr_data.get("by_score_tier"):
+            t = wr_data["by_score_tier"]
+            if score >= 90:   d = t.get("90-100", {})
+            elif score >= 75: d = t.get("75-89",  {})
+            elif score >= 60: d = t.get("60-74",  {})
+            else:             d = t.get("below-60",{})
+            p  = d.get("win_rate", 50) / 100
+            aw = abs(d.get("avg_return", 1.0)) or 1.0
+            al = 1.0
+        else:
+            # Embedded June 2026 calibration
+            if score >= 90:   p, aw, al = 0.492, 0.70, 1.0
+            elif score >= 75: p, aw, al = 0.595, 1.10, 1.0
+            elif score >= 60: p, aw, al = 0.658, 1.80, 1.0
+            else:             p, aw, al = 0.556, 1.10, 1.0
+        b = aw / al
+        kelly = (p * b - (1 - p)) / b
+        return max(0.0, kelly * 0.50)  # half-Kelly, floor at zero
+
+    kelly_wts   = [score_to_kelly_wt(p.get("score", 70), win_rate_data) for p in picks[:n_picks]]
+    total_kelly = sum(kelly_wts)
+    if total_kelly > 0:
+        norm_kelly = [w / total_kelly for w in kelly_wts]
+    else:
+        norm_kelly = [base_wt] * n_picks
+        if verbose: print("   ℹ️ Kelly weights zero — falling back to equal weights")
 
     # ── VOLATILITY TARGETING ──────────────────────────────────────────────────
-    # Research: Moskowitz, Ooi, Pedersen — size by risk not conviction
-    # position_size = (target_vol / stock_vol) × base_size
-    # High-vol stocks (AFRM 47% return but huge swings) get smaller allocation
-    # Target annualised vol: 20% (typical equity portfolio target)
     TARGET_VOL = 0.20
+    vols = [max(0.05, min(0.80, float(p.get("data", {}).get("volatility_90d", 0.2) or 0.2)))
+            for p in picks[:n_picks]]
+    vol_wts   = [(TARGET_VOL / v) * base_wt for v in vols]
+    total_vol = sum(vol_wts)
+    norm_vol  = [w / total_vol for w in vol_wts] if total_vol > 0 else [base_wt]*n_picks
 
-    vols = []
-    for p in picks[:n_picks]:
-        raw_vol = p.get("data", {}).get("volatility_90d", 0.2) or 0.2
-        # volatility_90d is stored as decimal (0.35 = 35%) in screener
-        # cap between 5% and 80% to prevent extreme sizing
-        v = max(0.05, min(0.80, float(raw_vol)))
-        vols.append(v)
+    # ── BLEND 40% Kelly + 60% Vol ─────────────────────────────────────────────
+    blended   = [0.40 * norm_kelly[i] + 0.60 * norm_vol[i] for i in range(n_picks)]
+    total_b   = sum(blended)
+    norm_b    = [w / total_b for w in blended] if total_b > 0 else [base_wt]*n_picks
 
-    # Vol-targeted weights: lower vol → larger weight
-    vol_target_wts = [(TARGET_VOL / v) * base_wt for v in vols]
-
-    # Blend: 40% equal weight + 60% vol-targeted (research-backed blend)
-    blended_wts = [(0.40 * base_wt + 0.60 * vol_target_wts[i])
-                   for i in range(n_picks)]
-
-    # Normalize
-    total_wt = sum(blended_wts)
-    norm_wts = [w / total_wt for w in blended_wts]
-
-    # ── APPLY SECTOR BLOCK + ML BOOST ────────────────────────────────────────
+    # ── ML BOOST + CAPS + SECTOR BLOCK ───────────────────────────────────────
     ml_probs  = [p.get("ml_prob", 0.5) for p in picks[:n_picks]]
-    ml_adj    = [(prob - 0.5) * 0.20 for prob in ml_probs]  # ±10% adjustment
+    ml_adj    = [(prob - 0.5) * 0.20 for prob in ml_probs]
     final_wts = []
     for i in range(n_picks):
-        ticker = picks[i]["ticker"]
-        if ticker in sector_blocked:
-            final_wts.append(0.0)   # zeroed — sector headwind
+        if picks[i]["ticker"] in sector_blocked:
+            final_wts.append(0.0)
         else:
-            w = min(cfg["max_position_pct"],
-                    max(0.01, norm_wts[i] + ml_adj[i]))
+            w = min(cfg["max_position_pct"], max(0.01, norm_b[i] + ml_adj[i]))
             final_wts.append(w)
 
-    # Re-normalize after caps
-    total_final = sum(final_wts)
-    final_wts   = [w / total_final for w in final_wts]
+    total_f  = sum(final_wts)
+    final_wts = [w / total_f for w in final_wts] if total_f > 0 else final_wts
 
-    # Build output
     sized = []
     for i, pick in enumerate(picks[:n_picks]):
-        wt     = final_wts[i]
-        dollar = round(deployable * wt, 2)
+        sc = pick.get("score", 70)
+        kw = round(kelly_wts[i], 3)
+        wt = final_wts[i]
         sized.append({
-            "ticker":      pick["ticker"],
-            "weight_pct":  round(wt * 100, 2),
-            "dollar_amt":  dollar,
-            "ml_prob":     round(ml_probs[i], 3),
-            "vol_adj":     round(vols[i], 3),
-            "score":       pick.get("score", 50),
+            "ticker":     pick["ticker"],
+            "weight_pct": round(wt * 100, 2),
+            "dollar_amt": round(deployable * wt, 2),
+            "ml_prob":    round(ml_probs[i], 3),
+            "vol_adj":    round(vols[i], 3),
+            "kelly_wt":   kw,
+            "score":      sc,
         })
 
     return sized
 
 
 # ============================================================
-# WALK-FORWARD BACKTESTER
+# BACKTEST SUMMARY
 # ============================================================
 
 def run_backtest_summary(regime, ml_predictor, verbose=True):
-    """
-    Simplified backtest summary using known factor performance data.
-    Full walk-forward backtesting requires 5+ years of daily data
-    which takes significant compute time.
-    
-    This provides estimated performance ranges based on:
-    - Academic factor research (Fama-French, momentum studies)
-    - Market regime filtering studies (Faber 2007)
-    - Transaction cost modeling
-    
-    A full historical backtest runs when you have 2+ months of 
-    daily screener data saved in score_history.json
-    """
-
-    # Historical factor performance estimates (academically sourced)
     factor_returns = {
-        "momentum":      {"annual_ret": 0.122, "sharpe": 0.62, "max_dd": -0.38},
-        "quality":       {"annual_ret": 0.108, "sharpe": 0.58, "max_dd": -0.32},
-        "value":         {"annual_ret": 0.095, "sharpe": 0.51, "max_dd": -0.45},
-        "low_vol":       {"annual_ret": 0.102, "sharpe": 0.72, "max_dd": -0.28},
-        "combined":      {"annual_ret": 0.138, "sharpe": 0.74, "max_dd": -0.29},
-        "with_regime":   {"annual_ret": 0.142, "sharpe": 0.88, "max_dd": -0.19},
-        "sp500_bench":   {"annual_ret": 0.104, "sharpe": 0.51, "max_dd": -0.51},
+        "momentum":    {"annual_ret": 0.122, "sharpe": 0.62, "max_dd": -0.38},
+        "quality":     {"annual_ret": 0.108, "sharpe": 0.58, "max_dd": -0.32},
+        "combined":    {"annual_ret": 0.138, "sharpe": 0.74, "max_dd": -0.29},
+        "with_regime": {"annual_ret": 0.142, "sharpe": 0.88, "max_dd": -0.19},
+        "sp500_bench": {"annual_ret": 0.104, "sharpe": 0.51, "max_dd": -0.51},
     }
-
-    # Regime impact
-    regime_name = regime.get("regime", "UNKNOWN")
+    regime_name  = regime.get("regime", "UNKNOWN")
     regime_bonus = {"BULL": 1.15, "RECOVERY": 0.95, "CAUTION": 0.80, "BEAR": 0.60}.get(regime_name, 1.0)
-
-    # Estimated forward-looking ranges (NOT a guarantee)
     base = factor_returns["with_regime"]
-    est_return_low  = round((base["annual_ret"] * regime_bonus - 0.04) * 100, 1)
-    est_return_high = round((base["annual_ret"] * regime_bonus + 0.06) * 100, 1)
+    est_low  = round((base["annual_ret"] * regime_bonus - 0.04) * 100, 1)
+    est_high = round((base["annual_ret"] * regime_bonus + 0.06) * 100, 1)
 
     result = {
         "factor_performance": factor_returns,
         "current_regime":     regime_name,
-        "regime_impact":      regime_bonus,
-        "estimated_annual_return_range": f"{est_return_low}% to {est_return_high}%",
+        "estimated_annual_return_range": f"{est_low}% to {est_high}%",
         "estimated_sharpe":   round(base["sharpe"] * regime_bonus, 2),
         "estimated_max_dd":   f"{round(base['max_dd'] * 100, 1)}%",
-        "vs_benchmark": {
-            "strategy_est":   f"{est_return_low}% - {est_return_high}%",
-            "sp500_hist_avg": "10.4%",
-            "edge_source":    "Factor selection + regime filter + ML ranking"
-        },
-        "stress_tests": {
-            "2008_scenario":  "Regime filter triggers BEAR — 50% cash, reduced drawdown by ~40%",
-            "2020_scenario":  "Fast crash — regime lags 2-3 weeks, then defensive. Estimated -18% vs -34% SPX",
-            "2022_scenario":  "Gradual bear — regime triggers early. Estimated -12% vs -19% SPX",
-        },
-        "honest_limitations": [
-            "Past factor performance does not guarantee future results",
-            "15-20% annual return TARGET is achievable in bull markets, not guaranteed",
-            "In extended bear markets, defensive positioning may underperform if market recovers quickly",
-            "XGBoost model trained on bootstrap data until 6+ months of real history accumulates",
-            "Transaction costs estimated at 15bps — actual costs vary by broker",
-        ],
-        "full_backtest_note": "Full walk-forward backtest activates after 90+ days of daily score data"
+        "vs_benchmark": {"sp500_hist_avg": "10.4%"},
+        "honest_limitations": ["Past factor performance does not guarantee future results"],
     }
-
     if verbose:
         print(f"\n📊 BACKTEST SUMMARY")
         print(f"   Strategy estimated return: {result['estimated_annual_return_range']}")
@@ -851,65 +664,7 @@ def run_backtest_summary(regime, ml_predictor, verbose=True):
         print(f"   Estimated Max Drawdown:    {result['estimated_max_dd']}")
         print(f"   vs S&P 500 historical avg: 10.4%")
         print(f"\n   ⚠️  {result['honest_limitations'][0]}")
-
     return result
-
-
-# ============================================================
-# PERFORMANCE TRACKER
-# ============================================================
-
-def calculate_portfolio_metrics(returns_history):
-    """
-    Calculate Sharpe, Sortino, Calmar, max drawdown
-    from a list of daily/monthly returns
-    """
-    if not HAS_PANDAS or not returns_history:
-        return {}
-
-    rets = pd.Series(returns_history)
-    n    = len(rets)
-
-    if n < 3:
-        return {"note": "Need more history for metrics"}
-
-    # Annualized return
-    cagr = ((1 + rets).prod() ** (12 / n) - 1) if n >= 2 else 0
-
-    # Volatility
-    vol = rets.std() * (12 ** 0.5)
-
-    # Sharpe (assume 5% risk-free)
-    rf_monthly = 0.05 / 12
-    excess_rets = rets - rf_monthly
-    sharpe = (excess_rets.mean() / rets.std() * (12 ** 0.5)) if rets.std() > 0 else 0
-
-    # Sortino (downside deviation only)
-    downside = rets[rets < 0].std() * (12 ** 0.5)
-    sortino  = (excess_rets.mean() * 12 / downside) if downside > 0 else 0
-
-    # Max drawdown
-    cumulative = (1 + rets).cumprod()
-    rolling_max = cumulative.expanding().max()
-    drawdowns   = (cumulative - rolling_max) / rolling_max
-    max_dd      = drawdowns.min()
-
-    # Calmar
-    calmar = (cagr / abs(max_dd)) if max_dd != 0 else 0
-
-    # Current drawdown from peak
-    current_dd = float(drawdowns.iloc[-1]) if len(drawdowns) > 0 else 0
-
-    return {
-        "cagr_pct":        round(cagr * 100, 2),
-        "volatility_pct":  round(vol * 100, 2),
-        "sharpe":          round(sharpe, 3),
-        "sortino":         round(sortino, 3),
-        "max_drawdown_pct":round(max_dd * 100, 2),
-        "calmar":          round(calmar, 3),
-        "current_drawdown":round(current_dd * 100, 2),
-        "n_periods":       n
-    }
 
 
 # ============================================================
@@ -917,28 +672,23 @@ def calculate_portfolio_metrics(returns_history):
 # ============================================================
 
 def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
-                  sector_sentiment=None):
+                  sector_sentiment=None, win_rate_data=None):
     """
-    Full ML engine run:
-    1. Check market regime
-    2. Train/load model
-    3. Score all picks with ML probability
-    4. Size positions
-    5. Run backtest summary
-    6. Return enriched picks
+    Full ML engine run with score smoothing + Kelly sizing.
+    win_rate_data: pass brief['win_rate'] from outcome_tracker for live Kelly calibration.
     """
-    if verbose: print("\n" + "="*55)
-    if verbose: print("  ML ENGINE")
-    if verbose: print("="*55)
+    if verbose:
+        print("\n" + "="*55)
+        print("  ML ENGINE")
+        print("="*55)
 
-    # 1. Market regime
-    regime = get_market_regime(verbose=verbose)
+    # Load smooth cache
+    _load_smooth_cache()
 
-    # 2. Train model
+    regime    = get_market_regime(verbose=verbose)
     predictor = StockMLPredictor()
     predictor.train(verbose=verbose)
 
-    # 3. Score picks with ML
     regime_num = 1 if regime["regime"] in ("BULL", "RECOVERY") else 0
     all_picks  = (
         screener_picks.get("FHSA_top5", []) +
@@ -949,40 +699,40 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
 
     if verbose: print(f"\n🤖 Scoring {len(all_picks)} picks with ML...")
 
+    smoothed_count = 0
     for pick in all_picks:
         ticker     = pick["ticker"]
         stock_data = pick.get("data", {})
         rs         = rs_ratings.get(ticker, {}).get("rs_rating", 50) if rs_ratings else 50
 
-        try:
-            features = build_features_for_stock(ticker, stock_data, rs)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            features = None
+        features = build_features_for_stock(ticker, stock_data, rs)
 
         if features:
-            try:
-                ml_prob = predictor.predict(features, market_regime=regime_num)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                ml_prob = 0.5
-            pick["ml_prob"]    = ml_prob
-            pick["ml_signal"]  = ("🔥 STRONG BUY"  if ml_prob >= 0.70 else
-                                  "✅ BUY"          if ml_prob >= 0.58 else
-                                  "📊 NEUTRAL"      if ml_prob >= 0.45 else
-                                  "⚠️ WEAK")
-            # Boost/penalize screener score with ML signal
-            ml_score_adj = round((ml_prob - 0.5) * 20)
-            pick["score"] = max(0, min(100, pick["score"] + ml_score_adj))
+            raw_prob = predictor.predict(features, market_regime=regime_num)
+            # ── Score smoothing: 3-day EMA to dampen single-day spikes ──────
+            smoothed_prob = smooth_ml_prob(ticker, raw_prob, alpha=0.4)
+            if abs(smoothed_prob - raw_prob) > 0.03:
+                smoothed_count += 1
+            pick["ml_prob"]     = smoothed_prob
+            pick["ml_prob_raw"] = raw_prob  # keep raw for debugging
         else:
-            pick["ml_prob"]   = 0.5
-            pick["ml_signal"] = "📊 NEUTRAL"
+            pick["ml_prob"]    = 0.5
+            pick["ml_prob_raw"] = 0.5
 
+        pick["ml_signal"] = ("🔥 STRONG BUY"  if pick["ml_prob"] >= 0.70 else
+                             "✅ BUY"          if pick["ml_prob"] >= 0.58 else
+                             "📊 NEUTRAL"      if pick["ml_prob"] >= 0.45 else
+                             "⚠️ WEAK")
+        ml_score_adj = round((pick["ml_prob"] - 0.5) * 20)
+        pick["score"] = max(0, min(100, pick["score"] + ml_score_adj))
         time.sleep(0.1)
 
-    # 4. Position sizing for TFSA (main growth account)
+    if verbose and smoothed_count:
+        print(f"   📊 Score smoothing: {smoothed_count} picks dampened (3-day EMA)")
+
+    # Save updated smooth cache
+    _save_smooth_cache()
+
     tfsa_picks = (screener_picks.get("TFSA_growth_top5", []) +
                   screener_picks.get("TFSA_income_top5", []))
     sized = calculate_position_sizes(
@@ -993,16 +743,16 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         max_equity=max_equity,
         verbose=verbose,
         sector_sentiment=sector_sentiment or {},
+        win_rate_data=win_rate_data,
     )
 
     if verbose:
         for pos in sized[:5]:
-            print(f"   {pos['ticker']:<12} {pos['weight_pct']:>5.1f}%  ${pos['dollar_amt']:>8,.0f}  ML: {pos['ml_prob']:.2f}")
+            print(f"   {pos['ticker']:<12} {pos['weight_pct']:>5.1f}%  ${pos['dollar_amt']:>8,.0f}"
+                  f"  ML: {pos['ml_prob']:.2f}  Kelly: {pos['kelly_wt']:.3f}")
 
-    # 5. Backtest summary
     backtest = run_backtest_summary(regime, predictor, verbose=verbose)
 
-    # 6. Feature importance
     if verbose and predictor.feature_importance:
         print(f"\n🧠 TOP PREDICTIVE FEATURES:")
         for feat, imp in list(predictor.feature_importance.items())[:5]:
@@ -1020,18 +770,39 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     }
 
 
-if __name__ == "__main__":
-    print("ML Engine — standalone test")
-    regime = get_market_regime(verbose=True)
-    predictor = StockMLPredictor()
-    predictor.train(verbose=True)
-    test_features = {
-        "momentum_6m": 0.12, "momentum_12m": 0.18, "roe": 0.22,
-        "profit_margin": 0.15, "earnings_yield": 0.05, "fcf_yield": 0.04,
-        "volatility_90d": 0.18, "beta": 1.1, "rev_growth": 0.12,
-        "earn_growth": 0.15, "div_yield": 0.03, "debt_equity": 0.4,
-        "rs_rating": 0.82, "market_regime": 1, "sector_momentum": 0.05
+def calculate_portfolio_metrics(returns_history):
+    if not HAS_PANDAS or not returns_history:
+        return {}
+    rets = pd.Series(returns_history)
+    n    = len(rets)
+    if n < 3:
+        return {"note": "Need more history for metrics"}
+    cagr     = ((1 + rets).prod() ** (12 / n) - 1) if n >= 2 else 0
+    vol      = rets.std() * (12 ** 0.5)
+    rf_m     = 0.05 / 12
+    sharpe   = ((rets - rf_m).mean() / rets.std() * (12 ** 0.5)) if rets.std() > 0 else 0
+    downside = rets[rets < 0].std() * (12 ** 0.5)
+    sortino  = ((rets - rf_m).mean() * 12 / downside) if downside > 0 else 0
+    cum      = (1 + rets).cumprod()
+    max_dd   = ((cum - cum.expanding().max()) / cum.expanding().max()).min()
+    calmar   = (cagr / abs(max_dd)) if max_dd != 0 else 0
+    return {
+        "cagr_pct": round(cagr*100,2), "volatility_pct": round(vol*100,2),
+        "sharpe": round(sharpe,3), "sortino": round(sortino,3),
+        "max_drawdown_pct": round(max_dd*100,2), "calmar": round(calmar,3),
+        "n_periods": n
     }
-    prob = predictor.predict(test_features, market_regime=1)
-    print(f"\nTest prediction: {prob:.3f} ({'BUY' if prob > 0.58 else 'NEUTRAL'})")
-    print(f"Backtest estimate: {run_backtest_summary(regime, predictor, verbose=False)['estimated_annual_return_range']}")
+
+
+if __name__ == "__main__":
+    print("ML Engine v2.1 — Kelly sizing + score smoothing")
+    regime = get_market_regime(verbose=True)
+    p = StockMLPredictor()
+    p.train(verbose=True)
+    test_f = {"momentum_6m":0.12,"momentum_12m":0.18,"roe":0.22,"profit_margin":0.15,
+              "earnings_yield":0.05,"fcf_yield":0.04,"volatility_90d":0.18,"beta":1.1,
+              "rev_growth":0.12,"earn_growth":0.15,"div_yield":0.03,"debt_equity":0.4,
+              "rs_rating":0.82,"market_regime":1,"sector_momentum":0.05}
+    raw = p.predict(test_f, market_regime=1)
+    smoothed = smooth_ml_prob("TEST", raw)
+    print(f"\nTest prediction: raw={raw:.3f} smoothed={smoothed:.3f}")
