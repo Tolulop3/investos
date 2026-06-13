@@ -672,10 +672,11 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
         # Verify the write worked
         with open(dashboard_file, "r", encoding="utf-8") as f:
             verify = f.read()
-        if 'investos-baked-data' in verify and '"brief"' in verify:
-            print(f"  ✅ Dashboard baked and VERIFIED ({len(html)//1024}KB)")
-            return True
-        print(f"  ⚠️  Written but BAKED content unclear — check manually")
+        if 'const BAKED = {' in verify or '"brief"' in verify:
+            ngx_ok = '"ngx"' in verify
+            print(f"  ✅ Dashboard baked and VERIFIED ({len(html)//1024}KB) {'✅ NGX included' if ngx_ok else '⚠️ NGX MISSING from bake'}")
+        else:
+            print(f"  ⚠️  Written but BAKED content unclear — check manually")
         return True
     except Exception as e:
         print(f"  ❌ Failed to write {dashboard_file}: {e}")
