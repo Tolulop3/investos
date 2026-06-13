@@ -503,27 +503,45 @@ def run_daily(test_mode=False):
         db  = (sum((b[i]-mb)**2 for i in range(n)))**0.5
         return num/(da*db) if da*db > 0 else 0.0
 
-    CORR_THRESHOLD = 0.82
+    # ── Correlation filter — sector + return proximity ───────────────────────
+    # closes_30d is rarely in pick data so Pearson on price series never fires.
+    # Use sector + 30d return proximity instead:
+    #   Same sector AND 30d returns within 3% = momentum echo, remove lower-scored.
+    #   Also cap at 2 picks per sector to prevent concentration.
+    SECTOR_CAP    = 2      # max conviction picks per sector
+    RETURN_TOL    = 3.0    # % — within this 30d band in same sector = correlated
+    sector_counts = {}
     kept = []; removed = []
     for pick in conviction:
-        cl   = pick.get("data", {}).get("closes_30d", [])
-        rets = [(cl[i]-cl[i-1])/cl[i-1] for i in range(1, len(cl)) if cl[i-1] > 0]
+        sector = (pick.get("sector","") or
+                  pick.get("data",{}).get("sector","") or "Unknown")
+        r30    = pick.get("data",{}).get("perf_30d", None)
         correlated = False
-        for k in kept:
-            kcl  = k.get("data", {}).get("closes_30d", [])
-            kret = [(kcl[i]-kcl[i-1])/kcl[i-1] for i in range(1, len(kcl)) if kcl[i-1] > 0]
-            if len(rets) >= 5 and len(kret) >= 5 and _pearson(rets, kret) >= CORR_THRESHOLD:
-                correlated = True
-                pick["corr_flag"] = round(_pearson(rets, kret), 2)
-                pick["corr_with"] = k["ticker"]
-                removed.append(pick)
-                break
+        # Sector cap — hard limit 2 per sector
+        if sector_counts.get(sector, 0) >= SECTOR_CAP and sector not in ("","Unknown"):
+            pick["corr_flag"] = "sector_cap"
+            pick["corr_with"] = f"{sector} (>{SECTOR_CAP} picks)"
+            removed.append(pick); correlated = True
+        else:
+            # Return proximity within same sector
+            for k in kept:
+                k_sector = (k.get("sector","") or
+                            k.get("data",{}).get("sector","") or "Unknown")
+                k_r30    = k.get("data",{}).get("perf_30d", None)
+                if (sector == k_sector and sector not in ("","Unknown") and
+                        r30 is not None and k_r30 is not None and
+                        abs(r30 - k_r30) < RETURN_TOL):
+                    correlated = True
+                    pick["corr_flag"] = round(abs(r30 - k_r30), 1)
+                    pick["corr_with"] = k["ticker"]
+                    removed.append(pick); break
         if not correlated:
             kept.append(pick)
+            sector_counts[sector] = sector_counts.get(sector, 0) + 1
     conviction = kept
     if removed:
         print(f"  🔗 Correlation filter: {len(removed)} redundant picks removed "
-              f"{[p['ticker']+'≈'+p['corr_with'] for p in removed]}")
+              f"{[p['ticker']+'≈'+p.get('corr_with','?') for p in removed]}")
 
     all_recent_scores = []
     for ticker_hist, records in score_history_for_decay.items():
@@ -1123,24 +1141,110 @@ def send_morning_brief(brief, fx_signals, crypto_signals):
     subject  = f"📊 InvestOS Brief — {today} — {regime_icon} {regime}"
     plain    = f"InvestOS Daily Brief — {today}\nRegime: {regime} | Dashboard: {dashboard_url}\nNFA · Educational only"
 
-    html_body = f"""<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#0d0d1a;font-family:sans-serif">
-<div style="max-width:620px;margin:0 auto">
-  <div style="background:#1a1a2e;padding:24px 28px;border-bottom:2px solid {rc}">
-    <div style="font-size:11px;color:#888;letter-spacing:2px">INVESTOS DAILY BRIEF</div>
-    <div style="font-size:22px;font-weight:800;color:#fff;margin:4px 0">{today}</div>
-    <div style="display:inline-block;padding:4px 14px;background:{rc}22;border:1px solid {rc};
-                border-radius:3px;font-size:12px;font-weight:700;color:{rc}">{regime_icon} {regime} — {regime_scale} DEPLOYED</div>
+    # Build pick rows
+    all_email_picks = fhsa_picks + tfsa_income + tfsa_growth + tfsa_swing
+    html_picks_rows = ""
+    for p in all_email_picks:
+        t   = p.get("ticker","?"); sc = p.get("score",0)
+        pk  = p.get("pick",{}); cat = pk.get("category","")
+        act = (pk.get("action","") or "")[:65]
+        tag = "FHSA" if "FHSA" in cat else "TFSA"
+        sc_col = "#00f5a0" if sc>=75 else "#ffc947" if sc>=55 else "#ff4d4d"
+        html_picks_rows += (f'<tr><td style="padding:9px 8px;border-bottom:1px solid #2a2a3e">'
+            f'<span style="font-size:14px;font-weight:700;color:#fff;font-family:monospace">{t}</span>'
+            f' <span style="font-size:9px;padding:1px 5px;background:#1a1a2e;border-radius:3px;color:#3d9bff">{tag}</span></td>'
+            f'<td style="padding:9px 8px;border-bottom:1px solid #2a2a3e;text-align:center">'
+            f'<span style="font-size:14px;font-weight:800;color:{sc_col};font-family:monospace">{sc}</span></td>'
+            f'<td style="padding:9px 8px;border-bottom:1px solid #2a2a3e;font-size:11px;color:#aaa">{act}</td></tr>')
+
+    # FX row
+    fx_html = ("<p style='margin:0;font-size:13px;font-weight:700;color:"
+               + ("#00f5a0" if fx_top and fx_top.get("direction")=="LONG" else "#ff4d4d") + "'>"
+               + (f"{'🟢' if fx_top.get('direction')=='LONG' else '🔴'} {fx_top.get('pair','')} {fx_top.get('direction','')} — {fx_top.get('conviction',0)}% conviction</p>"
+                  f"<p style='margin:5px 0 0;font-size:11px;color:#888'>Entry {fx_top.get('entry','')} · Stop {fx_top.get('stop','')} · Target {fx_top.get('target','')}</p>"
+                  if fx_top else "<p style='font-size:12px;color:#888'>No FX call today</p>"))
+
+    def cr(a, nm):
+        if not a: return f"<tr><td colspan='3' style='padding:8px;color:#888;font-size:11px'>{nm}: No data</td></tr>"
+        d = a.get("direction","NEUTRAL"); c = a.get("conviction",0); pr = a.get("price",0)
+        col = "#00f5a0" if d=="LONG" else "#ff4d4d" if d=="SHORT" else "#888"
+        ic  = "🟢" if d=="LONG" else "🔴" if d=="SHORT" else "⚪"
+        return (f"<tr><td style='padding:8px;font-size:13px;font-weight:700;color:#fff'>{ic} {nm}</td>"
+                f"<td style='padding:8px;font-size:13px;font-weight:700;color:{col}'>{d}</td>"
+                f"<td style='padding:8px;font-size:12px;color:#aaa'>{c}% · ${pr:,.0f}</td></tr>")
+
+    wr      = brief.get("win_rate",{}) or {}
+    wr30    = (wr.get("windows",{}).get("30d",{}) or {}).get("win_rate", wr.get("win_rate_30d",0)) or 0
+    wr_col  = "#00f5a0" if wr30 >= 60 else "#ffc947" if wr30 >= 50 else "#ff4d4d"
+    streak  = wr.get("streak",0); stype = wr.get("streak_type","WIN")
+    s_col   = "#00f5a0" if stype=="WIN" else "#ff4d4d"
+    br      = brief.get("breadth",{}) or {}
+    p200    = br.get("pct_above_200",0) or 0
+    b_col   = "#00f5a0" if p200>=70 else "#ffc947" if p200>=55 else "#ff4d4d"
+    acc_col = "#00f5a0" if acc_7d and acc_7d>=65 else "#ffc947" if acc_7d and acc_7d>=50 else "#ff4d4d"
+
+    html_body = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0d0d1a;font-family:-apple-system,BlinkMacSystemFont,sans-serif">
+<div style="max-width:620px;margin:0 auto;background:#0d0d1a">
+
+  <div style="background:linear-gradient(135deg,#1a1a2e,#12122a);padding:22px 26px;border-bottom:2px solid {rc}">
+    <div style="font-size:10px;color:#888;letter-spacing:2px;margin-bottom:4px">INVESTOS DAILY BRIEF</div>
+    <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:6px">{today}</div>
+    <span style="display:inline-block;padding:3px 12px;background:{rc}22;border:1px solid {rc};
+          border-radius:3px;font-size:11px;font-weight:700;color:{rc}">{regime_icon} {regime} · {regime_scale} DEPLOYED</span>
   </div>
-  <div style="padding:20px 28px">
-    <div style="font-size:9px;color:#888;letter-spacing:2px;margin-bottom:8px">SCREEN STATS</div>
-    <div style="font-size:14px;color:#fff">{screen.get('screened',0)}/{screen.get('universe',0)} stocks analyzed</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid #1a1a2e">
+    <div style="padding:14px 16px;border-right:1px solid #1a1a2e">
+      <div style="font-size:8px;color:#888;letter-spacing:1px;margin-bottom:4px">WIN RATE 30D</div>
+      <div style="font-size:22px;font-weight:800;color:{wr_col};font-family:monospace">{wr30:.1f}%</div>
+      <div style="font-size:9px;color:{s_col};margin-top:2px">{streak} {stype} streak</div>
+    </div>
+    <div style="padding:14px 16px;border-right:1px solid #1a1a2e">
+      <div style="font-size:8px;color:#888;letter-spacing:1px;margin-bottom:4px">BREADTH 200MA</div>
+      <div style="font-size:22px;font-weight:800;color:{b_col};font-family:monospace">{p200:.1f}%</div>
+      <div style="font-size:9px;color:#888;margin-top:2px">{br.get("signal","").replace("_"," ")}</div>
+    </div>
+    <div style="padding:14px 16px">
+      <div style="font-size:8px;color:#888;letter-spacing:1px;margin-bottom:4px">SCREENED</div>
+      <div style="font-size:22px;font-weight:800;color:#3d9bff;font-family:monospace">{screen.get("screened",0)}/{screen.get("universe",0)}</div>
+      <div style="font-size:9px;color:#888;margin-top:2px">{screen.get("signals_detected",0) if hasattr(screen,"get") else 0} signals active</div>
+    </div>
   </div>
-  <div style="padding:16px 28px 24px;border-top:1px solid #1a1a2e;text-align:center">
-    <a href="{dashboard_url}" style="display:inline-block;padding:12px 28px;background:{rc};color:#000;
-       font-weight:800;font-size:13px;border-radius:3px;text-decoration:none">OPEN FULL DASHBOARD →</a>
-    <p style="margin:16px 0 0;font-size:10px;color:#555">Model suggestions only — not financial advice.</p>
+
+  <div style="padding:18px 26px 0">
+    <div style="font-size:8px;color:#888;letter-spacing:2px;margin-bottom:10px">TODAY'S PICKS</div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#1a1a2e">
+        <th style="padding:7px 8px;text-align:left;font-size:8px;color:#888">TICKER</th>
+        <th style="padding:7px 8px;text-align:center;font-size:8px;color:#888">SCORE</th>
+        <th style="padding:7px 8px;text-align:left;font-size:8px;color:#888">ACTION</th>
+      </tr></thead>
+      <tbody>{html_picks_rows if html_picks_rows else "<tr><td colspan='3' style='padding:10px;color:#888;font-size:11px'>No picks today — staying patient</td></tr>"}</tbody>
+    </table>
   </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;padding:18px 26px 0;gap:12px">
+    <div>
+      <div style="font-size:8px;color:#888;letter-spacing:2px;margin-bottom:8px">FX TOP CALL</div>
+      <div style="background:#1a1a2e;border-radius:4px;padding:12px 14px">{fx_html}</div>
+    </div>
+    <div>
+      <div style="font-size:8px;color:#888;letter-spacing:2px;margin-bottom:8px">CRYPTO</div>
+      <table style="width:100%;border-collapse:collapse;background:#1a1a2e;border-radius:4px">
+        <tbody>{cr(btc,"BTC")}{cr(sol,"SOL")}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="padding:18px 26px 22px;margin-top:4px;text-align:center;border-top:1px solid #1a1a2e">
+    <a href="{dashboard_url}" style="display:inline-block;padding:11px 26px;background:{rc};color:#000;
+       font-weight:800;font-size:13px;letter-spacing:1px;border-radius:3px;text-decoration:none">
+       OPEN FULL DASHBOARD →</a>
+    <p style="margin:12px 0 0;font-size:9px;color:#444">Model suggestions only · Not financial advice · NFA</p>
+  </div>
+
 </div></body></html>"""
 
     try:
