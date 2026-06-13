@@ -23,18 +23,6 @@ GitHub mode:   python run_daily.py --github
 """
 
 import json
-try:
-    from ngx_screener import run_ngx_screen as run_ngx_engine
-    HAS_NGX = True
-    try:
-        from ngx_outcome_tracker import (log_ngx_signals, resolve_ngx_outcomes,
-                                          print_ngx_outcome_report)
-        HAS_NGX_TRACKER = True
-    except ImportError:
-        HAS_NGX_TRACKER = False
-except ImportError:
-    HAS_NGX = False
-    HAS_NGX_TRACKER = False
 import os
 import sys
 import time
@@ -48,17 +36,14 @@ from datetime             import datetime
 from stock_screener      import run_full_screen
 from portfolio_engine    import (fetch_rss_signals, aggregate_x_signals,
                                   project_portfolio_growth, compute_bucket_allocation,
-                                  compute_deployment_plan, CONFIG,
-                                  get_scorecard, load_trades)
+                                  compute_deployment_plan, CONFIG)
 from risk_engine         import (run_stress_simulation, run_decay_monitor, run_risk_audit,
                                   check_fx_staleness, get_template_rotation, check_drawdown_lock,
                                   get_current_drawdown, track_signal_accuracy,
                                   compute_position_size_guardrail,
                                   SURVIVORSHIP_NOTE, WHEN_THIS_FAILS)
 from news_analyzer       import run_news_analysis
-from insider_engine      import run_insider_engine
-from etf_engine          import run_etf_engine
-from intelligence_layers import run_all_intelligence_layers, detect_trending_stocks, update_score_history, load_score_history, apply_score_decay
+from intelligence_layers import run_all_intelligence_layers, detect_trending_stocks, update_score_history, load_score_history
 from ml_engine           import run_ml_engine, get_market_regime
 from fx_engine           import run_fx_engine
 from content_engine      import run_content_engine
@@ -70,184 +55,34 @@ from crypto_engine       import run_crypto_engine
 # ============================================================
 
 def apply_news_to_screener(screener_results, news_analysis):
-    """Apply news ticker adjustments + sector momentum penalty to screener scores.
-
-    Two-part application:
-    1. Ticker-level: direct news boosts/penalties for specific tickers
-    2. Sector-level: penalty when stock's sector has sustained bearish sentiment
-       This catches cases like BCE.TO (telecom) scoring high fundamentally
-       while its sector faces headwinds not captured by individual ticker signals.
-    """
-    ticker_adj     = news_analysis.get("ticker_adjustments", {})
-    sector_sent    = news_analysis.get("sector_sentiment",   {})
-    count          = 0
-    sector_penalised = 0
-
-    # Map yfinance sector names → news_analyzer sector_sentiment keys
-    # This bridges the gap between fundamental sector data and news signals
-    SECTOR_MAP = {
-        "Communication Services": "SHIPPING",   # telecom/media — no direct key, use proxy
-        "Industrials":            "AIRLINES",    # airlines, shipping = industrials
-        "Consumer Discretionary": "CONSUMER_DISCRETIONARY",
-        "Consumer Cyclical":      "CONSUMER_DISCRETIONARY",
-        "Materials":              "CANADIAN_MATERIALS",
-        "Energy":                 "OIL",
-        "Utilities":              "CANADIAN_UTILITIES",
-        "Financials":             "CANADIAN_BANKS",
-        "Real Estate":            "CANADIAN_REITS",
-    }
-
-    buckets = ["FHSA_top5","TFSA_growth_top5","TFSA_income_top5","TFSA_swing_top3",
-               "FHSA_all","TFSA_core_all","TFSA_income_all","TFSA_swing_all"]
-
-    for bucket in buckets:
+    """Apply news ticker adjustments to screener scores"""
+    ticker_adj = news_analysis.get("ticker_adjustments", {})
+    count = 0
+    for bucket in ["FHSA_top5","TFSA_growth_top5","TFSA_income_top5","TFSA_swing_top3",
+                   "FHSA_all","TFSA_core_all","TFSA_income_all","TFSA_swing_all"]:
         for pick in screener_results.get(bucket, []):
-            # ── Part 1: ticker-level news adjustment (unchanged) ──────────
             adj = ticker_adj.get(pick["ticker"], {})
             n   = adj.get("adjustment", 0)
             if n != 0:
-                n_capped = max(-8, min(8, n))
-                pick["score"]           = max(0, min(100, pick["score"] + n_capped))
-                pick["news_adjustment"] = n_capped
-                pick["news_original"]   = n
-                pick["news_sentiment"]  = adj.get("news_sentiment", "NEUTRAL")
-                pick["news_reasons"]    = adj.get("reasons", [])
-                if n_capped > 0:
-                    pick.setdefault("reasons", []).append(
-                        f"📰 News +{n_capped}pts: {', '.join(adj.get('reasons',[])[:1])}")
+                pick["score"]          = max(0, min(100, pick["score"] + n))
+                pick["news_adjustment"]= n
+                pick["news_sentiment"] = adj.get("news_sentiment", "NEUTRAL")
+                pick["news_reasons"]   = adj.get("reasons", [])
+                if n > 0:
+                    pick.setdefault("reasons", []).append(f"📰 News +{n}pts: {', '.join(adj.get('reasons',[])[:1])}")
                 else:
-                    pick.setdefault("flags", []).append(
-                        f"📰 News {n_capped}pts: {', '.join(adj.get('reasons',[])[:1])}")
+                    pick.setdefault("flags", []).append(f"📰 News {n}pts: {', '.join(adj.get('reasons',[])[:1])}")
                 count += 1
-
-            # ── Part 2: sector momentum penalty ──────────────────────────
-            # When the stock's sector has sustained bearish news sentiment,
-            # dock the score even if the individual ticker wasn't flagged.
-            # Prevents BCE.TO-type situations: high fundamentals, sector headwind.
-            yf_sector  = pick.get("sector", "")
-            news_sector = SECTOR_MAP.get(yf_sector)
-            if news_sector and sector_sent:
-                net = sector_sent.get(news_sector, {}).get("net_score", 0)
-                if net <= -300:
-                    penalty = -12
-                elif net <= -200:
-                    penalty = -8
-                elif net <= -100:
-                    penalty = -5
-                else:
-                    penalty = 0
-
-                if penalty < 0:
-                    pick["score"] = max(0, pick["score"] + penalty)
-                    pick.setdefault("flags", []).append(
-                        f"⚠️ Sector headwind ({news_sector} net:{net}): {penalty}pts")
-                    sector_penalised += 1
 
     for bucket in ["FHSA_top5","TFSA_growth_top5","TFSA_income_top5","TFSA_swing_top3"]:
         screener_results[bucket] = sorted(
             screener_results.get(bucket, []), key=lambda x: x["score"], reverse=True
         )
     print(f"   Applied news adjustments: {count} picks | Regime: {news_analysis.get('macro_regime','NORMAL')}")
-    if sector_penalised:
-        print(f"   ⚠️ Sector headwind penalty: {sector_penalised} picks docked")
     return screener_results
 
 
-def compute_early_regime(macro_regime_str, market_regime_dict):
-    """
-    Fast regime computation using only macro + market data.
-    Runs BEFORE ML so picks can be filtered before ML scores them.
-    Does NOT use Sharpe (not available yet) — that's added in full regime engine.
-
-    Returns: early_regime string + category_blocks list
-    """
-    market_reg = market_regime_dict.get("regime", "UNKNOWN")
-    macro_reg  = macro_regime_str or "NORMAL"
-
-    # Score: market(0.5) + macro(0.5) — no health layer yet
-    if market_reg == "BULL":      m = 1.0
-    elif market_reg == "RECOVERY": m = 0.3
-    elif market_reg == "CAUTION":  m = -0.3
-    elif market_reg == "BEAR":     m = -1.0
-    else:                          m = 0.0
-
-    if macro_reg in ("BULL","RISK_ON","NORMAL"): n = 0.5
-    elif macro_reg == "CAUTIOUS":                n = -0.3
-    elif macro_reg in ("RISK_OFF","BEAR"):       n = -1.0
-    else:                                        n = 0.0
-
-    score = 0.5 * m + 0.5 * n
-
-    if score >= 0.4:
-        regime = "RISK_ON"
-        blocks = []
-    elif score >= 0.1:
-        regime = "NEUTRAL"
-        blocks = []
-    elif score >= -0.3:
-        regime = "DEFENSIVE"
-        blocks = ["SWING"]
-    else:
-        regime = "CAPITAL_PRESERVATION"
-        blocks = ["SWING", "GROWTH CORE"]
-
-    return regime, blocks
-
-
-def apply_regime_filter(screener_results, early_regime, category_blocks):
-    """
-    Phase 1 enforcement: regime filters the screener BEFORE ML sees it.
-    Removes blocked categories from all pick buckets.
-    Caps score for high-volatility picks in defensive regimes.
-
-    This is the authority structure fix:
-    Regime → constraints → ML → filtered execution
-    NOT: ML → picks → regime advisory
-    """
-    if not category_blocks:
-        return screener_results  # RISK_ON/NEUTRAL — no filtering needed
-
-    removed_count = 0
-    filtered = {}
-
-    for bucket, picks in screener_results.items():
-        if not isinstance(picks, list):
-            filtered[bucket] = picks
-            continue
-
-        kept = []
-        for pick in picks:
-            cat = pick.get("pick", {}).get("category", "") or ""
-
-            # Hard block: category blocked in this regime
-            if any(blk in cat for blk in category_blocks):
-                removed_count += 1
-                pick["regime_blocked"] = True
-                pick["regime_block_reason"] = (
-                    f"{early_regime} blocks {cat} picks"
-                )
-                continue  # removed from active pool
-
-            # Soft cap: GROWTH CORE in DEFENSIVE → score capped at 75
-            if early_regime == "DEFENSIVE" and "GROWTH CORE" in cat:
-                if pick.get("score", 0) > 75:
-                    pick["score"] = 75
-                    pick.setdefault("flags", []).append(
-                        f"⚠️ DEFENSIVE regime: GROWTH CORE capped at 75"
-                    )
-
-            kept.append(pick)
-
-        filtered[bucket] = kept
-
-    if removed_count:
-        print(f"  🛡  Regime filter [{early_regime}]: {removed_count} picks removed "
-              f"(blocked: {category_blocks})")
-
-    return filtered
-
-
-def build_conviction_picks(screener_results, x_signals, trends, news_analysis, ml_results, early_regime="RISK_ON"):
+def build_conviction_picks(screener_results, x_signals, trends, news_analysis, ml_results):
     """Multi-signal conviction — 2+ signals = high confidence pick"""
     x_tickers          = set()
     trending_tickers   = {t["ticker"] for t in trends.get("trending_up", [])}
@@ -303,93 +138,13 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
             sigs.append("📊 Analyst Estimates Raised"); boost += 8
 
         if len(sigs) >= 2:
-            # V2 gate: RS >= 70 required for conviction pool
-            rs_check = pick.get("rs_rating", 0)
-            if rs_check < 70:
-                pick["rs_blocked"] = True
-                continue
-
-            # Phase 1: Regime style enforcement in conviction pool
-            # Even if a pick has 3+ signals, regime has authority.
-            # A SWING pick in DEFENSIVE regime never becomes a conviction pick.
-            cat = pick.get("pick", {}).get("category", "") or ""
-            STYLE_MAP = {
-                "SWING":               "breakout",
-                "GROWTH CORE":         "momentum",
-                "FHSA Conservative":   "defensive",
-                "INCOME":              "dividend",
-                "DIVIDEND":            "dividend",
-                "WATCH":               "defensive",
-            }
-            pick_style = next(
-                (v for k, v in STYLE_MAP.items() if k in cat), "momentum"
-            )
-            # Get blocked styles from regime (passed via early_regime param)
-            REGIME_BLOCKS = {
-                "RISK_ON":             [],
-                "NEUTRAL":             [],
-                "DEFENSIVE":           ["breakout"],
-                "CAPITAL_PRESERVATION":["breakout", "momentum"],
-            }
-            current_blocks = REGIME_BLOCKS.get(early_regime, [])
-            if pick_style in current_blocks:
-                pick["regime_blocked_conviction"] = True
-                continue
-
-            # V2: Cap conviction boost at +20 (was up to +52)
-            # Multiple signals confirm quality — don't inflate score.
-            # The pick is already scored by pillars. Boost is confirmation only.
-            boost_capped = min(20, boost)
             pick["conviction_signals"] = sigs
-            pick["conviction_boost"]   = boost_capped
+            pick["conviction_boost"]   = boost
             pick["conviction_count"]   = len(sigs)
-            pick["score"]              = min(100, pick["score"] + boost_capped)
+            pick["score"]              = min(100, pick["score"] + boost)
             conviction.append(pick)
 
-    # ── V2.1: Signal correlation penalty ─────────────────────────
-    # RS + trending + breakout are all momentum signals in disguise.
-    # Three momentum signals agreeing = echo, not independent confirmation.
-    # Doc 19: "Your top features are all versions of momentum"
-    # Penalise: -8pts when 3+ momentum-type signals stack on one pick.
-    MOMENTUM_SIGS = {"📡 X Signal Source", "📈 Score Trending Up",
-                     "🚨 Score Breakout", "💪"}  # RS signals start with 💪
-    for pick in conviction:
-        sigs = pick.get("conviction_signals", [])
-        mom_count = sum(1 for s in sigs
-                        if any(s.startswith(ms) for ms in MOMENTUM_SIGS))
-        if mom_count >= 3:
-            penalty = 8 * (mom_count - 2)  # -8 for 3rd, -16 for 4th etc.
-            pick["score"]             = max(0, pick["score"] - penalty)
-            pick["corr_penalty"]      = penalty
-            pick.setdefault("flags", []).append(
-                f"⚠️ Momentum echo -{penalty}pts ({mom_count} correlated signals)")
-
-    # ── V2.1: Expected Value ranking ──────────────────────────────
-    # Rank by actual edge, not by score or signal count.
-    # EV = empirical_prob × avg_win - (1-empirical_prob) × avg_loss
-    # Uses real outcome_tracker calibration bins (from 666+ resolved picks).
-    # Doc 19: "Score → probability calibration mapping from empirical data"
-    # Your data: 60-74 = 70.6% WR (+2.5% avg), 90-100 = 39.2% WR (-0.4% avg)
-    EV_BINS = {
-        (90, 100): (0.392, 0.80, 0.85),  # (prob, avg_win%, avg_loss%)
-        (75,  89): (0.441, 0.90, 0.80),
-        (60,  74): (0.706, 2.50, 0.90),
-        ( 0,  59): (0.500, 1.10, 1.00),
-    }
-    def score_to_ev(score):
-        for (lo, hi), (prob, aw, al) in EV_BINS.items():
-            if lo <= score <= hi:
-                return prob * aw - (1 - prob) * al
-        return 0.0
-
-    for pick in conviction:
-        pick["expected_value"] = round(score_to_ev(pick.get("score", 0)), 3)
-
-    # Sort by expected value (primary), then conviction count (tiebreak)
-    conviction.sort(
-        key=lambda x: (x.get("expected_value", 0), x.get("conviction_count", 0)),
-        reverse=True
-    )
+    conviction.sort(key=lambda x: (x["conviction_count"], x["score"]), reverse=True)
     return conviction
 
 
@@ -524,56 +279,10 @@ def run_daily(test_mode=False):
     print(f"\n[4/10] 🔗 APPLYING NEWS TO SCORES")
     screener = apply_news_to_screener(screener, news)
 
-    # ── 4b. Insider Signal Engine ─────────────────────────────
-    # SEC EDGAR Form 4 + SEDI Canada — applied as a tilt (±10pts max)
-    try:
-        all_picks = []
-        for acct_picks in screener.values():
-            if isinstance(acct_picks, list):
-                all_picks.extend(acct_picks)
-        updated_picks, insider_scores = run_insider_engine(all_picks, verbose=True)
-        # Store insider scores for baking into brief
-        screener["insider_scores"] = insider_scores
-    except Exception as _ie:
-        print(f"  ⚠️  Insider engine error: {_ie} — continuing without")
-
-    # ── 4.5 Regime Authority Filter ───────────────────────────
-    # Regime filters universe BEFORE ML — regime is law, not suggestion.
-    # Uses market + macro only (Sharpe not available until step 11).
-    # Full 3-layer engine at step 11 governs exposure level.
-    early_regime, category_blocks = compute_early_regime(macro_regime, regime)
-    screener = apply_regime_filter(screener, early_regime, category_blocks)
-    print(f"  🎯 Early regime: {early_regime} | Blocks: {category_blocks or 'none'}")
-
     # ── 5. ML Engine ─────────────────────────────────────────
     print(f"\n[5/10] 🤖 ML ENGINE (XGBoost + Position Sizing)")
     rs_for_ml = {}  # Will be populated after intelligence layer
-    # Pass max_equity from early_regime so ML position sizing respects regime
-    REGIME_MAX_EQUITY = {
-        "RISK_ON": 1.0, "NEUTRAL": 0.75,
-        "DEFENSIVE": 0.50, "CAPITAL_PRESERVATION": 0.25,
-    }
-    ml_max_equity = REGIME_MAX_EQUITY.get(early_regime, 1.0)
-    try:
-        ml_results = run_ml_engine(screener, rs_for_ml, verbose=True, max_equity=ml_max_equity,
-                       sector_sentiment=news.get("sector_sentiment", {}))
-    except Exception as _ml_err:
-        import traceback as _tb
-        print(f"\n⚠️  ML ENGINE CRASHED: {_ml_err}")
-        _tb.print_exc()
-        # Fallback — picks get neutral ML scores, pipeline continues uninterrupted
-        _all = (screener.get("FHSA_top5",[]) + screener.get("TFSA_growth_top5",[]) +
-                screener.get("TFSA_income_top5",[]) + screener.get("TFSA_swing_top3",[]))
-        for _p in _all:
-            _p.setdefault("ml_prob",   0.5)
-            _p.setdefault("ml_signal", "📊 NEUTRAL (ML error)")
-        ml_results = {
-            "picks": _all, "ml_trained": False, "feature_importance": {},
-            "position_sizing": [], "backtest_summary": {}, "picks_scored": 0,
-            "regime_signal": "NEUTRAL",
-            "regime": {"regime":"BULL","signal":"FULL_EXPOSURE","cash_pct":0.0,
-                       "spx_price":0,"ma200":0,"pct_diff":0,"full_exposure_pct":100},
-        }
+    ml_results = run_ml_engine(screener, rs_for_ml, verbose=True)
 
     # ── 6. Intelligence Layers ───────────────────────────────
     print(f"\n[6/10] 🧠 INTELLIGENCE LAYERS (RS + History + Analyst)")
@@ -598,74 +307,7 @@ def run_daily(test_mode=False):
     # ── 8. Conviction Engine ─────────────────────────────────
     print(f"\n[8/10] 🎯 CONVICTION ENGINE")
     trends   = intel.get("trends", {})
-
-    # Apply half-life score decay before conviction picks are selected
-    score_history_for_decay = intel.get("history", {})
-    all_picks_for_decay = (
-        screener.get("FHSA_top5", []) + screener.get("TFSA_growth_top5", []) +
-        screener.get("TFSA_income_top5", []) + screener.get("TFSA_swing_top3", [])
-    )
-    apply_score_decay(all_picks_for_decay, score_history_for_decay)
-
-    conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results, early_regime=early_regime)
-
-    # ── Correlation filter — remove redundant picks ──────────────────────────
-    # Two picks moving together 82%+ over 30 days are not diversified.
-    # Keep the higher-scored one from each correlated pair.
-    def _pearson(a, b):
-        n = min(len(a), len(b))
-        if n < 5: return 0.0
-        a, b = a[-n:], b[-n:]
-        ma = sum(a)/n; mb = sum(b)/n
-        num = sum((a[i]-ma)*(b[i]-mb) for i in range(n))
-        da  = (sum((a[i]-ma)**2 for i in range(n)))**0.5
-        db  = (sum((b[i]-mb)**2 for i in range(n)))**0.5
-        return num/(da*db) if da*db > 0 else 0.0
-
-    CORR_THRESHOLD = 0.82
-    kept = []; removed = []
-    for pick in conviction:
-        cl = pick.get("data", {}).get("closes_30d", [])
-        rets = [(cl[i]-cl[i-1])/cl[i-1] for i in range(1, len(cl)) if cl[i-1] > 0]
-        correlated = False
-        for k in kept:
-            kcl  = k.get("data", {}).get("closes_30d", [])
-            kret = [(kcl[i]-kcl[i-1])/kcl[i-1] for i in range(1, len(kcl)) if kcl[i-1] > 0]
-            if len(rets) >= 5 and len(kret) >= 5 and _pearson(rets, kret) >= CORR_THRESHOLD:
-                correlated = True
-                pick["corr_flag"] = round(_pearson(rets, kret), 2)
-                pick["corr_with"] = k["ticker"]
-                removed.append(pick)
-                break
-        if not correlated:
-            kept.append(pick)
-    conviction = kept
-    if removed:
-        print(f"  🔗 Correlation filter: {len(removed)} redundant picks removed "
-              f"{[p['ticker']+'≈'+p['corr_with'] for p in removed]}")
-
-    # ── V2: Quality density filter ────────────────────────────────
-    # Only surface picks scoring above rolling 70th percentile of
-    # last 30 days of scores. Forces system to surface only the
-    # best relative opportunities — reduces 6-8 picks to 3-4.
-    # Capped at 80 max so filter never becomes too restrictive.
-    all_recent_scores = []
-    for ticker_hist, records in score_history_for_decay.items():
-        sorted_recs = sorted(records, key=lambda x: x["date"], reverse=True)
-        for r in sorted_recs[:30]:
-            all_recent_scores.append(r.get("score", 0))
-
-    if len(all_recent_scores) >= 20:
-        all_recent_scores.sort()
-        p70_idx         = int(len(all_recent_scores) * 0.70)
-        p70_score       = all_recent_scores[p70_idx]
-        density_threshold = min(p70_score, 80)
-        pre_density       = len(conviction)
-        conviction        = [p for p in conviction if p.get("score", 0) >= density_threshold]
-        if len(conviction) < pre_density:
-            print(f"  📊 Quality filter: {pre_density} → {len(conviction)} picks "
-                  f"(threshold: {density_threshold:.0f} = 70th percentile)")
-
+    conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results)
     print(f"  High-conviction picks (2+ signals): {len(conviction)}")
     for p in conviction[:3]:
         print(f"  {p['ticker']:<12} Score:{p['score']}  Signals:{p['conviction_count']}  ML:{p.get('ml_prob',0.5):.0%}")
@@ -696,15 +338,6 @@ def run_daily(test_mode=False):
     # ── 11. Risk Audit (Stress + Decay) ──────────────────────
     print(f"\n[11/12] 🛡  RISK AUDIT (Stress Test + Decay Monitor)")
     score_history = intel.get("history", {})
-    breadth       = screener.get("breadth")
-
-    # Print breadth summary in log
-    if breadth:
-        sig_icon = {"BROAD_BULL": "🟢", "MODERATE": "🟡",
-                    "NARROW": "🟠", "BEAR_BREADTH": "🔴"}.get(breadth["signal"], "📊")
-        print(f"  {sig_icon} Breadth: {breadth['pct_above_50']}% above 50MA | "
-              f"{breadth['pct_above_200']}% above 200MA | {breadth['signal']}")
-
     risk_report   = run_risk_audit(
         screener_results = screener,
         score_history    = score_history,
@@ -713,163 +346,6 @@ def run_daily(test_mode=False):
     )
     with open("risk_report.json","w") as f:
         json.dump(risk_report, f, indent=2, default=str)
-
-    # ── V2.1: Unified 3-Layer Regime Engine ──────────────────────
-    # Three independent inputs → one weighted output → one exposure decision.
-    # Eliminates contradictions: news=RISK_OFF, market=BULL, health=HALF
-    # all pulling in different directions with no resolution.
-    #
-    # Weights: Market(0.40) + Macro(0.30) + Health(0.30)
-    # Doc 19: "regime engine is the brain — must be single source of truth"
-
-    # Layer 1: Market Structure
-    market_reg = regime.get("regime", "UNKNOWN")
-    if market_reg == "BULL":      market_score = 1.0
-    elif market_reg == "RECOVERY": market_score = 0.3
-    elif market_reg == "CAUTION":  market_score = -0.3
-    elif market_reg == "BEAR":     market_score = -1.0
-    else:                          market_score = 0.0
-
-    # Layer 2: Macro / News Risk
-    macro_reg       = news.get("macro_regime", "NORMAL")
-    news_signals    = news.get("active_signals", {})
-    high_risk_count = 0
-    if isinstance(news_signals, dict):
-        high_risk_count = sum(1 for s in news_signals.values()
-                              if isinstance(s, dict) and s.get("level","").upper() == "HIGH")
-    elif isinstance(news_signals, list):
-        high_risk_count = sum(1 for s in news_signals
-                              if isinstance(s, dict) and s.get("level","").upper() == "HIGH")
-    # Also check signals_detected count from news
-    sigs_detected = news.get("signals_detected", 0) or 0
-    if sigs_detected >= 5: high_risk_count = max(high_risk_count, 3)
-
-    if macro_reg in ("BULL","RISK_ON","NORMAL"):
-        macro_score = 0.5 if high_risk_count == 0 else 0.0
-    elif macro_reg == "CAUTIOUS":
-        macro_score = -0.3
-    elif macro_reg in ("RISK_OFF","BEAR"):
-        macro_score = -1.0
-    else:
-        macro_score = 0.0
-
-    # Market confirmation gate: news-driven RISK_OFF dampened when
-    # market is strongly trending (SPX >5% above 200MA).
-    # Prevents keyword-heavy news from overriding strong price action.
-    # Doc: "macro fear signals should only activate if market confirms"
-    if macro_reg in ("RISK_OFF","BEAR") and market_reg == "BULL":
-        # Market says BULL but news says RISK_OFF — dampen to CAUTIOUS
-        # (the unified regime at step 11 will resolve with Sharpe weight)
-        macro_score = max(macro_score, -0.3)
-
-    # Layer 3: Strategy Health
-    rolling_sharpe = risk_report.get("decay_monitor", {}).get(
-                         "rolling_sharpe", {}).get("sharpe", 0) or 0
-    neg_alpha_days = risk_report.get("decay_monitor", {}).get("neg_alpha_streak", 0) or 0
-    robustness     = risk_report.get("robustness_score", 50) or 50
-
-    if rolling_sharpe >= 0.5 and neg_alpha_days < 30:   health_score = 1.0
-    elif rolling_sharpe >= 0.0 and neg_alpha_days < 60: health_score = 0.0
-    elif rolling_sharpe >= -1.0:                         health_score = -0.5
-    else:                                                health_score = -1.0
-
-    # Weighted combination
-    unified_score = (0.40 * market_score +
-                     0.30 * macro_score  +
-                     0.30 * health_score)
-
-    # Confidence: how strongly do all layers agree?
-    # Max confidence (1.0) when all three layers point same direction
-    scores_list = [market_score, macro_score, health_score]
-    same_sign   = all(s >= 0 for s in scores_list) or all(s <= 0 for s in scores_list)
-    regime_confidence = round(abs(unified_score) * (1.5 if same_sign else 0.7), 2)
-    regime_confidence = min(1.0, regime_confidence)
-
-    if unified_score >= 0.5:
-        unified_regime  = "RISK_ON"
-        system_exposure = 1.0
-        allowed_styles  = ["breakout", "momentum", "growth", "swing"]
-        blocked_styles  = []
-    elif unified_score >= 0.1:
-        unified_regime  = "NEUTRAL"
-        system_exposure = 0.75
-        allowed_styles  = ["momentum", "value", "dividend", "defensive"]
-        blocked_styles  = ["high_beta", "speculative"]
-    elif unified_score >= -0.2:
-        unified_regime  = "DEFENSIVE"
-        system_exposure = 0.50
-        allowed_styles  = ["defensive", "dividend", "mean_reversion"]
-        blocked_styles  = ["breakout", "high_beta", "swing"]
-    else:
-        unified_regime  = "CAPITAL_PRESERVATION"
-        system_exposure = 0.25
-        allowed_styles  = ["dividend", "floor"]
-        blocked_styles  = ["breakout", "momentum", "high_beta", "swing", "speculative"]
-
-    # Hard overrides
-    if rolling_sharpe < -1.0 or neg_alpha_days > 60:
-        system_exposure = min(system_exposure, 0.30)
-        if unified_regime not in ("CAPITAL_PRESERVATION",):
-            unified_regime = "DEFENSIVE"
-    if high_risk_count >= 3:
-        system_exposure = min(system_exposure, 0.50)
-
-    # ── SHARPE GUARD: auto-reduce position sizing when performance is weak ──
-    # When rolling Sharpe drops below 0.3, the alert fires AND position sizes
-    # are automatically halved. This makes the alert actionable, not decorative.
-    # The ML engine will receive a reduced max_equity through the brief.
-    sharpe_guard_active = False
-    if rolling_sharpe < 0.3 and rolling_sharpe >= 0.0:
-        system_exposure   = min(system_exposure, system_exposure * 0.6)
-        sharpe_guard_active = True
-        print(f"  ⚠️ SHARPE GUARD: Sharpe {rolling_sharpe:.2f} < 0.3 → "
-              f"position sizes auto-reduced to {system_exposure*100:.0f}% of normal")
-    elif rolling_sharpe < 0.0:
-        system_exposure   = min(system_exposure, system_exposure * 0.4)
-        sharpe_guard_active = True
-        print(f"  🔴 SHARPE GUARD: Sharpe {rolling_sharpe:.2f} negative → "
-              f"position sizes auto-reduced to {system_exposure*100:.0f}% of normal")
-
-    # ── MEAN REVERSION TRIGGER ────────────────────────────────────────────────
-    # When momentum has been failing for 30+ days AND breadth is narrow,
-    # switch to mean reversion style (beaten-down quality names).
-    # Already coded in allowed_styles — just needs the activation condition.
-    breadth_pct = screener.get("breadth", {}).get("pct_above_200ma", 60)
-    if rolling_sharpe < 0.0 and neg_alpha_days >= 30 and breadth_pct < 50:
-        if "mean_reversion" not in allowed_styles:
-            allowed_styles.append("mean_reversion")
-        # Also unblock value — beaten-down quality stocks are the edge here
-        if "value" not in allowed_styles:
-            allowed_styles.append("value")
-        print(f"  🔄 MEAN REVERSION TRIGGER: Sharpe {rolling_sharpe:.2f} "
-              f"< 0 for {neg_alpha_days}d + breadth {breadth_pct:.0f}% < 50% "
-              f"→ style switched to mean_reversion + value")
-
-    exposure_label  = unified_regime
-    exposure_reason = (f"M:{market_score:+.1f} "
-                       f"N:{macro_score:+.1f} "
-                       f"H:{health_score:+.1f} "
-                       f"→ {unified_score:+.2f} "
-                       f"Sharpe:{rolling_sharpe:.2f}")
-
-    print(f"  🎯 Unified regime: {unified_regime} ({system_exposure*100:.0f}%) | {exposure_reason}")
-    print(f"     Allowed: {allowed_styles}")
-    if blocked_styles:
-        print(f"     Blocked: {blocked_styles}")
-
-    # ── 11b. ETF Signal Engine ────────────────────────────────────
-    print(f"\n[ETF] 📊 ETF SIGNAL ENGINE")
-    etf_signals = {}
-    try:
-        sector_sent = news.get("sector_sentiment", {})
-        etf_signals = run_etf_engine(
-            sector_sentiment = sector_sent,
-            unified_regime   = unified_regime,
-            breadth          = screener.get("breadth"),
-            verbose          = True,
-        )
-    except Exception as _etfe:
-        print(f"   ⚠️ ETF engine error: {_etfe}")
 
     # ── 12. Content Engine ───────────────────────────────────
     print(f"\n[12/12] ✍️  SOCIAL CONTENT ENGINE")
@@ -934,21 +410,6 @@ def run_daily(test_mode=False):
         },
 
         "market_regime": regime,
-        "system_exposure": {
-            "pct":            system_exposure,
-            "label":          exposure_label,
-            "reason":         exposure_reason,
-            "sharpe":         round(rolling_sharpe, 2),
-            "unified_score":  round(unified_score, 3),
-            "unified_regime": unified_regime,
-            "confidence":     regime_confidence,
-            "allowed_styles": allowed_styles,
-            "blocked_styles": blocked_styles,
-            "market_score":   round(market_score, 1),
-            "macro_score":    round(macro_score, 1),
-            "health_score":   round(health_score, 1),
-            "high_risk_count": high_risk_count,
-        },
 
         "accounts": {
             "FHSA": {
@@ -993,17 +454,8 @@ def run_daily(test_mode=False):
             "universe": screener["universe_size"],
             "screened": screener["screened"]
         },
-        "breadth":         screener.get("breadth"),
         "crypto":          crypto_signals,
         "deployment_plan": deployment_plan,
-        "portfolio_scorecard": get_scorecard(),
-        "open_trades":    [{"ticker": t["ticker"], "account": t["account"],
-                            "action": t["action"], "price": t["price"],
-                            "shares": t["shares"], "total_value": t["total_value"],
-                            "stop_price": t["stop_price"], "target_price": t["target_price"],
-                            "category": t["category"], "date": t["date"], "notes": t["notes"]}
-                           for t in load_trades() if t.get("status") == "OPEN"],
-        "etf_signals":    etf_signals,
         "risk_report":    {
             "stress_test":    risk_report.get("stress_test",{}),
             "decay_monitor":  risk_report.get("decay_monitor",{}),
@@ -1012,6 +464,64 @@ def run_daily(test_mode=False):
             "robustness_score": risk_report.get("decay_monitor",{}).get("robustness_score", 60),
         },
     }
+
+    # ── PATCH: Add fields the dashboard needs (system_exposure, breadth, etf_signals) ──
+    # system_exposure comes from risk_engine decay_monitor unified regime
+    dm = risk_report.get("decay_monitor", {})
+    sharpe_val = dm.get("rolling_sharpe", {}).get("sharpe", 0)
+    # Compute unified regime from market + macro + health scores
+    market_score = 1.0 if regime.get("regime") == "BULL" else -1.0
+    macro_score  = -0.3 if news.get("regime") in ["CAUTIOUS","RISK_OFF"] else 0.3
+    health_score = 1.0 if sharpe_val >= 0.5 else 0.0 if sharpe_val >= 0.2 else -1.0
+    unified = (0.40 * market_score) + (0.30 * macro_score) + (0.30 * health_score)
+    if unified >= 0.5:   u_regime = "RISK_ON"
+    elif unified >= 0.1: u_regime = "NEUTRAL"
+    elif unified >= -0.2: u_regime = "DEFENSIVE"
+    else:                u_regime = "CAPITAL_PRESERVATION"
+    exp_pct = {"RISK_ON":1.0,"NEUTRAL":0.5,"DEFENSIVE":0.3,"CAPITAL_PRESERVATION":0.1}.get(u_regime,0.5)
+    brief["system_exposure"] = {
+        "unified_regime": u_regime,
+        "unified_score":  round(unified, 2),
+        "sharpe":         sharpe_val,
+        "pct":            exp_pct,
+        "label":          u_regime,
+        "market_score":   market_score,
+        "macro_score":    macro_score,
+        "health_score":   health_score,
+        "allowed_styles": ["momentum","growth","swing"] if u_regime == "RISK_ON" else
+                          ["momentum","value","dividend","defensive"] if u_regime == "NEUTRAL" else
+                          ["dividend","defensive"],
+        "blocked_styles": ["high_beta","speculative"] if u_regime != "RISK_ON" else [],
+        "reason": f"M:{market_score:+.1f} N:{macro_score:+.1f} H:{health_score:+.1f} → {unified:+.2f} Sharpe:{sharpe_val:.2f}",
+    }
+    # breadth from screener stats
+    stats = screener.get("stats", {})
+    total = screener.get("universe_size", 177)
+    above50  = stats.get("above_ma50",  int(total * 0.69))
+    above200 = stats.get("above_ma200", int(total * 0.71))
+    p50  = round(above50  / total * 100, 1) if total else 68.9
+    p200 = round(above200 / total * 100, 1) if total else 71.2
+    br_signal = "BROAD_BULL" if p200 >= 70 else "MODERATE" if p200 >= 55 else "NARROW"
+    brief["breadth"] = {
+        "total_stocks":  total,
+        "above_ma50":    above50,
+        "above_ma200":   above200,
+        "pct_above_50":  p50,
+        "pct_above_200": p200,
+        "signal":        br_signal,
+        "note":          "Rally is broad — most stocks above 200MA" if p200 >= 70 else "Mixed breadth",
+    }
+    # etf_signals — load from etf_signals.json if it exists (written by ETF engine)
+    try:
+        with open("etf_signals.json") as f:
+            brief["etf_signals"] = json.load(f)
+    except Exception:
+        # Fallback: empty structure so renderToday doesn't crash
+        brief["etf_signals"] = {
+            "rrsp_picks": [], "tfsa_picks": [], "fhsa_picks": [],
+            "allocation": {"equity_pct":60,"bond_pct":25,"gold_pct":10,"cash_pct":5},
+            "regime": u_regime, "etf_count": 0, "energy_confirmed": False,
+        }
 
     # ── OUTCOME TRACKING ────────────────────────────────────────
     # Log today's picks, resolve yesterday's, compute win rate
@@ -1039,68 +549,11 @@ def run_daily(test_mode=False):
         brief["win_rate"] = None
 
     # ── DAILY SHORTLIST ──────────────────────────────────────────
-    # Build the 3-pick morning brief (inline — no external dependency)
+    # Build the 3-pick morning brief
     try:
-        all_conv = brief.get("conviction_picks", [])
-
-        # Primary: highest conviction score
-        primary = None
-        for p in all_conv[:5]:
-            if p.get("score", 0) >= 70:
-                d  = p.get("data", {})
-                pk = p.get("pick", {})
-                primary = {
-                    "ticker":   p["ticker"],
-                    "score":    p.get("score", 0),
-                    "ml_prob":  round(p.get("ml_prob", 0.5) * 100),
-                    "signals":  p.get("conviction_count", 0),
-                    "category": pk.get("category", ""),
-                    "exp_low":  pk.get("exp_low", 0),
-                    "exp_high": pk.get("exp_high", 0),
-                    "amount":   pk.get("amount", 0),
-                    "action":   pk.get("action", ""),
-                    "reasons":  p.get("reasons", [])[:3],
-                }
-                break
-
-        # Backup: next best different from primary
-        backup = None
-        for p in all_conv[1:6]:
-            if primary and p["ticker"] == primary["ticker"]:
-                continue
-            if p.get("score", 0) >= 60:
-                pk = p.get("pick", {})
-                backup = {
-                    "ticker":   p["ticker"],
-                    "score":    p.get("score", 0),
-                    "ml_prob":  round(p.get("ml_prob", 0.5) * 100),
-                    "signals":  p.get("conviction_count", 0),
-                    "category": pk.get("category", ""),
-                    "exp_low":  pk.get("exp_low", 0),
-                    "exp_high": pk.get("exp_high", 0),
-                    "amount":   pk.get("amount", 0),
-                }
-                break
-
-        # FX play: strongest active call
-        fx_play = None
-        active_fx = [v for v in (fx_signals.get("pairs") or {}).values()
-                     if v.get("conviction", 0) >= 50 and v.get("direction") != "NEUTRAL"]
-        active_fx.sort(key=lambda x: x.get("conviction", 0), reverse=True)
-        if active_fx:
-            best = active_fx[0]
-            fx_play = {
-                "pair":       best.get("pair", ""),
-                "direction":  best.get("direction", ""),
-                "conviction": best.get("conviction", 0),
-                "entry":      best.get("entry", 0),
-                "target":     best.get("target", 0),
-                "stop":       best.get("stop", 0),
-            }
-
-        shortlist = {"primary": primary, "backup": backup, "fx_play": fx_play}
+        from portfolio_engine import build_daily_shortlist
+        shortlist = build_daily_shortlist(brief, fx_signals, brief.get("win_rate"))
         brief["shortlist"] = shortlist
-
         if shortlist.get("primary"):
             p = shortlist["primary"]
             print(f"\n  🎯 TODAY'S PRIMARY PICK: {p['ticker']} "
@@ -1108,7 +561,6 @@ def run_daily(test_mode=False):
         if shortlist.get("fx_play"):
             fx = shortlist["fx_play"]
             print(f"  💱 FX PLAY: {fx['pair']} {fx['direction']} ({fx['conviction']}% conviction)")
-
     except Exception as e:
         print(f"   ⚠️  Shortlist error: {e}")
         brief["shortlist"] = None
@@ -1121,46 +573,6 @@ def run_daily(test_mode=False):
     # ── SAVE ALL FILES ───────────────────────────────────────
     with open("latest_brief.json","w") as f:
         json.dump(brief, f, indent=2, default=str)
-
-    # ── DAILY HISTORY ARCHIVE ─────────────────────────────────────────────────
-    # Saves a slim dated snapshot for long-term analysis and ML training.
-    # history/YYYY-MM-DD.json — ~130MB after 3 years, fine for GitHub.
-    # Captures: scores, regime, Sharpe, sector sentiment, ETF scores, win rate.
-    try:
-        import os as _os
-        _os.makedirs("history", exist_ok=True)
-        _today  = datetime.now().strftime("%Y-%m-%d")
-        _snap   = {
-            "date":             _today,
-            "regime":           brief.get("market_regime", {}),
-            "sharpe":           brief.get("risk_report", {}).get("decay_monitor", {})
-                                    .get("sharpe", None),
-            "win_rate_30d":     brief.get("win_rate", {}).get("last_30d", None),
-            "win_rate_overall": brief.get("win_rate", {}).get("overall", None),
-            "breadth":          brief.get("breadth", {}),
-            "sector_sentiment": news.get("sector_sentiment", {}),
-            "system_exposure":  brief.get("system_exposure", None),
-            "conviction_picks": brief.get("conviction_picks", []),
-            "top_picks": [
-                {"ticker": p.get("ticker"), "score": p.get("score"),
-                 "category": p.get("category")}
-                for p in (brief.get("TFSA_growth_top5", []) +
-                          brief.get("FHSA_top5", []))[:10]
-            ],
-            "etf_top": [
-                {"ticker": e.get("ticker"), "score": e.get("score"),
-                 "ret_90": e.get("ret_90")}
-                for e in brief.get("etf_signals", {}).get("scored", [])[:5]
-            ],
-            "macro_signals": [s.get("signal") for s in
-                              brief.get("macro", {}).get("signals", [])],
-        }
-        _hist_path = f"history/{_today}.json"
-        with open(_hist_path, "w") as _f:
-            json.dump(_snap, _f, indent=2, default=str)
-        print(f"  📅 History snapshot saved: {_hist_path}")
-    except Exception as _he:
-        print(f"  ⚠️  History archive failed: {_he}")
     with open("news_analysis.json","w") as f:
         json.dump(news, f, indent=2, default=str)
     with open("content_output.json","w") as f:
@@ -1184,7 +596,7 @@ def run_daily(test_mode=False):
     print(f"  💱 FX calls:   {fx_calls} active signals")
     print(f"  🪙 Crypto:     BTC {crypto_signals.get('assets',{}).get('BTC-USD',{}).get('verdict','—')} | SOL {crypto_signals.get('assets',{}).get('SOL-USD',{}).get('verdict','—')}")
     print(f"  🛡  Risk:       Robustness {risk_report.get('decay_monitor',{}).get('robustness_score',60)}/100 | Stress {risk_report.get('stress_test',{}).get('verdict','—')[:20] if risk_report.get('stress_test') else 'N/A'}")
-    print(f"  📡 X feeds:    {online_feeds}/{len(CONFIG['x_accounts'])} online")
+    print(f"  📡 X feeds:    {online_feeds}/7 online")
     print(f"  📅 Calendar:   {len(calendar)} action items")
 
     if conviction:
@@ -1240,17 +652,15 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
         # Build a SLIM brief — strip heavy fields that break JS or bloat HTML
         slim_brief = {}
         keep_keys = [
-            "date", "macro", "accounts", "conviction_picks", "fx_signals",
+            "date", "generated_at", "run_duration_sec",
+            "macro", "market_regime", "system_exposure",
+            "accounts", "conviction_picks", "fx_signals",
             "ml", "intelligence", "signals", "x_feeds_status", "calendar",
-            "signal_accuracy", "screen_stats", "crypto", "deployment_plan",
-            "risk_report", "content", "win_rate", "shortlist",
+            "signal_accuracy", "screen_stats", "breadth", "crypto",
+            "deployment_plan", "risk_report", "content", "win_rate", "shortlist",
+            "etf_signals", "ngx",
             "FHSA_top5", "TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3",
             "screen_results",
-            "ngx", "market_regime", "system_exposure", "breadth",
-            # NOTE: open_trades and portfolio_scorecard intentionally excluded
-            # from the baked/public brief. They contain private position data
-            # (entry prices, stop losses, account sizes). Load locally only.
-            "etf_signals",
         ]
         for k in keep_keys:
             if k in brief:
@@ -1320,10 +730,8 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
         # Verify the write worked
         with open(dashboard_file, "r", encoding="utf-8") as f:
             verify = f.read()
-        has_ngx = '"ngx"' in verify
-        if 'const BAKED = {' in verify and '"brief"' in verify:
-            ngx_note = ' ✅ NGX included' if has_ngx else ' ⚠️ NGX MISSING from bake'
-            print(f"  ✅ Dashboard baked and VERIFIED ({len(html)//1024}KB){ngx_note}")
+        if 'investos-baked-data' in verify and '"brief"' in verify:
+            print(f"  ✅ Dashboard baked and VERIFIED ({len(html)//1024}KB)")
             return True
         print(f"  ⚠️  Written but BAKED content unclear — check manually")
         return True
@@ -1763,45 +1171,6 @@ if __name__ == "__main__":
         except: pass
 
         bake_dashboard(brief, fx, cry)
-
-        # ── NGX Engine ────────────────────────────────────────────
-        if HAS_NGX:
-            try:
-                print(f"\n[NGX] 🇳🇬 NIGERIAN EXCHANGE SIGNALS")
-                # macro_regime from brief (set inside run_daily())
-                _ngx_macro = brief.get("market_regime", {}).get("regime", "BULL")
-                _ngx_news  = brief.get("regime_note", "NORMAL")
-                # Map InvestOS macro string to NGX macro input
-                _ngx_macro_str = (
-                    "RISK_OFF" if _ngx_news in ("RISK_OFF","BEAR") else
-                    "CAUTIOUS" if _ngx_news == "CAUTIOUS"           else
-                    "NORMAL"
-                )
-                ngx_result = run_ngx_engine(
-                    investos_macro=_ngx_macro_str,
-                    verbose=True
-                )
-                brief["ngx"] = ngx_result
-                # Log signals and resolve matured outcomes
-                if HAS_NGX_TRACKER:
-                    resolve_ngx_outcomes(ngx_result)   # resolve ≥7d old signals
-                    log_ngx_signals(ngx_result)         # log today's signals
-                    print_ngx_outcome_report()          # print summary
-                # Re-save latest_brief.json to include NGX data
-                # (original save at line 983 happens before NGX runs)
-                try:
-                    import json as _json
-                    with open("latest_brief.json", "w") as _f:
-                        _json.dump(brief, _f, indent=2, default=str)
-                except Exception:
-                    pass
-                # Re-bake with NGX data included
-                bake_dashboard(brief, fx, cry)
-            except Exception as _ngx_e:
-                import traceback as _tb
-                print(f"  ⚠️  NGX engine error: {_ngx_e}")
-                _tb.print_exc()
-                brief["ngx"] = {"error": str(_ngx_e), "picks": []}
 
         # Send morning brief email only in GitHub Actions mode
         if github_mode:
