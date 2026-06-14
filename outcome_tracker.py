@@ -429,15 +429,19 @@ def print_win_rate_report(wr):
     # Feature coverage — shows ML data quality
     fc = wr.get("feature_coverage", {})
     if fc:
-        new_features = {k:v for k,v in fc.items() if v["pct"] > 1}
+        new_features  = {k:v for k,v in fc.items() if v["pct"] > 1}
         zero_features = {k:v for k,v in fc.items() if v["pct"] <= 1}
         if new_features:
             print(f"\n  ML FEATURE COVERAGE (new picks only):")
-            for f, d in list(new_features.items())[:4]:
-                print(f"    {f:<20} {d['pct']:.0f}% ({d['filled']}/{d['total']} picks)")
-        if zero_features:
-            print(f"  ⚠️  {len(zero_features)} features still at 0% (historical picks without feature data)")
-            print(f"     Building... ~{300 - d['filled']:,} more picks needed for ML training")
+            for fname, fdata in list(new_features.items())[:4]:
+                print(f"    {fname:<20} {fdata['pct']:.0f}% ({fdata['filled']}/{fdata['total']} picks)")
+            best_filled = max(v["filled"] for v in new_features.values())
+            needed = max(0, 300 - best_filled)
+            if needed > 0:
+                print(f"    Building... ~{needed:,} more featured picks until ML retrains with signal")
+        if zero_features and not new_features:
+            print(f"\n  ⚠️  ML features: 0% coverage ({len(zero_features)} fields)")
+            print(f"     All historical picks lack feature data — new picks being captured from today")
 
     if wr.get("recent_10"):
         print(f"\n  LAST {len(wr['recent_10'])} PICKS:")
