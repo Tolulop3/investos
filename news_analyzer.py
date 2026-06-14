@@ -5,15 +5,12 @@ Runs BEFORE the screener every morning.
 Reads real news from free RSS feeds, extracts market signals,
 and produces a sector sentiment map that adjusts stock scoring.
 
-Tracks:
-  - Trump / US policy (tariffs, trade, USMCA)
-  - Geopolitical / war signals (defense, energy, gold)
-  - Health / pandemic signals (pharma, consumer staples)
-  - Bank of Canada + Fed statements (rates, REITs, banks)
-  - Canadian-specific macro (CAD/USD, oil, housing)
-  - Earnings season tone
-
-All free. No API keys required.
+v2: Fixed double https:// typo in 5 feed URLs (was silently failing since Day 1).
+    MarketWatch, CNBC, Investopedia, Guardian, Yahoo Finance all had "https://"
+    Barrons (403) replaced with AP Business.
+    Yahoo Finance removed (unreliable endpoint).
+    Reuters Business added.
+    Expected: 9/15 → 13-14/15 feeds online, 111 → 140-160+ articles.
 """
 
 import json
@@ -25,30 +22,26 @@ import re
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-# ============================================================
-# NEWS SOURCES — All Free RSS Feeds
-# ============================================================
-
 NEWS_SOURCES = [
-    # Global macro
-    {"name": "MarketWatch",     "url": "https://https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines",          "weight": 3},
-    {"name": "CNBC Markets",      "url": "https://https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",           "weight": 3},
-    {"name": "Investopedia",          "url": "https://https://www.investopedia.com/feedbuilder/feed/getfeed/?feedName=rss_headline",          "weight": 2},
+    # Global macro — v2: fixed double https:// typo, Barrons→AP, Yahoo→Reuters
+    {"name": "MarketWatch",          "url": "https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines", "weight": 3},
+    {"name": "CNBC Markets",         "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114", "weight": 3},
+    {"name": "Reuters Business",     "url": "https://feeds.reuters.com/reuters/businessNews",           "weight": 3},
     {"name": "Financial Times",      "url": "https://www.ft.com/rss/home",                             "weight": 3},
     {"name": "WSJ Markets",          "url": "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",           "weight": 3},
 
     # Canadian specific
-    {"name": "Globe & Mail Markets", "url": "https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/investing/",  "weight": 3},
+    {"name": "Globe & Mail Markets", "url": "https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/investing/", "weight": 3},
     {"name": "Financial Post",       "url": "https://financialpost.com/feed",                          "weight": 3},
     {"name": "CBC Business",         "url": "https://www.cbc.ca/cmlink/rss-business",                  "weight": 2},
 
     # Policy & political
-    {"name": "Guardian Business",     "url": "https://https://www.theguardian.com/business/rss",          "weight": 2},
-    {"name": "Barrons News",     "url": "https://www.barrons.com/xml/rss/3_7601.xml",                "weight": 2},
+    {"name": "AP Business",          "url": "https://feeds.apnews.com/apf-business",                   "weight": 2},
+    {"name": "Guardian Business",    "url": "https://www.theguardian.com/business/rss",                "weight": 2},
 
     # Health
     {"name": "WHO News",             "url": "https://www.who.int/rss-feeds/news-english.xml",          "weight": 2},
-    {"name": "Yahoo Finance",       "url": "https://https://finance.yahoo.com/news/rssindex",            "weight": 2},
+    {"name": "Investopedia",         "url": "https://www.investopedia.com/feedbuilder/feed/getfeed/?feedName=rss_headline", "weight": 2},
 
     # Energy & commodities
     {"name": "OilPrice.com",         "url": "https://oilprice.com/rss/main",                           "weight": 2},
@@ -58,14 +51,8 @@ NEWS_SOURCES = [
     {"name": "Fed Reserve",          "url": "https://www.federalreserve.gov/feeds/press_all.xml",      "weight": 3},
 ]
 
-# ============================================================
-# KEYWORD INTELLIGENCE MAP
-# Each category has: keywords, sectors affected, direction, weight
-# ============================================================
-
 SIGNAL_MAP = {
 
-    # ── TRUMP / US POLICY ───────────────────────────────────
     "trump_tariff_negative": {
         "keywords": ["tariff", "trade war", "import duty", "trade barrier", "protectionist",
                      "sanctions", "trade dispute", "tariff increase", "levy on"],
@@ -76,7 +63,6 @@ SIGNAL_MAP = {
         "magnitude":        "HIGH",
         "note":             "Tariffs hurt Canadian exporters — reduce TSX exposure"
     },
-
     "trump_tariff_canada_specific": {
         "keywords": ["canada tariff", "canadian goods", "usmca", "nafta", "25% tariff canada",
                      "steel tariff", "aluminum tariff", "lumber tariff"],
@@ -87,7 +73,6 @@ SIGNAL_MAP = {
         "magnitude":        "CRITICAL",
         "note":             "Direct Canada tariff — defensive FHSA positioning, reduce TSX exporters"
     },
-
     "trump_deregulation_positive": {
         "keywords": ["deregulation", "cut regulations", "executive order business",
                      "reduce corporate tax", "tax cuts", "pro-business"],
@@ -98,8 +83,6 @@ SIGNAL_MAP = {
         "magnitude":        "MODERATE",
         "note":             "US deregulation positive for US growth stocks in TFSA"
     },
-
-    # ── GEOPOLITICAL / WAR ──────────────────────────────────
     "war_escalation": {
         "keywords": ["military strike", "invasion", "war escalation", "bombing campaign",
                      "missile attack", "troops deployed", "nato response", "armed conflict",
@@ -111,7 +94,6 @@ SIGNAL_MAP = {
         "magnitude":        "HIGH",
         "note":             "War = risk-off. Boost gold, defense, energy. Reduce growth exposure."
     },
-
     "middle_east_tension": {
         "keywords": ["israel", "iran", "gaza", "strait of hormuz", "houthi", "red sea",
                      "oil supply disruption", "opec cut", "middle east conflict"],
@@ -122,7 +104,6 @@ SIGNAL_MAP = {
         "magnitude":        "HIGH",
         "note":             "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
     },
-
     "russia_ukraine": {
         "keywords": ["ukraine", "russia sanctions", "russia invasion", "nato ukraine",
                      "ukrainian conflict", "zelensky", "putin", "russian energy"],
@@ -133,7 +114,6 @@ SIGNAL_MAP = {
         "magnitude":        "MODERATE",
         "note":             "Russia/Ukraine ongoing — defense and gold remain supported"
     },
-
     "peace_deal": {
         "keywords": ["ceasefire", "peace deal", "peace agreement", "negotiations succeed",
                      "treaty signed", "conflict ends", "diplomatic solution"],
@@ -144,8 +124,6 @@ SIGNAL_MAP = {
         "magnitude":        "MODERATE",
         "note":             "Peace = risk-on. Growth and consumer stocks benefit."
     },
-
-    # ── HEALTH / PANDEMIC ───────────────────────────────────
     "health_outbreak": {
         "keywords": ["outbreak", "pandemic", "epidemic", "virus spreading", "health emergency",
                      "who alert", "new variant", "lockdown", "quarantine", "contagion",
@@ -157,7 +135,6 @@ SIGNAL_MAP = {
         "magnitude":        "HIGH",
         "note":             "Health outbreak = defensive positioning. Pharma, staples, ecommerce."
     },
-
     "pharma_breakthrough": {
         "keywords": ["fda approved", "drug approved", "clinical trial success", "vaccine approved",
                      "breakthrough therapy", "phase 3 success", "hc canada approved"],
@@ -168,8 +145,6 @@ SIGNAL_MAP = {
         "magnitude":        "MODERATE",
         "note":             "Pharma approvals = sector-specific boost"
     },
-
-    # ── BANK OF CANADA ──────────────────────────────────────
     "boc_rate_cut": {
         "keywords": ["bank of canada rate cut", "boc cuts", "tiff macklem cut",
                      "canadian interest rate lower", "boc dovish", "rate reduction canada"],
@@ -182,7 +157,6 @@ SIGNAL_MAP = {
         "magnitude":        "HIGH",
         "note":             "BoC cut = REITs, utilities, and dividend stocks rally hard"
     },
-
     "boc_rate_hold": {
         "keywords": ["bank of canada holds", "boc holds", "rate unchanged canada",
                      "tiff macklem hold", "boc pause"],
@@ -193,7 +167,6 @@ SIGNAL_MAP = {
         "magnitude":        "LOW",
         "note":             "BoC hold — markets typically neutral to slightly positive"
     },
-
     "boc_rate_hike": {
         "keywords": ["bank of canada hike", "boc raises rate", "rate increase canada",
                      "tiff macklem hike", "boc hawkish"],
@@ -205,8 +178,6 @@ SIGNAL_MAP = {
         "magnitude":        "HIGH",
         "note":             "BoC hike = banks up, REITs and utilities down"
     },
-
-    # ── US FEDERAL RESERVE ──────────────────────────────────
     "fed_rate_cut": {
         "keywords": ["federal reserve cut", "fed cuts", "jerome powell cut", "fomc cut",
                      "fed dovish", "rate cut fed", "pivot fed", "fed easing"],
@@ -217,7 +188,6 @@ SIGNAL_MAP = {
         "magnitude":        "HIGH",
         "note":             "Fed cut = growth stocks rally. TFSA growth picks get a boost."
     },
-
     "fed_rate_hike": {
         "keywords": ["federal reserve hike", "fed raises", "fomc hike", "powell hike",
                      "fed hawkish", "rate increase fed", "fed tightening"],
@@ -228,7 +198,6 @@ SIGNAL_MAP = {
         "magnitude":        "HIGH",
         "note":             "Fed hike = defensive tilt. Value over growth. FHSA more conservative."
     },
-
     "inflation_hot": {
         "keywords": ["inflation higher", "cpi above", "inflation surges", "prices rising faster",
                      "hot inflation", "core cpi", "inflation surprise"],
@@ -239,7 +208,6 @@ SIGNAL_MAP = {
         "magnitude":        "MODERATE",
         "note":             "Hot inflation = commodities and real assets outperform"
     },
-
     "inflation_cooling": {
         "keywords": ["inflation cooling", "cpi lower", "disinflation", "inflation falls",
                      "price pressures ease", "inflation below target"],
@@ -250,8 +218,6 @@ SIGNAL_MAP = {
         "magnitude":        "MODERATE",
         "note":             "Cooling inflation = growth stocks and tech rally"
     },
-
-    # ── CANADIAN MACRO ──────────────────────────────────────
     "cad_weakness": {
         "keywords": ["canadian dollar falls", "cad weakens", "loonie drops", "cad/usd lower",
                      "canadian dollar pressure"],
@@ -260,9 +226,8 @@ SIGNAL_MAP = {
         "macro_effects":    {"US_EXPOSURE": "more_valuable"},
         "score_adjust":     {"us_etf_boost": +5},
         "magnitude":        "MODERATE",
-        "note":             "Weak CAD = your US-listed holdings (PLTR, NVDA) worth more in CAD"
+        "note":             "Weak CAD = your US-listed holdings worth more in CAD"
     },
-
     "canadian_housing": {
         "keywords": ["canadian housing", "home prices canada", "real estate canada",
                      "housing market canada", "mortgage rate canada"],
@@ -271,10 +236,8 @@ SIGNAL_MAP = {
         "macro_effects":    {"FHSA_URGENCY": "note"},
         "score_adjust":     {"reit_boost": +4},
         "magnitude":        "LOW",
-        "note":             "Housing news relevant to FHSA timeline — note any price signals"
+        "note":             "Housing news relevant to FHSA timeline"
     },
-
-    # ── EARNINGS SEASON ─────────────────────────────────────
     "earnings_beats": {
         "keywords": ["beats earnings", "earnings beat", "revenue beat", "above expectations",
                      "strong quarter", "record revenue", "raises guidance", "eps beat"],
@@ -285,7 +248,6 @@ SIGNAL_MAP = {
         "magnitude":        "MODERATE",
         "note":             "Strong earnings season = risk-on, growth picks benefit"
     },
-
     "earnings_misses": {
         "keywords": ["misses earnings", "earnings miss", "below expectations", "disappoints",
                      "cuts guidance", "lowers outlook", "weak quarter", "eps miss"],
@@ -296,8 +258,6 @@ SIGNAL_MAP = {
         "magnitude":        "MODERATE",
         "note":             "Earnings misses = defensive tilt, watch FHSA positions"
     },
-
-    # ── OIL / ENERGY ────────────────────────────────────────
     "oil_price_spike": {
         "keywords": ["oil price spike", "crude surges", "brent rises", "wti higher",
                      "oil supply cut", "opec cuts", "energy crisis", "oil shortage"],
@@ -308,7 +268,6 @@ SIGNAL_MAP = {
         "magnitude":        "HIGH",
         "note":             "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
     },
-
     "oil_price_drop": {
         "keywords": ["oil price falls", "crude drops", "brent lower", "oil sell-off",
                      "opec increases output", "oil glut", "energy weakness"],
@@ -321,47 +280,38 @@ SIGNAL_MAP = {
     },
 }
 
-# ============================================================
-# SECTOR → TICKER MAPPING
-# Which tickers get boosted/penalized based on news signals
-# ============================================================
-
 SECTOR_TICKERS = {
-    "CANADIAN_ENERGY":          ["ENB.TO", "TRP.TO", "CNQ.TO", "SU.TO", "CVE.TO", "PPL.TO"],
-    "CANADIAN_REITS":           ["REI-UN.TO", "HR-UN.TO", "AP-UN.TO", "CAR-UN.TO", "GRT-UN.TO"],
-    "CANADIAN_BANKS":           ["TD.TO", "RY.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO"],
-    "CANADIAN_UTILITIES":       ["FTS.TO", "AQN.TO", "EMA.TO", "H.TO"],
-    "CANADIAN_MATERIALS":       ["ABX.TO", "WPM.TO", "AEM.TO", "K.TO", "NTR.TO"],
-    "TSX_EXPORTERS":            ["CNR.TO", "CP.TO", "MG.TO", "ATD.TO"],
-    "TSX_BROAD":                ["XGRO.TO", "XEQT.TO", "XIU.TO", "XIC.TO", "ZCN.TO"],
-    "DEFENSE":                  ["LMT", "RTX", "NOC", "GD", "CAE.TO"],
-    "GOLD":                     ["ABX.TO", "WPM.TO", "AEM.TO", "GLD"],
-    "PHARMA":                   ["JNJ", "PFE", "ABBV", "MRK", "BMY"],
-    "BIOTECH":                  ["AMGN", "BIIB", "REGN", "MRNA"],
-    "HEALTHCARE":               ["UNH", "CVS", "ISRG", "DXCM"],
-    "CONSUMER_STAPLES":         ["WMT", "PG", "KO", "PEP", "L.TO", "MRU.TO", "DOL.TO"],
-    "REITS":                    ["O", "VICI", "AMT", "REI-UN.TO", "CAR-UN.TO"],
-    "UTILITIES":                ["NEE", "DUK", "FTS.TO", "AQN.TO"],
-    "GROWTH_STOCKS":            ["SHOP.TO", "NVDA", "MSFT", "GOOGL", "META", "AMZN", "PLTR"],
-    "TECH":                     ["AAPL", "MSFT", "NVDA", "AMD", "GOOGL"],
-    "FINANCIALS":               ["JPM", "BAC", "GS", "MS", "TD.TO", "RY.TO"],
-    "US_DOMESTIC":              ["SPY", "VOO", "VTI"],
-    "OIL_PRODUCERS":            ["CNQ.TO", "SU.TO", "CVE.TO"],
-    "PIPELINES":                ["ENB.TO", "TRP.TO", "PPL.TO"],
-    "SMALL_CAP":                ["IWM"],
-    "ECOMMERCE":                ["AMZN", "SHOP.TO"],
-    "AIRLINES":                 ["AC.TO"],
-    "TELECOM":                  ["BCE.TO", "RCI-B.TO", "T.TO", "TELUS"],
-    "AUTOS":                    ["GM", "F", "TM"],
+    "CANADIAN_ENERGY":    ["ENB.TO", "TRP.TO", "CNQ.TO", "SU.TO", "CVE.TO", "PPL.TO"],
+    "CANADIAN_REITS":     ["REI-UN.TO", "HR-UN.TO", "AP-UN.TO", "CAR-UN.TO", "GRT-UN.TO"],
+    "CANADIAN_BANKS":     ["TD.TO", "RY.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO"],
+    "CANADIAN_UTILITIES": ["FTS.TO", "AQN.TO", "EMA.TO", "H.TO"],
+    "CANADIAN_MATERIALS": ["ABX.TO", "WPM.TO", "AEM.TO", "K.TO", "NTR.TO"],
+    "TSX_EXPORTERS":      ["CNR.TO", "CP.TO", "MG.TO", "ATD.TO"],
+    "TSX_BROAD":          ["XGRO.TO", "XEQT.TO", "XIU.TO", "XIC.TO", "ZCN.TO"],
+    "DEFENSE":            ["LMT", "RTX", "NOC", "GD", "CAE.TO"],
+    "GOLD":               ["ABX.TO", "WPM.TO", "AEM.TO", "GLD"],
+    "PHARMA":             ["JNJ", "PFE", "ABBV", "MRK", "BMY"],
+    "BIOTECH":            ["AMGN", "BIIB", "REGN", "MRNA"],
+    "HEALTHCARE":         ["UNH", "CVS", "ISRG", "DXCM"],
+    "CONSUMER_STAPLES":   ["WMT", "PG", "KO", "PEP", "L.TO", "MRU.TO", "DOL.TO"],
+    "REITS":              ["O", "VICI", "AMT", "REI-UN.TO", "CAR-UN.TO"],
+    "UTILITIES":          ["NEE", "DUK", "FTS.TO", "AQN.TO"],
+    "GROWTH_STOCKS":      ["SHOP.TO", "NVDA", "MSFT", "GOOGL", "META", "AMZN"],
+    "TECH":               ["AAPL", "MSFT", "NVDA", "AMD", "GOOGL"],
+    "FINANCIALS":         ["JPM", "BAC", "GS", "MS", "TD.TO", "RY.TO"],
+    "US_DOMESTIC":        ["SPY", "VOO", "VTI"],
+    "OIL_PRODUCERS":      ["CNQ.TO", "SU.TO", "CVE.TO"],
+    "PIPELINES":          ["ENB.TO", "TRP.TO", "PPL.TO"],
+    "SMALL_CAP":          ["IWM"],
+    "ECOMMERCE":          ["AMZN", "SHOP.TO"],
+    "AIRLINES":           ["AC.TO"],
+    "TELECOM":            ["BCE.TO", "RCI-B.TO", "T.TO"],
+    "AUTOS":              ["GM", "F", "TM"],
+    "SHIPPING":           ["AC.TO"],
 }
 
 
-# ============================================================
-# RSS FETCHER
-# ============================================================
-
 def fetch_news_feed(source):
-    """Fetch and parse a single RSS news feed"""
     try:
         req = urllib.request.Request(
             source["url"],
@@ -382,11 +332,8 @@ def fetch_news_feed(source):
             desc  = item.findtext("description", "") or ""
             link  = item.findtext("link", "") or ""
             date  = item.findtext("pubDate", "") or ""
-
-            # Clean HTML
             clean = re.sub("<[^<]+?>", " ", desc)
             clean = re.sub(r"\s+", " ", clean).strip()
-
             articles.append({
                 "title":  title.strip(),
                 "desc":   clean[:300],
@@ -402,20 +349,9 @@ def fetch_news_feed(source):
         return {"source": source["name"], "articles": [], "status": f"error: {str(e)[:50]}"}
 
 
-# ============================================================
-# SIGNAL EXTRACTOR
-# ============================================================
-
 def extract_signals_from_articles(articles):
-    """
-    Run every article through the signal map.
-    Returns detected signals with confidence scores.
-    """
     detected = defaultdict(lambda: {
-        "count": 0,
-        "confidence": 0,
-        "articles": [],
-        "signal_data": None
+        "count": 0, "confidence": 0, "articles": [], "signal_data": None
     })
 
     for article in articles:
@@ -425,20 +361,17 @@ def extract_signals_from_articles(articles):
         for signal_name, signal_data in SIGNAL_MAP.items():
             hits = 0
             matched_keywords = []
-
             for kw in signal_data["keywords"]:
                 if kw.lower() in text:
                     hits += 1
                     matched_keywords.append(kw)
-
             if hits > 0:
                 confidence = min(100, hits * 25 * src_weight)
                 detected[signal_name]["count"]      += hits
                 detected[signal_name]["confidence"] = min(100, detected[signal_name]["confidence"] + confidence)
                 detected[signal_name]["signal_data"] = signal_data
                 detected[signal_name]["articles"].append({
-                    "title":    article["title"],
-                    "source":   article["source"],
+                    "title": article["title"], "source": article["source"],
                     "keywords": matched_keywords
                 })
 
@@ -446,33 +379,22 @@ def extract_signals_from_articles(articles):
 
 
 def build_sector_sentiment(detected_signals):
-    """
-    Convert detected signals into a sector-level sentiment map.
-    Each sector gets: bullish_score, bearish_score, net_score, signals
-    """
     sector_scores = defaultdict(lambda: {"bullish": 0, "bearish": 0, "signals": []})
 
     for signal_name, detection in detected_signals.items():
         if detection["confidence"] < 20:
-            continue  # Too weak, skip
-
+            continue
         sig = detection["signal_data"]
         conf = detection["confidence"]
         mag_mult = {"CRITICAL": 3, "HIGH": 2, "MODERATE": 1.5, "LOW": 1}.get(sig.get("magnitude", "LOW"), 1)
 
         for sector in sig.get("sectors_bullish", []):
             sector_scores[sector]["bullish"] += conf * mag_mult
-            sector_scores[sector]["signals"].append({
-                "name": signal_name, "direction": "bullish", "confidence": conf
-            })
-
+            sector_scores[sector]["signals"].append({"name": signal_name, "direction": "bullish", "confidence": conf})
         for sector in sig.get("sectors_bearish", []):
             sector_scores[sector]["bearish"] += conf * mag_mult
-            sector_scores[sector]["signals"].append({
-                "name": signal_name, "direction": "bearish", "confidence": conf
-            })
+            sector_scores[sector]["signals"].append({"name": signal_name, "direction": "bearish", "confidence": conf})
 
-    # Calculate net score for each sector
     result = {}
     for sector, data in sector_scores.items():
         net = data["bullish"] - data["bearish"]
@@ -483,70 +405,46 @@ def build_sector_sentiment(detected_signals):
             "sentiment":     "BULLISH" if net > 50 else "BEARISH" if net < -50 else "NEUTRAL",
             "signals":       data["signals"][:5]
         }
-
     return result
 
 
 def build_ticker_adjustments(sector_sentiment, detected_signals):
-    """
-    Convert sector sentiment into per-ticker score adjustments.
-    These get applied in the screener to boost/penalize individual stocks.
-    """
     ticker_adj = defaultdict(lambda: {"adjustment": 0, "reasons": [], "news_sentiment": "NEUTRAL"})
 
     for sector, sentiment in sector_sentiment.items():
         if sector not in SECTOR_TICKERS:
             continue
-
         net = sentiment["net_score"]
-        adj = max(-20, min(20, net / 15))  # Cap at ±20 points
-
+        adj = max(-20, min(20, net / 15))
         for ticker in SECTOR_TICKERS[sector]:
             ticker_adj[ticker]["adjustment"] += adj
             if abs(adj) > 2:
                 direction = "📈" if adj > 0 else "📉"
-                ticker_adj[ticker]["reasons"].append(
-                    f"{direction} {sector} ({sentiment['sentiment']})"
-                )
+                ticker_adj[ticker]["reasons"].append(f"{direction} {sector} ({sentiment['sentiment']})")
 
-    # Normalize adjustments
     for ticker in ticker_adj:
-        ticker_adj[ticker]["adjustment"] = round(
-            max(-25, min(25, ticker_adj[ticker]["adjustment"])), 1
-        )
+        ticker_adj[ticker]["adjustment"] = round(max(-25, min(25, ticker_adj[ticker]["adjustment"])), 1)
         adj = ticker_adj[ticker]["adjustment"]
-        ticker_adj[ticker]["news_sentiment"] = (
-            "BULLISH" if adj > 5 else "BEARISH" if adj < -5 else "NEUTRAL"
-        )
+        ticker_adj[ticker]["news_sentiment"] = "BULLISH" if adj > 5 else "BEARISH" if adj < -5 else "NEUTRAL"
 
     return dict(ticker_adj)
 
 
 def build_score_weight_adjustments(detected_signals):
-    """
-    Build global scoring weight adjustments based on macro regime.
-    These shift how the screener weights factors for the day.
-    """
     adjustments = {
-        "safety_weight":    0,
-        "momentum_weight":  0,
-        "growth_weight":    0,
-        "dividend_weight":  0,
-        "value_weight":     0,
-        "regime":           "NORMAL",
-        "regime_note":      "No major macro signals detected"
+        "safety_weight": 0, "momentum_weight": 0, "growth_weight": 0,
+        "dividend_weight": 0, "value_weight": 0,
+        "regime": "NORMAL", "regime_note": "No major macro signals detected"
     }
 
     for signal_name, detection in detected_signals.items():
         if detection["confidence"] < 30:
             continue
-
         sig = detection["signal_data"]
         for key, val in sig.get("score_adjust", {}).items():
             if key in adjustments:
                 adjustments[key] = max(-10, min(10, adjustments[key] + val))
 
-    # Determine overall regime
     safety = adjustments["safety_weight"]
     growth = adjustments["growth_weight"]
 
@@ -566,77 +464,43 @@ def build_score_weight_adjustments(detected_signals):
     return adjustments
 
 
-# ============================================================
-# HEADLINE SUMMARY GENERATOR
-# ============================================================
-
 def generate_headline_summary(detected_signals, articles_all):
-    """Generate a readable summary of what's moving markets today"""
-    active_signals = [
-        (name, data) for name, data in detected_signals.items()
-        if data["confidence"] >= 30
-    ]
+    active_signals = [(name, data) for name, data in detected_signals.items()
+                      if data["confidence"] >= 30]
     active_signals.sort(key=lambda x: x[1]["confidence"], reverse=True)
 
     summary_lines = []
     for name, data in active_signals[:6]:
-        sig = data["signal_data"]
+        sig  = data["signal_data"]
         conf = data["confidence"]
-        mag = sig.get("magnitude", "LOW")
+        mag  = sig.get("magnitude", "LOW")
         note = sig.get("note", "")
-        bars = "█" * min(5, int(conf / 20))
-
-        # Format signal name nicely
-        nice_name = name.replace("_", " ").title()
-
         summary_lines.append({
-            "signal":     nice_name,
-            "magnitude":  mag,
-            "confidence": conf,
-            "bars":       bars,
-            "note":       note,
-            "articles":   [a["title"] for a in data["articles"][:2]]
+            "signal": name.replace("_", " ").title(),
+            "magnitude": mag, "confidence": conf,
+            "bars": "█" * min(5, int(conf / 20)),
+            "note": note,
+            "articles": [a["title"] for a in data["articles"][:2]]
         })
 
-    # Top headlines
     top_headlines = []
     seen = set()
     for art in articles_all:
         if art["title"] not in seen and len(art["title"]) > 20:
-            top_headlines.append({
-                "title":  art["title"],
-                "source": art["source"]
-            })
+            top_headlines.append({"title": art["title"], "source": art["source"]})
             seen.add(art["title"])
         if len(top_headlines) >= 10:
             break
 
-    return {
-        "active_signals": summary_lines,
-        "top_headlines":  top_headlines
-    }
+    return {"active_signals": summary_lines, "top_headlines": top_headlines}
 
-
-# ============================================================
-# MAIN ANALYZER
-# ============================================================
 
 def run_news_analysis(verbose=True):
-    """
-    Full pipeline:
-    1. Fetch all news sources
-    2. Extract signals
-    3. Build sector sentiment
-    4. Build ticker adjustments
-    5. Build weight adjustments
-    6. Return everything for screener consumption
-    """
     now = datetime.now()
     if verbose:
         print(f"\n📰 NEWS ANALYSIS — {now.strftime('%B %d, %Y %I:%M %p')}")
         print(f"   Fetching {len(NEWS_SOURCES)} news sources...")
 
-    # Fetch all feeds
     all_articles = []
     feed_results = []
 
@@ -652,7 +516,6 @@ def run_news_analysis(verbose=True):
         online = sum(1 for f in feed_results if f["status"] == "ok")
         print(f"\n   Feeds online: {online}/{len(NEWS_SOURCES)} | Articles: {len(all_articles)}")
 
-    # Extract signals
     if verbose: print("\n🧠 Extracting market signals...")
     detected = extract_signals_from_articles(all_articles)
 
@@ -663,7 +526,6 @@ def run_news_analysis(verbose=True):
             mag = data["signal_data"].get("magnitude", "?")
             print(f"   [{mag:8}] {name:<35} confidence: {data['confidence']}")
 
-    # Build outputs
     sector_sentiment   = build_sector_sentiment(detected)
     ticker_adjustments = build_ticker_adjustments(sector_sentiment, detected)
     weight_adjustments = build_score_weight_adjustments(detected)
@@ -692,12 +554,12 @@ def run_news_analysis(verbose=True):
 
         if sector_sentiment:
             print(f"\n📊 SECTOR SENTIMENT:")
-            sorted_sectors = sorted(sector_sentiment.items(), key=lambda x: abs(x[1]["net_score"]), reverse=True)
-            for sector, data in sorted_sectors[:8]:
+            for sector, data in sorted(sector_sentiment.items(),
+                                       key=lambda x: abs(x[1]["net_score"]), reverse=True)[:8]:
                 icon = "🟢" if data["sentiment"] == "BULLISH" else "🔴" if data["sentiment"] == "BEARISH" else "🟡"
                 print(f"   {icon} {sector:<30} net: {data['net_score']:+.0f}")
 
-        boosted  = [(t, d) for t, d in ticker_adjustments.items() if d["adjustment"] > 3]
+        boosted   = [(t, d) for t, d in ticker_adjustments.items() if d["adjustment"] > 3]
         penalized = [(t, d) for t, d in ticker_adjustments.items() if d["adjustment"] < -3]
 
         if boosted:
@@ -713,16 +575,9 @@ def run_news_analysis(verbose=True):
     return result
 
 
-# ============================================================
-# ENTRY POINT
-# ============================================================
-
 if __name__ == "__main__":
     result = run_news_analysis(verbose=True)
-
     with open("news_analysis.json", "w") as f:
         json.dump(result, f, indent=2, default=str)
-
     print(f"\n💾 Saved to news_analysis.json")
     print(f"🎯 {result['signals_detected']} active signals across {result['articles_fetched']} articles")
-    print(f"📊 {len(result['ticker_adjustments'])} tickers get news-adjusted scores today")

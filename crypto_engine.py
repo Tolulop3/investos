@@ -16,6 +16,10 @@ Output per coin:
   - Conviction 0-100%
   - Hold period: 7-30 days (not intraday)
 
+v2: Raised conviction thresholds — 52% is noise not signal.
+    REDUCE/BUY signals now require >= 65% conviction.
+    Position sizing requires >= 55% conviction (was 40%).
+
 RISK WARNING:
   BTC moves 3-5x more than stocks. SOL moves 5-10x more.
   Max position: 2-3% of portfolio per coin.
@@ -139,7 +143,6 @@ def generate_crypto_technical(price_data, config):
     score = 0
     reasons = []
 
-    # 200d MA — primary regime
     if price > p["ma200"]:
         score += 30; reasons.append(f"Above 200d MA (${p['ma200']:,.0f})")
     else:
@@ -148,25 +151,21 @@ def generate_crypto_technical(price_data, config):
     if p["ma50"] > p["ma200"]: score += 15
     elif p["ma50"] < p["ma200"]: score -= 15
 
-    # Momentum
     p30 = p["perf_30d"]
     if   p30 > 15:  score += 20; reasons.append(f"Strong 30d: +{p30}%")
     elif p30 > 5:   score += 10
     elif p30 < -15: score -= 20; reasons.append(f"Weak 30d: {p30}%")
     elif p30 < -5:  score -= 10
 
-    # RSI
     rsi = p["rsi"]
     if   45 <= rsi <= 70: score += 10; reasons.append(f"RSI healthy: {rsi:.0f}")
     elif rsi < 30:        score += 8;  reasons.append(f"RSI oversold: {rsi:.0f}")
     elif rsi > 75:        score -= 12; reasons.append(f"RSI overbought: {rsi:.0f}")
 
-    # Volume
     vr = p["vol_ratio"]
     if   vr > 1.3: score += 8;  reasons.append(f"Volume: {vr:.1f}x avg")
     elif vr < 0.7: score -= 5
 
-    # Near 52w high
     dist = (price - p["w52_high"]) / p["w52_high"] * 100
     if dist > -10: score += 12; reasons.append("Near 52w high")
 
@@ -256,23 +255,18 @@ def combine_crypto_signals(tech, macro):
 
     quality = "🔥 STRONG" if conv>=70 else "✅ MODERATE" if conv>=50 else "📊 WEAK" if conv>=30 else "😐 NEUTRAL"
 
-    if   direction=="LONG"  and conv>=55: verdict = "🟢 BULL — BUY/HOLD"
-    elif direction=="SHORT" and conv>=55: verdict = "🔴 BEAR — SELL/SHORT"
-    elif direction=="LONG":               verdict = "🟡 MILD BULL — HOLD"
-    elif direction=="SHORT":              verdict = "🟡 MILD BEAR — REDUCE"
-    else:                                 verdict = "⚪ NEUTRAL — WAIT"
+    # v2: raised thresholds — 52% conviction is noise not signal
+    if   direction=="LONG"  and conv>=65: verdict = "🟢 BULL — BUY/HOLD"
+    elif direction=="SHORT" and conv>=65: verdict = "🔴 BEAR — SELL/SHORT"
+    elif direction=="LONG"  and conv>=50: verdict = "🟡 MILD BULL — HOLD"
+    elif direction=="SHORT" and conv>=50: verdict = "🟡 MILD BEAR — REDUCE"
+    else:                                 verdict = "⚪ NEUTRAL — WAIT (< 50% conviction)"
 
     return {"direction":direction,"conviction":conv,"quality":quality,
             "alignment":alignment,"verdict":verdict,"tech_dir":td,"macro_dir":md}
 
 
 def fetch_whale_alerts(max_alerts=10):
-    """
-    Fetch Whale Alert RSS — large crypto transactions.
-    Free, no API key. Gives early warning on big moves.
-    Exchange inflow = selling pressure incoming.
-    Exchange outflow = accumulation / long-term hold.
-    """
     import urllib.request
     import xml.etree.ElementTree as ET
 
@@ -292,14 +286,12 @@ def fetch_whale_alerts(max_alerts=10):
             desc  = item.findtext("description", "")
             pub   = item.findtext("pubDate", "")
 
-            # Parse signal from title e.g. "50,000 BTC transferred from Binance to unknown"
             title_lower = title.lower()
             coins_found = []
             for coin in ["btc", "eth", "sol", "usdt", "usdc"]:
                 if coin in title_lower:
                     coins_found.append(coin.upper())
 
-            # Direction signals
             is_exchange_inflow  = any(x in title_lower for x in
                                      ["to binance","to coinbase","to kraken","to okx","to bybit",
                                       "to huobi","to kucoin","to exchange"])
@@ -310,14 +302,10 @@ def fetch_whale_alerts(max_alerts=10):
             is_burn             = "burn" in title_lower
 
             sentiment = "NEUTRAL"
-            if is_exchange_inflow:
-                sentiment = "BEARISH"   # Moving to exchange = preparing to sell
-            elif is_exchange_outflow:
-                sentiment = "BULLISH"   # Moving off exchange = accumulating
-            elif is_mint:
-                sentiment = "BULLISH"   # New stable coins = capital entering crypto
-            elif is_burn:
-                sentiment = "BULLISH"   # Supply reduction
+            if is_exchange_inflow:   sentiment = "BEARISH"
+            elif is_exchange_outflow: sentiment = "BULLISH"
+            elif is_mint:             sentiment = "BULLISH"
+            elif is_burn:             sentiment = "BULLISH"
 
             alerts.append({
                 "title":     title,
@@ -329,27 +317,22 @@ def fetch_whale_alerts(max_alerts=10):
                 "published": pub,
             })
 
-    except Exception as e:
-        pass  # Whale Alert is supplementary — never crash main run
+    except Exception:
+        pass
 
     return alerts
 
 
 def score_whale_alerts(alerts, symbol):
-    """
-    Translate whale alerts into a conviction adjustment for BTC or SOL.
-    Returns (adjustment: int, summary: str)
-    """
     coin = "BTC" if "BTC" in symbol else "SOL" if "SOL" in symbol else ""
     if not coin or not alerts:
         return 0, "No whale data"
 
     coin_alerts = [a for a in alerts if coin in a.get("coins", [])]
     if not coin_alerts:
-        # BTC whale activity affects SOL indirectly
         if coin == "SOL":
             btc_alerts = [a for a in alerts if "BTC" in a.get("coins", [])]
-            coin_alerts = btc_alerts[:3]  # Use BTC signals as proxy
+            coin_alerts = btc_alerts[:3]
         if not coin_alerts:
             return 0, "No whale activity detected"
 
@@ -358,20 +341,15 @@ def score_whale_alerts(alerts, symbol):
     total   = len(coin_alerts)
 
     if bearish > bullish and bearish >= 2:
-        adj = -15
-        summary = f"⚠️ {bearish}/{total} whale moves to exchanges — sell pressure incoming"
+        adj = -15; summary = f"⚠️ {bearish}/{total} whale moves to exchanges — sell pressure incoming"
     elif bullish > bearish and bullish >= 2:
-        adj = +12
-        summary = f"🐋 {bullish}/{total} whale moves off exchanges — accumulation signal"
+        adj = +12; summary = f"🐋 {bullish}/{total} whale moves off exchanges — accumulation signal"
     elif bearish > 0:
-        adj = -7
-        summary = f"🐋 Exchange inflow detected — monitor closely"
+        adj = -7;  summary = f"🐋 Exchange inflow detected — monitor closely"
     elif bullish > 0:
-        adj = +5
-        summary = f"🐋 Whale outflow — mild positive signal"
+        adj = +5;  summary = f"🐋 Whale outflow — mild positive signal"
     else:
-        adj = 0
-        summary = f"🐋 {total} whale alerts — mixed/neutral"
+        adj = 0;   summary = f"🐋 {total} whale alerts — mixed/neutral"
 
     return adj, summary
 
@@ -392,7 +370,6 @@ def run_crypto_engine(news_analysis=None, portfolio_value=10000, verbose=True):
     sol_data = fetch_crypto_data("SOL-USD")
     if verbose: print("✅" if sol_data and sol_data.get("status")=="ok" else "❌")
 
-    # Whale Alert — large transaction monitoring
     if verbose: print("  → Whale Alert...", end=" ", flush=True)
     whale_alerts = fetch_whale_alerts()
     if verbose: print(f"✅ {len(whale_alerts)} alerts" if whale_alerts else "⚠️ no data")
@@ -416,7 +393,6 @@ def run_crypto_engine(news_analysis=None, portfolio_value=10000, verbose=True):
         tech  = generate_crypto_technical(pd, config)
         macro = dict(macro_signals.get(symbol, {}))
 
-        # SOL dominance adjustment
         if symbol == "SOL-USD" and dom_signal["sol_adj"] != 0:
             adj = dom_signal["sol_adj"]
             macro["conviction"] = max(0, min(90, macro.get("conviction",0)+adj))
@@ -428,7 +404,6 @@ def run_crypto_engine(news_analysis=None, portfolio_value=10000, verbose=True):
         direction = combined["direction"]
         conviction= combined["conviction"]
 
-        # Whale Alert adjustment — real money moving on-chain
         whale_adj, whale_summary = score_whale_alerts(whale_alerts, symbol)
         if whale_adj != 0:
             conviction = max(0, min(95, conviction + whale_adj))
@@ -438,32 +413,30 @@ def run_crypto_engine(news_analysis=None, portfolio_value=10000, verbose=True):
 
         atr = pd["atr"]
 
-        # Final levels
         if direction == "LONG":
-            entry  = pd["price"]
-            stop   = round(entry - atr * config["stop_atr_mult"], 2)
-            target = round(entry + atr * config["target_atr_mult"], 2)
+            entry  = pd["price"]; stop = round(entry - atr*config["stop_atr_mult"], 2)
+            target = round(entry + atr*config["target_atr_mult"], 2)
         elif direction == "SHORT":
-            entry  = pd["price"]
-            stop   = round(entry + atr * config["stop_atr_mult"], 2)
-            target = round(entry - atr * config["target_atr_mult"], 2)
+            entry  = pd["price"]; stop = round(entry + atr*config["stop_atr_mult"], 2)
+            target = round(entry - atr*config["target_atr_mult"], 2)
         else:
             entry = stop = target = pd["price"]
 
         rr = round(abs(target-entry)/abs(stop-entry), 2) if stop != entry else 0
 
-        # Position size
-        if direction != "NEUTRAL" and conviction >= 40:
-            size_pct  = 0.03 if conviction>=70 else 0.025 if conviction>=55 else 0.015
+        # v2: size requires >= 55% conviction (was 40%) — no position on noise signals
+        if direction != "NEUTRAL" and conviction >= 55:
+            size_pct  = 0.03 if conviction>=75 else 0.025 if conviction>=65 else 0.015
             size_usd  = round(portfolio_value * size_pct, 2)
             size_note = f"Max {round(size_pct*100,1)}% — HIGH RISK"
         else:
-            size_pct = 0; size_usd = 0; size_note = "No position — wait for clearer signal"
+            size_pct = 0; size_usd = 0
+            size_note = "No position — conviction below 55% threshold"
 
-        if   direction=="LONG"  and conviction>=55: action = "BUY / ADD"
+        if   direction=="LONG"  and conviction>=65: action = "BUY / ADD"
         elif direction=="LONG":                      action = "HOLD"
-        elif direction=="SHORT" and conviction>=55:  action = "SELL / REDUCE"
-        elif direction=="SHORT":                     action = "REDUCE EXPOSURE"
+        elif direction=="SHORT" and conviction>=65:  action = "SELL / REDUCE"
+        elif direction=="SHORT":                     action = "WATCH"
         else:                                        action = "WAIT FOR SETUP"
 
         all_reasons = tech.get("reasons",[]) + [s["name"] for s in macro.get("signals",[])]
@@ -506,9 +479,10 @@ def run_crypto_engine(news_analysis=None, portfolio_value=10000, verbose=True):
             icon = "🟢" if direction=="LONG" else "🔴" if direction=="SHORT" else "⚪"
             print(f"\n  {icon} {config['display']}: ${pd['price']:,.2f} ({pd['day_chg_pct']:+.1f}%)")
             print(f"     {combined['verdict']} | {conviction}% conviction | {combined['alignment']}")
-            if direction != "NEUTRAL":
+            if direction != "NEUTRAL" and conviction >= 50:
                 print(f"     Entry:${entry:,.2f}  Target:${target:,.2f}  Stop:${stop:,.2f}  R/R:{rr}")
-                print(f"     Size: ${size_usd:,} ({round(size_pct*100,1)}% of portfolio)")
+                if size_usd > 0:
+                    print(f"     Size: ${size_usd:,} ({round(size_pct*100,1)}% of portfolio)")
 
     if verbose: print(f"\n{'='*55}")
 
