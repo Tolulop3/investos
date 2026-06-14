@@ -79,7 +79,7 @@ def apply_news_to_screener(screener_results, news_analysis):
     sector_penalised = 0
 
     SECTOR_MAP = {
-        "Communication Services": "SHIPPING",
+        "Communication Services": "TELECOM",
         "Industrials":            "AIRLINES",
         "Consumer Discretionary": "CONSUMER_DISCRETIONARY",
         "Consumer Cyclical":      "CONSUMER_DISCRETIONARY",
