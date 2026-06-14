@@ -892,6 +892,15 @@ def run_daily(test_mode=False):
                          for p in all_picks_to_log if p.get("data",{}).get("price")}
         resolve_outcomes(current_prices)
         log_picks(all_picks_to_log, regime=regime)
+
+        # ── SIGNAL LEDGER (tamper-evident audit trail) ────────────
+        try:
+            from signal_ledger import append_signals, resolve_ledger
+            news_sigs = news.get("signals", []) if news else []
+            append_signals(all_picks_to_log, regime=regime, news_signals=news_sigs)
+            resolve_ledger(current_prices)
+        except Exception as _sle:
+            print(f"   ⚠️  Signal ledger: {_sle}")
         win_rate = compute_win_rate()
         print_win_rate_report(win_rate)
         brief["win_rate"] = win_rate
@@ -1327,6 +1336,11 @@ if __name__ == "__main__":
         except: pass
 
         bake_dashboard(brief, fx, cry)
+        try:
+            from signal_ledger import bake_audit_page
+            bake_audit_page()
+        except Exception as _sle2:
+            pass   # non-critical
 
         # ── NGX Engine ────────────────────────────────────────
         if HAS_NGX:
