@@ -287,13 +287,13 @@ def compute_audit_stats():
     loss_rate = len(losses) / n_res
     expectancy = (win_rate/100 * avg_win) - (loss_rate * abs(avg_loss))
 
-    if len(returns) > 2:
+    if len(returns) >= 30:   # need 30+ resolved to estimate Sharpe meaningfully
         mean_r = sum(returns) / len(returns)
         var    = sum((r - mean_r)**2 for r in returns) / (len(returns)-1)
         std    = math.sqrt(var) if var > 0 else 1
         sharpe = round((mean_r / std) * math.sqrt(252 / HOLD_DAYS_CALENDAR), 3)
     else:
-        sharpe = None
+        sharpe = None   # building — suppress until 30+ resolved
 
     today = date.today()
     w30, w90 = [], []
