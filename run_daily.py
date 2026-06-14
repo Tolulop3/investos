@@ -891,7 +891,7 @@ def run_daily(test_mode=False):
         current_prices = {p["ticker"]: p.get("data",{}).get("price",0)
                          for p in all_picks_to_log if p.get("data",{}).get("price")}
         resolve_outcomes(current_prices)
-        log_picks(all_picks_to_log)
+        log_picks(all_picks_to_log, regime=regime)
         win_rate = compute_win_rate()
         print_win_rate_report(win_rate)
         brief["win_rate"] = win_rate
