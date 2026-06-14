@@ -65,6 +65,7 @@ from content_engine      import run_content_engine
 from crypto_engine       import run_crypto_engine
 from options_engine      import run_options_engine
 from regime_predictor    import predict_regime_shift
+from ml_retrainer        import retrain_if_due
 
 
 # ============================================================
@@ -445,6 +446,12 @@ def run_daily(test_mode=False):
         "DEFENSIVE": 0.50, "CAPITAL_PRESERVATION": 0.25,
     }
     ml_max_equity = REGIME_MAX_EQUITY.get(early_regime, 1.0)
+    # Weekly ML retrain on real outcomes (skips if <7 days since last)
+    try:
+        retrain_if_due()
+    except Exception as _rte:
+        print(f"  ⚠️  ML retrain skipped: {_rte}")
+
     # Load previous day's win_rate for Kelly position sizing calibration
     _wr_for_kelly = {}
     try:

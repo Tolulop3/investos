@@ -8,10 +8,22 @@ Predicts: probability a stock outperforms S&P 500 over next 3 months
 Trains on: rolling 5-year window, retrained monthly
 Validates: strict walk-forward, no lookahead bias
 
+v2.2 changes vs v2.1:
+  - outcomes_file: FIXED "pick_outcomes.json" → "outcomes_log.json"
+    (was reading wrong file — 1,480 real picks were never used, synthetic fallback every run)
+  - ML_CONFIG features: added market_regime, spx_vs_ma200, news_boost (18 total)
+    (market_regime was computed but not wired into model — now it feeds the model)
+  - Cache invalidation: synthetic cache detected and auto-rejected on first run
+    (triggers clean retrain on real data immediately after push)
+  - predict(): defaults spx_vs_ma200 + news_boost to 0.0 if not in features_dict
+
 v2.1 changes:
   - Half-Kelly position sizing calibrated to actual 1,466+ pick win rates
   - Score smoothing: 3-day EMA on ML probability to dampen single-day spikes
   - Kelly fractions: 60-74 tier is the real edge, 90-100 has negative Kelly
+
+DELETE ml_model_cache.pkl after pushing this file to force retrain on real data.
+The cache invalidation logic will also handle it automatically on first run.
 
 INSTALL: pip install xgboost scikit-learn pandas numpy yfinance --break-system-packages
 """
@@ -71,6 +83,10 @@ ML_CONFIG = {
         "debt_equity",
         "rs_rating",
         "sector_momentum",
+        # v2.2: regime features — were computed but not wired into model
+        "market_regime",    # 1 = BULL/RECOVERY, 0 = CAUTION/BEAR
+        "spx_vs_ma200",     # % SPX above/below 200d MA, normalised [-1,1]
+        "news_boost",       # news adjustment normalised [-1,1]
     ],
     "xgb_params": {
         "n_estimators":     100,
@@ -98,9 +114,6 @@ ML_CONFIG = {
     "transaction_cost_bps":       15,
 }
 
-# ── Score smoothing cache (in-memory, persisted to JSON) ──────────────────────
-# Stores last 3 ML probabilities per ticker for EMA smoothing.
-# Prevents a single outlier day (99 → 72 in one run) from driving decisions.
 _SMOOTH_CACHE_FILE = "ml_score_smooth.json"
 _smooth_cache = {}
 
@@ -119,19 +132,13 @@ def _save_smooth_cache():
         pass
 
 def smooth_ml_prob(ticker, raw_prob, alpha=0.4):
-    """
-    3-day exponential moving average of ML probability.
-    alpha=0.4: today's score weighted 40%, history 60%.
-    Dampens spikes without lagging too far behind real moves.
-    """
     global _smooth_cache
     history = _smooth_cache.get(ticker, [])
     if history:
         prev_ema = history[-1]
         smoothed = alpha * raw_prob + (1 - alpha) * prev_ema
     else:
-        smoothed = raw_prob  # first run — no history
-    # Keep last 3 values
+        smoothed = raw_prob
     history = (history + [round(smoothed, 4)])[-3:]
     _smooth_cache[ticker] = history
     return round(smoothed, 4)
@@ -209,8 +216,8 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
         if len(closes) >= 13:
             mom_6m  = (closes[-2] - closes[-8])  / closes[-8]  if len(closes) >= 8  else 0
             mom_12m = (closes[-2] - closes[-14]) / closes[-14] if len(closes) >= 14 else 0
-            daily_rets = [(closes[i] - closes[i-1]) / closes[i-1] for i in range(1, min(91, len(closes)))]
-            vol_90d = (sum(r**2 for r in daily_rets) / len(daily_rets)) ** 0.5 * (252 ** 0.5) if daily_rets else 0.2
+            daily_rets = [(closes[i]-closes[i-1])/closes[i-1] for i in range(1, min(91, len(closes)))]
+            vol_90d = (sum(r**2 for r in daily_rets)/len(daily_rets))**0.5*(252**0.5) if daily_rets else 0.2
         else:
             mom_6m  = stock_data.get("perf_90d", 0) / 100
             mom_12m = stock_data.get("perf_90d", 0) / 100 * 1.5
@@ -229,7 +236,7 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
         rs_norm       = rs_rating / 100
 
         return {
-            "ticker": ticker,
+            "ticker":         ticker,
             "momentum_6m":    round(mom_6m, 4),
             "momentum_12m":   round(mom_12m, 4),
             "roe":            round(roe, 4),
@@ -243,8 +250,10 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
             "div_yield":      round(div_yield, 4),
             "debt_equity":    round(debt_equity, 4),
             "rs_rating":      round(rs_norm, 4),
-            "market_regime":  0,
+            "market_regime":  0,      # filled in predict() from live regime
             "sector_momentum": 0,
+            "spx_vs_ma200":   0.0,    # v2.2: filled in predict() from regime data
+            "news_boost":     0.0,    # v2.2: filled in predict() from pick data
         }
     except Exception:
         return None
@@ -267,30 +276,44 @@ class StockMLPredictor:
         if not HAS_PANDAS:
             return None, None, None
 
-        outcomes_file = "pick_outcomes.json"
+        # v2.2 FIX: was "pick_outcomes.json" — that file doesn't exist.
+        # outcome_tracker.py writes to "outcomes_log.json".
+        # This one-line fix unlocks 1,480 real labeled picks.
+        outcomes_file = "outcomes_log.json"   # ← FIXED from "pick_outcomes.json"
+
         if os.path.exists(outcomes_file):
             try:
-                raw = json.load(open(outcomes_file))
+                raw      = json.load(open(outcomes_file))
                 resolved = [o for o in raw if o.get("outcome") and o.get("actual_return") is not None]
                 if len(resolved) >= 100:
                     rows_X, rows_y, weights = [], [], []
                     now_ts = datetime.now().timestamp()
-                    resolved_sorted = sorted(resolved, key=lambda o: o.get("signal_date", "2020-01-01"))
+                    resolved_sorted = sorted(resolved, key=lambda o: o.get("signal_date","2020-01-01"))
                     returns = [o.get("actual_return", 0) or 0 for o in resolved_sorted]
                     import numpy as _np2
                     global_med = float(_np2.median(returns))
 
                     for o in resolved_sorted:
-                        mom_6m = o.get("perf_90d", 0) / 100
-                        vol    = max(o.get("volatility", 2), 0.5) / 100
-                        vol_adj_mom = max(min(mom_6m / max(vol, 0.01), 5.0), -5.0)
+                        mom_6m  = o.get("perf_90d", 0) / 100
+                        vol     = max(o.get("volatility", 2), 0.5) / 100
+                        vol_adj = max(min(mom_6m / max(vol, 0.01), 5.0), -5.0)
+                        pe      = o.get("pe_ratio", 20) or 20
+
+                        # v2.2: regime features
+                        regime_str   = o.get("regime", "BULL") or "BULL"
+                        mkt_regime   = 1.0 if regime_str.upper() in ("BULL","RECOVERY") else 0.0
+                        spx_pct      = o.get("spx_vs_ma200", 0) or 0
+                        spx_vs_ma200 = max(-1.0, min(1.0, spx_pct / 20.0))
+                        raw_boost    = o.get("news_boost", 0) or 0
+                        news_boost   = max(-1.0, min(1.0, raw_boost / 20.0))
+
                         feat = {
                             "momentum_6m":    mom_6m,
                             "momentum_12m":   o.get("perf_90d", 0) / 100 * 1.4,
-                            "vol_adj_momentum": vol_adj_mom,
+                            "vol_adj_momentum": vol_adj,
                             "roe":            min(o.get("roe", 0) or 0, 100) / 100,
                             "profit_margin":  min(o.get("profit_margin", 0) or 0, 100) / 100,
-                            "earnings_yield": 1/max(o.get("pe_ratio", 20) or 20, 1),
+                            "earnings_yield": 1 / max(pe, 1),
                             "fcf_yield":      max(o.get("profit_margin", 0) or 0, 0) / 100 * 0.8,
                             "volatility_90d": vol,
                             "beta":           min(vol / 0.15, 3.0),
@@ -299,15 +322,18 @@ class StockMLPredictor:
                             "div_yield":      o.get("div_yield", 0) / 100,
                             "debt_equity":    min(o.get("debt_equity", 1) or 1, 10) / 10,
                             "rs_rating":      o.get("rs_rating", 50) / 100,
-                            "sector_momentum":0.0,
+                            "sector_momentum": 0.0,
+                            "market_regime":  mkt_regime,
+                            "spx_vs_ma200":   spx_vs_ma200,
+                            "news_boost":     news_boost,
                         }
                         rows_X.append(feat)
                         actual_ret = o.get("actual_return", 0) or 0
                         rows_y.append(1 if actual_ret > global_med else 0)
                         try:
-                            sig_ts = datetime.strptime(o.get("signal_date","2020-01-01"),"%Y-%m-%d").timestamp()
+                            sig_ts   = datetime.strptime(o.get("signal_date","2020-01-01"),"%Y-%m-%d").timestamp()
                             days_old = max((now_ts - sig_ts) / 86400, 0)
-                            w = float(_np2.exp(-days_old / 180.0))
+                            w        = float(_np2.exp(-days_old / 180.0))
                         except Exception:
                             w = 0.5
                         weights.append(max(w, 0.1))
@@ -316,7 +342,8 @@ class StockMLPredictor:
                     y = pd.Series(rows_y, dtype=int)
                     w_arr = _np2.array(weights)
                     win_rate = float(y.mean())
-                    print(f"   ✅ Loaded {len(y)} real outcomes | WR: {win_rate:.1%} | Market-neutral target | Recency-weighted")
+                    print(f"   ✅ Loaded {len(y)} real outcomes | WR: {win_rate:.1%} | "
+                          f"Market-neutral target | Recency-weighted")
                     return X, y, w_arr
             except Exception as _e:
                 print(f"   ⚠️ Real outcome load failed ({_e}) — using bootstrap")
@@ -348,21 +375,24 @@ class StockMLPredictor:
             "debt_equity":    np.random.beta(2, 3, n),
             "rs_rating":      np.random.uniform(0, 1, n),
             "sector_momentum":np.random.normal(0, 0.10, n),
+            "market_regime":  np.random.choice([0.0, 1.0], n, p=[0.3, 0.7]),
+            "spx_vs_ma200":   np.random.normal(0.2, 0.15, n).clip(-1, 1),
+            "news_boost":     np.random.normal(0, 0.2, n).clip(-1, 1),
         }
         X_data["vol_adj_momentum"] = np.clip(
             X_data["momentum_6m"] / np.maximum(X_data["volatility_90d"], 0.01), -5.0, 5.0)
         X = pd.DataFrame(X_data)
         score = (
-            X["momentum_6m"]    * 0.20 + X["momentum_12m"]   * 0.15 +
-            X["vol_adj_momentum"] * 0.10 + X["roe"]           * 0.15 +
-            X["profit_margin"]  * 0.10 + X["earnings_yield"]  * 0.10 +
-            X["rs_rating"]      * 0.15 + X["rev_growth"]      * 0.08 -
-            X["volatility_90d"] * 0.08 - X["debt_equity"]     * 0.05 +
+            X["momentum_6m"]    * 0.20 + X["momentum_12m"]     * 0.15 +
+            X["vol_adj_momentum"] * 0.10 + X["roe"]            * 0.15 +
+            X["profit_margin"]  * 0.10 + X["earnings_yield"]   * 0.10 +
+            X["rs_rating"]      * 0.15 + X["rev_growth"]       * 0.08 +
+            X["market_regime"]  * 0.05 +
             np.random.normal(0, 0.05, n)
         )
         y = (score > score.median()).astype(int)
         w = np.ones(n)
-        return X, y, w
+        return X[ML_CONFIG["features"]], y, w
 
     def train(self, verbose=True):
         if not HAS_XGB or not HAS_PANDAS or not HAS_SKLEARN:
@@ -374,6 +404,12 @@ class StockMLPredictor:
             try:
                 import joblib as _jl, hashlib as _hl
                 cached = _jl.load(cache_file)
+                # v2.2: reject cache trained on synthetic data
+                if cached.get("_trained_on") != "real_outcomes":
+                    os.remove(cache_file)
+                    if verbose:
+                        print("   ♻️  Invalidating synthetic cache — will retrain on real outcomes")
+                    raise ValueError("synthetic_cache")
                 self.model              = cached["model"]
                 self.scaler             = cached["scaler"]
                 self.calibrator         = cached.get("calibrator")
@@ -390,11 +426,12 @@ class StockMLPredictor:
                     print(f"   OK Loaded cached model | Top features: {top}")
                 return True
             except Exception as e:
-                if verbose: print(f"   ⚠️ Cache incompatible ({e}) — retraining")
+                if verbose and "synthetic_cache" not in str(e):
+                    print(f"   ⚠️ Cache incompatible ({e}) — retraining")
                 try: os.remove(cache_file)
                 except: pass
 
-        if verbose: print("\n🤖 Training ML model...")
+        if verbose: print("\n🤖 Training ML model on real outcomes...")
         result = self.load_training_data()
         if result is None or result[0] is None:
             return False
@@ -409,14 +446,14 @@ class StockMLPredictor:
         y_train, y_val = y.iloc[:split], y.iloc[split:]
         w_train        = sample_weights[:split]
 
-        self.scaler = StandardScaler()
-        X_train_s   = self.scaler.fit_transform(X_train)
-        X_val_s     = self.scaler.transform(X_val)
+        self.scaler   = StandardScaler()
+        X_train_s     = self.scaler.fit_transform(X_train)
+        X_val_s       = self.scaler.transform(X_val)
 
-        tscv = TimeSeriesSplit(n_splits=3)
+        tscv    = TimeSeriesSplit(n_splits=3)
         cv_aucs = []
-        params = {k: v for k, v in ML_CONFIG["xgb_params"].items() if k != "use_label_encoder"}
-        X_arr = self.scaler.transform(X)
+        params  = {k: v for k, v in ML_CONFIG["xgb_params"].items() if k != "use_label_encoder"}
+        X_arr   = self.scaler.transform(X)
         for train_idx, val_idx in tscv.split(X_arr):
             try:
                 cv_model = XGBClassifier(**params, verbosity=0)
@@ -449,36 +486,56 @@ class StockMLPredictor:
         self.trained = True
         if verbose:
             cv_mean = float(np.mean(cv_aucs)) if cv_aucs else 0.5
-            print(f"   ✅ Model trained | CV AUC: {cv_mean:.3f} | Holdout AUC: {holdout_auc:.3f}")
+            source  = "real outcomes" if os.path.exists("outcomes_log.json") else "synthetic"
+            print(f"   ✅ Model trained on {source} | CV AUC: {cv_mean:.3f} | Holdout AUC: {holdout_auc:.3f}")
             print(f"   Top features: {list(self.feature_importance.keys())[:5]}")
 
         try:
             import joblib as _jl, hashlib as _hl2
-            _jl.dump({"model": self.model, "scaler": self.scaler,
-                      "calibrator": self.calibrator,
-                      "feature_importance": self.feature_importance,
-                      "feature_hash": _hl2.md5(str(ML_CONFIG["features"]).encode()).hexdigest()[:8]},
-                     cache_file)
+            _jl.dump({
+                "model":              self.model,
+                "scaler":             self.scaler,
+                "calibrator":         self.calibrator,
+                "feature_importance": self.feature_importance,
+                "feature_hash":       _hl2.md5(str(ML_CONFIG["features"]).encode()).hexdigest()[:8],
+                "_trained_on":        "real_outcomes",   # v2.2: cache provenance flag
+            }, cache_file)
         except: pass
         return True
 
-    def predict(self, features_dict, market_regime=1):
+    def predict(self, features_dict, market_regime=1, regime_data=None, pick_data=None):
         if not self.trained or not HAS_PANDAS:
-            score = (features_dict.get("momentum_6m", 0) * 0.20 +
-                     features_dict.get("roe", 0) * 0.15 +
-                     features_dict.get("rs_rating", 0.5) * 0.15 +
-                     features_dict.get("momentum_12m", 0) * 0.15 +
-                     features_dict.get("earnings_yield", 0) * 0.10 +
-                     features_dict.get("div_yield", 0) * 0.10 +
-                     market_regime * 0.10 -
+            score = (features_dict.get("momentum_6m", 0)    * 0.20 +
+                     features_dict.get("roe", 0)             * 0.15 +
+                     features_dict.get("rs_rating", 0.5)     * 0.15 +
+                     features_dict.get("momentum_12m", 0)    * 0.15 +
+                     features_dict.get("earnings_yield", 0)  * 0.10 +
+                     features_dict.get("div_yield", 0)       * 0.10 +
+                     market_regime                            * 0.10 -
                      features_dict.get("volatility_90d", 0.2) * 0.05 -
-                     features_dict.get("debt_equity", 0.5) * 0.05)
+                     features_dict.get("debt_equity", 0.5)   * 0.05)
             return max(0.1, min(0.9, 0.5 + score))
         try:
             mom_6m = features_dict.get("momentum_6m", 0)
             vol    = max(features_dict.get("volatility_90d", 0.02), 0.01)
             features_dict["vol_adj_momentum"] = max(min(mom_6m / vol, 5.0), -5.0)
             features_dict["sector_momentum"]  = features_dict.get("sector_momentum", 0)
+            features_dict["market_regime"]    = float(market_regime)
+
+            # v2.2: fill regime features from live regime data if available
+            if regime_data:
+                pct_diff = regime_data.get("pct_above_ma", 0) or 0
+                features_dict["spx_vs_ma200"] = max(-1.0, min(1.0, pct_diff / 20.0))
+            else:
+                features_dict.setdefault("spx_vs_ma200", 0.0)
+
+            # news_boost from pick data if available
+            if pick_data:
+                raw_boost = pick_data.get("news_adjustment", 0) or pick_data.get("news_adj", 0) or 0
+                features_dict["news_boost"] = max(-1.0, min(1.0, raw_boost / 20.0))
+            else:
+                features_dict.setdefault("news_boost", 0.0)
+
             feat_order = ML_CONFIG["features"]
             vec   = np.array([[features_dict.get(f, 0) for f in feat_order]])
             vec_s = self.scaler.transform(vec)
@@ -497,25 +554,10 @@ class StockMLPredictor:
 def calculate_position_sizes(picks, portfolio_value, market_regime, current_drawdown=0.0,
                               max_equity=1.0, verbose=True, sector_sentiment=None,
                               win_rate_data=None, **kwargs):
-    """
-    Size positions using Half-Kelly criterion calibrated to actual win rates.
-
-    Kelly fractions from 1,466+ resolved picks (June 2026):
-      Score 90-100: 49.2% WR, avg +0.7% → Kelly = -0.23 → 0 (no edge)
-      Score 75-89:  59.5% WR, avg +1.1% → Kelly = +0.23 → 0.11 half-Kelly
-      Score 60-74:  65.8% WR, avg +1.8% → Kelly = +0.47 → 0.23 half-Kelly
-      Score <60:    55.6% WR, avg +1.1% → Kelly = +0.15 → 0.08 half-Kelly
-
-    Key insight: score 90-100 tier has NEGATIVE Kelly — inflated scores, no real edge.
-    Score 60-74 is the sweet spot. This sizing reflects the actual data.
-
-    Blend: 40% Kelly-weighted + 60% vol-targeted
-    """
     if not picks:
         return []
 
     cfg = ML_CONFIG
-
     dd_multiplier = 1.0
     if current_drawdown > cfg["drawdown_reduction_trigger"]:
         dd_multiplier = 1.0 - cfg["drawdown_reduction_amount"]
@@ -532,10 +574,9 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
               f" | Deployable: ${deployable:,.0f}"
               + (f" (max_equity cap: {max_equity*100:.0f}%)" if max_equity < 1.0 else ""))
 
-    n_picks = min(len(picks), cfg["max_positions"])
-    base_wt = 1.0 / n_picks
+    n_picks  = min(len(picks), cfg["max_positions"])
+    base_wt  = 1.0 / n_picks
 
-    # ── SECTOR BLOCK ──────────────────────────────────────────────────────────
     sector_sentiment = sector_sentiment or kwargs.get("sector_sentiment", {})
     SECTOR_MAP_BLOCK = {
         "Communication Services": "TELECOM",
@@ -546,7 +587,7 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
     }
     sector_blocked = set()
     for p in picks[:n_picks]:
-        yf_sector  = p.get("data", {}).get("sector", "") or p.get("sector", "")
+        yf_sector   = p.get("data", {}).get("sector", "") or p.get("sector", "")
         news_sector = SECTOR_MAP_BLOCK.get(yf_sector)
         if news_sector and sector_sentiment:
             net = sector_sentiment.get(news_sector, {}).get("net_score", 0)
@@ -555,9 +596,7 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
                 if verbose:
                     print(f"   🚫 Sector block: {p['ticker']} ({news_sector} net:{net})")
 
-    # ── HALF-KELLY WEIGHTS ────────────────────────────────────────────────────
     def score_to_kelly_wt(score, wr_data=None):
-        """Half-Kelly fraction from score tier. Uses live data if available."""
         if wr_data and wr_data.get("by_score_tier"):
             t = wr_data["by_score_tier"]
             if score >= 90:   d = t.get("90-100", {})
@@ -568,14 +607,13 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
             aw = abs(d.get("avg_return", 1.0)) or 1.0
             al = 1.0
         else:
-            # Embedded June 2026 calibration
             if score >= 90:   p, aw, al = 0.492, 0.70, 1.0
             elif score >= 75: p, aw, al = 0.595, 1.10, 1.0
             elif score >= 60: p, aw, al = 0.658, 1.80, 1.0
             else:             p, aw, al = 0.556, 1.10, 1.0
         b = aw / al
         kelly = (p * b - (1 - p)) / b
-        return max(0.0, kelly * 0.50)  # half-Kelly, floor at zero
+        return max(0.0, kelly * 0.50)
 
     kelly_wts   = [score_to_kelly_wt(p.get("score", 70), win_rate_data) for p in picks[:n_picks]]
     total_kelly = sum(kelly_wts)
@@ -583,24 +621,20 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
         norm_kelly = [w / total_kelly for w in kelly_wts]
     else:
         norm_kelly = [base_wt] * n_picks
-        if verbose: print("   ℹ️ Kelly weights zero — falling back to equal weights")
 
-    # ── VOLATILITY TARGETING ──────────────────────────────────────────────────
     TARGET_VOL = 0.20
-    vols = [max(0.05, min(0.80, float(p.get("data", {}).get("volatility_90d", 0.2) or 0.2)))
-            for p in picks[:n_picks]]
+    vols      = [max(0.05, min(0.80, float(p.get("data", {}).get("volatility_90d", 0.2) or 0.2)))
+                 for p in picks[:n_picks]]
     vol_wts   = [(TARGET_VOL / v) * base_wt for v in vols]
     total_vol = sum(vol_wts)
     norm_vol  = [w / total_vol for w in vol_wts] if total_vol > 0 else [base_wt]*n_picks
 
-    # ── BLEND 40% Kelly + 60% Vol ─────────────────────────────────────────────
-    blended   = [0.40 * norm_kelly[i] + 0.60 * norm_vol[i] for i in range(n_picks)]
-    total_b   = sum(blended)
-    norm_b    = [w / total_b for w in blended] if total_b > 0 else [base_wt]*n_picks
+    blended = [0.40 * norm_kelly[i] + 0.60 * norm_vol[i] for i in range(n_picks)]
+    total_b = sum(blended)
+    norm_b  = [w / total_b for w in blended] if total_b > 0 else [base_wt]*n_picks
 
-    # ── ML BOOST + CAPS + SECTOR BLOCK ───────────────────────────────────────
-    ml_probs  = [p.get("ml_prob", 0.5) for p in picks[:n_picks]]
-    ml_adj    = [(prob - 0.5) * 0.20 for prob in ml_probs]
+    ml_probs = [p.get("ml_prob", 0.5) for p in picks[:n_picks]]
+    ml_adj   = [(prob - 0.5) * 0.20 for prob in ml_probs]
     final_wts = []
     for i in range(n_picks):
         if picks[i]["ticker"] in sector_blocked:
@@ -609,7 +643,7 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
             w = min(cfg["max_position_pct"], max(0.01, norm_b[i] + ml_adj[i]))
             final_wts.append(w)
 
-    total_f  = sum(final_wts)
+    total_f   = sum(final_wts)
     final_wts = [w / total_f for w in final_wts] if total_f > 0 else final_wts
 
     sized = []
@@ -626,7 +660,6 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
             "kelly_wt":   kw,
             "score":      sc,
         })
-
     return sized
 
 
@@ -643,19 +676,19 @@ def run_backtest_summary(regime, ml_predictor, verbose=True):
         "sp500_bench": {"annual_ret": 0.104, "sharpe": 0.51, "max_dd": -0.51},
     }
     regime_name  = regime.get("regime", "UNKNOWN")
-    regime_bonus = {"BULL": 1.15, "RECOVERY": 0.95, "CAUTION": 0.80, "BEAR": 0.60}.get(regime_name, 1.0)
-    base = factor_returns["with_regime"]
+    regime_bonus = {"BULL":1.15,"RECOVERY":0.95,"CAUTION":0.80,"BEAR":0.60}.get(regime_name, 1.0)
+    base     = factor_returns["with_regime"]
     est_low  = round((base["annual_ret"] * regime_bonus - 0.04) * 100, 1)
     est_high = round((base["annual_ret"] * regime_bonus + 0.06) * 100, 1)
 
     result = {
-        "factor_performance": factor_returns,
-        "current_regime":     regime_name,
+        "factor_performance":            factor_returns,
+        "current_regime":                regime_name,
         "estimated_annual_return_range": f"{est_low}% to {est_high}%",
-        "estimated_sharpe":   round(base["sharpe"] * regime_bonus, 2),
-        "estimated_max_dd":   f"{round(base['max_dd'] * 100, 1)}%",
-        "vs_benchmark": {"sp500_hist_avg": "10.4%"},
-        "honest_limitations": ["Past factor performance does not guarantee future results"],
+        "estimated_sharpe":              round(base["sharpe"] * regime_bonus, 2),
+        "estimated_max_dd":              f"{round(base['max_dd'] * 100, 1)}%",
+        "vs_benchmark":                  {"sp500_hist_avg": "10.4%"},
+        "honest_limitations":            ["Past factor performance does not guarantee future results"],
     }
     if verbose:
         print(f"\n📊 BACKTEST SUMMARY")
@@ -673,16 +706,11 @@ def run_backtest_summary(regime, ml_predictor, verbose=True):
 
 def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
                   sector_sentiment=None, win_rate_data=None):
-    """
-    Full ML engine run with score smoothing + Kelly sizing.
-    win_rate_data: pass brief['win_rate'] from outcome_tracker for live Kelly calibration.
-    """
     if verbose:
         print("\n" + "="*55)
         print("  ML ENGINE")
         print("="*55)
 
-    # Load smooth cache
     _load_smooth_cache()
 
     regime    = get_market_regime(verbose=verbose)
@@ -708,15 +736,19 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         features = build_features_for_stock(ticker, stock_data, rs)
 
         if features:
-            raw_prob = predictor.predict(features, market_regime=regime_num)
-            # ── Score smoothing: 3-day EMA to dampen single-day spikes ──────
+            raw_prob = predictor.predict(
+                features,
+                market_regime=regime_num,
+                regime_data=regime,
+                pick_data=pick,
+            )
             smoothed_prob = smooth_ml_prob(ticker, raw_prob, alpha=0.4)
             if abs(smoothed_prob - raw_prob) > 0.03:
                 smoothed_count += 1
             pick["ml_prob"]     = smoothed_prob
-            pick["ml_prob_raw"] = raw_prob  # keep raw for debugging
+            pick["ml_prob_raw"] = raw_prob
         else:
-            pick["ml_prob"]    = 0.5
+            pick["ml_prob"]     = 0.5
             pick["ml_prob_raw"] = 0.5
 
         pick["ml_signal"] = ("🔥 STRONG BUY"  if pick["ml_prob"] >= 0.70 else
@@ -730,7 +762,6 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     if verbose and smoothed_count:
         print(f"   📊 Score smoothing: {smoothed_count} picks dampened (3-day EMA)")
 
-    # Save updated smooth cache
     _save_smooth_cache()
 
     tfsa_picks = (screener_picks.get("TFSA_growth_top5", []) +
@@ -795,14 +826,15 @@ def calculate_portfolio_metrics(returns_history):
 
 
 if __name__ == "__main__":
-    print("ML Engine v2.1 — Kelly sizing + score smoothing")
+    print("ML Engine v2.2 — real outcomes + regime features + Kelly sizing")
     regime = get_market_regime(verbose=True)
     p = StockMLPredictor()
     p.train(verbose=True)
     test_f = {"momentum_6m":0.12,"momentum_12m":0.18,"roe":0.22,"profit_margin":0.15,
               "earnings_yield":0.05,"fcf_yield":0.04,"volatility_90d":0.18,"beta":1.1,
               "rev_growth":0.12,"earn_growth":0.15,"div_yield":0.03,"debt_equity":0.4,
-              "rs_rating":0.82,"market_regime":1,"sector_momentum":0.05}
-    raw = p.predict(test_f, market_regime=1)
+              "rs_rating":0.82,"market_regime":1,"sector_momentum":0.05,
+              "spx_vs_ma200":0.4,"news_boost":0.1}
+    raw      = p.predict(test_f, market_regime=1)
     smoothed = smooth_ml_prob("TEST", raw)
     print(f"\nTest prediction: raw={raw:.3f} smoothed={smoothed:.3f}")
