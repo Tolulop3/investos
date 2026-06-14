@@ -200,6 +200,26 @@ def build_feature_matrix(resolved):
     pos_rate = float(y.mean())
     print(f"  ✅ Feature matrix: {len(y)} rows × {len(FEATURES)} features")
     print(f"     Label balance: {pos_rate:.1%} positive | {1-pos_rate:.1%} negative")
+
+    # ── COVERAGE GATE ─────────────────────────────────────────────────────
+    # Check: what % of rows have real (non-zero) feature data?
+    # Historical picks have perf_90d=0, roe=0, etc. because features weren't
+    # saved at signal time. Training on these rows produces a zero-variance model
+    # (AUC=0.500) because all features are zero — XGBoost learns nothing.
+    # Guard: if coverage < 10%, preserve existing cache and skip this retrain.
+    key_features = ["momentum_6m", "roe", "profit_margin", "rs_rating"]
+    has_real_data = X[key_features].abs().sum(axis=1) > 0.001
+    coverage_pct  = float(has_real_data.mean()) * 100
+    print(f"  📊 Feature coverage: {coverage_pct:.1f}% of rows have real data")
+
+    MIN_COVERAGE_PCT = 10.0   # need at least 10% of rows with real features
+    if coverage_pct < MIN_COVERAGE_PCT:
+        print(f"  ⛔ Coverage {coverage_pct:.1f}% < {MIN_COVERAGE_PCT}% threshold.")
+        print(f"     Preserving existing model cache — real features accumulate ~{(MIN_COVERAGE_PCT/100 * len(y)):.0f} more picks needed.")
+        print(f"     New picks with features are being logged. Retrain will auto-run when coverage crosses threshold.")
+        return None, None, None   # signals train_and_save to abort
+    # ──────────────────────────────────────────────────────────────────────
+
     return X, y, w
 
 

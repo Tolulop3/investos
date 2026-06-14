@@ -151,11 +151,15 @@ def compute_early_regime(macro_regime_str, market_regime_dict):
     elif macro_reg in ("RISK_OFF","BEAR"):       n = -1.0
     else:                                        n = 0.0
 
-    score = 0.5 * m + 0.5 * n
+    # 70% market structure (SPX vs 200MA), 30% news macro
+    # Market regime is the primary signal — SPX +8% above 200MA in BULL
+    # should NOT be overridden by news sentiment alone.
+    # News macro affects individual pick adjustments (±8pts) separately.
+    score = 0.70 * m + 0.30 * n
 
-    if score >= 0.4:    regime = "RISK_ON";             blocks = []
-    elif score >= 0.1:  regime = "NEUTRAL";             blocks = []
-    elif score >= -0.3: regime = "DEFENSIVE";           blocks = ["SWING"]
+    if score >= 0.4:    regime = "RISK_ON";              blocks = []
+    elif score >= 0.1:  regime = "NEUTRAL";              blocks = []
+    elif score >= -0.3: regime = "DEFENSIVE";            blocks = ["SWING"]
     else:               regime = "CAPITAL_PRESERVATION"; blocks = ["SWING", "GROWTH CORE"]
 
     return regime, blocks
