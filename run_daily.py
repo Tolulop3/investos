@@ -63,6 +63,8 @@ from ml_engine           import run_ml_engine, get_market_regime
 from fx_engine           import run_fx_engine
 from content_engine      import run_content_engine
 from crypto_engine       import run_crypto_engine
+from options_engine      import run_options_engine
+from regime_predictor    import predict_regime_shift
 
 
 # ============================================================
@@ -419,6 +421,17 @@ def run_daily(test_mode=False):
     except Exception as _ie:
         print(f"  ⚠️  Insider engine error: {_ie} — continuing without")
 
+    # ── 4c. Options Flow Engine ──────────────────────────────
+    options_signals = {}
+    market_pcr_data = {"pcr": None, "signal": "NEUTRAL", "macro_adj": 0.0}
+    try:
+        us_picks_for_opts = [p for p in all_picks if not p["ticker"].endswith(".TO")]
+        _, options_signals, market_pcr_data = run_options_engine(
+            us_picks_for_opts, verbose=True
+        )
+    except Exception as _oe:
+        print(f"  ⚠️  Options engine error: {_oe} — continuing without")
+
     # ── 4.5 Regime Authority Filter ──────────────────────────
     early_regime, category_blocks = compute_early_regime(macro_regime, regime)
     screener = apply_regime_filter(screener, early_regime, category_blocks)
@@ -694,6 +707,22 @@ def run_daily(test_mode=False):
     if blocked_styles:
         print(f"     Blocked: {blocked_styles}")
 
+    # ── 11c. Regime Shift Predictor ───────────────────────────────────────────
+    regime_momentum_data = {}
+    try:
+        regime_momentum_data = predict_regime_shift(
+            current_unified_regime=unified_regime, verbose=True
+        )
+        # Advisory only — small nudge to unified_score, never overrides regime directly
+        momentum = regime_momentum_data.get("momentum","STABLE")
+        confidence = regime_momentum_data.get("confidence", 0.0)
+        if momentum == "ACCELERATING" and confidence > 0.6:
+            unified_score = min(1.0, unified_score + 0.05)
+        elif momentum == "DECELERATING" and confidence > 0.6:
+            unified_score = max(-1.0, unified_score - 0.05)
+    except Exception as _rpe:
+        print(f"  ⚠️  Regime predictor error: {_rpe}")
+
     # ── 11b. ETF Signal Engine ────────────────────────────────
     print(f"\n[ETF] 📊 ETF SIGNAL ENGINE")
     etf_signals = {}
@@ -831,7 +860,10 @@ def run_daily(test_mode=False):
                             "stop_price":t["stop_price"],"target_price":t["target_price"],
                             "category":t["category"],"date":t["date"],"notes":t["notes"]}
                            for t in load_trades() if t.get("status") == "OPEN"],
-        "etf_signals":    etf_signals,
+        "etf_signals":        etf_signals,
+        "options_signals":    options_signals,
+        "market_pcr":         market_pcr_data,
+        "regime_momentum":    regime_momentum_data,
         "risk_report":    {
             "stress_test":    risk_report.get("stress_test",{}),
             "decay_monitor":  risk_report.get("decay_monitor",{}),
