@@ -5150,7 +5150,7 @@ function renderNGX() {
       const nm  = p.name || p.ticker.replace('.LG','');
       h += '<div style="background:var(--bg3);border-radius:4px;padding:8px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">';
       h += '<div>';
-      h += '<div style="font-size:13px;font-weight:700;color:#fff;font-family:var(--mono)">' + nm;
+      h += '<div style="font-size:13px;font-weight:700;color:var(--t);font-family:var(--mono)">' + nm;
       h += ' <span style="font-size:7px;color:var(--t3)">' + (p.tier===1?'★T1':'T2') + ' · ' + (p.sector||'') + '</span></div>';
       h += '<div style="font-size:8px;color:var(--t3);margin-top:3px">' + ((p.reasons||[]).slice(0,2).join(' · ')) + '</div>';
       h += '<div style="font-size:7px;color:var(--a);margin-top:2px">' + (p.persistence||'') + '</div>';
@@ -5175,7 +5175,7 @@ function renderNGX() {
       const prog  = parts ? parseInt(parts[1]) : 0;
       const progBar = '▓'.repeat(prog) + '░'.repeat(Math.max(0, 3-prog));
       h += '<div style="background:var(--bg3);border-radius:3px;padding:5px 8px;font-size:8px">';
-      h += '<div style="color:#fff;font-weight:700">' + nm + ' <span style="color:var(--t3);font-size:7px">T' + w.tier + '</span></div>';
+      h += '<div style="color:var(--t);font-weight:700">' + nm + ' <span style="color:var(--t3);font-size:7px">T' + w.tier + '</span></div>';
       h += '<div style="color:' + sc2 + '">' + sc + ' <span style="color:var(--t3)">' + progBar + '</span></div>';
       h += '<div style="color:var(--t3);font-size:6px">' + (w.sector||'') + '</div>';
       h += '</div>';
@@ -5196,7 +5196,7 @@ function renderNGX() {
       const persCol = (pers.includes('streak') || pers==='ELIGIBLE') ? 'var(--g)'
                     : (pers.includes('/3') || pers==='WATCH') ? 'var(--a)' : 'var(--t3)';
       h += '<tr style="border-top:1px solid var(--border)">';
-      h += '<td style="padding:3px 6px;color:#fff;font-weight:600">' + nm + '</td>';
+      h += '<td style="padding:3px 6px;color:var(--t);font-weight:600">' + nm + '</td>';
       h += '<td style="text-align:center;color:var(--t3)">T' + s.tier + '</td>';
       h += '<td style="text-align:center;color:var(--t3)">' + (s.sector||'—') + '</td>';
       h += '<td style="text-align:center;color:' + sc2 + ';font-weight:700">' + s.score + '</td>';
