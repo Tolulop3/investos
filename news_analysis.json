@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-15T19:34:53.172472",
+  "timestamp": "2026-06-15T20:41:20.837854",
   "date": "June 15, 2026",
   "articles_fetched": 152,
   "feeds_online": 12,
@@ -14,13 +14,13 @@
       "confidence": 100,
       "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
     },
+    "oil_price_spike": {
+      "confidence": 75,
+      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
+    },
     "peace_deal": {
       "confidence": 100,
       "note": "Peace = risk-on. Growth and consumer stocks benefit."
-    },
-    "oil_price_spike": {
-      "confidence": 100,
-      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
     },
     "health_outbreak": {
       "confidence": 100,
@@ -46,9 +46,9 @@
       ]
     },
     "CANADIAN_ENERGY": {
-      "bullish_score": 400,
+      "bullish_score": 350,
       "bearish_score": 200,
-      "net_score": 200,
+      "net_score": 150,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -64,7 +64,7 @@
         {
           "name": "oil_price_spike",
           "direction": "bullish",
-          "confidence": 100
+          "confidence": 75
         }
       ]
     },
@@ -116,8 +116,8 @@
     },
     "AIRLINES": {
       "bullish_score": 0,
-      "bearish_score": 600,
-      "net_score": -600,
+      "bearish_score": 550,
+      "net_score": -550,
       "sentiment": "BEARISH",
       "signals": [
         {
@@ -128,7 +128,7 @@
         {
           "name": "oil_price_spike",
           "direction": "bearish",
-          "confidence": 100
+          "confidence": 75
         },
         {
           "name": "health_outbreak",
@@ -189,6 +189,63 @@
         }
       ]
     },
+    "OIL_PRODUCERS": {
+      "bullish_score": 150,
+      "bearish_score": 0,
+      "net_score": 150,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 75
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 150,
+      "bearish_score": 0,
+      "net_score": 150,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 75
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 150.0,
+      "bearish_score": 150,
+      "net_score": 0.0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 75
+        },
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 150,
+      "net_score": -150,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 75
+        }
+      ]
+    },
     "TRAVEL": {
       "bullish_score": 150.0,
       "bearish_score": 200,
@@ -202,24 +259,6 @@
         },
         {
           "name": "health_outbreak",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "CONSUMER": {
-      "bullish_score": 150.0,
-      "bearish_score": 200,
-      "net_score": -50.0,
-      "sentiment": "NEUTRAL",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        },
-        {
-          "name": "oil_price_spike",
           "direction": "bearish",
           "confidence": 100
         }
@@ -247,45 +286,6 @@
         {
           "name": "peace_deal",
           "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "OIL_PRODUCERS": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "PIPELINES": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "TRANSPORT": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
           "confidence": 100
         }
       ]
@@ -449,7 +449,7 @@
   },
   "ticker_adjustments": {
     "ENB.TO": {
-      "adjustment": 25,
+      "adjustment": 20.0,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -457,7 +457,7 @@
       "news_sentiment": "BULLISH"
     },
     "TRP.TO": {
-      "adjustment": 25,
+      "adjustment": 20.0,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -465,7 +465,7 @@
       "news_sentiment": "BULLISH"
     },
     "CNQ.TO": {
-      "adjustment": 25,
+      "adjustment": 20.0,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -473,7 +473,7 @@
       "news_sentiment": "BULLISH"
     },
     "SU.TO": {
-      "adjustment": 25,
+      "adjustment": 20.0,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -481,7 +481,7 @@
       "news_sentiment": "BULLISH"
     },
     "CVE.TO": {
-      "adjustment": 25,
+      "adjustment": 20.0,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
@@ -489,7 +489,7 @@
       "news_sentiment": "BULLISH"
     },
     "PPL.TO": {
-      "adjustment": 25,
+      "adjustment": 20.0,
       "reasons": [
         "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
         "\ud83d\udcc8 PIPELINES (BULLISH)"
@@ -806,7 +806,7 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "Dow jumps 600 points to record with rally gaining steam after Trump signs Iran deal memorandum: Live updates",
+          "Dow climbs more than 450 points for record close as oil tumbles on potential Iran deal",
           "Vance says 'a lot' of Iran deal details to figure out, but U.S. has 'all the cards'"
         ]
       },
@@ -828,19 +828,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Peace = risk-on. Growth and consumer stocks benefit.",
         "articles": [
-          "Oil falls 5% to three-month low as US, Iran reach peace deal to reopen Strait of Hormuz",
-          "BlackRock\u2019s Rieder Sees \u2018Explosive\u2019 Rally as Cash Gets Unlocked"
-        ]
-      },
-      {
-        "signal": "Oil Price Spike",
-        "magnitude": "HIGH",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
-        "articles": [
-          "History\u2019s worst energy crisis, minus the price shock",
-          "Trump at G7 Hails Iran Deal Even as Divisions With Tehran Remain"
+          "Worst of US Inflation May Be Over If Iran Peace Deal Sticks",
+          "Oil prices hit three-month low and markets rally amid Iran deal breakthrough"
         ]
       },
       {
@@ -850,8 +839,18 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Health outbreak = defensive positioning. Pharma, staples, ecommerce.",
         "articles": [
-          "Open letter to leaders of G7, G20, BRICS and all nations on finalizing the WHO Pandemic Agreement\u2019s Pathogen Access and Benefit Sharing annex",
-          "Africa CDC and WHO launch joint continental Ebola response plan"
+          "Africa CDC and WHO launch joint continental Ebola response plan",
+          "Joint statement by the Government of the Democratic Republic of the Congo and WHO concerning the outbreak of Ebola disease caused by the Bundibugyo virus"
+        ]
+      },
+      {
+        "signal": "Oil Price Spike",
+        "magnitude": "HIGH",
+        "confidence": 75,
+        "bars": "\u2588\u2588\u2588",
+        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
+        "articles": [
+          "History\u2019s worst energy crisis, minus the price shock"
         ]
       },
       {
