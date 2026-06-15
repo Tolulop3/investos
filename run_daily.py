@@ -254,10 +254,16 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
             opt = options_signals.get(ticker) or options_signals.get(clean)
             if opt:
                 opt_sig = opt.get("signal","")
+                opt_pcr = opt.get("pcr_stock", 1.0)
                 if opt_sig == "UNUSUAL_CALL_SWEEP":
+                    # Genuine unusual sweep — high quality signal
                     sigs.append(f"🎯 Options: Unusual Call Sweep"); boost += 10
-                elif opt_sig in ("BULLISH_PCR", "HIGH_CALL_VOLUME"):
-                    sigs.append(f"📊 Options: Bullish Flow"); boost += 5
+                elif opt_sig == "BULLISH_PCR" and opt_pcr <= 0.40:
+                    # Strongly bullish PCR (not just barely <0.5)
+                    sigs.append(f"📊 Options: Bullish PCR {opt_pcr:.2f}"); boost += 6
+                elif opt_sig == "HIGH_CALL_VOLUME":
+                    # Elevated call volume without PCR context — moderate signal
+                    sigs.append(f"📊 Options: High Call Volume"); boost += 4
 
         if len(sigs) >= 2:
             rs_check = pick.get("rs_rating", 0)

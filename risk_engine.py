@@ -539,13 +539,13 @@ def compute_rolling_sharpe(score_history, days=90):
         if os.path.exists(outcomes_path):
             with open(outcomes_path) as f:
                 outcomes = json.load(f)
-            resolved = [o for o in outcomes if o.get("outcome") in ("WIN","LOSS","FLAT")
-                        and o.get("return_pct") is not None]
-            # Use last 90 days of resolved picks
-            resolved_sorted = sorted(resolved, key=lambda x: x.get("resolved_date","") or x.get("entry_date",""))
-            recent = resolved_sorted[-days*3:]  # ~3 picks/day average
+            resolved = [o for o in outcomes if o.get("resolved") is True
+                        and o.get("actual_return") is not None]
+            # Use last N days of resolved picks
+            resolved_sorted = sorted(resolved, key=lambda x: x.get("resolved_date","") or x.get("signal_date",""))
+            recent = resolved_sorted[-max(100, days*3):]  # at least 100 picks for stability
             if len(recent) >= 30:
-                returns = [o["return_pct"] / 100 for o in recent]
+                returns = [o["actual_return"] / 100 for o in recent]
                 n = len(returns)
                 avg_r = sum(returns) / n
                 var   = sum((r - avg_r)**2 for r in returns) / n
