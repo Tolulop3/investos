@@ -530,6 +530,10 @@ def compute_rolling_sharpe(score_history, days=90):
     """
     Rolling Sharpe from RESOLVED pick returns (outcomes_log.json).
     Falls back to score-proxy if not enough resolved data yet.
+
+    IMPORTANT: pick returns are 7-day holding period returns, NOT daily.
+    Annualise by sqrt(52) = weekly frequency, not sqrt(252).
+    Minimum 50 picks required. Hard cap at 4.0 (anything higher = data error).
     """
     import math, json, os
 
@@ -541,27 +545,35 @@ def compute_rolling_sharpe(score_history, days=90):
                 outcomes = json.load(f)
             resolved = [o for o in outcomes if o.get("resolved") is True
                         and o.get("actual_return") is not None]
-            # Use last N days of resolved picks
-            resolved_sorted = sorted(resolved, key=lambda x: x.get("resolved_date","") or x.get("signal_date",""))
-            recent = resolved_sorted[-max(100, days*3):]  # at least 100 picks for stability
-            if len(recent) >= 30:
-                returns = [o["actual_return"] / 100 for o in recent]
-                n = len(returns)
-                avg_r = sum(returns) / n
-                var   = sum((r - avg_r)**2 for r in returns) / n
-                std   = math.sqrt(var) if var > 0 else 0.0001
-                # Annualise assuming ~252 trading days, ~3 picks/day
-                ann_r = avg_r * 252 * 3
-                ann_v = std   * math.sqrt(252 * 3)
-                sharpe = ann_r / ann_v if ann_v > 0 else 0
-                return {
-                    "sharpe":        round(sharpe, 3),
-                    "ann_ret_pct":   round(ann_r * 100, 1),
-                    "ann_vol_pct":   round(ann_v * 100, 1),
-                    "days_computed": n,
-                    "source":        "resolved_returns",
-                    "note":          f"Sharpe from {n} resolved picks (audited returns)",
-                }
+            # Need minimum 50 picks for a stable estimate
+            if len(resolved) < 50:
+                pass  # fall through to score-proxy
+            else:
+                resolved_sorted = sorted(resolved, key=lambda x: x.get("resolved_date","") or x.get("signal_date",""))
+                recent = resolved_sorted[-300:]  # last 300 picks (~3-4 months)
+                if len(recent) >= 50:
+                    returns = [o["actual_return"] / 100 for o in recent]
+                    n = len(returns)
+                    avg_r = sum(returns) / n
+                    var   = sum((r - avg_r)**2 for r in returns) / n
+                    std   = math.sqrt(var) if var > 0 else None
+                    # Guard: if std is near-zero, returns are suspiciously uniform
+                    if std is None or std < 0.005:
+                        pass  # fall through — data too uniform to compute meaningful Sharpe
+                    else:
+                        # Picks are ~weekly holds → annualise by sqrt(52)
+                        ann_factor = math.sqrt(52)
+                        sharpe_raw = (avg_r / std) * ann_factor
+                        # Hard cap: real equity Sharpe never exceeds 4.0
+                        sharpe = min(round(sharpe_raw, 3), 4.0)
+                        return {
+                            "sharpe":        sharpe,
+                            "avg_ret_pct":   round(avg_r * 100, 2),
+                            "std_ret_pct":   round(std * 100, 2),
+                            "picks_used":    n,
+                            "source":        "resolved_returns",
+                            "note":          f"Sharpe from {n} resolved picks · weekly horizon · capped at 4.0",
+                        }
     except Exception:
         pass
 
