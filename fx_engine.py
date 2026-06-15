@@ -583,9 +583,22 @@ def run_fx_engine(news_analysis=None, verbose=True):
 
         rr = round(abs(target - entry) / abs(stop - entry), 2) if stop != entry else 0
 
-        # Key driver (most confident signal)
-        all_reasons = tech.get("reasons", []) + [s["name"] for s in macro.get("signals", [])]
-        key_driver  = all_reasons[0] if all_reasons else config["drivers"][0]
+        # Key driver — must reflect WHAT actually drove the final direction
+        tech_reasons  = tech.get("reasons", [])
+        macro_reasons = [s["name"] for s in macro.get("signals", [])]
+        alignment     = combined.get("alignment", "")
+        if "MACRO ONLY" in alignment:
+            # Direction came from macro — don't show a contradicting tech reason
+            key_driver = macro_reasons[0] if macro_reasons else config["drivers"][0]
+        elif "TECH ONLY" in alignment:
+            key_driver = tech_reasons[0] if tech_reasons else config["drivers"][0]
+        elif "ALIGNED" in alignment:
+            # Both agree — tech reason is more specific and actionable
+            key_driver = tech_reasons[0] if tech_reasons else (macro_reasons[0] if macro_reasons else config["drivers"][0])
+        else:
+            # CONFLICTED or NEUTRAL — show top reason regardless
+            all_reasons = tech_reasons + macro_reasons
+            key_driver  = all_reasons[0] if all_reasons else config["drivers"][0]
 
         result = {
             "pair":        config["name"],
