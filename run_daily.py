@@ -197,7 +197,7 @@ def apply_regime_filter(screener_results, early_regime, category_blocks):
     return filtered
 
 
-def build_conviction_picks(screener_results, x_signals, trends, news_analysis, ml_results, early_regime="RISK_ON"):
+def build_conviction_picks(screener_results, x_signals, trends, news_analysis, ml_results, early_regime="RISK_ON", options_signals=None):
     x_tickers          = set()
     trending_tickers   = {t["ticker"] for t in trends.get("trending_up", [])}
     breakout_tickers   = {t["ticker"] for t in trends.get("breakouts", [])}
@@ -249,6 +249,15 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
         analyst = pick.get("analyst_signal", {})
         if analyst.get("direction") == "BULLISH" and analyst.get("magnitude") in ("STRONG","MODERATE"):
             sigs.append("📊 Analyst Estimates Raised"); boost += 8
+        # Options flow signal — only bullish signals count (HIGH_IV is a warning, not bullish)
+        if options_signals:
+            opt = options_signals.get(ticker) or options_signals.get(clean)
+            if opt:
+                opt_sig = opt.get("signal","")
+                if opt_sig == "UNUSUAL_CALL_SWEEP":
+                    sigs.append(f"🎯 Options: Unusual Call Sweep"); boost += 10
+                elif opt_sig in ("BULLISH_PCR", "HIGH_CALL_VOLUME"):
+                    sigs.append(f"📊 Options: Bullish Flow"); boost += 5
 
         if len(sigs) >= 2:
             rs_check = pick.get("rs_rating", 0)
@@ -515,7 +524,7 @@ def run_daily(test_mode=False):
     )
     apply_score_decay(all_picks_for_decay, score_history_for_decay)
 
-    conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results, early_regime=early_regime)
+    conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results, early_regime=early_regime, options_signals=options_signals)
 
     def _pearson(a, b):
         n = min(len(a), len(b))

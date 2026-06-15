@@ -528,32 +528,60 @@ def save_health_history(data):
 
 def compute_rolling_sharpe(score_history, days=90):
     """
-    Approximate rolling Sharpe from score history.
-    Uses score changes as proxy for returns until live trade data exists.
-    In real usage: replace with actual portfolio returns.
+    Rolling Sharpe from RESOLVED pick returns (outcomes_log.json).
+    Falls back to score-proxy if not enough resolved data yet.
     """
-    import math
+    import math, json, os
 
+    # ── Try resolved returns first ─────────────────────────────
+    try:
+        outcomes_path = "outcomes_log.json"
+        if os.path.exists(outcomes_path):
+            with open(outcomes_path) as f:
+                outcomes = json.load(f)
+            resolved = [o for o in outcomes if o.get("outcome") in ("WIN","LOSS","FLAT")
+                        and o.get("return_pct") is not None]
+            # Use last 90 days of resolved picks
+            resolved_sorted = sorted(resolved, key=lambda x: x.get("resolved_date","") or x.get("entry_date",""))
+            recent = resolved_sorted[-days*3:]  # ~3 picks/day average
+            if len(recent) >= 30:
+                returns = [o["return_pct"] / 100 for o in recent]
+                n = len(returns)
+                avg_r = sum(returns) / n
+                var   = sum((r - avg_r)**2 for r in returns) / n
+                std   = math.sqrt(var) if var > 0 else 0.0001
+                # Annualise assuming ~252 trading days, ~3 picks/day
+                ann_r = avg_r * 252 * 3
+                ann_v = std   * math.sqrt(252 * 3)
+                sharpe = ann_r / ann_v if ann_v > 0 else 0
+                return {
+                    "sharpe":        round(sharpe, 3),
+                    "ann_ret_pct":   round(ann_r * 100, 1),
+                    "ann_vol_pct":   round(ann_v * 100, 1),
+                    "days_computed": n,
+                    "source":        "resolved_returns",
+                    "note":          f"Sharpe from {n} resolved picks (audited returns)",
+                }
+    except Exception:
+        pass
+
+    # ── Fallback: score-proxy ──────────────────────────────────
     if not score_history:
         return {"sharpe": None, "note": "No history yet"}
 
-    # Collect all score changes across all tickers as proxy for daily "returns"
     daily_changes = defaultdict(list)
-
     for ticker, records in score_history.items():
         sorted_recs = sorted(records, key=lambda x: x["date"])
         for i in range(1, len(sorted_recs)):
             date   = sorted_recs[i]["date"]
             change = sorted_recs[i]["score"] - sorted_recs[i-1]["score"]
-            daily_changes[date].append(change / 100)  # Normalize to return-like
+            daily_changes[date].append(change / 100)
 
     if len(daily_changes) < 10:
-        return {"sharpe": None, "note": f"Only {len(daily_changes)} days of data — need 10+ for Sharpe"}
+        return {"sharpe": None, "note": f"Only {len(daily_changes)} days — need 10+ for Sharpe"}
 
-    # Recent N days
     sorted_dates = sorted(daily_changes.keys())[-days:]
     daily_avgs   = [sum(daily_changes[d])/len(daily_changes[d]) for d in sorted_dates]
-
     n        = len(daily_avgs)
     avg_ret  = sum(daily_avgs) / n
     variance = sum((r - avg_ret)**2 for r in daily_avgs) / n
@@ -561,13 +589,13 @@ def compute_rolling_sharpe(score_history, days=90):
     ann_ret  = avg_ret * 252
     ann_vol  = std_dev * math.sqrt(252)
     sharpe   = ann_ret / ann_vol if ann_vol > 0 else 0
-
     return {
         "sharpe":        round(sharpe, 3),
         "ann_ret_pct":   round(ann_ret * 100, 1),
         "ann_vol_pct":   round(ann_vol * 100, 1),
         "days_computed": n,
-        "note":          f"Score-proxy Sharpe over {n} days (improves with live trade data)",
+        "source":        "score_proxy",
+        "note":          f"Score-proxy Sharpe · {n} days (switches to resolved returns at 30+ picks)",
     }
 
 
