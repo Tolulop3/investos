@@ -159,22 +159,32 @@ def get_market_regime(verbose=True):
         ma50     = sum(closes[-50:])  / 50
         pct_diff = (spx - ma200) / ma200 * 100
 
-        # Stale data guard: if SPX dropped >1.5% from prior run and markets are closed,
-        # use the higher (more recent) of the last 3 closes
+        # Stale data guard: SPX high-watermark approach
+        # The watermark only moves UP — stale cached data (which is LOWER) gets overridden
         try:
             import os as _os, json as _j
-            if _os.path.exists("latest_brief.json"):
-                _prev = _j.load(open("latest_brief.json"))
-                _prev_spx = (_prev.get("market_regime") or {}).get("spx_price", 0)
-                if _prev_spx and spx < _prev_spx * 0.985:
-                    # SPX dropped >1.5% since last run — likely stale/cached data
-                    # Use the maximum of the last 3 daily closes (most recent session)
-                    _recent_max = max(closes[-3:])
-                    if _recent_max > spx:
-                        print(f"  ⚠️  SPX stale data detected: {spx:.2f} vs prev {_prev_spx:.2f}")
-                        print(f"      Using recent session high: {_recent_max:.2f}")
-                        spx = _recent_max
-                        pct_diff = (spx - ma200) / ma200 * 100
+            _wmf = "spx_watermark.json"
+            _watermark = 0
+            if _os.path.exists(_wmf):
+                try:
+                    _watermark = _j.load(open(_wmf)).get("spx_high", 0)
+                except Exception:
+                    _watermark = 0
+            # Always use the HIGHER of: current data vs stored watermark
+            if _watermark > 0 and spx < _watermark * 0.985:
+                print(f"  ⚠️  SPX stale data: {spx:.2f} < watermark {_watermark:.2f} × 0.985")
+                # Also check if any of the last 5 closes is closer to watermark
+                _best = max(closes[-5:])
+                if _best > spx:
+                    print(f"      Using recent best close: {_best:.2f}")
+                    spx = _best
+                    pct_diff = (spx - ma200) / ma200 * 100
+            # Update watermark if current SPX is higher
+            if spx > _watermark:
+                try:
+                    _j.dump({"spx_high": round(spx, 2)}, open(_wmf, "w"))
+                except Exception:
+                    pass
         except Exception:
             pass
 
