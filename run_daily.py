@@ -426,11 +426,22 @@ def run_daily(test_mode=False):
     regime = get_market_regime(verbose=True)
 
     # ── 2b. Strategy Engine ─────────────────────────────────
+    # early_regime isn't computed until step 4.5 (after news + market combine)
+    # Use market regime + macro regime directly here — same inputs, no dependency
     try:
         from strategy_engine import get_strategy as _gs, log_strategy as _ls
-        _macro_r = news.get("macro_regime") if news else None
-        _regime  = early_regime if early_regime else "CAUTIOUS"
-        strategy_name, strategy_profile = _gs(unified_regime=_regime, macro_regime=_macro_r)
+        _macro_r  = news.get("macro_regime") if news else None
+        # Derive preliminary unified regime from market signal + macro
+        _mkt_sig  = (regime or {}).get("signal", "NEUTRAL")
+        if _mkt_sig == "FULL_EXPOSURE" and _macro_r not in ("RISK_OFF", "BEAR"):
+            _unified = "RISK_ON"
+        elif _macro_r in ("RISK_OFF", "BEAR"):
+            _unified = "DEFENSIVE"
+        elif _macro_r in ("CAUTIOUS",):
+            _unified = "CAUTIOUS"
+        else:
+            _unified = "CAUTIOUS"
+        strategy_name, strategy_profile = _gs(unified_regime=_unified, macro_regime=_macro_r)
         _ls(strategy_name, strategy_profile, verbose=True)
     except Exception as _se:
         print(f"  ⚠️  Strategy engine error: {_se} — using default weights")
@@ -438,7 +449,15 @@ def run_daily(test_mode=False):
 
     # ── 3. Stock Screen ──────────────────────────────────────────
     print(f"\n[3/10] 🔍 STOCK SCREEN (500+ universe)")
-    screener = run_full_screen(max_tickers=30 if test_mode else None, verbose=True, strategy_profile=strategy_profile)
+    try:
+        screener = run_full_screen(max_tickers=30 if test_mode else None, verbose=True, strategy_profile=strategy_profile)
+    except Exception as _scr_err:
+        import traceback as _tb
+        print(f"\n⚠️  SCREENER ERROR: {_scr_err}")
+        _tb.print_exc()
+        screener = {"FHSA_top5":[], "TFSA_growth_top5":[], "TFSA_income_top5":[],
+                    "TFSA_swing_top3":[], "FHSA_all":[], "TFSA_core_all":[],
+                    "TFSA_income_all":[], "TFSA_swing_all":[], "breadth":None, "stats":{}}
 
     # ── 4. News Adjustment ───────────────────────────────────
     print(f"\n[4/10] 🔗 APPLYING NEWS TO SCORES")
