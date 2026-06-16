@@ -320,8 +320,21 @@ def fetch_news_feed(source):
                 "Accept": "application/rss+xml, application/xml, text/xml, */*"
             }
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            content = resp.read().decode("utf-8", errors="ignore")
+        # Single retry for transient DNS/network errors (not 403/auth failures)
+        _last_exc = None
+        for _attempt in range(2):
+            try:
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    content = resp.read().decode("utf-8", errors="ignore")
+                break
+            except urllib.error.HTTPError as _he:
+                raise  # Don't retry HTTP errors (403, 404, etc.) — they won't change
+            except Exception as _ne:
+                _last_exc = _ne
+                if _attempt == 0:
+                    import time as _t; _t.sleep(2)
+        else:
+            raise _last_exc
 
         root = ET.fromstring(content)
         channel = root.find("channel") or root

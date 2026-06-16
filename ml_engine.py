@@ -173,12 +173,11 @@ def get_market_regime(verbose=True):
             # Always use the HIGHER of: current data vs stored watermark
             if _watermark > 0 and spx < _watermark * 0.985:
                 print(f"  ⚠️  SPX stale data: {spx:.2f} < watermark {_watermark:.2f} × 0.985")
-                # Also check if any of the last 5 closes is closer to watermark
-                _best = max(closes[-5:])
-                if _best > spx:
-                    print(f"      Using recent best close: {_best:.2f}")
-                    spx = _best
-                    pct_diff = (spx - ma200) / ma200 * 100
+                # The watermark IS the last verified good price — use it directly
+                # max(closes[-5:]) won't help if yfinance returned all stale values
+                print(f"      Using watermark: {_watermark:.2f}")
+                spx = _watermark
+                pct_diff = (spx - ma200) / ma200 * 100
             # Update watermark if current SPX is higher
             if spx > _watermark:
                 try:
