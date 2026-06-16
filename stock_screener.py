@@ -396,7 +396,7 @@ def fetch_ticker_full(ticker, retries=2):
 # SCORING ENGINE
 # ============================================================
 
-def score_stock(data, account_type="TFSA_core"):
+def score_stock(data, account_type="TFSA_core", strategy_profile=None):
     """
     Score 0–100 using weighted pillars tailored to your profile.
     Returns (total_score, pillar_scores, reasons, flags)
