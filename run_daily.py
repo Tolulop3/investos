@@ -59,7 +59,7 @@ from news_analyzer       import run_news_analysis
 from insider_engine      import run_insider_engine
 from etf_engine          import run_etf_engine
 from intelligence_layers import run_all_intelligence_layers, detect_trending_stocks, update_score_history, load_score_history, apply_score_decay
-from ml_engine           import run_ml_engine, get_market_regime
+from ml_engine           import run_ml_engine, get_market_regime, get_cooldown_set
 from fx_engine           import run_fx_engine
 from content_engine      import run_content_engine
 from crypto_engine       import run_crypto_engine
@@ -526,7 +526,11 @@ def run_daily(test_mode=False):
     print(f"\n[8/10] 🎯 CONVICTION ENGINE")
     trends = intel.get("trends", {})
     # Compute cooldown set here — tickers on cooldown are invisible to conviction AND sizing
-    cooldown_set, cooldown_tiers = get_cooldown_set(verbose=True)
+    try:
+        cooldown_set, cooldown_tiers = get_cooldown_set(verbose=True)
+    except Exception as _e:
+        print(f"  ⚠️  Cooldown computation error: {_e}")
+        cooldown_set, cooldown_tiers = set(), {}
 
     score_history_for_decay = intel.get("history", {})
     all_picks_for_decay = (
@@ -535,7 +539,11 @@ def run_daily(test_mode=False):
     )
     apply_score_decay(all_picks_for_decay, score_history_for_decay)
 
-    conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results, early_regime=early_regime, options_signals=options_signals, cooldown_set=cooldown_set)
+    try:
+        conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results, early_regime=early_regime, options_signals=options_signals, cooldown_set=cooldown_set)
+    except Exception as _e:
+        print(f"  ⚠️  Conviction engine error: {_e}")
+        conviction = []
 
     def _pearson(a, b):
         n = min(len(a), len(b))
@@ -610,7 +618,11 @@ def run_daily(test_mode=False):
 
     # ── 9. FX & Gold ─────────────────────────────────────────
     print(f"\n[9/12] 💱 FX & GOLD SIGNALS")
-    fx_signals = run_fx_engine(news_analysis=news, verbose=True)
+    try:
+        fx_signals = run_fx_engine(news_analysis=news, verbose=True)
+    except Exception as _e:
+        print(f"  ⚠️  FX engine error: {_e}")
+        fx_signals = {}
     fx_signals, stale_pairs = check_fx_staleness(fx_signals)
     if stale_pairs:
         print(f"  ⚠️  Stale FX pairs: {', '.join(stale_pairs)}")
