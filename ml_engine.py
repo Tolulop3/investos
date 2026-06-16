@@ -670,9 +670,18 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
             final_wts.append(0.0)
         else:
             w = min(cfg["max_position_pct"], max(0.01, norm_b[i] + ml_adj[i]))
+            # Kelly=0 means model sees zero edge — zero allocation regardless of vol
+            if kelly_wts[i] == 0.0:
+                w = 0.0
             final_wts.append(w)
 
     total_f  = sum(final_wts)
+    if total_f == 0:
+        # All picks have Kelly=0 (very thin pool) — fall back to equal weight
+        if verbose: print("   ℹ️ All Kelly=0 — falling back to equal weight")
+        final_wts = [base_wt if picks[i]["ticker"] not in sector_blocked else 0.0
+                     for i in range(n_picks)]
+        total_f = sum(final_wts)
     final_wts = [w / total_f for w in final_wts] if total_f > 0 else final_wts
 
     sized = []
