@@ -494,6 +494,58 @@ class StockMLPredictor:
 # POSITION SIZER — Half-Kelly + Vol Targeting
 # ============================================================
 
+def get_cooldown_set(verbose=False):
+    """
+    Compute tiered loss cooldown set from outcomes_log.json.
+    - 2 losses in 7 days  AND last loss within 3 days → 3-day block
+    - 3+ losses in 14 days AND last loss within 7 days → 7-day block
+    Returns set of blocked tickers and a dict {ticker: tier_label}.
+    """
+    import json as _j, os as _o
+    from datetime import datetime as _dt, timedelta as _td
+    blocked = set()
+    tiers   = {}
+    try:
+        if not _o.path.exists("outcomes_log.json"):
+            return blocked, tiers
+        outcomes = _j.load(open("outcomes_log.json"))
+        today  = _dt.now()
+        cut7   = (today - _td(days=7)).strftime("%Y-%m-%d")
+        cut14  = (today - _td(days=14)).strftime("%Y-%m-%d")
+        cut3cd = (today - _td(days=3)).strftime("%Y-%m-%d")
+        cut7cd = (today - _td(days=7)).strftime("%Y-%m-%d")
+        losses_7d  = {}
+        losses_14d = {}
+        last_loss  = {}
+        for o in outcomes:
+            if o.get("resolved") is not True or o.get("outcome") != "LOSS":
+                continue
+            t  = o.get("ticker", "")
+            rd = o.get("resolved_date", "") or o.get("signal_date", "")
+            if not t or not rd:
+                continue
+            if rd >= cut14:
+                losses_14d[t] = losses_14d.get(t, 0) + 1
+            if rd >= cut7:
+                losses_7d[t]  = losses_7d.get(t, 0) + 1
+            if rd > last_loss.get(t, ""):
+                last_loss[t] = rd
+        for t in set(list(losses_7d) + list(losses_14d)):
+            ll = last_loss.get(t, "")
+            if losses_14d.get(t, 0) >= 3 and ll >= cut7cd:
+                blocked.add(t)
+                tiers[t] = "7d"
+            elif losses_7d.get(t, 0) >= 2 and ll >= cut3cd:
+                blocked.add(t)
+                tiers[t] = "3d"
+        if blocked and verbose:
+            parts = sorted(f"{t}({tiers[t]})" for t in blocked)
+            print(f"   🧊 Cooldown: {', '.join(parts)}")
+    except Exception:
+        pass
+    return blocked, tiers
+
+
 def calculate_position_sizes(picks, portfolio_value, market_regime, current_drawdown=0.0,
                               max_equity=1.0, verbose=True, sector_sentiment=None,
                               win_rate_data=None, **kwargs):
@@ -519,60 +571,7 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
     if not picks:
         return []
 
-    # ── TIERED LOSS COOLDOWN ────────────────────────────────────────────────
-    # 2 losses in 7 days  → 3-day cooldown (short stumble)
-    # 3+ losses in 14 days → 7-day cooldown (persistent underperformance)
-    import json as _json, os as _os
-    from datetime import datetime as _dt, timedelta as _td
-    _cooldown_set = set()
-    try:
-        _outcomes_file = "outcomes_log.json"
-        if _os.path.exists(_outcomes_file):
-            _outcomes = _json.load(open(_outcomes_file))
-            _today    = _dt.now()
-            _cut7     = (_today - _td(days=7)).strftime("%Y-%m-%d")
-            _cut14    = (_today - _td(days=14)).strftime("%Y-%m-%d")
-            _cut3cd   = (_today - _td(days=3)).strftime("%Y-%m-%d")  # 3-day cooldown threshold
-            _cut7cd   = (_today - _td(days=7)).strftime("%Y-%m-%d")  # 7-day cooldown threshold
-
-            _losses_7d  = {}   # losses in last 7 days
-            _losses_14d = {}   # losses in last 14 days
-            # Track most recent loss date per ticker
-            _last_loss  = {}
-
-            for _o in _outcomes:
-                if _o.get("resolved") is not True or _o.get("outcome") != "LOSS":
-                    continue
-                _t  = _o.get("ticker","")
-                _rd = _o.get("resolved_date","") or _o.get("signal_date","")
-                if not _t or not _rd:
-                    continue
-                if _rd >= _cut14:
-                    _losses_14d[_t] = _losses_14d.get(_t, 0) + 1
-                if _rd >= _cut7:
-                    _losses_7d[_t]  = _losses_7d.get(_t, 0) + 1
-                if _rd > _last_loss.get(_t, ""):
-                    _last_loss[_t] = _rd
-
-            _blocked_3d = set()  # 2 losses in 7 days → block if last loss within 3 days
-            _blocked_7d = set()  # 3+ losses in 14 days → block if last loss within 7 days
-
-            for _t in set(list(_losses_7d) + list(_losses_14d)):
-                _ll = _last_loss.get(_t, "")
-                if _losses_14d.get(_t, 0) >= 3 and _ll >= _cut7cd:
-                    _blocked_7d.add(_t)
-                elif _losses_7d.get(_t, 0) >= 2 and _ll >= _cut3cd:
-                    _blocked_3d.add(_t)
-
-            _cooldown_set = _blocked_3d | _blocked_7d
-            if _cooldown_set and verbose:
-                parts = []
-                for _t in sorted(_cooldown_set):
-                    tier = "7d" if _t in _blocked_7d else "3d"
-                    parts.append(f"{_t}({tier})")
-                print(f"   🧊 Cooldown: {', '.join(parts)}")
-    except Exception:
-        pass
+    _cooldown_set, _ = get_cooldown_set(verbose=verbose)
     picks = [p for p in picks if p.get("ticker","") not in _cooldown_set]
     if not picks:
         if verbose: print("   ⚠️ All picks on cooldown — no positions sized")

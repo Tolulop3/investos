@@ -197,7 +197,7 @@ def apply_regime_filter(screener_results, early_regime, category_blocks):
     return filtered
 
 
-def build_conviction_picks(screener_results, x_signals, trends, news_analysis, ml_results, early_regime="RISK_ON", options_signals=None):
+def build_conviction_picks(screener_results, x_signals, trends, news_analysis, ml_results, early_regime="RISK_ON", options_signals=None, cooldown_set=None):
     x_tickers          = set()
     trending_tickers   = {t["ticker"] for t in trends.get("trending_up", [])}
     breakout_tickers   = {t["ticker"] for t in trends.get("breakouts", [])}
@@ -223,6 +223,9 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
         if ticker in seen:
             continue
         seen.add(ticker)
+        # Skip tickers on cooldown — invisible to conviction AND content engine
+        if cooldown_set and (ticker in cooldown_set or ticker.replace(".TO","").replace("-UN","").upper() in cooldown_set):
+            continue
 
         clean = ticker.replace(".TO","").replace("-UN","").upper()
         sigs  = []
@@ -522,6 +525,8 @@ def run_daily(test_mode=False):
     # ── 8. Conviction Engine ─────────────────────────────────
     print(f"\n[8/10] 🎯 CONVICTION ENGINE")
     trends = intel.get("trends", {})
+    # Compute cooldown set here — tickers on cooldown are invisible to conviction AND sizing
+    cooldown_set, cooldown_tiers = get_cooldown_set(verbose=True)
 
     score_history_for_decay = intel.get("history", {})
     all_picks_for_decay = (
@@ -530,7 +535,7 @@ def run_daily(test_mode=False):
     )
     apply_score_decay(all_picks_for_decay, score_history_for_decay)
 
-    conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results, early_regime=early_regime, options_signals=options_signals)
+    conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results, early_regime=early_regime, options_signals=options_signals, cooldown_set=cooldown_set)
 
     def _pearson(a, b):
         n = min(len(a), len(b))
