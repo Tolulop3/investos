@@ -403,12 +403,23 @@ def build_thread(brief):
         amount      = pick_p.get("amount", 0)
         category    = pick_p.get("category", "")
 
+        # Use actual 90d return as evidence — more credible than speculative range
+        ret_90 = pick_d.get("momentum_90d", 0) or pick_d.get("return_90d", 0) or 0
+        ret_30 = pick_d.get("momentum_30d", 0) or pick_d.get("return_30d", 0) or 0
+        if ret_90 > 0:
+            perf_line = f"📈 Strong 90d: +{ret_90:.1f}%"
+        elif ret_90 < 0:
+            perf_line = f"📉 90d: {ret_90:.1f}% (contrarian setup)"
+        elif ret_30 > 0:
+            perf_line = f"📈 30d: +{ret_30:.1f}%"
+        else:
+            perf_line = reason_line
+
         threads.append(
             f"3/ TOP SIGNAL: ${ticker}\n\n"
             f"Score: {score}/100 | {sig_count} signals aligned\n"
-            f"{reason_line}\n\n"
-            f"Category: {category}\n"
-            f"Expected: +{exp_low}% → +{exp_high}%\n\n"
+            f"{perf_line}\n\n"
+            f"Category: {category}\n\n"
             f"NFA — do your own research."
         )
     else:
