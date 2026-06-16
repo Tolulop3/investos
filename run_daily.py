@@ -511,6 +511,22 @@ def run_daily(test_mode=False):
                 screener.get("TFSA_income_top5",[]) + screener.get("TFSA_swing_top3",[]))
     intel = run_all_intelligence_layers(all_raw, top_flat, verbose=True)
 
+    # ── 6b. Post-intelligence sizing cap for exit watch tickers ─
+    exit_watch_tickers = set(t.get("ticker","") for t in intel.get("trends",{}).get("trending_down",[]))
+    if exit_watch_tickers and ml_results.get("position_sizing"):
+        capped = []
+        for sz in ml_results["position_sizing"]:
+            if sz.get("ticker","") in exit_watch_tickers:
+                orig_pct = sz.get("weight_pct", 0)
+                if orig_pct > 10.0:
+                    print(f"   ⚠️  Exit watch cap: {sz['ticker']} {orig_pct:.1f}% → 10.0%")
+                    sz = dict(sz)
+                    sz["weight_pct"]  = 10.0
+                    sz["dollar_amt"]  = round(sz.get("dollar_amt",0) * (10.0/orig_pct), 2)
+                    sz["exit_capped"] = True
+            capped.append(sz)
+        ml_results["position_sizing"] = capped
+
     # ── 7. X Signal Feeds ────────────────────────────────────
     print(f"\n[7/10] 📡 X SIGNAL FEEDS")
     x_feeds = []
