@@ -572,7 +572,7 @@ def compute_rolling_sharpe(score_history, days=90):
                             "std_ret_pct":   round(std * 100, 2),
                             "picks_used":    n,
                             "source":        "resolved_returns",
-                            "note":          f"Sharpe from {n} resolved picks · weekly horizon · capped at 4.0",
+                            "note":          f"Sharpe from {n} resolved picks · price-return · weekly horizon · capped at 4.0",
                         }
     except Exception:
         pass

@@ -689,18 +689,25 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
     total_b   = sum(blended)
     norm_b    = [w / total_b for w in blended] if total_b > 0 else [base_wt]*n_picks
 
-    # ── ML BOOST + CAPS + SECTOR BLOCK ───────────────────────────────────────
-    ml_probs  = [p.get("ml_prob", 0.5) for p in picks[:n_picks]]
-    ml_adj    = [(prob - 0.5) * 0.20 for prob in ml_probs]
-    final_wts = []
+    # ── ML-PROPORTIONAL WEIGHTING ────────────────────────────────────────────
+    # Instead of a flat ±20% adj, weight proportionally to ML probability.
+    # Picks with higher ML confidence get proportionally more capital.
+    # Three-way blend: 33% Kelly + 33% vol-targeted + 33% ML-proportional
+    ml_probs   = [p.get("ml_prob", 0.5) for p in picks[:n_picks]]
+    total_ml   = sum(ml_probs) or 1.0
+    norm_ml    = [prob / total_ml for prob in ml_probs]
+
+    MAX_SINGLE = 0.20   # hard cap: no name > 20% of TFSA in any regime
+    final_wts  = []
     for i in range(n_picks):
         if picks[i]["ticker"] in sector_blocked:
             final_wts.append(0.0)
+        elif kelly_wts[i] == 0.0:
+            # Kelly=0: model sees zero edge — zero allocation
+            final_wts.append(0.0)
         else:
-            w = min(cfg["max_position_pct"], max(0.01, norm_b[i] + ml_adj[i]))
-            # Kelly=0 means model sees zero edge — zero allocation regardless of vol
-            if kelly_wts[i] == 0.0:
-                w = 0.0
+            w = 0.33 * norm_kelly[i] + 0.33 * norm_vol[i] + 0.33 * norm_ml[i]
+            w = min(MAX_SINGLE, w)   # hard 20% cap
             final_wts.append(w)
 
     total_f  = sum(final_wts)
