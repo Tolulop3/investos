@@ -90,7 +90,7 @@ def log_picks(picks, run_time=None, regime=None):
             "signal_date":   date_str,
             "signal_time":   now,
             "entry_price":   d.get("price", 0),
-            "score":         pick.get("score", 0),
+            "score":         round(float(pick.get("score", 0) or 0), 1),
             "ml_prob":       pick.get("ml_prob", 0.5),
             "category":      pick.get("pick", {}).get("category", ""),
             "exp_low":       pick.get("pick", {}).get("exp_low", 0),

@@ -171,7 +171,7 @@ def get_market_regime(verbose=True):
                 except Exception:
                     _watermark = 0
             # Always use the HIGHER of: current data vs stored watermark
-            if _watermark > 0 and spx < _watermark * 0.985:
+            if _watermark > 0 and spx < _watermark * 0.970:  # 3% drop threshold — real moves are < 2% overnight
                 print(f"  ⚠️  SPX stale data: {spx:.2f} < watermark {_watermark:.2f} × 0.985")
                 # The watermark IS the last verified good price — use it directly
                 # max(closes[-5:]) won't help if yfinance returned all stale values
