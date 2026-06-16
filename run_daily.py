@@ -425,9 +425,20 @@ def run_daily(test_mode=False):
     print(f"\n[2/10] 📊 MARKET REGIME FILTER")
     regime = get_market_regime(verbose=True)
 
-    # ── 3. Stock Screen ──────────────────────────────────────
+    # ── 2b. Strategy Engine ─────────────────────────────────
+    try:
+        from strategy_engine import get_strategy as _gs, log_strategy as _ls
+        _macro_r = news.get("macro_regime") if news else None
+        _regime  = early_regime if early_regime else "CAUTIOUS"
+        strategy_name, strategy_profile = _gs(unified_regime=_regime, macro_regime=_macro_r)
+        _ls(strategy_name, strategy_profile, verbose=True)
+    except Exception as _se:
+        print(f"  ⚠️  Strategy engine error: {_se} — using default weights")
+        strategy_name, strategy_profile = "RISK_ON", None
+
+    # ── 3. Stock Screen ──────────────────────────────────────────
     print(f"\n[3/10] 🔍 STOCK SCREEN (500+ universe)")
-    screener = run_full_screen(max_tickers=30 if test_mode else None, verbose=True)
+    screener = run_full_screen(max_tickers=30 if test_mode else None, verbose=True, strategy_profile=strategy_profile)
 
     # ── 4. News Adjustment ───────────────────────────────────
     print(f"\n[4/10] 🔗 APPLYING NEWS TO SCORES")

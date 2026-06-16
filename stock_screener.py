@@ -12,8 +12,14 @@ No paid APIs. Runs free on Yahoo Finance data.
 
 import json
 import time
+import math as _math
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
+try:
+    from strategy_engine import apply_strategy_weights
+    _STRATEGY_ENGINE = True
+except ImportError:
+    _STRATEGY_ENGINE = False
 
 # ============================================================
 # SCREENING UNIVERSE
@@ -579,7 +585,14 @@ def score_stock(data, account_type="TFSA_core"):
     elif si >= 5:
         bonus -= 2  # mild caution, no flag shown
 
-    total = sum(pillars.values()) + bonus
+    # ── STRATEGY ENGINE: Dynamic factor weights ─────────────────────────────
+    if strategy_profile and _STRATEGY_ENGINE:
+        _mom_pct = strategy_profile.get("_momentum_percentile")
+        _wp = apply_strategy_weights(pillars, strategy_profile, _mom_pct)
+        total = sum(_wp.values()) + bonus
+        pillars = _wp
+    else:
+        total = sum(pillars.values()) + bonus
     total = round(max(0, min(100, total)), 1)  # always clean 1dp
 
     # ── ITEM 5: MOMENTUM SKIP PERIOD ─────────────────────────────────────────
@@ -610,7 +623,6 @@ def score_stock(data, account_type="TFSA_core"):
     if active_signals >= 3 and total > 70:
         # Geometric mean correction: compress top-heavy scores
         # Formula: GM = (score^0.85) adjusted back to same scale
-        import math as _math
         gm_score = (_math.pow(total / 100, 0.85)) * 100
         # Blend: 60% geometric mean + 40% original (not full replacement)
         total = round(0.60 * gm_score + 0.40 * total, 1)
@@ -849,7 +861,7 @@ def passes_hard_filters(data, account_type):
 # MAIN SCREENER — THE BRAIN
 # ============================================================
 
-def run_full_screen(max_tickers=None, verbose=True):
+def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
     """
     Screen the full universe. Returns ranked picks per account.
     max_tickers: limit for testing (None = full universe)
@@ -890,7 +902,7 @@ def run_full_screen(max_tickers=None, verbose=True):
         # FHSA pass
         ok, reason = passes_hard_filters(d, "FHSA")
         if ok:
-            score, pillars, reasons, flags = score_stock(d, "FHSA")
+            score, pillars, reasons, flags = score_stock(d, "FHSA", strategy_profile=strategy_profile)
             if score >= 45:
                 pick = classify_pick(d, score, "FHSA")
                 fhsa_candidates.append({
@@ -902,7 +914,7 @@ def run_full_screen(max_tickers=None, verbose=True):
         # TFSA pass
         ok_tfsa, _ = passes_hard_filters(d, "TFSA")
         if ok_tfsa:
-            score_t, pillars_t, reasons_t, flags_t = score_stock(d, "TFSA_core")
+            score_t, pillars_t, reasons_t, flags_t = score_stock(d, "TFSA_core", strategy_profile=strategy_profile)
             if score_t >= 40:
                 pick_t = classify_pick(d, score_t, "TFSA_core")
 
