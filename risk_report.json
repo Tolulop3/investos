@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-16T20:20:19.904105",
+    "run_at": "2026-06-16T21:19:27.759884",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,25 +30,25 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 16,
-        "survival_pct": 88.9,
+        "survived": 17,
+        "survival_pct": 94.4,
         "avg_score_change": 4.2,
         "verdict": "\u2705 ROBUST",
         "note": "Avg score change: \u00b14.2 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 78.7,
-        "stressed_avg": 70.8,
-        "score_drop": 7.9,
+        "normal_avg": 78.4,
+        "stressed_avg": 71.4,
+        "score_drop": 7.0,
         "removed": [
-          "JPM",
-          "LUN.TO",
-          "MS",
-          "MDB"
+          "MDB",
+          "REI-UN.TO",
+          "MFC.TO",
+          "MS"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 7.9 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 7.0 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -62,7 +62,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 78.7,
+      "normal_avg_score": 78.4,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
