@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-16T21:19:27.759884",
+    "run_at": "2026-06-16T22:55:03.315446",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -38,37 +38,36 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 78.4,
-        "stressed_avg": 71.4,
-        "score_drop": 7.0,
+        "normal_avg": 77.6,
+        "stressed_avg": 74.0,
+        "score_drop": 3.6,
         "removed": [
-          "MDB",
-          "REI-UN.TO",
-          "MFC.TO",
+          "POW.TO",
+          "TD.TO",
           "MS"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 7.0 pts without top 5 \u2014 system depth check"
+        "verdict": "\u2705 ROBUST",
+        "note": "Score drops 3.6 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
         "survived": 17,
         "survival_pct": 94.4,
-        "avg_score_drop": 3.2,
+        "avg_score_drop": 3.4,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.2 pts"
+        "note": "If momentum stops working: avg score drops 3.4 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 78.4,
-      "scenarios_robust": 4,
-      "scenarios_fragile": 1,
+      "normal_avg_score": 77.6,
+      "scenarios_robust": 5,
+      "scenarios_fragile": 0,
       "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+      "overall_verdict": "\u2705 ROBUST \u2014 System survives stress well"
     },
-    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+    "verdict": "\u2705 ROBUST \u2014 System survives stress well"
   },
   "decay_monitor": {
     "date": "June 16, 2026",
@@ -79,7 +78,7 @@
       "std_ret_pct": 4.81,
       "picks_used": 300,
       "source": "resolved_returns",
-      "note": "Sharpe from 300 resolved picks \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 300 resolved picks \u00b7 price-return \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": 1.43,
