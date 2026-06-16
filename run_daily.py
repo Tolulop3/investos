@@ -527,6 +527,24 @@ def run_daily(test_mode=False):
             capped.append(sz)
         ml_results["position_sizing"] = capped
 
+    # ── 6c. HIGH_IV options warning → cap at 10% max allocation ─
+    # TGT flagged "size conservatively" but still got 20% — connect the warning to sizing
+    high_iv_tickers = {t for t, sig in (options_signals or {}).items()
+                       if isinstance(sig, dict) and sig.get("signal") == "HIGH_IV"}
+    if high_iv_tickers and ml_results.get("position_sizing"):
+        capped_iv = []
+        for sz in ml_results["position_sizing"]:
+            if sz.get("ticker","") in high_iv_tickers:
+                orig_pct = sz.get("weight_pct", 0)
+                if orig_pct > 10.0:
+                    print(f"   ⚠️  HIGH_IV cap: {sz['ticker']} {orig_pct:.1f}% → 10.0% (elevated IV)")
+                    sz = dict(sz)
+                    sz["weight_pct"]  = 10.0
+                    sz["dollar_amt"]  = round(sz.get("dollar_amt",0) * (10.0/orig_pct), 2)
+                    sz["iv_capped"]   = True
+            capped_iv.append(sz)
+        ml_results["position_sizing"] = capped_iv
+
     # ── 7. X Signal Feeds ────────────────────────────────────
     print(f"\n[7/10] 📡 X SIGNAL FEEDS")
     x_feeds = []

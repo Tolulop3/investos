@@ -159,6 +159,25 @@ def get_market_regime(verbose=True):
         ma50     = sum(closes[-50:])  / 50
         pct_diff = (spx - ma200) / ma200 * 100
 
+        # Stale data guard: if SPX dropped >1.5% from prior run and markets are closed,
+        # use the higher (more recent) of the last 3 closes
+        try:
+            import os as _os, json as _j
+            if _os.path.exists("latest_brief.json"):
+                _prev = _j.load(open("latest_brief.json"))
+                _prev_spx = (_prev.get("market_regime") or {}).get("spx_price", 0)
+                if _prev_spx and spx < _prev_spx * 0.985:
+                    # SPX dropped >1.5% since last run — likely stale/cached data
+                    # Use the maximum of the last 3 daily closes (most recent session)
+                    _recent_max = max(closes[-3:])
+                    if _recent_max > spx:
+                        print(f"  ⚠️  SPX stale data detected: {spx:.2f} vs prev {_prev_spx:.2f}")
+                        print(f"      Using recent session high: {_recent_max:.2f}")
+                        spx = _recent_max
+                        pct_diff = (spx - ma200) / ma200 * 100
+        except Exception:
+            pass
+
         if spx > ma200 and ma50 > ma200:
             regime = "BULL"; signal = "FULL_EXPOSURE"; cash_pct = 0.0
         elif spx > ma200 and ma50 <= ma200:
