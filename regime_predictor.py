@@ -44,7 +44,13 @@ def load_history(n=SIGNAL_DAYS):
         if os.path.exists(_alt):
             _dir = _alt
         else:
-            return []
+            # Last resort: search from / for history/*.json pattern
+            import glob
+            _hits = glob.glob("**/history/2026*.json", recursive=True)
+            if _hits:
+                _dir = os.path.dirname(_hits[0])
+            else:
+                return []
 
     files = sorted([
         f for f in os.listdir(_dir)

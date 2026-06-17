@@ -214,6 +214,17 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
         screener_results.get("TFSA_income_top5", []) +
         screener_results.get("TFSA_swing_top3", [])
     )
+    # Also include ML sizing picks — these may have been sector-capped from screener
+    # but still scored by ML. Avoids AFRM-type gaps where ML sees the pick but conviction doesn't.
+    ml_sized = ml_results.get("position_sizing", []) if ml_results else []
+    for _mp in ml_sized:
+        _mt = _mp.get("ticker","")
+        if _mt and _mp.get("weight_pct",0) > 0:
+            # Build a minimal pick dict from ML output to feed conviction
+            _base = screener_results.get("TFSA_core_all", [])
+            _found = next((p for p in _base if p.get("ticker") == _mt), None)
+            if _found and _found.get("ticker") not in {p.get("ticker") for p in all_picks}:
+                all_picks = list(all_picks) + [_found]
 
     conviction = []
     seen       = set()
@@ -820,6 +831,23 @@ def run_daily(test_mode=False):
     print(f"     Allowed: {allowed_styles}")
     if blocked_styles:
         print(f"     Blocked: {blocked_styles}")
+
+    # ── PCR vs Price Regime conflict detection ────────────────────────────────
+    # When options market positioning (PCR) disagrees with price-based regime,
+    # surface explicitly — both inputs matter, system shouldn't silently pick one.
+    _pcr_signal = market_pcr_data.get("signal", "NEUTRAL") if market_pcr_data else "NEUTRAL"
+    _pcr_val    = market_pcr_data.get("pcr") if market_pcr_data else None
+    _price_bull = unified_regime in ("RISK_ON",) and regime.get("regime") == "BULL"
+    _pcr_bearish = _pcr_signal in ("BEARISH", "EXTREME_FEAR") if _pcr_signal else False
+    _pcr_bullish = _pcr_signal in ("BULLISH", "GREED") if _pcr_signal else False
+
+    if _price_bull and _pcr_bearish and _pcr_val:
+        print(f"  ⚡ SIGNAL CONFLICT: Price regime BULL vs Options PCR {_pcr_val:.3f} {_pcr_signal}")
+        print(f"     → Price structure says buy. Options market is hedging heavily.")
+        print(f"     → Hold positions but reduce new entries by 25% until conflict resolves.")
+    elif not _price_bull and _pcr_bullish and _pcr_val:
+        print(f"  ⚡ SIGNAL CONFLICT: Regime cautious vs Options PCR {_pcr_val:.3f} {_pcr_signal}")
+        print(f"     → Price structure weak. But options showing bullish positioning.")
 
     # ── 11c. Regime Shift Predictor ───────────────────────────────────────────
     regime_momentum_data = {}
