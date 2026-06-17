@@ -1114,8 +1114,8 @@ def run_daily(test_mode=False):
         _snap  = {
             "date":             _today,
             "regime":           brief.get("market_regime",{}),
-            "sharpe":           brief.get("risk_report",{}).get("decay_monitor",{}).get("sharpe",None),
-            "win_rate_30d":     brief.get("win_rate",{}).get("last_30d",None) if brief.get("win_rate") else None,
+            "sharpe":           brief.get("risk_report",{}).get("decay_monitor",{}).get("rolling_sharpe",None),
+            "win_rate_30d":     (brief.get("win_rate",{}) or {}).get("windows",{}).get("30d",{}).get("win_rate",None),
             "win_rate_overall": brief.get("win_rate",{}).get("overall",None) if brief.get("win_rate") else None,
             "breadth":          brief.get("breadth",{}),
             "sector_sentiment": news.get("sector_sentiment",{}),

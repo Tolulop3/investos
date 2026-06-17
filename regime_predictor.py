@@ -148,25 +148,7 @@ def predict_regime_shift(current_unified_regime=None, verbose=True):
             "wr_slope":       0.0,
         }
         if verbose:
-            # Debug: show what was actually found to diagnose persistent 0/5
-            _dbg_dir = HISTORY_DIR
-            if not os.path.exists(_dbg_dir):
-                _alt = os.path.join(os.path.dirname(os.path.abspath(__file__)), HISTORY_DIR)
-                _dbg_dir = _alt if os.path.exists(_alt) else _dbg_dir
-            _files_found = []
-            if os.path.exists(_dbg_dir):
-                _files_found = [f for f in os.listdir(_dbg_dir) if f.endswith(".json") and f.startswith("2026")]
-            _sample_fields = ""
-            if records:
-                _r = records[0]
-                _sample_fields = f" | sample: sharpe={_r.get('sharpe')}, breadth={_r.get('breadth_200')}, wr={_r.get('wr_30d')}"
-            elif _files_found:
-                # Try reading one file to show its actual structure
-                import json as _j
-                _sample = _j.load(open(os.path.join(_dbg_dir, sorted(_files_found)[-1])))
-                _sample_fields = f" | file keys: {list(_sample.keys())[:6]}"
             print(f"  ⏳ Regime predictor: {len(records)}/{MIN_DAYS} days — building history")
-            print(f"     Files in history/: {len(_files_found)} | Records parsed: {len(records)}{_sample_fields}")
         return result
 
     # ── Extract time series ───────────────────────────────────────────────────
