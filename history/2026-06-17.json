@@ -70,10 +70,10 @@
       ]
     },
     "DEFENSE": {
-      "bullish_score": 200,
+      "bullish_score": 350.0,
       "bearish_score": 150.0,
-      "net_score": 50.0,
-      "sentiment": "NEUTRAL",
+      "net_score": 200.0,
+      "sentiment": "BULLISH",
       "signals": [
         {
           "name": "middle_east_tension",
@@ -83,15 +83,20 @@
         {
           "name": "peace_deal",
           "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
           "confidence": 100
         }
       ]
     },
     "GOLD": {
-      "bullish_score": 200,
+      "bullish_score": 350.0,
       "bearish_score": 150.0,
-      "net_score": 50.0,
-      "sentiment": "NEUTRAL",
+      "net_score": 200.0,
+      "sentiment": "BULLISH",
       "signals": [
         {
           "name": "middle_east_tension",
@@ -101,6 +106,11 @@
         {
           "name": "peace_deal",
           "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
           "confidence": 100
         }
       ]
@@ -335,10 +345,62 @@
           "confidence": 100
         }
       ]
+    },
+    "EUROPEAN_ENERGY": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "AGRICULTURE": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "EUROPEAN_STOCKS": {
+      "bullish_score": 0,
+      "bearish_score": 150.0,
+      "net_score": -150.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "NATURAL_GAS": {
+      "bullish_score": 0,
+      "bearish_score": 150.0,
+      "net_score": -150.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
     }
   },
   "system_exposure": {
-    "pct": 1.0,
+    "pct": 0.5,
     "label": "RISK_ON",
     "reason": "M:+1.0 N:-0.3 H:+1.0 \u2192 +0.61 Sharpe:2.17",
     "sharpe": 2.17,
@@ -355,7 +417,7 @@
     "market_score": 1.0,
     "macro_score": -0.3,
     "health_score": 1.0,
-    "high_risk_count": 0
+    "high_risk_count": 3
   },
   "conviction_picks": [
     {
@@ -481,13 +543,13 @@
         "atm_iv": 0.0156,
         "atm_oi": 6645
       },
-      "ml_prob": 0.0919,
+      "ml_prob": 0.0903,
       "ml_prob_raw": 0.0878,
       "ml_signal": "\u26a0\ufe0f WEAK",
       "rs_rating": 96,
       "rs_signal": "\ud83d\udd25 TOP PERFORMER",
       "rs_adj": 15,
-      "score_velocity": 0.3000000000000001,
+      "score_velocity": 0.29142857142857154,
       "velocity_boost": 0,
       "decay_penalty": 13,
       "decay_half_life": 30,
@@ -644,7 +706,7 @@
       "rs_rating": 95,
       "rs_signal": "\ud83d\udd25 TOP PERFORMER",
       "rs_adj": 15,
-      "score_velocity": 0.3191489361702128,
+      "score_velocity": 0.31690140845070425,
       "velocity_boost": 0,
       "decay_penalty": 17,
       "decay_half_life": 30,
@@ -685,19 +747,19 @@
       "ret_90": 23.5
     },
     {
+      "ticker": "ITA",
+      "score": 85,
+      "ret_90": 3.5
+    },
+    {
+      "ticker": "PPA",
+      "score": 85,
+      "ret_90": 0.5
+    },
+    {
       "ticker": "QTUM",
       "score": 85.0,
       "ret_90": 37.9
-    },
-    {
-      "ticker": "ARKG",
-      "score": 85,
-      "ret_90": 20.5
-    },
-    {
-      "ticker": "BLOK",
-      "score": 85.0,
-      "ret_90": 16.7
     }
   ],
   "macro_signals": []

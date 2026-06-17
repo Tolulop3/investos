@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-17T22:47:00.450105",
+    "run_at": "2026-06-17T23:08:25.378923",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,31 +30,31 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 16,
-        "survival_pct": 88.9,
-        "avg_score_change": 4.2,
+        "survived": 17,
+        "survival_pct": 94.4,
+        "avg_score_change": 4.0,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.2 pts with 10% noise"
+        "note": "Avg score change: \u00b14.0 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 76.0,
-        "stressed_avg": 69.1,
-        "score_drop": 6.9,
+        "normal_avg": 75.0,
+        "stressed_avg": 69.4,
+        "score_drop": 5.6,
         "removed": [
-          "NA.TO",
           "MS",
-          "CM.TO",
+          "REI-UN.TO",
+          "NA.TO",
           "AFRM"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 6.9 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 5.6 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
-        "survived": 16,
-        "survival_pct": 88.9,
+        "survived": 17,
+        "survival_pct": 94.4,
         "avg_score_drop": 3.5,
         "verdict": "\u2705 ROBUST",
         "note": "If momentum stops working: avg score drops 3.5 pts"
@@ -62,7 +62,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 76.0,
+      "normal_avg_score": 75.0,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
