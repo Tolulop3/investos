@@ -30,6 +30,8 @@ jobs:
 
       - name: Run InvestOS daily analysis
         run: python run_daily.py --github
+        env:
+          NGN_MARKETS_KEY: ${{ secrets.NGN_MARKETS_KEY }}
 
       - name: Commit updated dashboard
         run: |
