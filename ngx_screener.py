@@ -27,6 +27,13 @@ import json
 import time
 import os
 from datetime import datetime, timedelta
+try:
+    from ngx_price_engine import (gate_level, fetch_all_ngx_prices,
+                                   blend_price_with_macro, get_gate_status_label)
+    _NGX_PRICE_ENGINE = True
+except ImportError:
+    _NGX_PRICE_ENGINE = False
+    def gate_level(): return 0
 
 # ── UNIVERSE ──────────────────────────────────────────────────────────────────
 NGX_TIER1 = [
@@ -355,6 +362,28 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
             "actionable": False, "persistence": "—",
             "ngn_context": ngn_context,
         })
+    # ── Gate 1: Blend price data if NGN_MARKETS_KEY is set ─────────────────
+    _gate = gate_level() if _NGX_PRICE_ENGINE else 0
+    _prices = {}
+    if _gate >= 1 and _NGX_PRICE_ENGINE:
+        if verbose:
+            print(f"  🔑 Gate {_gate} active: {get_gate_status_label(_gate)}")
+            print(f"  📡 Fetching NGX price data...")
+        _prices = fetch_all_ngx_prices(NGX_ALL, verbose=verbose)
+        for s in scored:
+            pd = _prices.get(s["ticker"])
+            if pd:
+                blended, price_reasons = blend_price_with_macro(
+                    s["score"], pd, s["ticker"])
+                s["score"]         = blended
+                s["price_data"]    = pd
+                s["price_reasons"] = price_reasons
+                s["reasons"]       = s["reasons"] + price_reasons
+    else:
+        if verbose and _NGX_PRICE_ENGINE:
+            print(f"  ℹ️  Gate 0: macro-only scoring (set NGN_MARKETS_KEY for price data)")
+        _gate = 0
+
     scored.sort(key=lambda x: x["score"], reverse=True)
 
     if verbose:
@@ -382,7 +411,11 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
     eligible_signals = [s for s in signals if s.get("eligible", True)]
 
     if verbose:
-        print(f"\n  NGX Basket: {basket_regime} | Gate: {gate_status}")
+        gate_label = f"Gate {_gate}: {get_gate_status_label(_gate)}" if _NGX_PRICE_ENGINE else "Gate 0: macro-only"
+    print(f"\n  NGX Basket: {basket_regime} | {gate_label}")
+    if _prices:
+        ok = sum(1 for t in NGX_ALL if t in _prices)
+        print(f"  💰 Price data: {ok}/{len(NGX_ALL)} tickers fetched from NGN Markets")
         print(f"  Phase: {phase} (Day {phase_days})")
         print(f"  Signals: {len(eligible_signals)} | Watch: {len(watch)}")
         if watch:
