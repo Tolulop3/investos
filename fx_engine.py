@@ -522,9 +522,17 @@ def run_fx_engine(news_analysis=None, verbose=True):
     1. Fetch price data for all pairs
     2. Generate technical signals
     3. Aggregate macro signals from news
-    4. Combine into final calls
+    4. Combine into final calls (with hysteresis)
     5. Return structured signal output
     """
+    # Load FX state for hysteresis (tracks direction + hold_count per pair)
+    _fx_state_path = "fx_state.json"
+    try:
+        with open(_fx_state_path) as _f:
+            _fx_state = json.load(_f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        _fx_state = {}
+
     now = datetime.now()
     if verbose:
         print(f"\n{'='*55}")
@@ -563,9 +571,49 @@ def run_fx_engine(news_analysis=None, verbose=True):
         # 4. Combine
         combined = combine_signals(tech, macro, config["name"])
 
-        # 5. Build final call
+        # 5. Apply hysteresis — prevents boundary chatter between runs
+        #    Entry: need >= 55% conviction to take a new position
+        #    Exit:  only exit below 45% (allows 45-55% to hold existing position)
+        #    Hold:  must hold direction for 2+ runs before flipping (stops USD/JPY 15%→51% noise)
         direction  = combined["direction"]
         conviction = combined["conviction"]
+
+        pair_key    = config["name"].replace("/", "_")
+        prior_state = _fx_state.get(pair_key, {"direction": "NEUTRAL", "hold_count": 0, "ema_conviction": conviction})
+
+        # EMA smoothing on conviction — prevents noisy spikes (e.g. 15%→51% in one run)
+        # Alpha=0.4: weights current run 40%, prior smoothed value 60%
+        _prior_ema  = prior_state.get("ema_conviction", conviction)
+        conviction  = round(0.40 * conviction + 0.60 * _prior_ema)
+        prior_state["ema_conviction"] = conviction
+
+        FX_ENTRY = 55   # conviction% needed to open a position
+        FX_EXIT  = 45   # conviction% needed to hold (exit below this)
+        FX_HOLD  = 2    # consecutive runs before direction flip is confirmed
+
+        if prior_state["direction"] == "NEUTRAL":
+            # No position — need FX_ENTRY threshold to open
+            if conviction < FX_ENTRY:
+                direction = "NEUTRAL"
+            else:
+                # Opening — reset hold count
+                prior_state["hold_count"] = 1
+        else:
+            # In a position — check if conviction still supports it
+            if direction == prior_state["direction"] or conviction >= FX_EXIT:
+                # Holding — increment hold count
+                prior_state["hold_count"] = prior_state.get("hold_count", 0) + 1
+                direction = prior_state["direction"]  # maintain direction
+            else:
+                # Potential flip — require FX_HOLD confirmation runs
+                if prior_state.get("hold_count", 0) <= FX_HOLD and conviction < FX_EXIT:
+                    prior_state["hold_count"] = 0
+                    direction = "NEUTRAL"  # exit, wait for new entry
+                else:
+                    direction = "NEUTRAL"
+                    prior_state["hold_count"] = 0
+
+        _fx_state[pair_key] = {"direction": direction, "hold_count": prior_state.get("hold_count", 1), "ema_conviction": conviction}
 
         # Risk parameters (1.5R:1 minimum, ideally 2.5R:1)
         entry  = tech["entry"]
@@ -661,6 +709,13 @@ def run_fx_engine(news_analysis=None, verbose=True):
             print(f"{icon} {direction} ({conviction}%) | {combined['quality']}")
 
     # Summary
+    # Save FX state for next run
+    try:
+        with open(_fx_state_path, "w") as _sf:
+            json.dump(_fx_state, _sf)
+    except Exception:
+        pass
+
     active_calls = [r for r in results.values() if r.get("direction") != "NEUTRAL" and r.get("conviction", 0) >= 40]
 
     if verbose:

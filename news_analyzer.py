@@ -539,6 +539,30 @@ def run_news_analysis(verbose=True):
             mag = data["signal_data"].get("magnitude", "?")
             print(f"   [{mag:8}] {name:<35} confidence: {data['confidence']}")
 
+    # ── Signal EMA smoothing ─────────────────────────────────────────────────
+    # Prevents confidence spikes from single-run noise (e.g. oil_price_spike 50%→100%)
+    # Loads prior smoothed confidence from signal_state.json, applies EMA alpha=0.5
+    _sig_state_path = "signal_state.json"
+    try:
+        with open(_sig_state_path) as _sf:
+            _sig_state = json.load(_sf)
+    except (FileNotFoundError, json.JSONDecodeError):
+        _sig_state = {}
+
+    for _sig_name, _sig_data in detected.items():
+        _raw_conf  = _sig_data["confidence"]
+        _prior_ema = _sig_state.get(_sig_name, {}).get("ema_confidence", _raw_conf)
+        _smoothed  = round(0.50 * _raw_conf + 0.50 * _prior_ema)
+        _sig_data["confidence"]     = _smoothed
+        _sig_data["raw_confidence"] = _raw_conf
+        _sig_state[_sig_name]       = {"ema_confidence": _smoothed}
+
+    try:
+        with open(_sig_state_path, "w") as _sf:
+            json.dump(_sig_state, _sf)
+    except Exception:
+        pass
+
     sector_sentiment   = build_sector_sentiment(detected)
     ticker_adjustments = build_ticker_adjustments(sector_sentiment, detected)
     weight_adjustments = build_score_weight_adjustments(detected)

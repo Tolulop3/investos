@@ -360,7 +360,7 @@ def build_thread(brief):
         hook_options = [
             f"1/ 🚨 {sigs} risk signals firing today.\n\nI read {arts} articles and screened {screened}+ stocks this morning.\n\nHere's what you actually need to know. 🧵",
             f"1/ Macro is loud this morning.\n\n{sig_preview} — and {sigs - 1} other signals.\n\n{screened}+ stocks screened. Here's what stood out. 🧵",
-            f"1/ RISK_OFF day.\n\nBefore you do anything in the market today — read this. 🧵\n\n{arts} articles. {screened}+ stocks. {sigs} signals.",
+            f"1/ {'⚠️ CAUTIOUS' if regime == 'CAUTIOUS' else '🔴 RISK-OFF' if regime in ('RISK_OFF', 'BEAR') else '📊 NEUTRAL'} market today.\n\nBefore you do anything — read this. 🧵\n\n{arts} articles. {screened}+ stocks. {sigs} signals.",
         ]
     elif top_ticker:
         hook_options = [

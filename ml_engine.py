@@ -717,7 +717,25 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
         final_wts = [base_wt if picks[i]["ticker"] not in sector_blocked else 0.0
                      for i in range(n_picks)]
         total_f = sum(final_wts)
-    final_wts = [w / total_f for w in final_wts] if total_f > 0 else final_wts
+    # Iterative normalize + 20% hard cap
+    # Renorm to 100% of deployable, then cap at 20%, redistribute, repeat
+    MAX_HARD = 0.20
+    for _iter in range(6):
+        _nz = sum(w for w in final_wts if w > 0)
+        if _nz == 0: break
+        final_wts = [w / _nz for w in final_wts]
+        _excess = sum(max(0.0, w - MAX_HARD) for w in final_wts)
+        if _excess < 0.0005: break  # converged
+        _n_unc = sum(1 for w in final_wts if 0 < w < MAX_HARD)
+        _boost = _excess / _n_unc if _n_unc > 0 else 0
+        final_wts = [
+            min(MAX_HARD, w) if w > 0 else 0.0
+            for w in final_wts
+        ]
+        final_wts = [
+            min(MAX_HARD, w + _boost) if 0 < w < MAX_HARD else w
+            for w in final_wts
+        ]
 
     sized = []
     for i, pick in enumerate(picks[:n_picks]):
