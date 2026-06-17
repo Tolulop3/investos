@@ -611,7 +611,7 @@ def compute_rolling_sharpe(score_history, days=90):
     }
 
 
-def run_decay_monitor(score_history=None, screener_results=None, verbose=True):
+def run_decay_monitor(score_history=None, screener_results=None, verbose=True, win_rate_30d=None, win_rate_7d=None):
     """
     ITEM 3: Strategy Decay Monitor
 
@@ -703,6 +703,20 @@ def run_decay_monitor(score_history=None, screener_results=None, verbose=True):
             "message": f"Only {len(score_history)} tickers in history. "
                        f"Monitor improves significantly after 30+ days of data.",
         })
+
+    # ── 7b. Win rate drop alert ──────────────────────────────
+    if win_rate_30d is not None and win_rate_7d is not None:
+        wr_drop = win_rate_7d - win_rate_30d
+        if wr_drop >= 15:
+            alerts.append({
+                "level": "🔴 CRITICAL",
+                "message": f"WR DROP: 30d WR fell {wr_drop:.1f}pts to {win_rate_30d:.1f}% (was {win_rate_7d:.1f}% last week).",
+            })
+        elif wr_drop >= 10:
+            alerts.append({
+                "level": "⚠️  WARNING",
+                "message": f"WR DECLINE: 30d WR down {wr_drop:.1f}pts to {win_rate_30d:.1f}%.",
+            })
 
     # ── 8. Robustness score ───────────────────────────────
     robustness = compute_robustness_score(rolling_sharpe, benchmark, momentum_health, neg_alpha_days)
@@ -1078,7 +1092,7 @@ def get_template_rotation(situation):
 # ============================================================
 
 def run_risk_audit(screener_results=None, score_history=None,
-                   fx_signals=None, verbose=True):
+                   fx_signals=None, verbose=True, win_rate_data=None):
     """
     Run full risk audit:
       1. Stress simulation

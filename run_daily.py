@@ -710,9 +710,16 @@ def run_daily(test_mode=False):
         print(f"  {sig_icon} Breadth: {breadth['pct_above_50']}% above 50MA | "
               f"{breadth['pct_above_200']}% above 200MA | {breadth['signal']}")
 
+    # Pre-read win rate from existing outcomes (before new picks are logged)
+    _wr_pre = {}
+    try:
+        from outcome_tracker import compute_win_rate
+        _wr_pre = compute_win_rate() or {}
+    except Exception:
+        pass
     risk_report = run_risk_audit(
         screener_results=screener, score_history=score_history,
-        fx_signals=fx_signals, verbose=True
+        fx_signals=fx_signals, verbose=True, win_rate_data=_wr_pre
     )
     with open("risk_report.json","w") as f:
         json.dump(risk_report, f, indent=2, default=str)

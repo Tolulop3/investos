@@ -154,9 +154,27 @@ def get_market_regime(verbose=True):
             return {"regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
                     "spx_price": 0, "ma200": 0, "pct_above_ma": 0}
 
-        spx      = closes[-1]
-        ma200    = sum(closes[-200:]) / 200
-        ma50     = sum(closes[-50:])  / 50
+        spx   = closes[-1]
+        ma200 = sum(closes[-200:]) / 200
+        ma50  = sum(closes[-50:])  / 50
+
+        # Secondary intraday fetch: try 5m interval for a live SPX price
+        # More current than EOD close (which yfinance caches until next session)
+        try:
+            _url2 = ("https://query1.finance.yahoo.com/v8/finance/chart/"
+                     "^GSPC?interval=5m&range=1d")
+            _req2 = urllib.request.Request(_url2, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(_req2, timeout=8) as _r2:
+                _d2 = json.loads(_r2.read().decode())
+            _c2 = [c for c in _d2['chart']['result'][0]['indicators']['quote'][0]['close'] if c]
+            if _c2:
+                _live = _c2[-1]
+                # Only use if it differs meaningfully from the stale close (>0.05%)
+                if abs(_live - spx) / spx > 0.0005:
+                    spx = _live
+        except Exception:
+            pass  # Fall back to daily close
+
         pct_diff = (spx - ma200) / ma200 * 100
 
         # Stale data guard: SPX high-watermark approach

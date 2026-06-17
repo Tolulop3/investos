@@ -29,7 +29,21 @@ def load_outcomes():
     if os.path.exists(OUTCOMES_FILE):
         try:
             with open(OUTCOMES_FILE) as f:
-                return json.load(f)
+                data = json.load(f)
+            # One-time cleanup: round float artifact scores (e.g. 60.400000000000006)
+            _dirty = False
+            for entry in data:
+                raw = entry.get("score")
+                if raw is not None:
+                    clean = round(float(raw), 1)
+                    if str(raw) != str(clean):
+                        entry["score"] = clean
+                        _dirty = True
+            if _dirty:
+                with open(OUTCOMES_FILE, "w") as f:
+                    import json as _j
+                    _j.dump(data, f, indent=2, default=str)
+            return data
         except Exception:
             pass
     return []

@@ -37,18 +37,24 @@ SIGNAL_DAYS  = 7   # days to look back for trend
 
 def load_history(n=SIGNAL_DAYS):
     """Load last N history snapshots. Returns list sorted oldest→newest."""
-    if not os.path.exists(HISTORY_DIR):
-        return []
+    # Try multiple path resolutions — GitHub Actions CWD can vary
+    _dir = HISTORY_DIR
+    if not os.path.exists(_dir):
+        _alt = os.path.join(os.path.dirname(os.path.abspath(__file__)), HISTORY_DIR)
+        if os.path.exists(_alt):
+            _dir = _alt
+        else:
+            return []
 
     files = sorted([
-        f for f in os.listdir(HISTORY_DIR)
+        f for f in os.listdir(_dir)
         if f.endswith(".json") and f.startswith("2026")
     ])[-n:]
 
     records = []
     for fname in files:
         try:
-            data = json.load(open(os.path.join(HISTORY_DIR, fname)))
+            data = json.load(open(os.path.join(_dir, fname)))
             # Normalize fields
             records.append({
                 "date":        fname.replace(".json",""),
