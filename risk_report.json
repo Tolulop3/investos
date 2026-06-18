@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-18T22:48:43.893102",
+    "run_at": "2026-06-18T22:57:35.280266",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,24 +32,23 @@
         "normal_count": 18,
         "survived": 16,
         "survival_pct": 88.9,
-        "avg_score_change": 3.7,
+        "avg_score_change": 3.8,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.7 pts with 10% noise"
+        "note": "Avg score change: \u00b13.8 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 71.2,
-        "stressed_avg": 65.0,
-        "score_drop": 6.2,
+        "normal_avg": 71.9,
+        "stressed_avg": 66.9,
+        "score_drop": 5.0,
         "removed": [
-          "CLS.TO",
-          "AFRM",
           "MS",
-          "REI-UN.TO",
-          "MFC.TO"
+          "AFRM",
+          "CLS.TO",
+          "REI-UN.TO"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 6.2 pts without top 5 \u2014 system depth check"
+        "verdict": "\u2705 ROBUST",
+        "note": "Score drops 5.0 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -63,13 +62,13 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 71.2,
-      "scenarios_robust": 4,
-      "scenarios_fragile": 1,
+      "normal_avg_score": 71.9,
+      "scenarios_robust": 5,
+      "scenarios_fragile": 0,
       "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+      "overall_verdict": "\u2705 ROBUST \u2014 System survives stress well"
     },
-    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+    "verdict": "\u2705 ROBUST \u2014 System survives stress well"
   },
   "decay_monitor": {
     "date": "June 18, 2026",
