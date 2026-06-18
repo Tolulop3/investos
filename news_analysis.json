@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-06-17T23:07:38.024791",
-  "date": "June 17, 2026",
+  "timestamp": "2026-06-18T02:35:38.623727",
+  "date": "June 18, 2026",
   "articles_fetched": 151,
   "feeds_online": 12,
   "feeds_total": 15,
-  "signals_detected": 5,
+  "signals_detected": 6,
   "active_signals": {
     "middle_east_tension": {
       "confidence": 100,
@@ -21,6 +21,10 @@
     "health_outbreak": {
       "confidence": 100,
       "note": "Health outbreak = defensive positioning. Pharma, staples, ecommerce."
+    },
+    "oil_price_spike": {
+      "confidence": 75,
+      "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)"
     },
     "russia_ukraine": {
       "confidence": 100,
@@ -42,10 +46,10 @@
       ]
     },
     "CANADIAN_ENERGY": {
-      "bullish_score": 200,
+      "bullish_score": 350,
       "bearish_score": 200,
-      "net_score": 0,
-      "sentiment": "NEUTRAL",
+      "net_score": 150,
+      "sentiment": "BULLISH",
       "signals": [
         {
           "name": "middle_east_tension",
@@ -56,6 +60,11 @@
           "name": "trump_tariff_negative",
           "direction": "bearish",
           "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 75
         }
       ]
     },
@@ -107,8 +116,8 @@
     },
     "AIRLINES": {
       "bullish_score": 0,
-      "bearish_score": 400,
-      "net_score": -400,
+      "bearish_score": 550,
+      "net_score": -550,
       "sentiment": "BEARISH",
       "signals": [
         {
@@ -120,6 +129,11 @@
           "name": "health_outbreak",
           "direction": "bearish",
           "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 75
         }
       ]
     },
@@ -195,14 +209,19 @@
     },
     "CONSUMER": {
       "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
+      "bearish_score": 150,
+      "net_score": 0.0,
+      "sentiment": "NEUTRAL",
       "signals": [
         {
           "name": "peace_deal",
           "direction": "bullish",
           "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 75
         }
       ]
     },
@@ -336,6 +355,45 @@
         }
       ]
     },
+    "OIL_PRODUCERS": {
+      "bullish_score": 150,
+      "bearish_score": 0,
+      "net_score": 150,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 75
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 150,
+      "bearish_score": 0,
+      "net_score": 150,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 75
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 150,
+      "net_score": -150,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 75
+        }
+      ]
+    },
     "EUROPEAN_ENERGY": {
       "bullish_score": 150.0,
       "bearish_score": 0,
@@ -391,34 +449,52 @@
   },
   "ticker_adjustments": {
     "ENB.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "TRP.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "CNQ.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "SU.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "CVE.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 OIL_PRODUCERS (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "PPL.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": 20.0,
+      "reasons": [
+        "\ud83d\udcc8 CANADIAN_ENERGY (BULLISH)",
+        "\ud83d\udcc8 PIPELINES (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
     },
     "LMT": {
       "adjustment": 13.3,
@@ -731,7 +807,7 @@
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
           "Trump says he likes idea of blaming Vance if Iran deal doesn't work out",
-          "Fed officials tilt towards rate rise as Kevin Warsh era begins"
+          "Oil falls as International Energy Agency forecasts supply glut next year after U.S.-Iran deal"
         ]
       },
       {
@@ -763,8 +839,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Health outbreak = defensive positioning. Pharma, staples, ecommerce.",
         "articles": [
-          "Open letter to leaders of G7, G20, BRICS and all nations on finalizing the WHO Pandemic Agreement\u2019s Pathogen Access and Benefit Sharing annex",
-          "Africa CDC and WHO launch joint continental Ebola response plan"
+          "WHO issues comprehensive guidelines on filovirus disease, including Ebola and Marburg disease",
+          "Open letter to leaders of G7, G20, BRICS and all nations on finalizing the WHO Pandemic Agreement\u2019s Pathogen Access and Benefit Sharing annex"
         ]
       },
       {
@@ -775,6 +851,16 @@
         "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported",
         "articles": [
           "Trump Signals Renewed Focus on Ukraine After Iran Deal Breakthrough"
+        ]
+      },
+      {
+        "signal": "Oil Price Spike",
+        "magnitude": "HIGH",
+        "confidence": 75,
+        "bars": "\u2588\u2588\u2588",
+        "note": "Oil spike = TSX energy stocks surge (ENB, CNQ, SU, CVE)",
+        "articles": [
+          "The Invisible Energy Crisis Threatening to Derail the AI Boom"
         ]
       }
     ],
