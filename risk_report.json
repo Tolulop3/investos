@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-18T18:20:17.485089",
+    "run_at": "2026-06-18T22:22:58.822845",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,46 +30,45 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
-        "avg_score_change": 4.0,
+        "survived": 16,
+        "survival_pct": 88.9,
+        "avg_score_change": 3.7,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.0 pts with 10% noise"
+        "note": "Avg score change: \u00b13.7 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 75.6,
-        "stressed_avg": 68.5,
-        "score_drop": 7.1,
+        "normal_avg": 72.0,
+        "stressed_avg": 67.0,
+        "score_drop": 5.0,
         "removed": [
-          "HOOD",
           "REI-UN.TO",
+          "CLS.TO",
           "AFRM",
-          "MS",
-          "JPM"
+          "MS"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 7.1 pts without top 5 \u2014 system depth check"
+        "verdict": "\u2705 ROBUST",
+        "note": "Score drops 5.0 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
         "survived": 17,
         "survival_pct": 94.4,
-        "avg_score_drop": 3.6,
+        "avg_score_drop": 3.4,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.6 pts"
+        "note": "If momentum stops working: avg score drops 3.4 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 75.6,
-      "scenarios_robust": 4,
-      "scenarios_fragile": 1,
+      "normal_avg_score": 72.0,
+      "scenarios_robust": 5,
+      "scenarios_fragile": 0,
       "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+      "overall_verdict": "\u2705 ROBUST \u2014 System survives stress well"
     },
-    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+    "verdict": "\u2705 ROBUST \u2014 System survives stress well"
   },
   "decay_monitor": {
     "date": "June 18, 2026",
@@ -83,15 +82,15 @@
       "note": "Sharpe from 300 resolved picks \u00b7 price-return \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": 3.15,
-      "ret_30d": 2.16,
-      "ret_90d": 7.98,
-      "ann_ret": 22.3,
+      "ret_7d": 3.21,
+      "ret_30d": 2.23,
+      "ret_90d": 8.05,
+      "ann_ret": 22.5,
       "ann_vol": 14.8,
-      "sharpe": 1.51,
+      "sharpe": 1.52,
       "symbol": "^GSPC"
     },
-    "alpha": 0.665,
+    "alpha": 0.655,
     "neg_alpha_days": 0,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
