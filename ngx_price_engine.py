@@ -71,9 +71,9 @@ def fetch_ngx_price(ticker):
     ticker_clean = ticker.replace(".LG", "")
 
     endpoints = [
-        f"{NGN_MARKETS_BASE}/market/{ticker_clean}",           # most likely based on /market/snapshot
-        f"{NGN_MARKETS_BASE}/market/stock/{ticker_clean}",
-        f"{NGN_MARKETS_BASE}/quotes/{ticker_clean}",
+        f"{NGN_MARKETS_BASE}/market/stocks/{ticker_clean}",
+        f"{NGN_MARKETS_BASE}/equities/{ticker_clean}",
+        f"{NGN_MARKETS_BASE}/market/equities/{ticker_clean}",
         f"{NGN_MARKETS_BASE}/stocks/{ticker_clean}",
     ]
 
@@ -189,13 +189,11 @@ def fetch_all_ngx_prices(tickers, verbose=False):
 
     if verbose:
         if ok == 0 and failed > 0:
-            print(f"  📊 NGX prices: 0/{len(tickers)} fetched | all unavailable")
+            print(f"  📊 NGX prices: 0/{len(tickers)} fetched | individual stock data unavailable")
             if _auth_failed:
-                print(f"  ⚠️  NGX API returned 403 — auth format mismatch")
-                print(f"     Check: verify the API key is active on ngnmarket.com dashboard")
+                print(f"     (individual stock endpoint requires upgraded plan — market snapshot OK)")
             else:
                 print(f"  ⚠️  NGX price fetch failed — check API endpoint or key")
-            print(f"     Falling back to macro-only scoring (same as Gate 0)")
         else:
             print(f"  📊 NGX prices: {ok}/{len(tickers)} fetched | {failed} unavailable")
 
