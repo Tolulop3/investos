@@ -850,29 +850,75 @@ def run_daily(test_mode=False, dry_run=False):
         print(f"     → Price structure weak. But options showing bullish positioning.")
 
     # ── Regime Convergence Detector ──────────────────────────────────────────
-    # When 3+ independent layers simultaneously compress toward caution,
-    # surface as a single composite flag rather than requiring cross-section reading.
-    _caution_signals = []
+    # Fires on TREND DETERIORATION, not just point-in-time threshold breach.
+    # Uses a 3-run rolling comparison via regime_state.json persistence.
+    import json as _rj
+    _STATE_FILE = "regime_state.json"
     _breadth_50 = screener.get("breadth", {}).get("pct_above_50", 100) if screener else 100
+    _breadth_200 = screener.get("breadth", {}).get("pct_above_200", 100) if screener else 100
     _spx_pct    = regime.get("pct_above_ma", 100) if regime else 100
     _macro_caut = macro_regime in ("CAUTIOUS", "DEFENSIVE", "RISK_OFF") if macro_regime else False
 
-    if _breadth_50 < 65:
-        _caution_signals.append(f"Breadth {_breadth_50:.1f}% above 50MA (compressed)")
-    if _spx_pct < 8.0:
-        _caution_signals.append(f"SPX only +{_spx_pct:.1f}% above 200MA (cushion shrinking)")
+    # Load rolling state (last 3 runs)
+    _rstate = {}
+    try:
+        _rstate = _rj.load(open(_STATE_FILE))
+    except Exception:
+        pass
+    _b50_hist   = _rstate.get("breadth_50_history", [])
+    _b200_hist  = _rstate.get("breadth_200_history", [])
+    _spx_hist   = _rstate.get("spx_cushion_history", [])
+    _b50_hist.append(round(_breadth_50, 1))
+    _b200_hist.append(round(_breadth_200, 1))
+    _spx_hist.append(round(_spx_pct, 1))
+    _b50_hist  = _b50_hist[-4:]   # keep last 4 runs
+    _b200_hist = _b200_hist[-4:]
+    _spx_hist  = _spx_hist[-4:]
+    try:
+        _rj.dump({"breadth_50_history": _b50_hist, "breadth_200_history": _b200_hist,
+                  "spx_cushion_history": _spx_hist}, open(_STATE_FILE, "w"), indent=2)
+    except Exception:
+        pass
+
+    # Detect deterioration: compare current to 3-run avg
+    _caution_signals = []
+    if len(_b50_hist) >= 3:
+        _b50_avg = sum(_b50_hist[:-1]) / len(_b50_hist[:-1])
+        _b50_drop = _b50_avg - _breadth_50
+        if _b50_drop >= 5:
+            _caution_signals.append(f"Breadth 50MA dropping: {_b50_avg:.1f}% → {_breadth_50:.1f}% ({-_b50_drop:.1f}pp trend)")
+        elif _breadth_50 < 62:
+            _caution_signals.append(f"Breadth {_breadth_50:.1f}% above 50MA (compressed)")
+    else:
+        if _breadth_50 < 65:
+            _caution_signals.append(f"Breadth {_breadth_50:.1f}% above 50MA (compressed)")
+
+    if len(_b200_hist) >= 3:
+        _b200_avg = sum(_b200_hist[:-1]) / len(_b200_hist[:-1])
+        _b200_drop = _b200_avg - _breadth_200
+        if _b200_drop >= 3:
+            _caution_signals.append(f"200MA breadth falling: {_b200_avg:.1f}% → {_breadth_200:.1f}% — regime reclassification risk")
+
+    if len(_spx_hist) >= 3:
+        _spx_avg = sum(_spx_hist[:-1]) / len(_spx_hist[:-1])
+        _spx_drop = _spx_avg - _spx_pct
+        if _spx_drop >= 1.0:
+            _caution_signals.append(f"SPX cushion shrinking: {_spx_avg:.1f}% → {_spx_pct:.1f}% above 200MA")
+        elif _spx_pct < 8.0:
+            _caution_signals.append(f"SPX only +{_spx_pct:.1f}% above 200MA (thin cushion)")
+
     if _pcr_bearish:
-        _caution_signals.append(f"Options PCR {_pcr_val:.3f} BEARISH (hedging elevated)")
+        _caution_signals.append(f"Options PCR {_pcr_val:.3f} BEARISH")
     if _macro_caut:
         _caution_signals.append(f"Macro regime {macro_regime}")
     if unified_regime == "NEUTRAL":
-        _caution_signals.append("Unified regime at NEUTRAL (not RISK_ON)")
+        _caution_signals.append("Unified regime at NEUTRAL")
 
     if len(_caution_signals) >= 3:
         print(f"  🔶 REGIME CONVERGENCE: {len(_caution_signals)} independent layers compressing toward caution:")
         for _cs in _caution_signals:
             print(f"     • {_cs}")
-        print(f"     → Not a regime change signal alone, but coherent pattern. Reduce new position sizing.")
+        print(f"     → Reduce new position sizing. Watch 200MA breadth for regime reclassification.")
 
     # ── 11c. Regime Shift Predictor ───────────────────────────────────────────
     regime_momentum_data = {}

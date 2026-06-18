@@ -900,6 +900,9 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
 
     if verbose:
         print(f"\n✅ Data fetched: {len(raw_data)} stocks | ❌ Failed: {len(failed)}")
+    if failed:
+        print(f"   ⚠️  Unavailable tickers: {', '.join(sorted(failed)[:8])}")
+        print(f"     → Check if delisted/renamed; swap out in UNIVERSE if persistent")
 
     # --- Score everything for both accounts ---
     fhsa_candidates   = []

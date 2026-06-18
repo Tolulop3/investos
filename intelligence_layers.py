@@ -36,7 +36,7 @@ def update_score_history(todays_picks):
     for pick in todays_picks:
         ticker = pick["ticker"]; score = pick["score"]; price = pick.get("data", {}).get("price", 0)
         if ticker not in history: history[ticker] = []
-        history[ticker].append({"date": today, "score": score, "price": price})
+        history[ticker].append({"date": today, "score": round(float(score), 1), "price": round(float(price), 4) if price else 0})
         cutoff = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
         history[ticker] = [h for h in history[ticker] if h["date"] >= cutoff]
     save_score_history(history)
@@ -54,7 +54,7 @@ def detect_trending_stocks(history, min_days=3, min_rise=10):
         most_recent_date = records_sorted[-1]["date"]
         if most_recent_date < cutoff: continue
         if len(records_sorted) >= 2:
-            last_two_delta = records_sorted[-1]["score"] - records_sorted[-2]["score"]
+            last_two_delta = round(float(records_sorted[-1]["score"]), 1) - round(float(records_sorted[-2]["score"]), 1)
             if abs(last_two_delta) < 1.0: continue
 
         first_score = recent[0]["score"]; last_score = recent[-1]["score"]
@@ -64,8 +64,11 @@ def detect_trending_stocks(history, min_days=3, min_rise=10):
         prev_max = max(r["score"] for r in records_sorted[:-1]) if len(records_sorted) > 1 else 0
         just_broke_out = last_score >= 65 and prev_max < 65
 
-        entry = {"ticker": ticker, "score_now": last_score, "score_start": first_score,
-                 "score_delta": round(score_delta, 1), "price_change_pct": round(price_chg, 2),
+        entry = {"ticker": ticker,
+                 "score_now":   round(float(last_score),  1),
+                 "score_start": round(float(first_score), 1),
+                 "score_delta": round(score_delta, 1),
+                 "price_change_pct": round(price_chg, 2),
                  "days_tracked": len(records_sorted), "trend_signal": ""}
 
         if just_broke_out:

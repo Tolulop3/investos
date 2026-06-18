@@ -688,8 +688,24 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
 
     kelly_wts   = [score_to_kelly_wt(p.get("score", 70), win_rate_data) for p in picks[:n_picks]]
     total_kelly = sum(kelly_wts)
+    n_positive_kelly = sum(1 for w in kelly_wts if w > 0)
+
     if total_kelly > 0:
-        norm_kelly = [w / total_kelly for w in kelly_wts]
+        raw_norm_kelly = [w / total_kelly for w in kelly_wts]
+        # Degradation guard: when <50% of picks have positive Kelly,
+        # the normalization concentrates heavily on a small subset.
+        # Blend in equal-weight to prevent one mid-tier pick from getting
+        # 33%+ of allocation solely due to Kelly normalization.
+        if n_positive_kelly < n_picks / 2:
+            equal_kelly = [base_wt] * n_picks
+            blend_ratio = n_positive_kelly / n_picks  # more equal as Kelly degrades
+            norm_kelly = [blend_ratio * raw_norm_kelly[i] + (1 - blend_ratio) * equal_kelly[i]
+                          for i in range(n_picks)]
+            if verbose and n_positive_kelly <= 2:
+                print(f"   ℹ️ Kelly degraded ({n_positive_kelly}/{n_picks} picks have edge)"
+                      f" — blending {blend_ratio:.0%} Kelly + {1-blend_ratio:.0%} equal")
+        else:
+            norm_kelly = raw_norm_kelly
     else:
         norm_kelly = [base_wt] * n_picks
         if verbose: print("   ℹ️ Kelly weights zero — falling back to equal weights")
@@ -766,7 +782,7 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
             "dollar_amt": round(deployable * wt, 2),
             "ml_prob":    round(ml_probs[i], 3),
             "vol_adj":    round(vols[i], 3),
-            "kelly_wt":   kw,
+            "kelly_wt":   kw,   # raw kelly fraction (not normalized)
             "score":      sc,
         })
 
