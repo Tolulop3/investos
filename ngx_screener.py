@@ -338,7 +338,10 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
         if ngn_data and ngn_data[1]:
             ngn_usd = round(float(ngn_data[1]), 2)
         if verbose and ngn_usd:
-            print(f"  NGN/USD: {ngn_usd:.1f} | ₦10,000 ≈ ${10000/ngn_usd:.2f} USD")
+            usd_per_10k = 10000 / ngn_usd
+            cad_per_10k = usd_per_10k / cad_usd
+            print(f"  ₦/USD: {ngn_usd:.1f} | $1 USD = ₦{ngn_usd:.0f} | "
+                  f"₦10,000 ≈ ${usd_per_10k:.2f} USD (~${cad_per_10k:.2f} CAD)")
     except Exception:
         pass
 
@@ -351,8 +354,8 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
         if ngn_usd:
             ngn_context = {
                 "ngn_usd_rate":    ngn_usd,
-                "fx_note":         f"₦1 = ${1/ngn_usd:.6f} USD",
-                "conversion_note": f"₦10,000 ≈ ${10000/ngn_usd:.2f} USD",
+                "fx_note":         f"$1 USD = ₦{ngn_usd:.0f}",
+                "conversion_note": f"₦10,000 ≈ ${10000/ngn_usd:.2f} USD (~${10000/ngn_usd/cad_usd:.2f} CAD)",
             }
         scored.append({
             "ticker": ticker, "name": ticker.replace(".LG",""),

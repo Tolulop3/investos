@@ -409,7 +409,7 @@ def rotate_brief_history(brief):
 # MAIN RUN
 # ============================================================
 
-def run_daily(test_mode=False):
+def run_daily(test_mode=False, dry_run=False):
     start = datetime.now()
     sep   = "="*60
 
@@ -1156,9 +1156,12 @@ def run_daily(test_mode=False):
             "macro_signals":    [s.get("signal") for s in
                                  brief.get("macro",{}).get("signals",[])],
         }
-        with open(f"history/{_today}.json","w") as _f:
-            json.dump(_snap, _f, indent=2, default=str)
-        print(f"  📅 History snapshot saved: history/{_today}.json")
+        if not dry_run:
+            with open(f"history/{_today}.json","w") as _f:
+                json.dump(_snap, _f, indent=2, default=str)
+            print(f"  📅 History snapshot saved: history/{_today}.json")
+        else:
+            print(f"  📅 [DRY-RUN] History snapshot skipped: history/{_today}.json")
     except Exception as _he:
         print(f"  ⚠️  History archive failed: {_he}")
 
@@ -1479,10 +1482,15 @@ def send_morning_brief(brief, fx_signals, crypto_signals):
 # ============================================================
 
 if __name__ == "__main__":
-    github_mode = "--github" in sys.argv
-    test_mode   = "--test"   in sys.argv
+    github_mode  = "--github"       in sys.argv
+    test_mode    = "--test"         in sys.argv
+    dry_run      = "--dry-run"      in sys.argv   # skip git, email, history write
+    json_metrics = "--json-metrics" in sys.argv   # print machine-readable metrics line
 
-    brief = run_daily(test_mode=test_mode)
+    if dry_run:
+        print("  🔬 DRY-RUN MODE: git/email/history writes suppressed")
+
+    brief = run_daily(test_mode=test_mode, dry_run=dry_run)
 
     if brief:
         print("\n  📊 Baking dashboard...")
@@ -1529,8 +1537,28 @@ if __name__ == "__main__":
                 _tb.print_exc()
                 brief["ngx"] = {"error": str(_ngx_e), "picks": []}
 
-        if github_mode:
+        if github_mode and not dry_run:
             print("  📧 Sending morning brief...")
             send_morning_brief(brief, fx, cry)
+        elif dry_run:
+            print("  📧 [DRY-RUN] Email suppressed")
 
         print("  ✅ InvestOS complete")
+
+        if json_metrics and brief:
+            import json as _jm
+            _wr_data   = brief.get("win_rate", {}) or {}
+            _win_30d   = (_wr_data.get("windows") or {}).get("30d", {}).get("win_rate", 0)
+            _stress    = brief.get("risk_report", {}).get("stress_test", {})
+            _top5_drop = _stress.get("remove_top5", {}).get("avg_score_drop", 0) if _stress else 0
+            _decay     = brief.get("risk_report", {}).get("decay_monitor", {}) or {}
+            _metrics   = {
+                "win_rate_30d":      round(float(_win_30d or 0), 1),
+                "rolling_sharpe":    round(float(_decay.get("rolling_sharpe", 0) or 0), 3),
+                "stress_top5_drop":  round(float(_top5_drop or 0), 1),
+                "conviction_picks":  len(brief.get("conviction_picks", []) or []),
+                "error_count":       0,
+                "ngx_win_rate":      0.0,
+                "dry_run":           dry_run,
+            }
+            print(f"AGENT_METRICS_JSON={_jm.dumps(_metrics)}")

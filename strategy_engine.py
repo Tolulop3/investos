@@ -35,7 +35,7 @@ STRATEGY_PROFILES = {
             "safety":           0.70,   # accept more volatility
             "volume_liquidity": 1.00,
         },
-        "momentum_curve": "linear",     # reward momentum linearly (current behaviour)
+        "momentum_curve": "bell_soft",  # soft bell: rewards momentum, discounts extreme percentile
         "extension_penalty": True,      # still penalise top-5% blow-off
         "pullback_bonus":   True,       # reward pullback-from-high setups
         "min_score_threshold": 60,
@@ -119,9 +119,10 @@ def apply_momentum_curve(momentum_raw, momentum_percentile, curve_type):
     """
     Adjust momentum score based on its position in the universe distribution.
 
-    linear   (RISK_ON):  no adjustment — reward momentum as-is
-    bell     (CAUTIOUS): peak reward at 70th-85th percentile, taper above 90th
-    inverse  (DEFENSIVE): penalise any high-momentum reading
+    linear     (legacy): no adjustment — reward momentum as-is
+    bell_soft  (RISK_ON): light bell — rewards 70-90th pct, discounts 90th+ (blow-off)
+    bell       (CAUTIOUS): stronger bell — taper above 85th percentile
+    inverse    (DEFENSIVE): penalise any high-momentum reading
     """
     if curve_type == "linear" or momentum_percentile is None:
         return momentum_raw
@@ -129,14 +130,30 @@ def apply_momentum_curve(momentum_raw, momentum_percentile, curve_type):
     if curve_type == "bell":
         # Peak at 70-85th pct. Above 90th = crowded, penalise.
         if momentum_percentile > 95:
-            # Top 5% = blow-off moves. High reversal risk.
             return round(momentum_raw * 0.70, 1)
         elif momentum_percentile > 90:
             return round(momentum_raw * 0.85, 1)
         elif momentum_percentile > 85:
             return round(momentum_raw * 0.95, 1)
         elif momentum_percentile >= 70:
-            return round(momentum_raw * 1.05, 1)  # sweet spot: slight boost
+            return round(momentum_raw * 1.05, 1)
+        else:
+            return momentum_raw
+
+    if curve_type == "bell_soft":
+        # Lighter version for RISK_ON — still rewards genuine momentum,
+        # but discounts extreme-percentile names (BB.TO RS-100, BX velocity spikes)
+        # where score inflation concentrates without ML confirmation.
+        # Validated: ~5pt discount at 35pt max pillar — real but not overcorrecting.
+        if momentum_percentile > 95:
+            # Top 5%: blow-off territory in a bull market. Discount without blocking.
+            return round(momentum_raw * 0.85, 1)
+        elif momentum_percentile > 90:
+            # 90-95th pct: light penalty for crowding
+            return round(momentum_raw * 0.92, 1)
+        elif momentum_percentile >= 70:
+            # Sweet spot: small reward for genuine momentum leadership
+            return round(momentum_raw * 1.03, 1)
         else:
             return momentum_raw
 
@@ -221,7 +238,10 @@ def get_strategy_label(strategy_name, regime):
 def log_strategy(strategy_name, profile, verbose=True):
     if not verbose:
         return
+    curve = profile.get("momentum_curve", "linear")
     print(f"   📊 Strategy: {strategy_name} — {profile['description']}")
+    if curve != "linear":
+        print(f"   📐 Momentum curve: {curve} — top-percentile names discounted")
     if not profile.get("stock_screening_enabled", True):
         etfs = profile.get("recommended_etfs", [])
         print(f"   💵 Stock screening DISABLED — route to: {', '.join(etfs)}")

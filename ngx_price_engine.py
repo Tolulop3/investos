@@ -292,10 +292,7 @@ def _fetch_snapshot(tickers, verbose=False):
         return {}
     try:
 
-            # Save snapshot for diagnostics
-        with open("ngx_api_debug.json", "w") as _f:
-            json.dump({"url": url, "response_keys": list(raw.keys()) if isinstance(raw, dict) else type(raw).__name__,
-                       "sample": raw[:2] if isinstance(raw, list) else raw}, _f, indent=2)
+            # Snapshot data received — no longer saving debug file each run
 
             # Normalize: snapshot may return list of stocks or dict keyed by ticker
         stocks = []

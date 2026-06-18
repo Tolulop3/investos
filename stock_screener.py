@@ -587,7 +587,17 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
 
     # ── STRATEGY ENGINE: Dynamic factor weights ─────────────────────────────
     if strategy_profile and _STRATEGY_ENGINE:
+        # Approximate momentum percentile from perf_90d
+        # (RS Rating is computed post-screen; this uses a calibrated proxy)
         _mom_pct = strategy_profile.get("_momentum_percentile")
+        if _mom_pct is None:
+            _p90 = data.get("perf_90d", 0) or 0
+            if _p90 > 50:   _mom_pct = 97.0   # extreme — BB.TO +183%, BX spike
+            elif _p90 > 35: _mom_pct = 94.0   # top tier
+            elif _p90 > 20: _mom_pct = 88.0   # strong
+            elif _p90 > 12: _mom_pct = 78.0   # sweet spot
+            elif _p90 > 5:  _mom_pct = 62.0   # moderate
+            else:            _mom_pct = 40.0   # weak
         _wp = apply_strategy_weights(pillars, strategy_profile, _mom_pct)
         total = sum(_wp.values()) + bonus
         pillars = _wp
