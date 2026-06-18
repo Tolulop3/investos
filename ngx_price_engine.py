@@ -83,9 +83,8 @@ def fetch_ngx_price(ticker):
         try:
             req = urllib.request.Request(url, headers={
                 "Authorization": f"Bearer {key}",
-                "X-Api-Key":      key,
-                "User-Agent":     "InvestOS/4.0",
-                "Accept":         "application/json",
+                "User-Agent":    "InvestOS/4.0",
+                "Accept":        "application/json",
             })
             with urllib.request.urlopen(req, timeout=8) as r:
                 raw = json.loads(r.read().decode())
@@ -140,8 +139,7 @@ def fetch_ngx_price(ticker):
             if e.code == 404:
                 continue  # try next endpoint format
             if e.code in (401, 403):
-                print(f"  ⚠️  NGX API auth error ({e.code}) — check NGN_MARKETS_KEY")
-                return None
+                return None  # auth failure — silent, outer loop handles messaging
             continue
         except Exception:
             continue
@@ -166,23 +164,33 @@ def fetch_all_ngx_prices(tickers, verbose=False):
             print(f"  📊 NGX prices: {ok}/{len(tickers)} fetched via snapshot")
         return results
 
-    # Fall back to individual ticker calls
+    # Fall back to individual ticker calls (try first 3 to detect auth failure fast)
     results = {}
     ok, failed = 0, 0
+    _auth_failed = False
 
-    for ticker in tickers:
+    for i, ticker in enumerate(tickers):
         data = fetch_ngx_price(ticker)
         if data:
             results[ticker] = data
             ok += 1
         else:
             failed += 1
-        time.sleep(0.15)  # Rate limit: ~6 requests/second
+            # After 3 failures with 0 successes, likely auth issue — stop early
+            if i >= 2 and ok == 0:
+                _auth_failed = True
+                failed += len(tickers) - i - 1  # count remaining as failed
+                break
+        time.sleep(0.10)
 
     if verbose:
         if ok == 0 and failed > 0:
             print(f"  📊 NGX prices: 0/{len(tickers)} fetched | all unavailable")
-            print(f"  ⚠️  NGX price fetch failed — check API endpoint or key")
+            if _auth_failed:
+                print(f"  ⚠️  NGX API returned 403 — auth format mismatch")
+                print(f"     Check: verify the API key is active on ngnmarket.com dashboard")
+            else:
+                print(f"  ⚠️  NGX price fetch failed — check API endpoint or key")
             print(f"     Falling back to macro-only scoring (same as Gate 0)")
         else:
             print(f"  📊 NGX prices: {ok}/{len(tickers)} fetched | {failed} unavailable")
@@ -199,23 +207,47 @@ def _fetch_snapshot(tickers, verbose=False):
     if not key:
         return {}
 
-    url = f"{NGN_MARKETS_BASE}/market/snapshot"
+    snap_candidates = [
+        f"{NGN_MARKETS_BASE}/market/snapshot",
+        f"{NGN_MARKETS_BASE}/stocks",
+        f"{NGN_MARKETS_BASE}/market",
+        f"{NGN_MARKETS_BASE}/quotes",
+    ]
+    url = snap_candidates[0]
+    raw = None
+    for _snap_url in snap_candidates:
+        try:
+            _req = urllib.request.Request(_snap_url, headers={
+                "Authorization": f"Bearer {key}",
+                "User-Agent":    "InvestOS/4.0",
+                "Accept":        "application/json",
+            })
+            with urllib.request.urlopen(_req, timeout=12) as _r:
+                raw = json.loads(_r.read().decode())
+            url = _snap_url
+            break
+        except urllib.error.HTTPError as _e:
+            if _e.code == 403:
+                try:
+                    _body = _e.read().decode()[:300]
+                    with open("ngx_api_debug.json", "w") as _f:
+                        import json as _j
+                        _j.dump({"url": _snap_url, "http_error": 403, "body": _body}, _f, indent=2)
+                except Exception:
+                    pass
+            continue
+        except Exception:
+            continue
+    if raw is None:
+        return {}
     try:
-        req = urllib.request.Request(url, headers={
-            "Authorization": f"Bearer {key}",
-            "X-Api-Key":      key,
-            "User-Agent":     "InvestOS/4.0",
-            "Accept":         "application/json",
-        })
-        with urllib.request.urlopen(req, timeout=12) as r:
-            raw = json.loads(r.read().decode())
 
-        # Save snapshot for diagnostics
+            # Save snapshot for diagnostics
         with open("ngx_api_debug.json", "w") as _f:
             json.dump({"url": url, "response_keys": list(raw.keys()) if isinstance(raw, dict) else type(raw).__name__,
                        "sample": raw[:2] if isinstance(raw, list) else raw}, _f, indent=2)
 
-        # Normalize: snapshot may return list of stocks or dict keyed by ticker
+            # Normalize: snapshot may return list of stocks or dict keyed by ticker
         stocks = []
         if isinstance(raw, list):
             stocks = raw
