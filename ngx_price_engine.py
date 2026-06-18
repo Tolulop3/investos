@@ -149,19 +149,23 @@ def fetch_ngx_price(ticker):
 
 def fetch_all_ngx_prices(tickers, verbose=False):
     """
-    Fetch prices for all tickers. Tries snapshot endpoint first (1 call),
-    falls back to individual ticker calls if snapshot unavailable.
-    Returns dict {ticker: price_data}.
+    Fetch prices for all tickers. Returns dict {ticker: price_data}.
+    Also fetches market snapshot for NGX macro data.
     """
     if not _get_api_key():
         return {}
 
-    # Try snapshot endpoint first — returns all tickers in one call
+    # Always fetch market snapshot (1 call) — contains NGX breadth/ASI
+    market = fetch_ngx_market_snapshot(verbose=verbose)
+    if market:
+        _save_to_cache("__market__", market)
+
+    # Try bulk/list endpoint first
     results = _fetch_snapshot(tickers, verbose=verbose)
     if results:
         ok = len(results)
         if verbose:
-            print(f"  📊 NGX prices: {ok}/{len(tickers)} fetched via snapshot")
+            print(f"  📊 NGX stock prices: {ok}/{len(tickers)} fetched via bulk endpoint")
         return results
 
     # Fall back to individual ticker calls (try first 3 to detect auth failure fast)
@@ -198,20 +202,68 @@ def fetch_all_ngx_prices(tickers, verbose=False):
     return results
 
 
+def fetch_ngx_market_snapshot(verbose=False):
+    """
+    Fetch NGX market-level snapshot (ASI, breadth, volume).
+    Returns market dict with asi_change, adv_dec_ratio, etc.
+    This endpoint works on the free plan.
+    """
+    key = _get_api_key()
+    if not key:
+        return {}
+    url = f"{NGN_MARKETS_BASE}/market/snapshot"
+    try:
+        req = urllib.request.Request(url, headers={
+            "Authorization": f"Bearer {key}",
+            "User-Agent":    "InvestOS/4.0",
+            "Accept":        "application/json",
+        })
+        with urllib.request.urlopen(req, timeout=12) as r:
+            raw = json.loads(r.read().decode())
+        if not raw.get("success"):
+            return {}
+        data = raw.get("data", {})
+        breadth = data.get("breadth", {})
+        result = {
+            "asi":               data.get("asi"),
+            "asi_change_pct":    data.get("asi_change_percent"),
+            "adv_dec_ratio":     breadth.get("adv_dec_ratio"),
+            "advancers":         breadth.get("advancers"),
+            "decliners":         breadth.get("decliners"),
+            "unchanged":         breadth.get("unchanged"),
+            "volume":            data.get("volume"),
+            "deals":             data.get("deals"),
+            "date":              data.get("date", "")[:10],
+            "calls_remaining":   raw.get("meta", {}).get("calls_remaining"),
+        }
+        if verbose:
+            adv = breadth.get("advancers", 0)
+            dec = breadth.get("decliners", 0)
+            chg = data.get("asi_change_percent", 0)
+            direction = "🟢" if chg > 0 else "🔴"
+            print(f"  {direction} NGX ASI: {chg:+.2f}% | "
+                  f"Breadth: {adv} adv / {dec} dec "
+                  f"(ratio: {breadth.get('adv_dec_ratio', 0):.2f})")
+        return result
+    except Exception:
+        return {}
+
+
 def _fetch_snapshot(tickers, verbose=False):
     """
-    Fetch all NGX prices in a single snapshot call.
+    Attempt to fetch individual stock prices via bulk/list endpoint.
     Returns dict {ticker: price_data} or {} if unavailable.
     """
     key = _get_api_key()
     if not key:
         return {}
 
+    # Individual stock list endpoints — snapshot is market-level only
     snap_candidates = [
-        f"{NGN_MARKETS_BASE}/market/snapshot",
+        f"{NGN_MARKETS_BASE}/market/equities",
+        f"{NGN_MARKETS_BASE}/market/stocks",
+        f"{NGN_MARKETS_BASE}/equities",
         f"{NGN_MARKETS_BASE}/stocks",
-        f"{NGN_MARKETS_BASE}/market",
-        f"{NGN_MARKETS_BASE}/quotes",
     ]
     url = snap_candidates[0]
     raw = None

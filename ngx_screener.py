@@ -29,7 +29,8 @@ import os
 from datetime import datetime, timedelta
 try:
     from ngx_price_engine import (gate_level, fetch_all_ngx_prices,
-                                   blend_price_with_macro, get_gate_status_label)
+                                   blend_price_with_macro, get_gate_status_label,
+                                   fetch_ngx_market_snapshot)
     _NGX_PRICE_ENGINE = True
 except ImportError:
     _NGX_PRICE_ENGINE = False
@@ -365,11 +366,35 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
     # ── Gate 1: Blend price data if NGN_MARKETS_KEY is set ─────────────────
     _gate = gate_level() if _NGX_PRICE_ENGINE else 0
     _prices = {}
+    _ngx_market = {}
     if _gate >= 1 and _NGX_PRICE_ENGINE:
         if verbose:
             print(f"  🔑 Gate {_gate} active: {get_gate_status_label(_gate)}")
             print(f"  📡 Fetching NGX price data...")
         _prices = fetch_all_ngx_prices(NGX_ALL, verbose=verbose)
+        # Load market snapshot separately (already fetched inside fetch_all_ngx_prices)
+        try:
+            import json as _j
+            _cache = _j.load(open("ngx_price_cache.json"))
+            _ngx_market = _cache.get("prices", {}).get("__market__", {}).get("data", {})
+        except Exception:
+            pass
+        # Apply NGX breadth adjustment to base macro score
+        # adv_dec_ratio < 0.4 = bearish NGX market
+        if _ngx_market:
+            _adr = _ngx_market.get("adv_dec_ratio", 0.5)
+            _asi_chg = _ngx_market.get("asi_change_pct", 0) or 0
+            if verbose:
+                _adv = _ngx_market.get("advancers", 0)
+                _dec = _ngx_market.get("decliners", 0)
+                print(f"  📊 NGX market: ASI {_asi_chg:+.2f}% | "
+                      f"{_adv} adv / {_dec} dec (ratio: {_adr:.2f})")
+            # Penalise all scores when NGX breadth is very bearish
+            if _adr < 0.30:
+                for s in scored:
+                    s["score"] = max(0, round(s["score"] * 0.90, 1))
+                if verbose:
+                    print(f"  ⚠️  NGX breadth very bearish (ratio {_adr:.2f}) — scores dampened 10%")
         for s in scored:
             pd = _prices.get(s["ticker"])
             if pd:
