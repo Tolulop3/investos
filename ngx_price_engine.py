@@ -16,7 +16,7 @@ import time
 import urllib.request
 from datetime import datetime, timedelta
 
-NGN_MARKETS_BASE = "https://api.ngnmarkets.com/v1"
+NGN_MARKETS_BASE = "https://api.ngnmarket.com/v1"
 PRICE_CACHE_FILE  = "ngx_price_cache.json"
 CACHE_TTL_HOURS   = 12  # EOD data — cache for half a day
 
@@ -71,10 +71,13 @@ def fetch_ngx_price(ticker):
     ticker_clean = ticker.replace(".LG", "")
 
     endpoints = [
-        f"{NGN_MARKETS_BASE}/quotes/{ticker_clean}",
-        f"{NGN_MARKETS_BASE}/stocks/{ticker_clean}/quote",
+        f"{NGN_MARKETS_BASE}/market/{ticker_clean}",           # most likely based on /market/snapshot
         f"{NGN_MARKETS_BASE}/market/stock/{ticker_clean}",
+        f"{NGN_MARKETS_BASE}/quotes/{ticker_clean}",
+        f"{NGN_MARKETS_BASE}/stocks/{ticker_clean}",
     ]
+
+    _first_attempt = not os.path.exists("ngx_api_debug.json")
 
     for url in endpoints:
         try:
@@ -86,6 +89,12 @@ def fetch_ngx_price(ticker):
             })
             with urllib.request.urlopen(req, timeout=8) as r:
                 raw = json.loads(r.read().decode())
+            # Diagnostic: save first successful raw response
+            if _first_attempt:
+                with open("ngx_api_debug.json", "w") as _f:
+                    json.dump({"url": url, "ticker": ticker_clean, "response": raw}, _f, indent=2)
+                print(f"  📋 NGX API debug: saved first response from {url}")
+                _first_attempt = False
 
             # Normalize response — NGN Markets may use different field names
             close      = _extract(raw, ["close", "lastPrice", "price", "last", "c"])
@@ -118,6 +127,16 @@ def fetch_ngx_price(ticker):
             return data
 
         except urllib.error.HTTPError as e:
+            if _first_attempt:
+                try:
+                    _err_body = e.read().decode()[:300]
+                    with open("ngx_api_debug.json", "w") as _f:
+                        json.dump({"url": url, "ticker": ticker_clean,
+                                   "http_error": e.code, "body": _err_body}, _f, indent=2)
+                    print(f"  📋 NGX API {e.code} at {url}: {_err_body[:120]}")
+                except Exception:
+                    pass
+                _first_attempt = False
             if e.code == 404:
                 continue  # try next endpoint format
             if e.code in (401, 403):
@@ -131,10 +150,23 @@ def fetch_ngx_price(ticker):
 
 
 def fetch_all_ngx_prices(tickers, verbose=False):
-    """Fetch prices for all tickers. Returns dict {ticker: price_data}."""
+    """
+    Fetch prices for all tickers. Tries snapshot endpoint first (1 call),
+    falls back to individual ticker calls if snapshot unavailable.
+    Returns dict {ticker: price_data}.
+    """
     if not _get_api_key():
         return {}
 
+    # Try snapshot endpoint first — returns all tickers in one call
+    results = _fetch_snapshot(tickers, verbose=verbose)
+    if results:
+        ok = len(results)
+        if verbose:
+            print(f"  📊 NGX prices: {ok}/{len(tickers)} fetched via snapshot")
+        return results
+
+    # Fall back to individual ticker calls
     results = {}
     ok, failed = 0, 0
 
@@ -148,9 +180,114 @@ def fetch_all_ngx_prices(tickers, verbose=False):
         time.sleep(0.15)  # Rate limit: ~6 requests/second
 
     if verbose:
-        print(f"  📊 NGX prices: {ok}/{len(tickers)} fetched | {failed} unavailable")
+        if ok == 0 and failed > 0:
+            print(f"  📊 NGX prices: 0/{len(tickers)} fetched | all unavailable")
+            print(f"  ⚠️  NGX price fetch failed — check API endpoint or key")
+            print(f"     Falling back to macro-only scoring (same as Gate 0)")
+        else:
+            print(f"  📊 NGX prices: {ok}/{len(tickers)} fetched | {failed} unavailable")
 
     return results
+
+
+def _fetch_snapshot(tickers, verbose=False):
+    """
+    Fetch all NGX prices in a single snapshot call.
+    Returns dict {ticker: price_data} or {} if unavailable.
+    """
+    key = _get_api_key()
+    if not key:
+        return {}
+
+    url = f"{NGN_MARKETS_BASE}/market/snapshot"
+    try:
+        req = urllib.request.Request(url, headers={
+            "Authorization": f"Bearer {key}",
+            "X-Api-Key":      key,
+            "User-Agent":     "InvestOS/4.0",
+            "Accept":         "application/json",
+        })
+        with urllib.request.urlopen(req, timeout=12) as r:
+            raw = json.loads(r.read().decode())
+
+        # Save snapshot for diagnostics
+        with open("ngx_api_debug.json", "w") as _f:
+            json.dump({"url": url, "response_keys": list(raw.keys()) if isinstance(raw, dict) else type(raw).__name__,
+                       "sample": raw[:2] if isinstance(raw, list) else raw}, _f, indent=2)
+
+        # Normalize: snapshot may return list of stocks or dict keyed by ticker
+        stocks = []
+        if isinstance(raw, list):
+            stocks = raw
+        elif isinstance(raw, dict):
+            # Could be {"data": [...]} or {"stocks": [...]} or {"market": [...]}
+            for key_try in ["data", "stocks", "market", "quotes", "results"]:
+                if key_try in raw and isinstance(raw[key_try], list):
+                    stocks = raw[key_try]
+                    break
+            if not stocks:
+                stocks = list(raw.values()) if raw else []
+
+        results = {}
+        ticker_set = {t.upper() for t in tickers}
+
+        for stock in stocks:
+            if not isinstance(stock, dict):
+                continue
+            # Extract ticker symbol — field may be "symbol", "ticker", "code", "stock"
+            sym = None
+            for sym_key in ["symbol", "ticker", "code", "stock", "name"]:
+                sym = stock.get(sym_key, "")
+                if sym:
+                    sym = str(sym).upper().replace(".LG", "")
+                    break
+
+            if not sym or sym not in ticker_set:
+                continue
+
+            close      = _extract(stock, ["close", "lastPrice", "price", "last", "c", "current_price"])
+            prev_close = _extract(stock, ["previousClose", "prevClose", "open", "prev_close", "previous_close"])
+            volume     = _extract(stock, ["volume", "vol", "v"])
+            ma50       = _extract(stock, ["ma50", "sma50", "moving_average_50", "ma_50"])
+            ma200      = _extract(stock, ["ma200", "sma200", "moving_average_200", "ma_200"])
+
+            if close is None:
+                continue
+
+            change_pct  = ((close - prev_close) / prev_close * 100) if prev_close else 0.0
+            above_ma50  = close > ma50  if ma50  else None
+            above_ma200 = close > ma200 if ma200 else None
+
+            data = {
+                "close":        round(float(close), 2),
+                "prev_close":   round(float(prev_close), 2) if prev_close else None,
+                "change_pct":   round(change_pct, 2),
+                "volume":       int(volume) if volume else None,
+                "ma50":         round(float(ma50),  2) if ma50  else None,
+                "ma200":        round(float(ma200), 2) if ma200 else None,
+                "above_ma50":   above_ma50,
+                "above_ma200":  above_ma200,
+                "source":       "ngn_market_snapshot",
+            }
+            _save_to_cache(sym, data)
+            results[sym] = data
+
+        return results
+
+    except urllib.error.HTTPError as e:
+        if verbose:
+            try:
+                _body = e.read().decode()[:200]
+                print(f"  ⚠️  Snapshot HTTP {e.code}: {_body}")
+                with open("ngx_api_debug.json", "w") as _f:
+                    json.dump({"url": url, "http_error": e.code, "body": _body}, _f, indent=2)
+            except Exception:
+                pass
+        return {}
+    except Exception as e:
+        if verbose:
+            print(f"  ⚠️  Snapshot fetch failed: {e}")
+        return {}
 
 
 def blend_price_with_macro(macro_score, price_data, ticker):

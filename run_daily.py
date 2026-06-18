@@ -849,6 +849,31 @@ def run_daily(test_mode=False):
         print(f"  ⚡ SIGNAL CONFLICT: Regime cautious vs Options PCR {_pcr_val:.3f} {_pcr_signal}")
         print(f"     → Price structure weak. But options showing bullish positioning.")
 
+    # ── Regime Convergence Detector ──────────────────────────────────────────
+    # When 3+ independent layers simultaneously compress toward caution,
+    # surface as a single composite flag rather than requiring cross-section reading.
+    _caution_signals = []
+    _breadth_50 = screener.get("breadth", {}).get("pct_above_50", 100) if screener else 100
+    _spx_pct    = regime.get("pct_above_ma", 100) if regime else 100
+    _macro_caut = macro_regime in ("CAUTIOUS", "DEFENSIVE", "RISK_OFF") if macro_regime else False
+
+    if _breadth_50 < 65:
+        _caution_signals.append(f"Breadth {_breadth_50:.1f}% above 50MA (compressed)")
+    if _spx_pct < 8.0:
+        _caution_signals.append(f"SPX only +{_spx_pct:.1f}% above 200MA (cushion shrinking)")
+    if _pcr_bearish:
+        _caution_signals.append(f"Options PCR {_pcr_val:.3f} BEARISH (hedging elevated)")
+    if _macro_caut:
+        _caution_signals.append(f"Macro regime {macro_regime}")
+    if unified_regime == "NEUTRAL":
+        _caution_signals.append("Unified regime at NEUTRAL (not RISK_ON)")
+
+    if len(_caution_signals) >= 3:
+        print(f"  🔶 REGIME CONVERGENCE: {len(_caution_signals)} independent layers compressing toward caution:")
+        for _cs in _caution_signals:
+            print(f"     • {_cs}")
+        print(f"     → Not a regime change signal alone, but coherent pattern. Reduce new position sizing.")
+
     # ── 11c. Regime Shift Predictor ───────────────────────────────────────────
     regime_momentum_data = {}
     try:
