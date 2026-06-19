@@ -1296,10 +1296,24 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
                 slim_brief[k] = brief[k]
 
         def _sanitize_floats(obj, _depth=0):
-            """Recursively round all floats to 4dp to kill IEEE 754 artifacts."""
-            if _depth > 20: return obj  # guard against circular refs
+            """Recursively round all floats to 4dp to kill IEEE 754 artifacts.
+            Also catches string-encoded floats (e.g. '57.599999999999994')
+            that survive json.dumps(default=str) and bypass float isinstance check."""
+            if _depth > 20: return obj
             if isinstance(obj, float):
                 return round(obj, 4)
+            if isinstance(obj, str):
+                # Catch string-encoded floats with long decimal tails
+                if len(obj) > 6 and obj.replace('.','',1).replace('-','',1).isdigit():
+                    try:
+                        f = float(obj)
+                        rounded = round(f, 4)
+                        # Only reformat if it was an artifact (too many decimal places)
+                        if len(obj.split('.')[-1]) > 6:
+                            return str(rounded) if '.' in obj else obj
+                    except ValueError:
+                        pass
+                return obj
             if isinstance(obj, dict):
                 return {k: _sanitize_floats(v, _depth+1) for k, v in obj.items()}
             if isinstance(obj, list):
@@ -1561,6 +1575,18 @@ if __name__ == "__main__":
             with open("crypto_signals.json") as f: cry = json.load(f)
         except: pass
 
+
+        # ── Round score_history.json floats before baking ───────────────
+        try:
+            import json as _cj
+            _sh = _cj.load(open("score_history.json"))
+            for _recs in _sh.values():
+                for _r in _recs:
+                    if "score" in _r:
+                        _r["score"] = round(float(_r["score"]), 1)
+            _cj.dump(_sh, open("score_history.json","w"), indent=2)
+        except Exception:
+            pass
         bake_dashboard(brief, fx, cry)
         try:
             from signal_ledger import bake_audit_page
@@ -1588,6 +1614,18 @@ if __name__ == "__main__":
                     with open("latest_brief.json","w") as _f:
                         json.dump(brief, _f, indent=2, default=str)
                 except Exception: pass
+
+                # ── Round score_history.json floats before baking ───────
+                try:
+                    import json as _cj2
+                    _sh2 = _cj2.load(open("score_history.json"))
+                    for _recs2 in _sh2.values():
+                        for _r2 in _recs2:
+                            if "score" in _r2:
+                                _r2["score"] = round(float(_r2["score"]), 1)
+                    _cj2.dump(_sh2, open("score_history.json","w"), indent=2)
+                except Exception:
+                    pass
                 bake_dashboard(brief, fx, cry)
             except Exception as _ngx_e:
                 import traceback as _tb
