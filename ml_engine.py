@@ -778,9 +778,10 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
         final_wts = [base_wt if picks[i]["ticker"] not in sector_blocked else 0.0
                      for i in range(n_picks)]
         total_f = sum(final_wts)
-    # Iterative normalize + 20% hard cap
-    # Renorm to 100% of deployable, then cap at 20%, redistribute, repeat
-    MAX_HARD = 0.20
+    # Iterative normalize + dynamic hard cap
+    # Cap scales with basket size: 5 picks → 30%, 7 picks → 21%, 10+ → 20%
+    # A 20% cap on a 5-pick basket = equal weight, which kills vol-targeting signal.
+    MAX_HARD = max(0.20, 1.5 / n_picks)
     for _iter in range(6):
         _nz = sum(w for w in final_wts if w > 0)
         if _nz == 0: break
