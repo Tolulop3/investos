@@ -737,8 +737,11 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
         if picks[i]["ticker"] in sector_blocked:
             final_wts.append(0.0)
         elif kelly_wts[i] == 0.0:
-            # Kelly=0: model sees zero edge — zero allocation
-            final_wts.append(0.0)
+            # Kelly=0 or negative edge: reduce to minimum floor (not zero)
+            # Zero allocation creates concentration in Kelly>0 picks.
+            # Floor = 50% of equal weight — still underweights vs the edge picks
+            # but prevents the redistribution cascade that inflates RCI-B/ABX.TO.
+            final_wts.append(base_wt * 0.50)
         else:
             w = 0.33 * norm_kelly[i] + 0.33 * norm_vol[i] + 0.33 * norm_ml[i]
             w = min(MAX_SINGLE, w)   # hard 20% cap
