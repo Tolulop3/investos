@@ -1295,12 +1295,24 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
             if k in brief:
                 slim_brief[k] = brief[k]
 
-        baked = json.dumps({
+        def _sanitize_floats(obj, _depth=0):
+            """Recursively round all floats to 4dp to kill IEEE 754 artifacts."""
+            if _depth > 20: return obj  # guard against circular refs
+            if isinstance(obj, float):
+                return round(obj, 4)
+            if isinstance(obj, dict):
+                return {k: _sanitize_floats(v, _depth+1) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_sanitize_floats(i, _depth+1) for i in obj]
+            return obj
+
+        baked_payload = _sanitize_floats({
             "brief":    slim_brief,
             "fx":       fx_signals  or {},
             "crypto":   crypto_signals or {},
             "baked_at": datetime.now().isoformat(),
-        }, default=str, ensure_ascii=True)
+        })
+        baked = json.dumps(baked_payload, default=str, ensure_ascii=True)
         baked = baked.replace("</script>", r"<\/script>").replace("</", r"<\/")
         print(f"  📦 Baked JSON size: {len(baked)//1024}KB")
     except Exception as e:
