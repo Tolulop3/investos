@@ -11,9 +11,9 @@
     "full_exposure_pct": 100.0
   },
   "sharpe": {
-    "sharpe": 2.299,
-    "avg_ret_pct": 1.46,
-    "std_ret_pct": 4.59,
+    "sharpe": 2.332,
+    "avg_ret_pct": 1.48,
+    "std_ret_pct": 4.57,
     "picks_used": 300,
     "source": "resolved_returns",
     "note": "Sharpe from 300 resolved picks \u00b7 price-return \u00b7 weekly horizon \u00b7 capped at 4.0"
@@ -52,10 +52,10 @@
       ]
     },
     "CANADIAN_ENERGY": {
-      "bullish_score": 200,
+      "bullish_score": 300,
       "bearish_score": 275.0,
-      "net_score": -75.0,
-      "sentiment": "BEARISH",
+      "net_score": 25.0,
+      "sentiment": "NEUTRAL",
       "signals": [
         {
           "name": "middle_east_tension",
@@ -68,6 +68,11 @@
           "confidence": 100
         },
         {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 50
+        },
+        {
           "name": "oil_price_drop",
           "direction": "bearish",
           "confidence": 50
@@ -75,9 +80,9 @@
       ]
     },
     "DEFENSE": {
-      "bullish_score": 323.0,
+      "bullish_score": 336.0,
       "bearish_score": 150.0,
-      "net_score": 173.0,
+      "net_score": 186.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -93,14 +98,14 @@
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 82
+          "confidence": 91
         }
       ]
     },
     "GOLD": {
-      "bullish_score": 323.0,
+      "bullish_score": 336.0,
       "bearish_score": 150.0,
-      "net_score": 173.0,
+      "net_score": 186.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -116,14 +121,14 @@
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 82
+          "confidence": 91
         }
       ]
     },
     "AIRLINES": {
       "bullish_score": 75.0,
-      "bearish_score": 400,
-      "net_score": -325.0,
+      "bearish_score": 500,
+      "net_score": -425.0,
       "sentiment": "BEARISH",
       "signals": [
         {
@@ -135,6 +140,11 @@
           "name": "health_outbreak",
           "direction": "bearish",
           "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 50
         },
         {
           "name": "oil_price_drop",
@@ -176,14 +186,19 @@
     },
     "CONSUMER": {
       "bullish_score": 225.0,
-      "bearish_score": 0,
-      "net_score": 225.0,
+      "bearish_score": 100,
+      "net_score": 125.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "peace_deal",
           "direction": "bullish",
           "confidence": 100
+        },
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 50
         },
         {
           "name": "oil_price_drop",
@@ -219,54 +234,54 @@
       ]
     },
     "EUROPEAN_ENERGY": {
-      "bullish_score": 123.0,
+      "bullish_score": 136.0,
       "bearish_score": 0,
-      "net_score": 123.0,
+      "net_score": 136.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 82
+          "confidence": 91
         }
       ]
     },
     "AGRICULTURE": {
-      "bullish_score": 123.0,
+      "bullish_score": 136.0,
       "bearish_score": 0,
-      "net_score": 123.0,
+      "net_score": 136.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 82
+          "confidence": 91
         }
       ]
     },
     "EUROPEAN_STOCKS": {
       "bullish_score": 0,
-      "bearish_score": 123.0,
-      "net_score": -123.0,
+      "bearish_score": 136.0,
+      "net_score": -136.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bearish",
-          "confidence": 82
+          "confidence": 91
         }
       ]
     },
     "NATURAL_GAS": {
       "bullish_score": 0,
-      "bearish_score": 123.0,
-      "net_score": -123.0,
+      "bearish_score": 136.0,
+      "net_score": -136.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bearish",
-          "confidence": 82
+          "confidence": 91
         }
       ]
     },
@@ -413,12 +428,48 @@
         }
       ]
     },
-    "TRANSPORT": {
-      "bullish_score": 75.0,
+    "OIL_PRODUCERS": {
+      "bullish_score": 100,
       "bearish_score": 0,
-      "net_score": 75.0,
+      "net_score": 100,
       "sentiment": "BULLISH",
       "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 50
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 100,
+      "bearish_score": 75.0,
+      "net_score": 25.0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 50
+        },
+        {
+          "name": "oil_price_drop",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 75.0,
+      "bearish_score": 100,
+      "net_score": -25.0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 50
+        },
         {
           "name": "oil_price_drop",
           "direction": "bullish",
@@ -438,26 +489,13 @@
           "confidence": 50
         }
       ]
-    },
-    "PIPELINES": {
-      "bullish_score": 0,
-      "bearish_score": 75.0,
-      "net_score": -75.0,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "oil_price_drop",
-          "direction": "bearish",
-          "confidence": 50
-        }
-      ]
     }
   },
   "system_exposure": {
     "pct": 0.5,
     "label": "RISK_ON",
-    "reason": "M:+1.0 N:-0.3 H:+1.0 \u2192 +0.61 Sharpe:2.30",
-    "sharpe": 2.3,
+    "reason": "M:+1.0 N:-0.3 H:+1.0 \u2192 +0.61 Sharpe:2.33",
+    "sharpe": 2.33,
     "unified_score": 0.61,
     "unified_regime": "RISK_ON",
     "confidence": 0.43,
