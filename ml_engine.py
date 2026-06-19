@@ -785,7 +785,7 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
             "dollar_amt": round(deployable * wt, 2),
             "ml_prob":    round(ml_probs[i], 3),
             "vol_adj":    round(vols[i], 3),
-            "kelly_wt":   kw,   # raw kelly fraction (not normalized)
+            "kelly_wt":   kw,   # raw tier fraction (pre-normalization — see weight_pct for actual)
             "score":      sc,
         })
 
@@ -911,7 +911,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     if verbose:
         for pos in sized[:5]:
             print(f"   {pos['ticker']:<12} {pos['weight_pct']:>5.1f}%  ${pos['dollar_amt']:>8,.0f}"
-                  f"  ML: {pos['ml_prob']:.2f}  Kelly: {pos['kelly_wt']:.3f}")
+                  f"  ML: {pos['ml_prob']:.2f}  Kelly(tier): {pos['kelly_wt']:.3f}")
 
     backtest = run_backtest_summary(regime, predictor, verbose=verbose)
 
