@@ -686,7 +686,31 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
         kelly = (p * b - (1 - p)) / b
         return max(0.0, kelly * 0.50)  # half-Kelly, floor at zero
 
-    kelly_wts   = [score_to_kelly_wt(p.get("score", 70), win_rate_data) for p in picks[:n_picks]]
+    # Load score_history for trend-aware Kelly scoring
+    # Kelly should use the most recent trended score, not the raw screener score
+    # ABX.TO pattern: screener says 68 (60-74 tier), history shows 57.6 (below-60)
+    _score_hist = {}
+    try:
+        import json as _j
+        _score_hist = _j.load(open("score_history.json"))
+    except Exception:
+        pass
+
+    def _trend_adjusted_score(pick, hist):
+        """Return the lower of screener score or most recent history score.
+        Conservative: if trending down, Kelly uses the trended (lower) score."""
+        base = pick.get("score", 70)
+        ticker = pick.get("ticker", "")
+        records = hist.get(ticker, [])
+        if not records:
+            return base
+        recent = sorted(records, key=lambda x: x.get("date",""), reverse=True)
+        latest_score = round(float(recent[0].get("score", base)), 1)
+        # Only downgrade — never inflate Kelly using stale history
+        return min(base, latest_score)
+
+    kelly_wts = [score_to_kelly_wt(_trend_adjusted_score(p, _score_hist), win_rate_data)
+                 for p in picks[:n_picks]]
     total_kelly = sum(kelly_wts)
     n_positive_kelly = sum(1 for w in kelly_wts if w > 0)
 
@@ -779,13 +803,14 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
         sc = pick.get("score", 70)
         kw = round(kelly_wts[i], 3)
         wt = final_wts[i]
+        _eff_score = _trend_adjusted_score(pick, _score_hist)
         sized.append({
             "ticker":     pick["ticker"],
             "weight_pct": round(wt * 100, 2),
             "dollar_amt": round(deployable * wt, 2),
             "ml_prob":    round(ml_probs[i], 3),
             "vol_adj":    round(vols[i], 3),
-            "kelly_wt":   kw,   # raw tier fraction (pre-normalization — see weight_pct for actual)
+            "kelly_wt":   kw,   # tier fraction using trend-adjusted score
             "score":      sc,
         })
 
