@@ -601,9 +601,43 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2):
     Sector is taken from pick.get("sector") or pick.get("data",{}).get("sector").
     Picks without sector info are treated as "Unknown" — count toward no cap.
     """
+    # Sector normalization map — yfinance returns inconsistent strings
+    # e.g. "Financial Services", "Banks", "Insurance" all = same sector risk
+    _SECTOR_NORM = {
+        "financial services": "Financials",
+        "financials":         "Financials",
+        "banks":              "Financials",
+        "insurance":          "Financials",
+        "asset management":   "Financials",
+        "capital markets":    "Financials",
+        "diversified financials": "Financials",
+        "real estate":        "Real Estate",
+        "reits":              "Real Estate",
+        "reit":               "Real Estate",
+        "real estate investment trusts": "Real Estate",
+        "energy":             "Energy",
+        "oil & gas":          "Energy",
+        "oil and gas":        "Energy",
+        "utilities":          "Utilities",
+        "consumer discretionary": "Consumer",
+        "consumer staples":   "Consumer",
+        "technology":         "Technology",
+        "information technology": "Technology",
+        "communication services": "Communication",
+        "telecommunications": "Communication",
+        "telecom":            "Communication",
+        "health care":        "Healthcare",
+        "healthcare":         "Healthcare",
+        "pharmaceuticals":    "Healthcare",
+        "biotechnology":      "Healthcare",
+        "industrials":        "Industrials",
+        "materials":          "Materials",
+    }
+
     def _get_sector(pick):
         s = pick.get("sector") or pick.get("data", {}).get("sector", "")
-        return (s or "Unknown").strip()
+        s = (s or "Unknown").strip()
+        return _SECTOR_NORM.get(s.lower(), s)
 
     # Count sectors in current basket
     from collections import Counter
