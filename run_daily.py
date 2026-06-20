@@ -1126,7 +1126,17 @@ def run_daily(test_mode=False, dry_run=False):
             "drawdown_lock":  risk_report.get("drawdown_lock",{}),
             "stale_fx_pairs": stale_pairs,
             "robustness_score": risk_report.get("decay_monitor",{}).get("robustness_score", 60),
+            "risk_multiplier":   _risk_multiplier if "_risk_multiplier" in dir() else 1.0,
+            "cash_reserve_pct":  _cash_reserve if "_cash_reserve" in dir() else 0,
+            "convergence_fired": _convergence_fired if "_convergence_fired" in dir() else False,
+            "conflict_fired":    _conflict_fired if "_conflict_fired" in dir() else False,
         },
+        "sized_positions": [
+            {**p,
+             "weight_pct_adj":  round(p.get("weight_pct", 0) * (_risk_multiplier if "_risk_multiplier" in dir() else 1.0), 1),
+             "dollar_amt_adj":  round(p.get("dollar_amt", 0) * (_risk_multiplier if "_risk_multiplier" in dir() else 1.0), 0)}
+            for p in (ml_results.get("sized_positions", []) if ml_results else [])
+        ],
     }
 
     # ── OUTCOME TRACKING ─────────────────────────────────────
