@@ -860,7 +860,11 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
     total_ml   = sum(ml_probs) or 1.0
     norm_ml    = [prob / total_ml for prob in ml_probs]
 
-    MAX_SINGLE = 0.20   # hard cap: no name > 20% of TFSA in any regime
+    # Dynamic per-pick cap — same formula as MAX_HARD below.
+    # A flat 20% cap on a 4-pick basket equals equal weight (25% base),
+    # which collapses all differentiation before MAX_HARD even runs.
+    # 4 picks → 37.5%, 5 picks → 30%, 7+ → 20%
+    MAX_SINGLE = max(0.20, 1.5 / n_picks)
     final_wts  = []
     for i in range(n_picks):
         if picks[i]["ticker"] in sector_blocked:
@@ -873,7 +877,7 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
             final_wts.append(base_wt * 0.50)
         else:
             w = 0.33 * norm_kelly[i] + 0.33 * norm_vol[i] + 0.33 * norm_ml[i]
-            w = min(MAX_SINGLE, w)   # hard 20% cap
+            w = min(MAX_SINGLE, w)   # dynamic cap — scales with basket size
             final_wts.append(w)
 
     total_f  = sum(final_wts)
