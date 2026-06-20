@@ -690,26 +690,61 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
     # Kelly should use the most recent trended score, not the raw screener score
     # ABX.TO pattern: screener says 68 (60-74 tier), history shows 57.6 (below-60)
     _score_hist = {}
+    # Also build a fast ticker → outcomes lookup for picks with no score_history
+    _outcomes_lookup = {}
+    try:
+        import json as _jout
+        _raw_outcomes = _jout.load(open("outcomes.json"))
+        for _o in _raw_outcomes:
+            _tk = _o.get("ticker","")
+            if _tk:
+                _outcomes_lookup.setdefault(_tk, []).append(_o)
+    except Exception:
+        pass
     try:
         import json as _j
         _score_hist = _j.load(open("score_history.json"))
     except Exception:
         pass
 
-    def _trend_adjusted_score(pick, hist):
+    def _trend_adjusted_score(pick, hist, outcomes_lookup=None):
         """Return the lower of screener score or most recent history score.
-        Conservative: if trending down, Kelly uses the trended (lower) score."""
+        Conservative: if trending down, Kelly uses the trended (lower) score.
+
+        If no score_history exists, fall back to the most recent OUTCOME score
+        rather than blindly trusting the screener. This catches the CP.TO / F
+        pattern where a ticker enters the basket with no history but has prior
+        losses logged at low scores.
+        """
         base = pick.get("score", 70)
         ticker = pick.get("ticker", "")
         records = hist.get(ticker, [])
-        if not records:
-            return base
-        recent = sorted(records, key=lambda x: x.get("date",""), reverse=True)
-        latest_score = round(float(recent[0].get("score", base)), 1)
-        # Only downgrade — never inflate Kelly using stale history
-        return min(base, latest_score)
 
-    kelly_wts = [score_to_kelly_wt(_trend_adjusted_score(p, _score_hist), win_rate_data)
+        if records:
+            recent = sorted(records, key=lambda x: x.get("date",""), reverse=True)
+            latest_score = round(float(recent[0].get("score", base)), 1)
+            # Only downgrade — never inflate Kelly using stale history
+            return min(base, latest_score)
+
+        # No score_history: check outcomes.json for prior logged scores
+        if outcomes_lookup:
+            prior = outcomes_lookup.get(ticker, [])
+            if prior:
+                # Use the most recent outcome's score as conservative floor
+                prior_sorted = sorted(prior, key=lambda x: x.get("signal_date",""), reverse=True)
+                prior_score = prior_sorted[0].get("score", base)
+                if prior_score and prior_score < base:
+                    return float(prior_score)
+
+        # No history at all — use screener score but with a caution cap
+        # If base > 80 with no history, cap at 75 (requires evidence to go higher)
+        if base > 80:
+            return 75.0
+        return base
+
+    kelly_wts = [score_to_kelly_wt(
+                     _trend_adjusted_score(p, _score_hist, _outcomes_lookup),
+                     win_rate_data)
                  for p in picks[:n_picks]]
     total_kelly = sum(kelly_wts)
     n_positive_kelly = sum(1 for w in kelly_wts if w > 0)
