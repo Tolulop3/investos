@@ -102,7 +102,7 @@ UNIVERSE = {
         "VEA",   # All developed markets ex-US (Europe + Japan + Australia)
         "EFA",   # Same, iShares version
         "VGK",   # Europe only
-        "EWG",   # Germany
+        "EWJ",   # Germany
         "EWU",   # UK
         "EWJ",   # Japan
         "EWA",   # Australia

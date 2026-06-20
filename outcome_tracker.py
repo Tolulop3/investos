@@ -114,6 +114,8 @@ def log_picks(picks, run_time=None, regime=None):
             "actual_return": None,
             "outcome":       None,
             "resolved_date": None,
+            "outcome_90d":    None,
+            "return_90d":     None,
 
             # ── ML features: momentum ──────────────────────────────────────
             "perf_90d":      d.get("perf_90d", 0) or 0,      # → momentum_6m
@@ -197,7 +199,77 @@ def resolve_outcomes(current_prices):
     save_outcomes(outcomes)
     if resolved:
         print(f"   ✅ Resolved {resolved} outcomes")
+
+    # ── Loss-triggered cooldown ──────────────────────────────────────────
+    # If a ticker has 2+ losses ≥1.5% within the last 5 resolved picks,
+    # flag it for cooldown. run_daily.py reads cooldown_flags.json and
+    # adds these to the cooldown set before ML engine runs.
+    # This catches the GRT-UN.TO pattern: repeated losses, no circuit breaker.
+    _flagged = _detect_loss_streak(outcomes)
+    if _flagged:
+        import json as _jcf
+        _existing = {}
+        try:
+            _existing = _jcf.load(open("cooldown_flags.json"))
+        except Exception:
+            pass
+        import datetime as _dtt
+        _today = _dtt.date.today().isoformat()
+        for _tk in _flagged:
+            if _tk not in _existing or _existing[_tk].get("expires", "") < _today:
+                _existing[_tk] = {
+                    "reason":  "loss_streak",
+                    "flagged": _today,
+                    "expires": (
+                        _dtt.date.today() + _dtt.timedelta(days=7)
+                    ).isoformat(),
+                }
+                print(f"   🛑 Loss-streak cooldown: {_tk} (7 days)")
+        _jcf.dump(_existing, open("cooldown_flags.json", "w"), indent=2)
+
     return resolved
+
+
+def _detect_loss_streak(outcomes, window=10, min_losses=2, min_loss_pct=1.5):
+    """
+    Scan recent outcomes for tickers with loss streaks.
+    Returns set of tickers to flag for cooldown.
+
+    Rule: if a ticker has min_losses or more losses ≥min_loss_pct%
+    within the last `window` resolved picks, flag it.
+    This is structural — no cooldown currently fires on consecutive losses.
+    """
+    resolved = [o for o in outcomes if o.get("outcome") in ("WIN","LOSS","FLAT")]
+    if not resolved:
+        return set()
+
+    # Sort by resolved_date descending, take last window picks
+    resolved_sorted = sorted(
+        resolved,
+        key=lambda x: x.get("resolved_date", x.get("signal_date", "")),
+        reverse=True
+    )[:window * 4]  # look at 4x window to catch tickers that appear multiple times
+
+    # Group by ticker, count recent losses
+    from collections import defaultdict
+    ticker_losses = defaultdict(list)
+    ticker_all    = defaultdict(int)
+
+    for o in resolved_sorted:
+        tk  = o.get("ticker", "")
+        ret = o.get("actual_return", 0) or 0
+        if not tk:
+            continue
+        ticker_all[tk] += 1
+        if o.get("outcome") == "LOSS" and abs(ret) >= min_loss_pct:
+            ticker_losses[tk].append(ret)
+
+    flagged = set()
+    for tk, losses in ticker_losses.items():
+        if len(losses) >= min_losses:
+            flagged.add(tk)
+
+    return flagged
 
 
 def compute_time_weighted_win_rate(resolved):

@@ -592,6 +592,76 @@ def get_cooldown_set(verbose=False):
     return blocked, tiers
 
 
+def _apply_sector_cap(picks, screener_picks, max_per_sector=2):
+    """
+    Enforce sector diversity in final basket.
+    If >max_per_sector picks share a sector, replace excess with next-best
+    pick from an under-represented sector.
+
+    Sector is taken from pick.get("sector") or pick.get("data",{}).get("sector").
+    Picks without sector info are treated as "Unknown" — count toward no cap.
+    """
+    def _get_sector(pick):
+        s = pick.get("sector") or pick.get("data", {}).get("sector", "")
+        return (s or "Unknown").strip()
+
+    # Count sectors in current basket
+    from collections import Counter
+    sector_counts = Counter(_get_sector(p) for p in picks)
+
+    # Identify over-represented picks (keep first max_per_sector, flag rest)
+    seen = Counter()
+    kept   = []
+    excess = []
+    for pick in picks:
+        s = _get_sector(pick)
+        if s == "Unknown" or seen[s] < max_per_sector:
+            kept.append(pick)
+            seen[s] += 1
+        else:
+            excess.append(pick)
+
+    if not excess:
+        return picks  # no concentration issue
+
+    # Build reserve pool from all screener picks not already in basket
+    basket_tickers = {p.get("ticker") for p in picks}
+    all_candidates = []
+    for group_name in ["TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3",
+                       "FHSA_top5", "conviction_picks"]:
+        for p in screener_picks.get(group_name, []):
+            if p.get("ticker") not in basket_tickers:
+                all_candidates.append(p)
+
+    # Sort reserve pool by score descending
+    all_candidates.sort(key=lambda x: x.get("score", 0), reverse=True)
+
+    # Fill excess slots with best candidates from under-represented sectors
+    filled = list(kept)
+    for candidate in all_candidates:
+        if len(filled) >= len(picks):
+            break
+        s = _get_sector(candidate)
+        if s == "Unknown" or seen[s] < max_per_sector:
+            filled.append(candidate)
+            seen[s] += 1
+            basket_tickers.add(candidate.get("ticker"))
+
+    if len(filled) < len(picks):
+        # Not enough diversified replacements — keep original excess to maintain basket size
+        filled.extend(excess[:len(picks) - len(filled)])
+
+    if len(excess) > 0:
+        removed  = [p.get("ticker") for p in excess[:len(excess)]]
+        added    = [p.get("ticker") for p in filled[len(kept):]]
+        if removed or added:
+            import sys
+            print(f"  🏛  Sector cap: removed {removed}, added {added} (max {max_per_sector}/sector)",
+                  file=sys.stdout)
+
+    return filled[:len(picks)]
+
+
 def calculate_position_sizes(picks, portfolio_value, market_regime, current_drawdown=0.0,
                               max_equity=1.0, verbose=True, sector_sentiment=None,
                               win_rate_data=None, **kwargs):
@@ -958,6 +1028,15 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
 
     tfsa_picks = (screener_picks.get("TFSA_growth_top5", []) +
                   screener_picks.get("TFSA_income_top5", []))
+
+    # ── Sector diversity cap ──────────────────────────────────────────────
+    # Max 2 picks per sector in the final basket.
+    # Problem it solves: JPM + TD.TO + REI-UN.TO all land in financials
+    # under CAUTIOUS macro — 3 correlated positions, stress test shows fragility.
+    # When a sector is over-represented, excess picks are replaced by the
+    # next-best scoring pick from a different sector.
+    tfsa_picks = _apply_sector_cap(tfsa_picks, screener_picks, max_per_sector=2)
+
     sized = calculate_position_sizes(
         tfsa_picks,
         portfolio_value=10000,

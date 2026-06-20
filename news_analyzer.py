@@ -47,7 +47,7 @@ NEWS_SOURCES = [
     {"name": "OilPrice.com",         "url": "https://oilprice.com/rss/main",                           "weight": 2},
 
     # Central banks
-    {"name": "Bank of Canada",       "url": "https://www.bankofcanada.ca/press/press-releases/feed/",                       "weight": 3},
+    {"name": "Bank of Canada",       "url": "https://www.bankofcanada.ca/feed/",                       "weight": 3},
     {"name": "Fed Reserve",          "url": "https://www.federalreserve.gov/feeds/press_all.xml",      "weight": 3},
 ]
 
@@ -523,7 +523,7 @@ def run_news_analysis(verbose=True):
         all_articles.extend(result["articles"])
         if verbose:
             if result["status"] == "ok" and len(result["articles"]) == 0:
-                status = f"⚠️  0 articles (endpoint OK but empty — check URL)"
+                status = f"⚠️  0 articles (endpoint OK — BoC feed may have no recent items)"
             elif result["status"] == "ok":
                 status = f"✅ {len(result['articles'])} articles"
             else:

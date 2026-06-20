@@ -548,11 +548,15 @@ def run_daily(test_mode=False, dry_run=False):
     try:
         from evidence_engine import enrich_picks_with_evidence, get_tier_evidence_summary
         _spx_ret = regime.get("pct_above_ma", 0) if regime else 0
-        # Enrich conviction candidates + all screener picks
-        _all_for_evidence = (
-            ml_results.get("conviction_picks", []) +
-            ml_results.get("sized_positions", [])
-        )
+        # Enrich ALL ml shortlist picks (not just conviction — those are usually empty)
+        # sized_positions is the 5-pick basket that actually shows on dashboard
+        _all_for_evidence = ml_results.get("sized_positions", [])
+        if not _all_for_evidence:
+            # Fallback: try all screener candidates that made it to ML step
+            _all_for_evidence = (
+                screener.get("TFSA_growth_top5", []) +
+                screener.get("TFSA_income_top5", [])
+            )[:10]
         if _all_for_evidence:
             enrich_picks_with_evidence(_all_for_evidence, unified_regime,
                                        spx_90d_return=_spx_ret, verbose=True)
@@ -623,6 +627,24 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception as _e:
         print(f"  ⚠️  Cooldown computation error: {_e}")
         cooldown_set, cooldown_tiers = set(), {}
+
+    # ── Loss-streak flags from outcome_tracker ────────────────────────────
+    # outcome_tracker.resolve_outcomes() writes cooldown_flags.json when
+    # it detects 2+ losses ≥1.5% in last 10 resolved picks for a ticker.
+    # Merged here so loss-streak tickers are invisible to ML + conviction.
+    try:
+        import json as _jflags, datetime as _dttf
+        _flags = _jflags.load(open("cooldown_flags.json"))
+        _today_str = _dttf.date.today().isoformat()
+        _loss_flagged = [t for t, d in _flags.items() if d.get("expires","") >= _today_str]
+        for _ftk in _loss_flagged:
+            cooldown_set.add(_ftk)
+        if _loss_flagged:
+            print(f"  🛑 Loss-streak cooldowns: {', '.join(_loss_flagged)}")
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
 
     score_history_for_decay = intel.get("history", {})
     all_picks_for_decay = (
