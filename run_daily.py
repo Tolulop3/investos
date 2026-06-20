@@ -544,6 +544,23 @@ def run_daily(test_mode=False, dry_run=False):
         }
 
     # ── 6. Intelligence Layers ───────────────────────────────
+    # ── EVIDENCE ENGINE — enrich picks with historical backing ──────────────
+    try:
+        from evidence_engine import enrich_picks_with_evidence, get_tier_evidence_summary
+        _spx_ret = regime.get("pct_above_ma", 0) if regime else 0
+        # Enrich conviction candidates + all screener picks
+        _all_for_evidence = (
+            ml_results.get("conviction_picks", []) +
+            ml_results.get("sized_positions", [])
+        )
+        if _all_for_evidence:
+            enrich_picks_with_evidence(_all_for_evidence, unified_regime,
+                                       spx_90d_return=_spx_ret, verbose=True)
+        # Add tier evidence summary to brief for dashboard
+        brief["evidence_summary"] = get_tier_evidence_summary()
+    except Exception as _ee:
+        pass  # non-fatal — evidence is additive, never blocking
+
     print(f"\n[6/10] 🧠 INTELLIGENCE LAYERS (RS + History + Analyst)")
     all_raw = [p["data"] for bucket in
                ["FHSA_all","TFSA_core_all","TFSA_income_all","TFSA_swing_all"]
@@ -914,11 +931,37 @@ def run_daily(test_mode=False, dry_run=False):
     if unified_regime == "NEUTRAL":
         _caution_signals.append("Unified regime at NEUTRAL")
 
+    # ── RISK MULTIPLIER — translates text advice into actual size adjustments ──
+    # This is the sizing trust gate: convergence flags now produce a real number.
+    # The multiplier is applied to all new position sizes in the brief.
+    _convergence_fired = len(_caution_signals) >= 3
+    _conflict_fired    = _price_bull and _pcr_bearish
+
+    if unified_regime in ("CAPITAL_PRESERVATION", "DEFENSIVE"):
+        _risk_multiplier = 0.25
+    elif unified_regime == "NEUTRAL":
+        _risk_multiplier = 0.50
+    elif _convergence_fired and _conflict_fired:
+        _risk_multiplier = 0.50   # both firing: more conservative
+    elif _convergence_fired or _conflict_fired:
+        _risk_multiplier = 0.75   # one firing: standard caution
+    else:
+        _risk_multiplier = 1.00   # clean: full deployment
+
+    _cash_reserve = round((1 - _risk_multiplier) * 100, 0)
+
     if len(_caution_signals) >= 3:
         print(f"  🔶 REGIME CONVERGENCE: {len(_caution_signals)} independent layers compressing toward caution:")
         for _cs in _caution_signals:
             print(f"     • {_cs}")
         print(f"     → Reduce new position sizing. Watch 200MA breadth for regime reclassification.")
+
+    if _risk_multiplier < 1.0:
+        print(f"  📐 RISK MULTIPLIER: {_risk_multiplier:.2f}× "
+              f"({'convergence+conflict' if _convergence_fired and _conflict_fired else 'convergence' if _convergence_fired else 'PCR conflict'})")
+        print(f"     → Positions sized at {_risk_multiplier*100:.0f}% of full allocation | {_cash_reserve:.0f}% held as cash")
+    else:
+        print(f"  ✅ RISK MULTIPLIER: 1.00× — full deployment, no caution flags")
 
     # ── 11c. Regime Shift Predictor ───────────────────────────────────────────
     regime_momentum_data = {}
