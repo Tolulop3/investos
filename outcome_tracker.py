@@ -148,6 +148,15 @@ def log_picks(picks, run_time=None, regime=None):
             "above_ma200":   bool(d.get("above_ma200", True)),
             "above_ma50":    bool(d.get("above_ma50", True)),
             "sector":        d.get("sector", ""),
+
+            # ── Factor attribution fields (for leaderboard analysis) ──────
+            # These enable the hedge fund critique's factor isolation question:
+            # "Which factor actually predicts returns?"
+            "score_rank":    pick.get("score_rank", 0),      # rank in universe today
+            "score_pct":     pick.get("score_pct", 50.0),    # top X% of universe
+            "options_signal": pick.get("options_signal", ""), # HIGH_IV / BULLISH_PCR / etc
+            "conviction":    pick.get("conviction", False),   # was this a 2+ signal pick
+            "kelly_wt":      float(pick.get("kelly_wt", 0) or 0),  # kelly fraction at signal
         }
         outcomes.append(entry)
         new_logged += 1
@@ -399,12 +408,21 @@ def compute_win_rate():
     for tier, min_s, max_s in [("90-100",90,100),("75-89",75,89),("60-74",60,74),("below-60",0,59)]:
         tp = [o for o in resolved if min_s <= o.get("score",0) <= max_s]
         if tp:
-            tw = len([o for o in tp if o["outcome"]=="WIN"])
+            tw       = len([o for o in tp if o["outcome"]=="WIN"])
+            rets     = [o["actual_return"] for o in tp]
+            wins_abs = [r for r in rets if r > 0]
+            loss_abs = [abs(r) for r in rets if r < 0]
+            pf       = round(sum(wins_abs)/sum(loss_abs), 2) if loss_abs else 0
+            avg_win  = round(sum(wins_abs)/len(wins_abs), 2) if wins_abs else 0
+            avg_loss = round(sum(loss_abs)/len(loss_abs), 2) if loss_abs else 0
             by_score[tier] = {
-                "win_rate": round(tw/len(tp)*100, 1),
-                "count":    len(tp),
-                "avg_ret":  round(sum(o["actual_return"] for o in tp)/len(tp), 2),
-                "avg_return": round(sum(o["actual_return"] for o in tp)/len(tp), 2),
+                "win_rate":      round(tw/len(tp)*100, 1),
+                "count":         len(tp),
+                "avg_ret":       round(sum(rets)/len(rets), 2),
+                "avg_return":    round(sum(rets)/len(rets), 2),
+                "profit_factor": pf,
+                "avg_win":       avg_win,
+                "avg_loss":      avg_loss,
             }
 
     # By category
@@ -509,8 +527,11 @@ def print_win_rate_report(wr):
     if wr.get("by_score_tier"):
         print(f"\n  WIN RATE BY SCORE TIER:")
         for tier, data in sorted(wr["by_score_tier"].items(), reverse=True):
-            bar = "█" * int(data["win_rate"] / 5)
-            print(f"  Score {tier:<10} {bar} {data['win_rate']}%  ({data['count']} picks, avg {data['avg_ret']:+.1f}%)")
+            bar  = "█" * int(data["win_rate"] / 5)
+            pf   = data.get("profit_factor", 0)
+            pflag = "✅" if pf >= 1.5 else "⚠️ " if pf >= 1.0 else "🔴"
+            print(f"  Score {tier:<10} {bar:<15} {data['win_rate']}%  "
+                  f"({data['count']} picks, avg {data['avg_ret']:+.1f}%, PF={pf:.2f} {pflag})")
 
     # Feature coverage — shows ML data quality
     fc = wr.get("feature_coverage", {})
