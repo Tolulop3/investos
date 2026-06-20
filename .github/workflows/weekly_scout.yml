@@ -1,1 +1,41 @@
-/
+name: Weekly Scout
+
+on:
+  schedule:
+    - cron: '0 10 * * 0'   # Sunday 10 AM UTC = 6 AM ET
+  workflow_dispatch:         # Manual trigger for testing
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scout agent
+        run: python scout_agent.py
+        env:
+          NGN_MARKETS_KEY: ${{ secrets.NGN_MARKETS_KEY }}
+
+      - name: Commit updated universe
+        run: |
+          git config --global user.name "InvestOS Scout"
+          git config --global user.email "investos@bot.local"
+          git add universe_current.json universe_dynamic.json universe_rotation_log.json
+          git diff --cached --quiet || git commit -m "Scout $(date -u '+%Y-%m-%d'): universe updated"
+          git pull --rebase origin main
+          git push origin main
