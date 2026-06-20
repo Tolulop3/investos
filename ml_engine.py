@@ -742,7 +742,7 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
         print(f"\n💼 POSITION SIZING (TFSA — ${portfolio_value:,}):")
         print(f"   Regime: {market_regime['regime']} | "
               f"Equity: {round(regime_equity_pct*100)}% | Cash: {round((1-regime_equity_pct)*100)}%"
-              f" | Deployable: ${deployable:,.0f}"
+              f" | Deployable: ${deployable:,.0f} (pre-risk-multiplier)"
               + (f" (max_equity cap: {max_equity*100:.0f}%)" if max_equity < 1.0 else ""))
 
     n_picks = min(len(picks), cfg["max_positions"])

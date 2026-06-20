@@ -746,7 +746,7 @@ def run_daily(test_mode=False, dry_run=False):
     # ── 10. Crypto Signals ───────────────────────────────────
     print(f"\n[10/12] 🪙 CRYPTO SIGNALS (BTC + SOL)")
     tfsa_bal = CONFIG["accounts"]["TFSA"]["balance"]
-    crypto_signals = run_crypto_engine(news_analysis=news, portfolio_value=tfsa_bal, verbose=True)
+    crypto_signals = run_crypto_engine(news_analysis=news, portfolio_value=10000, verbose=True)  # hardcoded same as ML engine
     with open("crypto_signals.json","w") as f:
         json.dump(crypto_signals, f, indent=2, default=str)
 
