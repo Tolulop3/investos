@@ -359,7 +359,7 @@ def fetch_news_feed(source):
         return {"source": source["name"], "articles": articles, "status": "ok"}
 
     except Exception as e:
-        return {"source": source["name"], "articles": [], "status": f"error: {str(e)[:50]}"}
+        return {"source": source["name"], "articles": [], "status": f"error: {type(e).__name__}: {str(e)}"}
 
 
 def extract_signals_from_articles(articles):
