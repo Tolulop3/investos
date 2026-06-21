@@ -589,6 +589,24 @@ def get_cooldown_set(verbose=False):
             print(f"   🧊 Cooldown: {', '.join(parts)}")
     except Exception:
         pass
+
+    # ── Also read cooldown_flags.json (permanent exclusions + loss-streak flags) ──
+    # Without this: permanent exclusions (F, DXCM etc.) bypass ML engine's
+    # cooldown check and reach position sizing. The flags file is only read
+    # in run_daily.py AFTER ml_engine runs — too late to block sizing.
+    try:
+        import json as _jf2, datetime as _dttf2
+        _today_str2 = _dttf2.date.today().isoformat()
+        _flags2 = _jf2.load(open("cooldown_flags.json"))
+        for _ftk2, _fdata2 in _flags2.items():
+            if _fdata2.get("expires", "") >= _today_str2:
+                blocked.add(_ftk2)
+                tiers[_ftk2] = "permanent" if _fdata2.get("permanent") else "flag"
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+
     return blocked, tiers
 
 
