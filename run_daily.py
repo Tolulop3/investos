@@ -1714,6 +1714,17 @@ if __name__ == "__main__":
         elif dry_run:
             print("  📧 [DRY-RUN] Email suppressed")
 
+        # ── Factor Attribution Report ──────────────────────────────
+        try:
+            import factor_investigation as _fi
+            print()
+            print("=" * 55)
+            print("  FACTOR ATTRIBUTION REPORT")
+            print("=" * 55)
+            _fi.main()
+        except Exception as _fe:
+            print(f"  ⚠️  Factor report skipped: {_fe}")
+
         print("  ✅ InvestOS complete")
 
         if json_metrics and brief:
