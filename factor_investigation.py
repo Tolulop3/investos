@@ -13,13 +13,18 @@ from collections import defaultdict
 from datetime import datetime
 
 def load():
-    try:
-        data = json.load(open("outcomes.json"))
-        print(f"  Loaded {len(data)} total picks")
-        return data
-    except Exception as e:
-        print(f"  ERROR: {e}")
-        return []
+    # Try both filenames — outcome_tracker uses "outcomes_log.json"
+    for fname in ["outcomes_log.json", "outcomes.json"]:
+        try:
+            data = json.load(open(fname))
+            print(f"  Loaded {len(data)} total picks from {fname}")
+            return data
+        except FileNotFoundError:
+            continue
+        except Exception as e:
+            print(f"  ERROR loading {fname}: {e}")
+    print("  ERROR: No outcomes file found (tried outcomes_log.json, outcomes.json)")
+    return []
 
 def resolved_only(outcomes):
     return [o for o in outcomes
@@ -64,6 +69,10 @@ def main():
     outcomes = load()
     resolved = resolved_only(outcomes)
     print(f"  Resolved picks available: {len(resolved)}")
+
+    if not resolved:
+        print("  No resolved picks found — check outcomes_log.json exists in repo")
+        return
     print()
 
     # ── 1. TIER BASELINE ──────────────────────────────────────
@@ -161,13 +170,14 @@ def main():
     has_sect  = [o for o in resolved if o.get("sector")]
     has_reg   = [o for o in resolved if o.get("regime") and o["regime"] != "Unknown"]
 
+    n_res = len(resolved) or 1  # guard against div/zero
     print(f"  ml_prob (real, not 0.5 default): {len(has_ml):>4} picks  "
-          f"({len(has_ml)/len(resolved)*100:.0f}% coverage)")
+          f"({len(has_ml)/n_res*100:.0f}% coverage)")
     print(f"  rs_rating (real, not 50 default): {len(has_rs):>4} picks  "
-          f"({len(has_rs)/len(resolved)*100:.0f}% coverage)")
-    print(f"  news_boost:     {len(has_news):>4} picks  ({len(has_news)/len(resolved)*100:.0f}% coverage)")
-    print(f"  sector:         {len(has_sect):>4} picks  ({len(has_sect)/len(resolved)*100:.0f}% coverage)")
-    print(f"  regime:         {len(has_reg):>4} picks  ({len(has_reg)/len(resolved)*100:.0f}% coverage)")
+          f"({len(has_rs)/n_res*100:.0f}% coverage)")
+    print(f"  news_boost:     {len(has_news):>4} picks  ({len(has_news)/n_res*100:.0f}% coverage)")
+    print(f"  sector:         {len(has_sect):>4} picks  ({len(has_sect)/n_res*100:.0f}% coverage)")
+    print(f"  regime:         {len(has_reg):>4} picks  ({len(has_reg)/n_res*100:.0f}% coverage)")
     print()
 
     if len(has_ml) >= 50:
