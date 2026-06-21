@@ -143,7 +143,8 @@ def build_feature_matrix(resolved):
         rev_growth  = (o.get("rev_growth", 0) or 0) / 100
         earn_growth = (o.get("earn_growth", 0) or 0) / 100
         debt_equity = min(o.get("debt_equity", 1) or 1, 10) / 10
-        rs_rating   = (o.get("rs_rating", 50) or 50) / 100
+        # rs_rating: use 0 as sentinel for missing (not 50 which inflates coverage gate)
+        rs_rating   = (o.get("rs_rating") or 0) / 100
 
         vol_adj_mom  = float(np.clip(mom_6m / max(vol_raw, 0.01), -5.0, 5.0))
         earnings_yield = 1.0 / max(pe, 1)
@@ -202,22 +203,29 @@ def build_feature_matrix(resolved):
     print(f"     Label balance: {pos_rate:.1%} positive | {1-pos_rate:.1%} negative")
 
     # ── COVERAGE GATE ─────────────────────────────────────────────────────
-    # Check: what % of rows have real (non-zero) feature data?
-    # Historical picks have perf_90d=0, roe=0, etc. because features weren't
-    # saved at signal time. Training on these rows produces a zero-variance model
-    # (AUC=0.500) because all features are zero — XGBoost learns nothing.
-    # Guard: if coverage < 10%, preserve existing cache and skip this retrain.
-    key_features = ["momentum_6m", "roe", "profit_margin", "rs_rating"]
+    # Historical picks (pre feature-capture era) have perf_90d=0, roe=0 etc.
+    # Training on all-zero rows → zero-variance model → AUC=0.500 (random).
+    # Guard: require ≥10% of rows have real feature data before retraining.
+    # New picks (from June 20, 2026+) capture full feature snapshots.
+    key_features = ["momentum_6m", "roe", "profit_margin"]  # rs_rating excluded — default 50 inflates coverage
     has_real_data = X[key_features].abs().sum(axis=1) > 0.001
     coverage_pct  = float(has_real_data.mean()) * 100
-    print(f"  📊 Feature coverage: {coverage_pct:.1f}% of rows have real data")
+    real_rows     = int(has_real_data.sum())
+    print(f"  📊 Feature coverage: {coverage_pct:.1f}% ({real_rows}/{len(y)} rows have real data)")
 
-    MIN_COVERAGE_PCT = 10.0   # need at least 10% of rows with real features
+    # Per-feature zero check — shows which features are missing
+    for feat in key_features:
+        feat_coverage = float((X[feat].abs() > 0.001).mean()) * 100
+        status = "✅" if feat_coverage > 5 else "⚠️  ZERO"
+        print(f"     {feat:<20} {feat_coverage:>5.1f}% non-zero  {status}")
+
+    MIN_COVERAGE_PCT = 10.0   # ~160 picks needed (10% of 1,600 historical)
     if coverage_pct < MIN_COVERAGE_PCT:
-        print(f"  ⛔ Coverage {coverage_pct:.1f}% < {MIN_COVERAGE_PCT}% threshold.")
-        print(f"     Preserving existing model cache — real features accumulate ~{(MIN_COVERAGE_PCT/100 * len(y)):.0f} more picks needed.")
-        print(f"     New picks with features are being logged. Retrain will auto-run when coverage crosses threshold.")
+        print(f"  ⛔ Coverage {coverage_pct:.1f}% < {MIN_COVERAGE_PCT}% — preserving cached model.")
+        print(f"     ~{max(0, int(MIN_COVERAGE_PCT/100 * len(y)) - real_rows)} more feature-complete picks needed.")
+        print(f"     New picks capturing features daily. Auto-retrain fires when threshold crossed.")
         return None, None, None   # signals train_and_save to abort
+    print(f"  ✅ Coverage {coverage_pct:.1f}% ≥ {MIN_COVERAGE_PCT}% — proceeding with retrain")
     # ──────────────────────────────────────────────────────────────────────
 
     return X, y, w
