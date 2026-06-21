@@ -1075,6 +1075,50 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     # next-best scoring pick from a different sector.
     tfsa_picks = _apply_sector_cap(tfsa_picks, screener_picks, max_per_sector=2)
 
+    # ── ML Confidence Gate on 90-100 tier ────────────────────────────────
+    # Evidence from factor_investigation.py (875 picks, June 21 2026):
+    #   90-100 + ML≥20%: 754 picks, WR=50.4%, PF=1.65 ✅ (profitable)
+    #   90-100 + ML<20%: 121 picks, WR=47.1%, PF=0.96 🔴 (losing money)
+    #
+    # High composite score + low ML confidence = the fault line.
+    # Removing picks where score≥90 but ml_prob<0.20 eliminates the
+    # unprofitable subset without touching the 754-pick profitable subset.
+    # Replacement: next-best pick from screener that doesn't hit the gate.
+    ML_GATE_SCORE_MIN  = 90
+    ML_GATE_PROB_MIN   = 0.20
+    basket_tickers     = {p.get("ticker") for p in tfsa_picks}
+    gated_out          = []
+    passed             = []
+
+    for pick in tfsa_picks:
+        score    = pick.get("score", 0) or 0
+        ml_prob  = pick.get("ml_prob", 0.5) or 0.5
+        if score >= ML_GATE_SCORE_MIN and ml_prob < ML_GATE_PROB_MIN:
+            gated_out.append(pick)
+        else:
+            passed.append(pick)
+
+    if gated_out:
+        # Replace gated picks with next-best from screener reserve
+        reserve = []
+        for grp in ["TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3"]:
+            for p in screener_picks.get(grp, []):
+                if p.get("ticker") not in basket_tickers:
+                    s  = p.get("score", 0) or 0
+                    mp = p.get("ml_prob", 0.5) or 0.5
+                    # Reserve pick must not itself hit the gate
+                    if not (s >= ML_GATE_SCORE_MIN and mp < ML_GATE_PROB_MIN):
+                        reserve.append(p)
+                        basket_tickers.add(p.get("ticker"))
+        reserve.sort(key=lambda x: x.get("score", 0), reverse=True)
+        replacements = reserve[:len(gated_out)]
+        tfsa_picks   = passed + replacements
+
+        gated_tickers = [p.get("ticker") for p in gated_out]
+        repl_tickers  = [p.get("ticker") for p in replacements]
+        print(f"  🚦 ML gate (score≥90, ML<20%): removed {gated_tickers}"
+              + (f", added {repl_tickers}" if repl_tickers else " (no replacements)"))
+
     sized = calculate_position_sizes(
         tfsa_picks,
         portfolio_value=10000,
