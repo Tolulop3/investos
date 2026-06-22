@@ -77,8 +77,10 @@ def log_picks(picks, run_time=None, regime=None):
     date_str = datetime.now().strftime("%Y-%m-%d")
 
     # Don't double-log same picks on same date
+    # Note: unresolved picks have outcome=None, not resolved=False
+    # Using not o.get("outcome") catches both None and False correctly
     logged_today = {o["ticker"] for o in outcomes
-                    if o.get("signal_date") == date_str and o.get("resolved") is False}
+                    if o.get("signal_date") == date_str and not o.get("outcome")}
 
     # Extract regime context once (same for all picks this run)
     regime_str   = "BULL"
