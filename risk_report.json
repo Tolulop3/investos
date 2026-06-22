@@ -1,5 +1,5 @@
 {
-  "date": "June 21, 2026",
+  "date": "June 22, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,69 +9,68 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-21T14:37:42.995584",
+    "run_at": "2026-06-22T00:14:01.251719",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 18,
-        "survived": 12,
-        "survival_pct": 66.7,
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "6 picks unviable after doubling costs"
+        "survived": 16,
+        "survival_pct": 88.9,
+        "verdict": "\u2705 ROBUST",
+        "note": "2 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 18,
-        "survived": 13,
-        "survival_pct": 72.2,
-        "verdict": "\u26a0\ufe0f FRAGILE",
+        "survived": 16,
+        "survival_pct": 88.9,
+        "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
-        "avg_score_change": 3.7,
+        "survived": 16,
+        "survival_pct": 88.9,
+        "avg_score_change": 3.9,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.7 pts with 10% noise"
+        "note": "Avg score change: \u00b13.9 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 73.7,
-        "stressed_avg": 66.8,
-        "score_drop": 6.9,
+        "normal_avg": 73.5,
+        "stressed_avg": 67.6,
+        "score_drop": 5.9,
         "removed": [
           "BNS.TO",
-          "POW.TO",
-          "FM.TO",
+          "MS",
           "TD.TO"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 6.9 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 5.9 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
-        "survived": 18,
-        "survival_pct": 100.0,
-        "avg_score_drop": 2.5,
+        "survived": 16,
+        "survival_pct": 88.9,
+        "avg_score_drop": 3.4,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.5 pts"
+        "note": "If momentum stops working: avg score drops 3.4 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 73.7,
-      "scenarios_robust": 2,
-      "scenarios_fragile": 3,
+      "normal_avg_score": 73.5,
+      "scenarios_robust": 4,
+      "scenarios_fragile": 1,
       "scenarios_broken": 0,
-      "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
+      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
-    "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
+    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
-    "date": "June 21, 2026",
+    "date": "June 22, 2026",
     "robustness_score": 100,
     "rolling_sharpe": {
       "sharpe": 2.034,
