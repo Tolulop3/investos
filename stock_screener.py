@@ -143,6 +143,18 @@ EXCLUDED_TICKERS = {
 }
 ALL_TICKERS = [t for t in ALL_TICKERS if t not in EXCLUDED_TICKERS]
 
+# ── PERFORMANCE BLACKLIST — chronic losers in the 90-100 score tier ──────────
+# These tickers score 90-100 repeatedly but resolve as losses (0-25% WR).
+# Factor attribution (Jun 22 2026): F(0% WR/3picks), DXCM(0%/5), WPM.TO(0%/11).
+# They inflate the 90-100 tier entry count while destroying its win rate.
+# Screened normally but capped at score 74 — keeps them in universe for
+# lower-tier picks, prevents them from polluting the top basket.
+SCORE_CAP_74 = {
+    "F",        # 0% WR, 3 picks, avg -10.25% — chronic 90-100 loser
+    "DXCM",     # 0% WR, 5 picks, avg -6.16%  — chronic 90-100 loser
+    "WPM.TO",   # 0% WR, 11 picks, avg -4.67% — chronic 90-100 loser
+}
+
 # Tag each ticker with its venue type for pick routing
 VENUE_MAP = {}
 for t in ALL_TICKERS:
@@ -646,6 +658,14 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
         excess   = total - 85
         adjusted = 85 + (excess * 0.6)
         total    = round(min(100, adjusted), 1)
+
+    # ── PERFORMANCE BLACKLIST CAP ─────────────────────────────────────────────
+    # Chronic 90-100 losers are capped at 74 — keeps them in universe for
+    # lower-tier consideration but prevents basket pollution.
+    ticker = data.get("ticker", "")
+    if ticker in SCORE_CAP_74 and total > 74:
+        flags.append(f"⚠️ Score capped at 74 (performance blacklist — chronic 90-100 loser)")
+        total = 74.0
 
     return total, pillars, reasons, flags
 
