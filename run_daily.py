@@ -1725,6 +1725,68 @@ if __name__ == "__main__":
         except Exception as _fe:
             print(f"  ⚠️  Factor report skipped: {_fe}")
 
+        # ── PF Drift Monitor ───────────────────────────────────
+        # Compares current tier PF against clean post-dedup baseline
+        # (Jun 22 2026). Flags real drift vs baseline noise.
+        # Alert threshold: >0.20 PF drop = investigate.
+        try:
+            import json as _pjson, os as _pos
+
+            PF_BASELINE = {
+                "90-100":   1.43,
+                "75-89":    2.29,
+                "60-74":    3.17,
+                "below-60": 2.78,
+            }
+            PF_ALERT_THRESHOLD = 0.20
+
+            _log_path = "outcomes_log.json"
+            if _pos.path.exists(_log_path):
+                with open(_log_path) as _pf:
+                    _picks = _pjson.load(_pf)
+
+                _resolved = [e for e in _picks
+                             if e.get("resolved") and e.get("outcome") in ("WIN","LOSS")]
+
+                def _tier_pf(picks):
+                    wins   = [e for e in picks if e["outcome"] == "WIN"]
+                    losses = [e for e in picks if e["outcome"] == "LOSS"]
+                    gw = sum(e.get("actual_return", 0) for e in wins)
+                    gl = abs(sum(e.get("actual_return", 0) for e in losses))
+                    return round(gw / gl, 2) if gl > 0 else 0.0
+
+                _tier_map = {
+                    "90-100":   [e for e in _resolved if e.get("score", 0) >= 90],
+                    "75-89":    [e for e in _resolved if 75 <= e.get("score", 0) < 90],
+                    "60-74":    [e for e in _resolved if 60 <= e.get("score", 0) < 75],
+                    "below-60": [e for e in _resolved if e.get("score", 0) < 60],
+                }
+                _current_pf = {t: _tier_pf(p) for t, p in _tier_map.items() if p}
+
+                print()
+                print("─" * 55)
+                print("  PF DRIFT vs BASELINE (Jun 22 2026)")
+                print("─" * 55)
+                for _tier, _base in PF_BASELINE.items():
+                    _cur = _current_pf.get(_tier)
+                    if _cur is None:
+                        continue
+                    _drift = _cur - _base
+                    if _drift < -PF_ALERT_THRESHOLD:
+                        _icon = "🔴"
+                        _note = "— investigate"
+                    elif _drift > PF_ALERT_THRESHOLD:
+                        _icon = "✅"
+                        _note = "— improving"
+                    else:
+                        _icon = "↔ "
+                        _note = "— stable"
+                    print(f"  {_icon} [{_tier:>8}]  cur={_cur:.2f}  base={_base:.2f}  "
+                          f"drift={_drift:+.2f}  {_note}")
+                print("─" * 55)
+        except Exception as _dfe:
+            print(f"  ⚠️  PF drift monitor skipped: {_dfe}")
+
         print("  ✅ InvestOS complete")
 
         if json_metrics and brief:
