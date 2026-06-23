@@ -144,8 +144,12 @@ def _parse_amount(amount_str):
     return 8000  # default to minimum if unrecognised
 
 
+_FETCH_STATUS = {"senate": "ok", "house": "ok"}
+
+
 def _fetch_with_cache(url, cache_key):
-    """Fetch JSON from URL with TTL cache."""
+    """Fetch JSON from URL with TTL cache and redirect following."""
+    global _FETCH_STATUS
     cache = {}
     try:
         with open(CACHE_FILE) as _cf:
@@ -161,11 +165,15 @@ def _fetch_with_cache(url, cache_key):
             return entry.get("data", [])
 
     try:
+        opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
         req = urllib.request.Request(
             url,
-            headers={"User-Agent": "InvestOS/4.1 (personal investment tool)"}
+            headers={
+                "User-Agent": "Mozilla/5.0 (compatible; InvestOS/4.1)",
+                "Accept": "application/json, */*",
+            }
         )
-        with urllib.request.urlopen(req, timeout=15) as r:
+        with opener.open(req, timeout=15) as r:
             data = json.loads(r.read().decode())
         cache[cache_key] = {
             "fetched_at": datetime.now().isoformat(),
@@ -173,10 +181,24 @@ def _fetch_with_cache(url, cache_key):
         }
         with open(CACHE_FILE, "w") as _cf:
             json.dump(cache, _cf, indent=2)
+        _FETCH_STATUS[cache_key] = "ok"
         return data
     except Exception as e:
-        print(f"  ⚠️  Congressional fetch error ({cache_key}): {type(e).__name__}: {e}")
-        return entry.get("data", [])  # return stale cache if available
+        err_msg = str(e)
+        if "403" in err_msg:
+            _FETCH_STATUS[cache_key] = "access_restricted"
+            print(f"  ⚠️  Congressional {cache_key}: endpoint access restricted (HTTP 403)")
+            print(f"       Source unavailable — this is NOT zero activity")
+        elif "301" in err_msg or "302" in err_msg:
+            _FETCH_STATUS[cache_key] = "redirect_error"
+            print(f"  ⚠️  Congressional {cache_key}: endpoint moved (HTTP 301/302) — URL needs update")
+        else:
+            _FETCH_STATUS[cache_key] = f"error_{type(e).__name__}"
+            print(f"  ⚠️  Congressional fetch error ({cache_key}): {type(e).__name__}: {e}")
+        stale = entry.get("data", [])
+        if stale:
+            print(f"       Using stale cache from {entry.get('fetched_at', 'unknown')}")
+        return stale
 
 
 def _normalise_senate(raw):
@@ -369,9 +391,12 @@ def run_congressional_engine(screener_tickers=None, verbose=True):
             }
 
     # ── Output ────────────────────────────────────────────────────────────────
+    data_available = all(s == "ok" for s in _FETCH_STATUS.values())
     output = {
         "generated_at":  datetime.now().isoformat(),
         "window_days":   30,
+        "data_available": data_available,
+        "fetch_status":  _FETCH_STATUS.copy(),
         "total_recent":  len(recent),
         "ticker_signals": ticker_signals,
         "etf_signals":   etf_signals,
@@ -388,6 +413,11 @@ def run_congressional_engine(screener_tickers=None, verbose=True):
     # ── Print report ──────────────────────────────────────────────────────────
     if verbose:
         print()
+        if not data_available:
+            print(f"  \u26a0\ufe0f  DATA UNAVAILABLE — fetch failed for: "
+                  f"{[k for k,v in _FETCH_STATUS.items() if v != 'ok']}")
+            print(f"       Results below reflect stale cache or empty data, NOT zero activity")
+            print()
         # Strong signals
         strong = [(t, s) for t, s in ticker_signals.items()
                   if s.get("tier") in ("STRONG_CLUSTER", "CLUSTER")]
@@ -423,8 +453,7 @@ def run_congressional_engine(screener_tickers=None, verbose=True):
         print()
 
     # Save signals file
-    with open(SIGNAL_FILE, "w") as _sf:
-        json.dump(output, _sf, indent=2)
+    json.dump(output, open(SIGNAL_FILE, "w"), indent=2)
     return output
 
 
