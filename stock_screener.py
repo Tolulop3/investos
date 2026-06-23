@@ -153,6 +153,7 @@ SCORE_CAP_74 = {
     "F",        # 0% WR, 3 picks, avg -10.25% — chronic 90-100 loser
     "DXCM",     # 0% WR, 5 picks, avg -6.16%  — chronic 90-100 loser
     "WPM.TO",   # 0% WR, 11 picks, avg -4.67% — chronic 90-100 loser
+    "FM.TO",    # 0% WR, scored 100, -14.3% single loss Jun 23 2026 — worst loss in dataset
 }
 
 # Tag each ticker with its venue type for pick routing

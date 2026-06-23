@@ -387,3 +387,44 @@ echo "trades.csv" >> .gitignore
 
 *InvestOS v4.1 — Built session by session. Every line has a reason.*
 *NFA · Educational only · Personal use only*
+
+---
+
+## SESSION LOG
+
+| Date | Change | File(s) | Notes |
+|------|--------|---------|-------|
+| Jun 22 2026 | Dedup pass on outcomes_log.json | outcomes_log.json | 2005→1881 entries. Removed picks had 61.8% WR — disproportionate winners. WR delta -0.49pp. Clean baseline from this date. |
+| Jun 22 2026 | SCORE_CAP_74: F, DXCM, WPM.TO capped at 74 | stock_screener.py | Cap not exclude — still eligible for 60-74 tier. Chronic 90-100 losers. |
+| Jun 22 2026 | PF baseline locked + drift monitor | run_daily.py, pf_baseline.json | Baseline: 90-100=1.43, 75-89=2.29, 60-74=3.17, below-60=2.78. Drift alert at >0.20 drop. |
+| Jun 22 2026 | Congressional engine wired | run_daily.py, congressional_engine.py | Step 4c. Graceful fallback if file missing. Score boost capped at +12pts. |
+| Jun 22 2026 | Congressional engine error messaging fixed | congressional_engine.py | HTTP 403/301 now clearly labelled as DATA UNAVAILABLE, not zero activity. data_available flag added. |
+| Jun 22 2026 | Score ring font fix | index.html | var(--display) inside inline SVG → concrete font stack. Math.round(sc) prevents float display. |
+| Jun 22 2026 | .gitignore updated | .gitignore | Added congressional_cache.json + congressional_signals.json |
+| Jun 22 2026 | TELECOM roadmap item closed | — | Was already correct in ml_engine.py before this session. |
+| Jun 23 2026 | SCORE_CAP_74: FM.TO added | stock_screener.py | -14.3% at score 100 — worst single loss in dataset. Scored 100, lost worst. |
+
+## OPEN WATCH ITEMS
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Below-60 PF drift | 🔴 3 consecutive readings, worsening | cur=2.23 vs base=2.78 (drift -0.55). Expected: penalised names (ABX, RCI-B, FM, NTR) routing into this tier. NOT structural decay — penalty system working correctly. Watch for stabilisation. |
+| BULL-regime sub-slice PF | ⚠️ Watch | n=14, PF=0.69. Four declining readings. Only 3% regime coverage. Actionable at n≥50. |
+| Congressional data source | ⏳ Shelf | S3 endpoints 403/gone. api.congress.gov (free, needs API key) is clean path. Add CONGRESS_API_KEY to GitHub Secrets when ready. |
+| ABX.TO, AEM.TO cap decision | ⏳ Watch | ABX on cooldown. AEM still in 90-100 tier with 31.6% WR. Monitor. |
+| NGX 0% WR | ⏳ Paper phase | 159 resolved, all losses. Macro reversed on first batch. New signals loading post-June 11 restricted phase. |
+
+## KNOWN BASELINE (Jun 22 2026 — post-dedup)
+
+| Metric | Value |
+|--------|-------|
+| outcomes_log.json entries | 1881 (deduped) |
+| Total resolved | 1439 |
+| Overall WR | 58.2% |
+| Overall PF | 1.89 |
+| 90-100 tier PF | 1.43 ⚠️ |
+| 75-89 tier PF | 2.29 ✅ |
+| 60-74 tier PF | 3.17 ✅ |
+| below-60 tier PF | 2.78 ✅ |
+
+> All future factor attribution compares against these numbers. PF drift >0.20 = investigate.
