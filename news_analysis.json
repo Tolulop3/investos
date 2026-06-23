@@ -1,18 +1,26 @@
 {
-  "timestamp": "2026-06-23T03:09:53.157513",
+  "timestamp": "2026-06-23T13:44:26.538692",
   "date": "June 23, 2026",
-  "articles_fetched": 150,
+  "articles_fetched": 149,
   "feeds_online": 12,
   "feeds_total": 15,
   "signals_detected": 6,
   "active_signals": {
+    "trump_tariff_negative": {
+      "confidence": 100,
+      "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
+    },
     "middle_east_tension": {
       "confidence": 100,
       "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
     },
-    "trump_tariff_negative": {
+    "peace_deal": {
+      "confidence": 88,
+      "note": "Peace = risk-on. Growth and consumer stocks benefit."
+    },
+    "russia_ukraine": {
       "confidence": 100,
-      "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure"
+      "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
     },
     "health_outbreak": {
       "confidence": 100,
@@ -21,17 +29,66 @@
     "war_escalation": {
       "confidence": 50,
       "note": "War = risk-off. Boost gold, defense, energy. Reduce growth exposure."
-    },
-    "russia_ukraine": {
-      "confidence": 100,
-      "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
-    },
-    "peace_deal": {
-      "confidence": 100,
-      "note": "Peace = risk-on. Growth and consumer stocks benefit."
     }
   },
   "sector_sentiment": {
+    "TSX_EXPORTERS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "CANADIAN_ENERGY": {
+      "bullish_score": 200,
+      "bearish_score": 200,
+      "net_score": 0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "CANADIAN_MATERIALS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "AUTOS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
     "OIL": {
       "bullish_score": 300,
       "bearish_score": 0,
@@ -50,28 +107,10 @@
         }
       ]
     },
-    "CANADIAN_ENERGY": {
-      "bullish_score": 200,
-      "bearish_score": 200,
-      "net_score": 0,
-      "sentiment": "NEUTRAL",
-      "signals": [
-        {
-          "name": "middle_east_tension",
-          "direction": "bullish",
-          "confidence": 100
-        },
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
     "DEFENSE": {
       "bullish_score": 450.0,
-      "bearish_score": 150.0,
-      "net_score": 300.0,
+      "bearish_score": 132.0,
+      "net_score": 318.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -80,9 +119,9 @@
           "confidence": 100
         },
         {
-          "name": "war_escalation",
-          "direction": "bullish",
-          "confidence": 50
+          "name": "peace_deal",
+          "direction": "bearish",
+          "confidence": 88
         },
         {
           "name": "russia_ukraine",
@@ -90,16 +129,16 @@
           "confidence": 100
         },
         {
-          "name": "peace_deal",
-          "direction": "bearish",
-          "confidence": 100
+          "name": "war_escalation",
+          "direction": "bullish",
+          "confidence": 50
         }
       ]
     },
     "GOLD": {
       "bullish_score": 450.0,
-      "bearish_score": 150.0,
-      "net_score": 300.0,
+      "bearish_score": 132.0,
+      "net_score": 318.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -108,9 +147,9 @@
           "confidence": 100
         },
         {
-          "name": "war_escalation",
-          "direction": "bullish",
-          "confidence": 50
+          "name": "peace_deal",
+          "direction": "bearish",
+          "confidence": 88
         },
         {
           "name": "russia_ukraine",
@@ -118,9 +157,9 @@
           "confidence": 100
         },
         {
-          "name": "peace_deal",
-          "direction": "bearish",
-          "confidence": 100
+          "name": "war_escalation",
+          "direction": "bullish",
+          "confidence": 50
         }
       ]
     },
@@ -155,40 +194,120 @@
         }
       ]
     },
-    "TSX_EXPORTERS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
+    "TRAVEL": {
+      "bullish_score": 132.0,
+      "bearish_score": 300,
+      "net_score": -168.0,
       "sentiment": "BEARISH",
       "signals": [
         {
-          "name": "trump_tariff_negative",
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 88
+        },
+        {
+          "name": "health_outbreak",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "war_escalation",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 132.0,
+      "bearish_score": 0,
+      "net_score": 132.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 88
+        }
+      ]
+    },
+    "EMERGING_MARKETS": {
+      "bullish_score": 132.0,
+      "bearish_score": 100,
+      "net_score": 32.0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 88
+        },
+        {
+          "name": "war_escalation",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "INDUSTRIALS": {
+      "bullish_score": 132.0,
+      "bearish_score": 0,
+      "net_score": 132.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 88
+        }
+      ]
+    },
+    "EUROPEAN_ENERGY": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "AGRICULTURE": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "EUROPEAN_STOCKS": {
+      "bullish_score": 0,
+      "bearish_score": 150.0,
+      "net_score": -150.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
           "direction": "bearish",
           "confidence": 100
         }
       ]
     },
-    "CANADIAN_MATERIALS": {
+    "NATURAL_GAS": {
       "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
+      "bearish_score": 150.0,
+      "net_score": -150.0,
       "sentiment": "BEARISH",
       "signals": [
         {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "AUTOS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
+          "name": "russia_ukraine",
           "direction": "bearish",
           "confidence": 100
         }
@@ -259,29 +378,6 @@
         }
       ]
     },
-    "TRAVEL": {
-      "bullish_score": 150.0,
-      "bearish_score": 300,
-      "net_score": -150.0,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "health_outbreak",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "war_escalation",
-          "direction": "bearish",
-          "confidence": 50
-        },
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
     "HOSPITALITY": {
       "bullish_score": 0,
       "bearish_score": 200,
@@ -346,105 +442,37 @@
           "confidence": 50
         }
       ]
-    },
-    "EMERGING_MARKETS": {
-      "bullish_score": 150.0,
-      "bearish_score": 100,
-      "net_score": 50.0,
-      "sentiment": "NEUTRAL",
-      "signals": [
-        {
-          "name": "war_escalation",
-          "direction": "bearish",
-          "confidence": 50
-        },
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "EUROPEAN_ENERGY": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "russia_ukraine",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "AGRICULTURE": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "russia_ukraine",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "EUROPEAN_STOCKS": {
-      "bullish_score": 0,
-      "bearish_score": 150.0,
-      "net_score": -150.0,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "russia_ukraine",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "NATURAL_GAS": {
-      "bullish_score": 0,
-      "bearish_score": 150.0,
-      "net_score": -150.0,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "russia_ukraine",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "CONSUMER": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "INDUSTRIALS": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
     }
   },
   "ticker_adjustments": {
+    "CNR.TO": {
+      "adjustment": -13.3,
+      "reasons": [
+        "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
+    },
+    "CP.TO": {
+      "adjustment": -13.3,
+      "reasons": [
+        "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
+    },
+    "MG.TO": {
+      "adjustment": -13.3,
+      "reasons": [
+        "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
+    },
+    "ATD.TO": {
+      "adjustment": -13.3,
+      "reasons": [
+        "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
+    },
     "ENB.TO": {
       "adjustment": 0.0,
       "reasons": [],
@@ -474,6 +502,65 @@
       "adjustment": 0.0,
       "reasons": [],
       "news_sentiment": "NEUTRAL"
+    },
+    "ABX.TO": {
+      "adjustment": 6.7,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)",
+        "\ud83d\udcc8 GOLD (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "WPM.TO": {
+      "adjustment": 6.7,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)",
+        "\ud83d\udcc8 GOLD (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "AEM.TO": {
+      "adjustment": 6.7,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)",
+        "\ud83d\udcc8 GOLD (BULLISH)"
+      ],
+      "news_sentiment": "BULLISH"
+    },
+    "K.TO": {
+      "adjustment": -13.3,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
+    },
+    "NTR.TO": {
+      "adjustment": -13.3,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
+    },
+    "GM": {
+      "adjustment": -13.3,
+      "reasons": [
+        "\ud83d\udcc9 AUTOS (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
+    },
+    "F": {
+      "adjustment": -13.3,
+      "reasons": [
+        "\ud83d\udcc9 AUTOS (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
+    },
+    "TM": {
+      "adjustment": -13.3,
+      "reasons": [
+        "\ud83d\udcc9 AUTOS (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
     },
     "LMT": {
       "adjustment": 20,
@@ -510,30 +597,6 @@
       ],
       "news_sentiment": "BULLISH"
     },
-    "ABX.TO": {
-      "adjustment": 6.7,
-      "reasons": [
-        "\ud83d\udcc8 GOLD (BULLISH)",
-        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)"
-      ],
-      "news_sentiment": "BULLISH"
-    },
-    "WPM.TO": {
-      "adjustment": 6.7,
-      "reasons": [
-        "\ud83d\udcc8 GOLD (BULLISH)",
-        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)"
-      ],
-      "news_sentiment": "BULLISH"
-    },
-    "AEM.TO": {
-      "adjustment": 6.7,
-      "reasons": [
-        "\ud83d\udcc8 GOLD (BULLISH)",
-        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)"
-      ],
-      "news_sentiment": "BULLISH"
-    },
     "GLD": {
       "adjustment": 20,
       "reasons": [
@@ -546,69 +609,6 @@
       "reasons": [
         "\ud83d\udcc9 AIRLINES (BEARISH)",
         "\ud83d\udcc9 SHIPPING (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH"
-    },
-    "CNR.TO": {
-      "adjustment": -13.3,
-      "reasons": [
-        "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH"
-    },
-    "CP.TO": {
-      "adjustment": -13.3,
-      "reasons": [
-        "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH"
-    },
-    "MG.TO": {
-      "adjustment": -13.3,
-      "reasons": [
-        "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH"
-    },
-    "ATD.TO": {
-      "adjustment": -13.3,
-      "reasons": [
-        "\ud83d\udcc9 TSX_EXPORTERS (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH"
-    },
-    "K.TO": {
-      "adjustment": -13.3,
-      "reasons": [
-        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH"
-    },
-    "NTR.TO": {
-      "adjustment": -13.3,
-      "reasons": [
-        "\ud83d\udcc9 CANADIAN_MATERIALS (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH"
-    },
-    "GM": {
-      "adjustment": -13.3,
-      "reasons": [
-        "\ud83d\udcc9 AUTOS (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH"
-    },
-    "F": {
-      "adjustment": -13.3,
-      "reasons": [
-        "\ud83d\udcc9 AUTOS (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH"
-    },
-    "TM": {
-      "adjustment": -13.3,
-      "reasons": [
-        "\ud83d\udcc9 AUTOS (BEARISH)"
       ],
       "news_sentiment": "BEARISH"
     },
@@ -768,27 +768,16 @@
     }
   },
   "weight_adjustments": {
-    "safety_weight": 7,
+    "safety_weight": 10,
     "momentum_weight": 1,
     "growth_weight": -3,
     "dividend_weight": 3,
     "value_weight": 0,
-    "regime": "CAUTIOUS",
-    "regime_note": "Elevated uncertainty \u2014 slight defensive tilt"
+    "regime": "RISK_OFF",
+    "regime_note": "Multiple risk signals \u2014 defensive positioning recommended"
   },
   "headline_summary": {
     "active_signals": [
-      {
-        "signal": "Middle East Tension",
-        "magnitude": "HIGH",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
-        "articles": [
-          "'We'll see' \u2014 Trump hedges on guarantee Iran won't use oil profits to rebuild military",
-          "Oil prices rise as investors continue to watch U.S.-Iran moves, Citi sees 'overhang' disappearing"
-        ]
-      },
       {
         "signal": "Trump Tariff Negative",
         "magnitude": "HIGH",
@@ -796,8 +785,30 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Tariffs hurt Canadian exporters \u2014 reduce TSX exposure",
         "articles": [
-          "Arabica Coffee Prices Hit Record on U.S., Colombia Tariff Spat",
-          "Russia's Crude Exports Fairly Stable Despite U.S. Sanctions, Goldman Says"
+          "U.S. issues sweeping Iran oil sanctions waivers, unlocking billions in revenue for Tehran",
+          "Sens. Warren, Kelly press Trump administration on effects of tariffs on manufacturing"
+        ]
+      },
+      {
+        "signal": "Middle East Tension",
+        "magnitude": "HIGH",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
+        "articles": [
+          "U.S. issues sweeping Iran oil sanctions waivers, unlocking billions in revenue for Tehran",
+          "How Europe\u2019s refineries helped save your summer holiday"
+        ]
+      },
+      {
+        "signal": "Russia Ukraine",
+        "magnitude": "MODERATE",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported",
+        "articles": [
+          "Zelenskyy may get the last laugh over Trump",
+          "London Mayor: UK Tops Green Finance Rankings for Eighth Straight Year"
         ]
       },
       {
@@ -812,25 +823,13 @@
         ]
       },
       {
-        "signal": "Russia Ukraine",
-        "magnitude": "MODERATE",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported",
-        "articles": [
-          "London Mayor: UK Tops Green Finance Rankings for Eighth Straight Year",
-          "Russia Rations Fuel in Crimea as Ukraine Targets Oil Infrastructure"
-        ]
-      },
-      {
         "signal": "Peace Deal",
         "magnitude": "MODERATE",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "confidence": 88,
+        "bars": "\u2588\u2588\u2588\u2588",
         "note": "Peace = risk-on. Growth and consumer stocks benefit.",
         "articles": [
-          "U.S. Airlines Set To Pocket $40 Billion As Jet Fuel Prices Crash",
-          "The Phantom Peace Deal: What Washington and Tehran Are Really Playing At"
+          "U.S. issues sweeping Iran oil sanctions waivers, unlocking billions in revenue for Tehran"
         ]
       },
       {
@@ -887,6 +886,6 @@
       }
     ]
   },
-  "macro_regime": "CAUTIOUS",
-  "regime_note": "Elevated uncertainty \u2014 slight defensive tilt"
+  "macro_regime": "RISK_OFF",
+  "regime_note": "Multiple risk signals \u2014 defensive positioning recommended"
 }
