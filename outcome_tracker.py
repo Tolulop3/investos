@@ -149,7 +149,7 @@ def log_picks(picks, run_time=None, regime=None):
             "rsi":           d.get("rsi_approx", 50) or 50,
             "above_ma200":   bool(d.get("above_ma200", True)),
             "above_ma50":    bool(d.get("above_ma50", True)),
-            "sector":        d.get("sector", ""),
+            "sector":        (d.get("sector", "") or "").strip() or d.get("yf_sector", ""),
 
             # ── Factor attribution fields (for leaderboard analysis) ──────
             # These enable the hedge fund critique's factor isolation question:
@@ -455,7 +455,7 @@ def compute_win_rate():
     # Feature coverage report — shows ML data quality
     feature_fields = ["perf_90d","volatility","roe","profit_margin","pe_ratio",
                       "rev_growth","earn_growth","div_yield","debt_equity","rs_rating",
-                      "regime","spx_vs_ma200","news_boost"]
+                      "regime","spx_vs_ma200","news_boost","sector"]
     feature_coverage = {}
     for field in feature_fields:
         filled = sum(1 for o in resolved

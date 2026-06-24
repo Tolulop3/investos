@@ -175,6 +175,8 @@ SCORE_CAP_74 = {
     "DXCM",     # 0% WR, 5 picks, avg -6.16%  — chronic 90-100 loser
     "WPM.TO",   # 0% WR, 11 picks, avg -4.67% — chronic 90-100 loser
     "FM.TO",    # 0% WR, scored 100, -14.3% single loss Jun 23 2026 — worst loss in dataset
+    "ABX.TO",   # 25% WR, 12 picks, avg -3.49%, PF=0.06 — chronic 90-100 loser
+    "AEM.TO",   # 32% WR, 19 picks, avg -2.80%, PF=0.29 — chronic 90-100 loser
 }
 
 # Tag each ticker with its venue type for pick routing
@@ -402,6 +404,8 @@ def fetch_ticker_full(ticker, retries=2):
                 "target_price":     round(target_price, 2) if target_price else None,
                 "upside_target":    round(upside_to_target, 1),
                 "analyst_rec":      analyst_rec if isinstance(analyst_rec, str) else "",
+                "sector":           info.get("sector", "") or info.get("industryKey", "") or "",
+                "industry":         info.get("industry", "") or "",
                 "next_earnings":    next_earnings,
                 "short_pct_float":  round((info.get("shortPercentOfFloat") or 0) * 100, 1),
                 "vol_accum_score":  vol_accum_score,
