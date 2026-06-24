@@ -142,6 +142,28 @@ EXCLUDED_TICKERS = {
 }
 ALL_TICKERS = [t for t in ALL_TICKERS if t not in EXCLUDED_TICKERS]
 
+# ── Scout universe expansion (written weekly by scout_agent.py) ───────────
+# universe_current.json = static 175 + momentum scouts from ETF holdings.
+# Merges dynamic tickers into the daily screening universe automatically.
+# Graceful fallback: if file missing, static universe runs as normal.
+import json as _scout_json, os as _scout_os
+_scout_path = "universe_current.json"
+if _scout_os.path.exists(_scout_path):
+    try:
+        with open(_scout_path) as _sf:
+            _scout_data = _scout_json.load(_sf)
+        _dynamic = [
+            t for t, meta in _scout_data.get("tickers", {}).items()
+            if not meta.get("static", True)        # only add dynamic (non-static) names
+            and t not in EXCLUDED_TICKERS
+            and t not in set(ALL_TICKERS)           # no duplicates
+        ]
+        ALL_TICKERS = ALL_TICKERS + _dynamic
+        if _dynamic:
+            print(f"   Scout: +{len(_dynamic)} dynamic tickers → universe now {len(ALL_TICKERS)}")
+    except Exception as _se:
+        print(f"   ⚠️  Scout universe load failed: {_se} — using static universe")
+
 # ── PERFORMANCE BLACKLIST — chronic losers in the 90-100 score tier ──────────
 # These tickers score 90-100 repeatedly but resolve as losses (0-25% WR).
 # Factor attribution (Jun 22 2026): F(0% WR/3picks), DXCM(0%/5), WPM.TO(0%/11).

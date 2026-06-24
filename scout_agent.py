@@ -29,6 +29,8 @@ import time
 import datetime
 import urllib.request
 
+import math
+
 try:
     import yfinance as yf
     _YF = True
@@ -158,6 +160,8 @@ def momentum_pre_filter(tickers, region="US", verbose=True):
             ret_3m    = (price_now - price_3m) / price_3m
 
             # Hard filters
+            if math.isnan(ret_3m) or math.isinf(ret_3m):
+                continue  # AVGO-style NaN bug: skip instead of passing silently
             if price_now < MIN_PRICE:
                 continue
             if vol_avg < MIN_VOLUME_3M_AVG:
@@ -171,6 +175,10 @@ def momentum_pre_filter(tickers, region="US", verbose=True):
             gains  = deltas.clip(lower=0).mean()
             losses = (-deltas.clip(upper=0)).mean()
             rsi = 100 - (100 / (1 + gains / losses)) if losses > 0 else 100.0
+
+            # RSI ceiling — don't scout overbought names
+            if rsi > 80:
+                continue  # e.g. RY.TO/TD.TO at RSI 87/82 — already extended
 
             # 52-week high check (single extended history call)
             hist_1y = t.history(period="1y", auto_adjust=True)
