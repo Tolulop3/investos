@@ -168,19 +168,75 @@ def log_picks(picks, run_time=None, regime=None):
     return new_logged
 
 
+def _fetch_stale_prices(tickers):
+    """
+    Fetch current prices for tickers not in today's screener picks.
+    Used to resolve overdue entries that dropped out of the active universe.
+    Batches via yfinance to minimise API calls.
+    """
+    prices = {}
+    if not tickers:
+        return prices
+    try:
+        import yfinance as yf
+        # yfinance batch download — single call for all tickers
+        batch = list(tickers)
+        data  = yf.download(batch, period="2d", auto_adjust=True,
+                            progress=False, threads=True)
+        if data.empty:
+            return prices
+        closes = data["Close"] if "Close" in data else data.get("close", None)
+        if closes is None:
+            return prices
+        # Single ticker returns a Series, multiple returns a DataFrame
+        if hasattr(closes, "columns"):
+            for t in batch:
+                col = t.replace(".TO","") if t not in closes.columns else t
+                if col in closes.columns:
+                    val = closes[col].dropna()
+                    if not val.empty:
+                        prices[t] = float(val.iloc[-1])
+        else:
+            # Single ticker case
+            if len(batch) == 1 and not closes.empty:
+                prices[batch[0]] = float(closes.dropna().iloc[-1])
+    except Exception as _e:
+        pass  # graceful fallback — unresolved entries stay pending
+    return prices
+
+
 def resolve_outcomes(current_prices):
     """
     Check unresolved picks. Resolve WIN/LOSS after 7 calendar days (~5 trading days).
+    Includes a stale-resolution pass for overdue entries not in today's screener picks.
     """
-    if not current_prices:
-        return
+    if current_prices is None:
+        current_prices = {}
 
     outcomes = load_outcomes()
     today    = datetime.now().date()
     resolved = 0
 
+    # ── Identify overdue tickers not covered by today's screener prices ──
+    overdue_missing = set()
     for o in outcomes:
-        if o.get("resolved"):
+        if o.get("resolved") or o.get("outcome"):
+            continue
+        signal_date = datetime.strptime(o["signal_date"], "%Y-%m-%d").date()
+        if (today - signal_date).days >= 7:
+            ticker = o["ticker"]
+            if ticker not in current_prices:
+                overdue_missing.add(ticker)
+
+    # Fetch prices for stale tickers in one batch
+    if overdue_missing:
+        stale_prices = _fetch_stale_prices(overdue_missing)
+        print(f"   🔄 Stale resolution: {len(overdue_missing)} overdue tickers, "
+              f"{len(stale_prices)} prices fetched")
+        current_prices = {**current_prices, **stale_prices}
+
+    for o in outcomes:
+        if o.get("resolved") or o.get("outcome"):
             continue
 
         signal_date = datetime.strptime(o["signal_date"], "%Y-%m-%d").date()

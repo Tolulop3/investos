@@ -50,12 +50,31 @@ CURRENT_FILE  = "universe_current.json"
 ROTATION_LOG  = "universe_rotation_log.json"
 
 # ETF sources — yfinance holdings fetch
+# Note: yfinance top_holdings returns ~10 names per ETF regardless of max.
+# Wider coverage comes from diversity of ETF sources, not higher max values.
+# Each ETF represents a different slice of the investable universe.
 ETF_SOURCES = [
-    {"ticker": "QQQ",     "max": 100, "region": "US", "label": "scout_qqq"},
-    {"ticker": "SPY",     "max": 150, "region": "US", "label": "scout_spy"},
-    {"ticker": "SMH",     "max": 30,  "region": "US", "label": "scout_smh"},
-    {"ticker": "XIC.TO",  "max": 60,  "region": "CA", "label": "scout_xic"},
-    {"ticker": "XEQT.TO", "max": 50,  "region": "US", "label": "scout_xeqt"},
+    # ── Broad market ─────────────────────────────────────────────────────
+    {"ticker": "QQQ",     "max": 100, "region": "US", "label": "scout_qqq"},   # Nasdaq 100
+    {"ticker": "SPY",     "max": 150, "region": "US", "label": "scout_spy"},   # S&P 500
+    {"ticker": "IWM",     "max": 100, "region": "US", "label": "scout_iwm"},   # Russell 2000 small cap
+    {"ticker": "VTI",     "max": 100, "region": "US", "label": "scout_vti"},   # Total US market
+    # ── Sector ───────────────────────────────────────────────────────────
+    {"ticker": "SMH",     "max": 30,  "region": "US", "label": "scout_smh"},   # Semiconductors
+    {"ticker": "XLF",     "max": 50,  "region": "US", "label": "scout_xlf"},   # Financials
+    {"ticker": "XLK",     "max": 50,  "region": "US", "label": "scout_xlk"},   # Technology
+    {"ticker": "XLE",     "max": 30,  "region": "US", "label": "scout_xle"},   # Energy
+    {"ticker": "XLV",     "max": 50,  "region": "US", "label": "scout_xlv"},   # Healthcare
+    {"ticker": "XLI",     "max": 50,  "region": "US", "label": "scout_xli"},   # Industrials
+    {"ticker": "ARKK",    "max": 30,  "region": "US", "label": "scout_arkk"},  # Innovation/disruptive
+    # ── Momentum / factor ────────────────────────────────────────────────
+    {"ticker": "MTUM",    "max": 50,  "region": "US", "label": "scout_mtum"},  # US momentum factor
+    {"ticker": "QUAL",    "max": 50,  "region": "US", "label": "scout_qual"},  # US quality factor
+    # ── Canadian ─────────────────────────────────────────────────────────
+    {"ticker": "XIC.TO",  "max": 60,  "region": "CA", "label": "scout_xic"},   # TSX composite
+    {"ticker": "XEQT.TO", "max": 50,  "region": "CA", "label": "scout_xeqt"}, # All equity
+    {"ticker": "ZEB.TO",  "max": 30,  "region": "CA", "label": "scout_zeb"},   # Canadian banks
+    {"ticker": "XIU.TO",  "max": 60,  "region": "CA", "label": "scout_xiu"},   # TSX 60
 ]
 
 
