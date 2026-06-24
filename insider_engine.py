@@ -47,6 +47,41 @@ KNOWN_CIKS = {
     "PEP":    "0000077476", "PG":     "0000080424",
 }
 
+# ── Canadian cross-listed tickers with SEC CIKs ─────────────────────────────
+# These companies trade on both TSX and US exchanges — they file with SEC.
+# Covers the most common Canadian picks in InvestOS universe.
+CANADIAN_SEC_CIKS = {
+    # Big 6 Banks
+    "RY.TO":  "0001000177",  "TD.TO":  "0000947484",
+    "BNS.TO": "0000009870",  "BMO.TO": "0000927971",
+    "CM.TO":  "0000021175",  "NA.TO":  "0001672050",
+    # Insurers
+    "MFC.TO": "0001086888",  "SLF.TO": "0001090012",
+    # Energy
+    "ENB.TO": "0000880285",  "TRP.TO": "0001040570",
+    "CNQ.TO": "0001070154",  "SU.TO":  "0001144519",
+    "CVE.TO": "0001374310",  "PPL.TO": "0000020212",
+    # Rails + industrials
+    "CP.TO":  "0000016160",  "CNR.TO": "0001021162",
+    "TIH.TO": "0000101830",
+    # Financials / alt asset
+    "BAM.TO": "0001001085",  "BN.TO":  "0001001085",
+    "POW.TO": "0000080172",  "ATD.TO": "0001163370",
+    # Miners (already capped but keep for signal completeness)
+    "WPM.TO": "0001638175",  "ABX.TO": "0000756502",
+    "AEM.TO": "0000002187",  "NTR.TO": "0000875657",
+    "FM.TO":  "0000036966",  "LUN.TO": "0000060714",
+}
+
+# Tickers requiring SEDI (TSX-only, no SEC cross-listing)
+# sedi.ca blocks automated access from GitHub Actions — flagged for manual check
+SEDI_ONLY_TICKERS = {
+    "BCE.TO", "T.TO", "FTS.TO", "EMA.TO", "H.TO", "STN.TO",
+    "KXS.TO", "REI-UN.TO", "HR-UN.TO", "GRT-UN.TO", "WELL.TO",
+    "MRU.TO", "XIU.TO", "XIC.TO", "ZEB.TO", "ZCN.TO", "HXT.TO",
+    "BB.TO", "SHOP.TO", "AC.TO", "MG.TO", "CAE.TO",
+}
+
 # Canadian tickers (no EDGAR — SEDI Canada has no public API)
 CANADIAN_SUFFIXES = (".TO", ".TSX", ".V", ".CN")
 
@@ -83,14 +118,24 @@ def _edgar_request(url, timeout=8):
 
 
 def lookup_cik(ticker, cache):
-    """Get CIK for a ticker. Hardcoded → cache → EDGAR company search."""
+    """Get CIK for a ticker. Hardcoded → Canadian cross-listed → cache → EDGAR search."""
     t = ticker.upper().replace(".TO","").replace("-UN","").replace("-A","")
+    t_full = ticker.upper()  # keep .TO suffix for Canadian CIK lookup
 
-    # 1. Hardcoded (fastest, no API call)
+    # 1. Hardcoded US names (fastest, no API call)
     if t in KNOWN_CIKS:
         return KNOWN_CIKS[t]
 
-    # 2. Cache from previous run
+    # 2. Canadian cross-listed — use .TO version first, then bare ticker
+    if t_full in CANADIAN_SEC_CIKS:
+        return CANADIAN_SEC_CIKS[t_full]
+    # Some may be stored without suffix
+    ca_bare = t_full.replace(".TO","")
+    for ca_ticker, cik in CANADIAN_SEC_CIKS.items():
+        if ca_ticker.replace(".TO","") == ca_bare:
+            return cik
+
+    # 3. Cache from previous run
     if t in cache:
         return cache[t]
 
@@ -268,15 +313,25 @@ def run_insider_engine(picks, verbose=True):
     signals_found = 0
     tickers_checked = 0
 
+    # Split into three tracks
+    ca_sec_tickers   = [p["ticker"] for p in picks if p["ticker"].upper() in CANADIAN_SEC_CIKS]
+    sedi_only        = [p["ticker"] for p in picks
+                        if _is_canadian(p["ticker"])
+                        and p["ticker"].upper() not in CANADIAN_SEC_CIKS
+                        and p["ticker"].upper() not in {k.replace(".TO","") for k in CANADIAN_SEC_CIKS}]
+
     if verbose:
-        print(f"  📋 Picks: {len(us_tickers)} US | {len(cdn_tickers)} Canadian")
+        print(f"  📋 Picks: {len(us_tickers)} US | {len(ca_sec_tickers)} CA-SEC | {len(sedi_only)} SEDI-only")
         print(f"  🔍 Fetching Form 4 filings (SEC EDGAR)...")
 
-    # ── US tickers: SEC EDGAR ────────────────────────────────────────────────
+    # ── US + Canadian cross-listed tickers: SEC EDGAR ────────────────────────
     seen = set()
     for pick in picks:
         ticker = pick["ticker"]
-        if _is_canadian(ticker) or ticker in seen:
+        # Skip pure SEDI-only Canadian tickers
+        is_sedi_only = (ticker.upper() in SEDI_ONLY_TICKERS or
+                        (_is_canadian(ticker) and ticker.upper() not in CANADIAN_SEC_CIKS))
+        if is_sedi_only or ticker in seen:
             continue
         seen.add(ticker)
 
@@ -304,10 +359,12 @@ def run_insider_engine(picks, verbose=True):
 
     _save_cik_cache(cik_cache)
 
-    # ── Canadian tickers: SEDI note ──────────────────────────────────────────
-    if cdn_tickers and verbose:
-        print(f"  🇨🇦 {len(cdn_tickers)} Canadian tickers → SEDI")
-        print(f"      Manual check: sedi.ca for {', '.join(cdn_tickers[:3])}")
+    # ── SEDI-only tickers: manual check note ────────────────────────────────
+    if sedi_only and verbose:
+        print(f"  🇨🇦 {len(sedi_only)} SEDI-only tickers (no SEC cross-listing)")
+        print(f"      Manual check: sedi.ca for {', '.join(sedi_only[:3])}")
+    if ca_sec_tickers and verbose:
+        print(f"  🇨🇦✅ {len(ca_sec_tickers)} Canadian tickers covered via SEC EDGAR cross-listing")
 
     if verbose:
         print(f"  ✅ Checked {tickers_checked} US tickers | {signals_found} insider signals found")
