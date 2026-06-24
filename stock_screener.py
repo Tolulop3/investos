@@ -102,14 +102,13 @@ UNIVERSE = {
         "VEA",   # All developed markets ex-US (Europe + Japan + Australia)
         "EFA",   # Same, iShares version
         "VGK",   # Europe only
-        "EWJ",   # Germany
+        "EWG",   # Germany (was EWJ duplicate — fixed Jun 24 2026)
         "EWU",   # UK
         "EWJ",   # Japan
         "EWA",   # Australia
         "EWC",   # Canada (US-listed)
         # Emerging markets
-        "VWO",   # All emerging markets
-        "EEM",   # Same, iShares version
+        "VWO",   # All emerging markets (EEM removed — yfinance 404, VWO is liquid equivalent)
         "INDA",  # India
         "FXI",   # China large cap
         "KWEB",  # China internet
