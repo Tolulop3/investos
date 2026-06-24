@@ -4,16 +4,16 @@
     "regime": "BULL",
     "signal": "FULL_EXPOSURE",
     "cash_pct": 0.0,
-    "spx_price": 7349.77,
-    "ma200": 6916.41,
-    "ma50": 7348.84,
-    "pct_above_ma": 6.27,
+    "spx_price": 7358.22,
+    "ma200": 6916.45,
+    "ma50": 7349.01,
+    "pct_above_ma": 6.39,
     "full_exposure_pct": 100.0
   },
   "sharpe": {
-    "sharpe": 1.788,
-    "avg_ret_pct": 0.98,
-    "std_ret_pct": 3.95,
+    "sharpe": -2.992,
+    "avg_ret_pct": -4.05,
+    "std_ret_pct": 9.76,
     "picks_used": 300,
     "source": "resolved_returns",
     "note": "Sharpe from 300 resolved picks \u00b7 price-return \u00b7 weekly horizon \u00b7 capped at 4.0"
@@ -22,17 +22,52 @@
   "win_rate_overall": null,
   "breadth": {
     "total_stocks": 190,
-    "above_ma50": 119,
-    "above_ma200": 129,
-    "pct_above_50": 62.6,
-    "pct_above_200": 67.9,
+    "above_ma50": 121,
+    "above_ma200": 131,
+    "pct_above_50": 63.7,
+    "pct_above_200": 68.9,
     "signal": "MODERATE",
     "note": "Moderate breadth \u2014 majority above 200MA",
     "momentum_breadth": "NEUTRAL",
     "sector_breadth": {
+      "": {
+        "pct_above_50": 78,
+        "pct_above_200": 88,
+        "count": 50
+      },
+      "Communication Services": {
+        "pct_above_50": 29,
+        "pct_above_200": 71,
+        "count": 7
+      },
+      "Utilities": {
+        "pct_above_50": 89,
+        "pct_above_200": 100,
+        "count": 9
+      },
       "Technology": {
-        "pct_above_50": 64,
+        "pct_above_50": 68,
         "pct_above_200": 61,
+        "count": 28
+      },
+      "Consumer Defensive": {
+        "pct_above_50": 75,
+        "pct_above_200": 88,
+        "count": 8
+      },
+      "Consumer Cyclical": {
+        "pct_above_50": 33,
+        "pct_above_200": 40,
+        "count": 15
+      },
+      "Healthcare": {
+        "pct_above_50": 62,
+        "pct_above_200": 46,
+        "count": 13
+      },
+      "Financial Services": {
+        "pct_above_50": 79,
+        "pct_above_200": 64,
         "count": 28
       },
       "Energy": {
@@ -40,45 +75,10 @@
         "pct_above_200": 100,
         "count": 7
       },
-      "": {
-        "pct_above_50": 76,
-        "pct_above_200": 88,
-        "count": 50
-      },
-      "Consumer Defensive": {
-        "pct_above_50": 75,
-        "pct_above_200": 75,
-        "count": 8
-      },
       "Real Estate": {
         "pct_above_50": 40,
         "pct_above_200": 60,
         "count": 10
-      },
-      "Financial Services": {
-        "pct_above_50": 79,
-        "pct_above_200": 64,
-        "count": 28
-      },
-      "Healthcare": {
-        "pct_above_50": 62,
-        "pct_above_200": 46,
-        "count": 13
-      },
-      "Utilities": {
-        "pct_above_50": 89,
-        "pct_above_200": 100,
-        "count": 9
-      },
-      "Consumer Cyclical": {
-        "pct_above_50": 40,
-        "pct_above_200": 40,
-        "count": 15
-      },
-      "Communication Services": {
-        "pct_above_50": 14,
-        "pct_above_200": 57,
-        "count": 7
       },
       "Basic Materials": {
         "pct_above_50": 0,
@@ -401,52 +401,55 @@
     }
   },
   "system_exposure": {
-    "pct": 1.0,
-    "label": "RISK_ON",
-    "reason": "M:+1.0 N:-0.3 H:+1.0 \u2192 +0.61 Sharpe:1.79",
-    "sharpe": 1.79,
-    "unified_score": 0.61,
-    "unified_regime": "RISK_ON",
-    "confidence": 0.43,
+    "pct": 0.12,
+    "label": "DEFENSIVE",
+    "reason": "M:+1.0 N:-0.3 H:-1.0 \u2192 +0.01 Sharpe:-2.99",
+    "sharpe": -2.99,
+    "unified_score": 0.01,
+    "unified_regime": "DEFENSIVE",
+    "confidence": 0.01,
     "allowed_styles": [
+      "defensive",
+      "dividend",
+      "mean_reversion"
+    ],
+    "blocked_styles": [
       "breakout",
-      "momentum",
-      "growth",
+      "high_beta",
       "swing"
     ],
-    "blocked_styles": [],
     "market_score": 1.0,
     "macro_score": -0.3,
-    "health_score": 1.0,
+    "health_score": -1.0,
     "high_risk_count": 0
   },
   "conviction_picks": [],
   "top_picks": [],
   "etf_top": [
     {
-      "ticker": "CIBR",
-      "score": 85.0,
-      "ret_90": 25.7
-    },
-    {
-      "ticker": "ITA",
-      "score": 85,
-      "ret_90": 0.6
+      "ticker": "ARKG",
+      "score": 65.2,
+      "ret_90": 36.0
     },
     {
       "ticker": "PPA",
-      "score": 85,
+      "score": 58.0,
       "ret_90": -2.8
     },
     {
-      "ticker": "ARKG",
-      "score": 85,
-      "ret_90": 36.4
+      "ticker": "QQQ",
+      "score": 57.6,
+      "ret_90": 18.3
+    },
+    {
+      "ticker": "ITA",
+      "score": 56.1,
+      "ret_90": 0.7
     },
     {
       "ticker": "ZEB.TO",
-      "score": 80.0,
-      "ret_90": 25.7
+      "score": 56.0,
+      "ret_90": 26.1
     }
   ],
   "macro_signals": []
