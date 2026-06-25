@@ -122,7 +122,7 @@ UNIVERSE = {
     # ── CANADIAN ETFs ─────────────────────────────────────────
     "TSX_ETF_CORE": [
         "XGRO.TO", "XEQT.TO", "XBAL.TO", "XCNS.TO",
-        "VFV.TO",  "ZCN.TO",  "XIU.TO",  "XIC.TO",
+        "VFV.TO",  "XIU.TO",  "XIC.TO",
         "ZDV.TO",  "CDZ.TO",  "XDV.TO",
         "ZEB.TO",  "ZRE.TO",  "XRE.TO",
         "HXT.TO",  "HXS.TO",
@@ -278,7 +278,7 @@ def fetch_ticker_full(ticker, retries=2):
             # Detect ETF (no fundamentals available — skip PE, margins etc.)
             is_etf = info.get("quoteType", "").upper() in ("ETF", "MUTUALFUND") or \
                      any(ticker.upper().endswith(s) for s in ("XIU.TO","VFV.TO","XIC.TO","XEQT.TO",
-                         "XGRO.TO","ZCN.TO","ZEB.TO","ZRE.TO","HXT.TO","HXS.TO","VEA","VWO",
+                         "XGRO.TO","ZEB.TO","ZRE.TO","HXT.TO","HXS.TO","VEA","VWO",
                          "EFA","QQQ","SPY","VOO","VTI","IWM","VYM","SCHD")) or \
                      (info.get("fundFamily") is not None)
 
