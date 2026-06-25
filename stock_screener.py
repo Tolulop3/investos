@@ -180,6 +180,7 @@ SCORE_CAP_74 = {
     "AEM.TO",   # 27% WR, 22 picks, avg -6.13%, PF=0.14 — worsened after backlog
     "AGI.TO",   # 33% WR, 18 picks, avg -8.77%, PF=0.10 — surfaced Jun 25
     "MDB",      #  0% WR,  7 picks, avg -7.89%, PF=0.00 — surfaced Jun 25
+    "MSFT",     # 60% WR,  5 picks, avg -6.93%, PF=0.08 — asymmetric loss pattern
 }
 
 # Tag each ticker with its venue type for pick routing
