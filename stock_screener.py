@@ -166,17 +166,20 @@ if _scout_os.path.exists(_scout_path):
 
 # ── PERFORMANCE BLACKLIST — chronic losers in the 90-100 score tier ──────────
 # These tickers score 90-100 repeatedly but resolve as losses (0-25% WR).
-# Factor attribution (Jun 22 2026): F(0% WR/3picks), DXCM(0%/5), WPM.TO(0%/11).
-# They inflate the 90-100 tier entry count while destroying its win rate.
-# Screened normally but capped at score 74 — keeps them in universe for
-# lower-tier picks, prevents them from polluting the top basket.
+# Chronic losers in the 90-100 score tier — capped at 74.
+# Evidence: factor_investigation.py section 5 — worst avg-return tickers.
+# Cap not exclude — still eligible for 60-74 tier picks.
+# Jun 22: F, DXCM, WPM.TO, FM.TO | Jun 24: ABX.TO, AEM.TO
+# Jun 25: AGI.TO, MDB (surfaced when backlog resolved — true picture now visible)
 SCORE_CAP_74 = {
-    "F",        # 0% WR, 3 picks, avg -10.25% — chronic 90-100 loser
-    "DXCM",     # 0% WR, 5 picks, avg -6.16%  — chronic 90-100 loser
-    "WPM.TO",   # 0% WR, 11 picks, avg -4.67% — chronic 90-100 loser
-    "FM.TO",    # 0% WR, scored 100, -14.3% single loss Jun 23 2026 — worst loss in dataset
-    "ABX.TO",   # 25% WR, 12 picks, avg -3.49%, PF=0.06 — chronic 90-100 loser
-    "AEM.TO",   # 32% WR, 19 picks, avg -2.80%, PF=0.29 — chronic 90-100 loser
+    "F",        # 0% WR, 3 picks,  avg -10.25% — chronic 90-100 loser
+    "DXCM",     # 0% WR, 7 picks,  avg  -5.94% — chronic 90-100 loser
+    "WPM.TO",   # 0% WR, 15 picks, avg  -9.46% — chronic 90-100 loser (worsened)
+    "FM.TO",    # 0% WR, scored 100, -14.3% single loss Jun 23 — worst loss
+    "ABX.TO",   # 25% WR, 12 picks, avg -3.49%, PF=0.06
+    "AEM.TO",   # 27% WR, 22 picks, avg -6.13%, PF=0.14 — worsened after backlog
+    "AGI.TO",   # 33% WR, 18 picks, avg -8.77%, PF=0.10 — surfaced Jun 25
+    "MDB",      #  0% WR,  7 picks, avg -7.89%, PF=0.00 — surfaced Jun 25
 }
 
 # Tag each ticker with its venue type for pick routing

@@ -57,11 +57,6 @@ from risk_engine         import (run_stress_simulation, run_decay_monitor, run_r
                                   SURVIVORSHIP_NOTE, WHEN_THIS_FAILS)
 from news_analyzer       import run_news_analysis
 from insider_engine      import run_insider_engine
-try:
-    from congressional_engine import run_congressional_engine
-    _CONGRESSIONAL_AVAILABLE = True
-except ImportError:
-    _CONGRESSIONAL_AVAILABLE = False
 from etf_engine          import run_etf_engine
 from intelligence_layers import run_all_intelligence_layers, detect_trending_stocks, update_score_history, load_score_history, apply_score_decay
 from ml_engine           import run_ml_engine, get_market_regime, get_cooldown_set
@@ -490,38 +485,7 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception as _ie:
         print(f"  ⚠️  Insider engine error: {_ie} — continuing without")
 
-    # ── 4c. Congressional Engine ───────────────────────
-    congressional_signals = {}
-    if _CONGRESSIONAL_AVAILABLE:
-        try:
-            _all_tickers = set()
-            for _bkt in screener.values():
-                if isinstance(_bkt, list):
-                    for _p in _bkt:
-                        if isinstance(_p, dict) and "ticker" in _p:
-                            _all_tickers.add(_p["ticker"])
-            congressional_signals = run_congressional_engine(
-                screener_tickers=_all_tickers, verbose=True
-            )
-            # Apply score boosts to screener picks
-            _cong_hits = congressional_signals.get("screener_hits", {})
-            if _cong_hits:
-                _buckets = ["FHSA_top5","TFSA_growth_top5","TFSA_income_top5","TFSA_swing_top3",
-                            "FHSA_all","TFSA_core_all","TFSA_income_all","TFSA_swing_all"]
-                for _bkt in _buckets:
-                    for _pick in screener.get(_bkt, []):
-                        _sig = _cong_hits.get(_pick["ticker"])
-                        if _sig:
-                            _boost = min(_sig.get("score_boost", 0), 12)
-                            _pick["score"] = min(100, _pick["score"] + _boost)
-                            _pick.setdefault("reasons", []).append(
-                                "🏛 Congressional: " + _sig.get("label","") + " (+" + str(_boost) + "pts)"
-                            )
-                            _pick["congressional_signal"] = _sig
-        except Exception as _ce:
-            print(f"  ⚠️  Congressional engine error: {_ce} — continuing without")
-
-    # ── 4d. Options Flow Engine ──────────────────────────────
+    # ── 4c. Options Flow Engine ──────────────────────────────
     options_signals = {}
     market_pcr_data = {"pcr": None, "signal": "NEUTRAL", "macro_adj": 0.0}
     try:
@@ -1140,7 +1104,6 @@ def run_daily(test_mode=False, dry_run=False):
 
         "conviction_picks":  conviction[:5],
         "fx_signals":        fx_signals,
-        "congressional_signals": congressional_signals,
 
         "ml": {
             "regime":             ml_results.get("regime",{}),
@@ -1763,18 +1726,29 @@ if __name__ == "__main__":
             print(f"  ⚠️  Factor report skipped: {_fe}")
 
         # ── PF Drift Monitor ───────────────────────────────────
-        # Compares current tier PF against clean post-dedup baseline
-        # (Jun 22 2026). Flags real drift vs baseline noise.
+        # Compares current tier PF against clean post-backlog baseline
+        # (Jun 25 2026). Jun 22 baseline deprecated — was computed on
+        # incomplete data with 339 stale unresolved picks hiding bad outcomes.
         # Alert threshold: >0.20 PF drop = investigate.
         try:
             import json as _pjson, os as _pos
 
+            # Optionally load from pf_baseline.json if present (overrides hardcoded)
             PF_BASELINE = {
-                "90-100":   1.43,
-                "75-89":    2.29,
-                "60-74":    3.17,
-                "below-60": 2.78,
+                "90-100":   0.91,   # post-backlog clean baseline Jun 25 2026
+                "75-89":    1.07,
+                "60-74":    1.92,
+                "below-60": 1.09,
             }
+            _baseline_file = "pf_baseline.json"
+            if _pos.path.exists(_baseline_file):
+                try:
+                    with open(_baseline_file) as _bf:
+                        _bdata = _pjson.load(_bf)
+                    if "tiers" in _bdata:
+                        PF_BASELINE = {t: v["pf"] for t, v in _bdata["tiers"].items()}
+                except Exception:
+                    pass  # fall back to hardcoded
             PF_ALERT_THRESHOLD = 0.20
 
             _log_path = "outcomes_log.json"
@@ -1802,7 +1776,7 @@ if __name__ == "__main__":
 
                 print()
                 print("─" * 55)
-                print("  PF DRIFT vs BASELINE (Jun 22 2026)")
+                print("  PF DRIFT vs BASELINE (Jun 25 2026)")
                 print("─" * 55)
                 for _tier, _base in PF_BASELINE.items():
                     _cur = _current_pf.get(_tier)
