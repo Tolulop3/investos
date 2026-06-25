@@ -13,6 +13,24 @@ const https = require('https');
 // ── Allowed origin (your Netlify site only) ──────────────────────────────────
 const ALLOWED_ORIGIN = 'https://investos-proxy.netlify.app';
 
+// ── Rate limiting — prevents token burn from bots/scrapers ───────────────────
+// In-memory: resets on each cold start (Netlify functions are ephemeral)
+// Limit: max 30 calls per 10-minute window globally
+const RATE_WINDOW_MS  = 10 * 60 * 1000;  // 10 minutes
+const RATE_LIMIT      = 30;               // max calls per window
+let   _rateCount      = 0;
+let   _rateWindowStart = Date.now();
+
+function checkRateLimit() {
+  const now = Date.now();
+  if (now - _rateWindowStart > RATE_WINDOW_MS) {
+    _rateCount = 0;
+    _rateWindowStart = now;
+  }
+  _rateCount++;
+  return _rateCount <= RATE_LIMIT;
+}
+
 function httpsGet(url, headers) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers }, (res) => {
@@ -66,6 +84,15 @@ exports.handler = async function(event) {
       statusCode: 401,
       headers: cors,
       body: JSON.stringify({ error: 'Unauthorised' }),
+    };
+  }
+
+  // ── Rate limit check ─────────────────────────────────────────────────────
+  if (!checkRateLimit()) {
+    return {
+      statusCode: 429,
+      headers: cors,
+      body: JSON.stringify({ error: 'Rate limit exceeded — try again in a few minutes' }),
     };
   }
 
