@@ -4,10 +4,10 @@
     "regime": "BULL",
     "signal": "FULL_EXPOSURE",
     "cash_pct": 0.0,
-    "spx_price": 7358.22,
-    "ma200": 6916.45,
-    "ma50": 7349.01,
-    "pct_above_ma": 6.39,
+    "spx_price": 7366.21,
+    "ma200": 6920.81,
+    "ma50": 7356.98,
+    "pct_above_ma": 6.44,
     "full_exposure_pct": 100.0
   },
   "sharpe": {
@@ -22,23 +22,53 @@
   "win_rate_overall": null,
   "breadth": {
     "total_stocks": 190,
-    "above_ma50": 122,
+    "above_ma50": 119,
     "above_ma200": 131,
-    "pct_above_50": 64.2,
+    "pct_above_50": 62.6,
     "pct_above_200": 68.9,
     "signal": "MODERATE",
     "note": "Moderate breadth \u2014 majority above 200MA",
     "momentum_breadth": "NEUTRAL",
     "sector_breadth": {
+      "Energy": {
+        "pct_above_50": 43,
+        "pct_above_200": 100,
+        "count": 7
+      },
+      "Financial Services": {
+        "pct_above_50": 79,
+        "pct_above_200": 64,
+        "count": 28
+      },
       "Technology": {
-        "pct_above_50": 68,
+        "pct_above_50": 61,
         "pct_above_200": 61,
         "count": 28
       },
       "": {
         "pct_above_50": 80,
-        "pct_above_200": 88,
+        "pct_above_200": 92,
         "count": 50
+      },
+      "Consumer Defensive": {
+        "pct_above_50": 75,
+        "pct_above_200": 88,
+        "count": 8
+      },
+      "Healthcare": {
+        "pct_above_50": 62,
+        "pct_above_200": 46,
+        "count": 13
+      },
+      "Consumer Cyclical": {
+        "pct_above_50": 40,
+        "pct_above_200": 33,
+        "count": 15
+      },
+      "Utilities": {
+        "pct_above_50": 89,
+        "pct_above_200": 100,
+        "count": 9
       },
       "Real Estate": {
         "pct_above_50": 40,
@@ -50,59 +80,78 @@
         "pct_above_200": 57,
         "count": 7
       },
-      "Consumer Defensive": {
-        "pct_above_50": 75,
-        "pct_above_200": 88,
-        "count": 8
-      },
       "Communication Services": {
-        "pct_above_50": 29,
-        "pct_above_200": 71,
+        "pct_above_50": 0,
+        "pct_above_200": 57,
         "count": 7
       },
       "Basic Materials": {
         "pct_above_50": 0,
         "pct_above_200": 25,
         "count": 8
-      },
-      "Financial Services": {
-        "pct_above_50": 79,
-        "pct_above_200": 64,
-        "count": 28
-      },
-      "Healthcare": {
-        "pct_above_50": 62,
-        "pct_above_200": 46,
-        "count": 13
-      },
-      "Energy": {
-        "pct_above_50": 43,
-        "pct_above_200": 100,
-        "count": 7
-      },
-      "Utilities": {
-        "pct_above_50": 89,
-        "pct_above_200": 100,
-        "count": 9
-      },
-      "Consumer Cyclical": {
-        "pct_above_50": 33,
-        "pct_above_200": 40,
-        "count": 15
       }
     }
   },
   "sector_sentiment": {
-    "REPORTING_SECTOR": {
-      "bullish_score": 112.0,
-      "bearish_score": 0,
-      "net_score": 112.0,
-      "sentiment": "BULLISH",
+    "TSX_EXPORTERS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
       "signals": [
         {
-          "name": "earnings_beats",
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "CANADIAN_ENERGY": {
+      "bullish_score": 200,
+      "bearish_score": 284.0,
+      "net_score": -84.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "middle_east_tension",
           "direction": "bullish",
-          "confidence": 75
+          "confidence": 100
+        },
+        {
+          "name": "oil_price_drop",
+          "direction": "bearish",
+          "confidence": 56
+        }
+      ]
+    },
+    "CANADIAN_MATERIALS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "AUTOS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
         }
       ]
     },
@@ -116,29 +165,6 @@
           "name": "middle_east_tension",
           "direction": "bullish",
           "confidence": 100
-        }
-      ]
-    },
-    "CANADIAN_ENERGY": {
-      "bullish_score": 200,
-      "bearish_score": 293.0,
-      "net_score": -93.0,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "middle_east_tension",
-          "direction": "bullish",
-          "confidence": 100
-        },
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "oil_price_drop",
-          "direction": "bearish",
-          "confidence": 62
         }
       ]
     },
@@ -169,9 +195,9 @@
       ]
     },
     "AIRLINES": {
-      "bullish_score": 93.0,
+      "bullish_score": 84.0,
       "bearish_score": 400,
-      "net_score": -307.0,
+      "net_score": -316.0,
       "sentiment": "BEARISH",
       "signals": [
         {
@@ -182,7 +208,7 @@
         {
           "name": "oil_price_drop",
           "direction": "bullish",
-          "confidence": 62
+          "confidence": 56
         },
         {
           "name": "health_outbreak",
@@ -204,94 +230,55 @@
         }
       ]
     },
-    "TSX_EXPORTERS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "CANADIAN_MATERIALS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "AUTOS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
     "CONSUMER": {
-      "bullish_score": 93.0,
+      "bullish_score": 84.0,
       "bearish_score": 0,
-      "net_score": 93.0,
+      "net_score": 84.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "oil_price_drop",
           "direction": "bullish",
-          "confidence": 62
+          "confidence": 56
         }
       ]
     },
     "TRANSPORT": {
-      "bullish_score": 93.0,
+      "bullish_score": 84.0,
       "bearish_score": 0,
-      "net_score": 93.0,
+      "net_score": 84.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "oil_price_drop",
           "direction": "bullish",
-          "confidence": 62
+          "confidence": 56
         }
       ]
     },
     "TSX_ENERGY": {
       "bullish_score": 0,
-      "bearish_score": 93.0,
-      "net_score": -93.0,
+      "bearish_score": 84.0,
+      "net_score": -84.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "oil_price_drop",
           "direction": "bearish",
-          "confidence": 62
+          "confidence": 56
         }
       ]
     },
     "PIPELINES": {
       "bullish_score": 0,
-      "bearish_score": 93.0,
-      "net_score": -93.0,
+      "bearish_score": 84.0,
+      "net_score": -84.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "oil_price_drop",
           "direction": "bearish",
-          "confidence": 62
+          "confidence": 56
         }
       ]
     },
@@ -434,35 +421,187 @@
     "market_score": 1.0,
     "macro_score": -0.3,
     "health_score": -1.0,
-    "high_risk_count": 3
+    "high_risk_count": 0
   },
-  "conviction_picks": [],
+  "conviction_picks": [
+    {
+      "ticker": "QCOM",
+      "score": 100,
+      "data": {
+        "ticker": "QCOM",
+        "price": 204.34,
+        "day_chg_pct": 3.56,
+        "perf_30d": -17.57,
+        "perf_90d": 59.4,
+        "w52_high": 259.92,
+        "w52_low": 121.99,
+        "drawdown_high": -21.38,
+        "recovery_pct": 67.51,
+        "avg_volume": 21181685,
+        "volatility": 1.23,
+        "rsi_approx": 36.5,
+        "div_yield": 1.86,
+        "div_rate": 3.68,
+        "ex_div_date": "Jun 04, 2026",
+        "days_to_ex_div": -22,
+        "pe_ratio": 22.0,
+        "peg_ratio": 0.94,
+        "profit_margin": 22.3,
+        "rev_growth": -3.5,
+        "earn_growth": 173.0,
+        "debt_equity": 56.0,
+        "roe": 36.1,
+        "current_ratio": 2.37,
+        "target_price": 186.5,
+        "upside_target": -8.7,
+        "analyst_rec": "hold",
+        "sector": "Technology",
+        "industry": "Semiconductors",
+        "next_earnings": "N/A",
+        "short_pct_float": 4.8,
+        "vol_accum_score": 0,
+        "status": "ok",
+        "closes_30d": [
+          212.3856,
+          199.3437,
+          200.7486,
+          202.8906,
+          194.8902,
+          201.7648,
+          212.6247,
+          237.2836,
+          247.9044,
+          232.5411,
+          242.3947,
+          250.0963,
+          228.1474,
+          239.9537,
+          249.09,
+          242.57,
+          215.94,
+          217.77,
+          205.42,
+          191.2,
+          202.96,
+          211.72,
+          220.81,
+          214.07,
+          212.97,
+          226.11,
+          221.9,
+          204.13,
+          197.41,
+          204.3432
+        ],
+        "pct_from_20d_high": -18.29,
+        "above_ma50": true,
+        "above_ma200": true
+      },
+      "pillars": {
+        "momentum": 2.0,
+        "dividend_income": 9.1,
+        "growth": 10.4,
+        "value": 15.4,
+        "safety": 14.4,
+        "volume_liquidity": 10.0
+      },
+      "reasons": [
+        "\ud83d\ude80 Strong 90d: +59.4%",
+        "\ud83d\udcb0 Dividend: 1.86%",
+        "\ud83d\udcca Earnings growth: +173.0%",
+        "\ud83d\udcaa Strong ROE: 36.1%",
+        "\ud83d\udc8e PEG < 1: 0.94 (undervalued vs growth)",
+        "\ud83d\udcca Options: bullish stock PCR (0.39)",
+        "\ud83d\udcaa RS Rating: 91 \u2014 \ud83d\udd25 TOP PERFORMER"
+      ],
+      "flags": [
+        "\u26a0\ufe0f 30d pullback: -17.57%",
+        "\u26a0\ufe0f Deep pullback: -18.3% from 20d high"
+      ],
+      "pick": {
+        "category": "SWING",
+        "venue": "STOCK_ACCOUNT",
+        "tag": "[TFSA]",
+        "hold_days": 30,
+        "risk_label": "HIGH",
+        "amount": 12.0,
+        "action": "Suggested: $100 | Swing trade \u2014 target exit in 30 days",
+        "exit_note": "Stop loss: $179.82 | Target: $255.43 | Hard exit before N/A",
+        "exp_low": 4.0,
+        "exp_high": 49.5,
+        "exp_prob": 52,
+        "options_eligible": true,
+        "suggested_play": "csp",
+        "est_premium_pct": 0.42,
+        "short_interest": 4.8,
+        "next_earnings": "N/A"
+      },
+      "days_to_earnings": 999,
+      "options_signal": {
+        "ticker": "QCOM",
+        "signal": "BULLISH_PCR",
+        "adjustment": 2,
+        "reason": "\ud83d\udcca Options: bullish stock PCR (0.39)",
+        "call_volume": 44087,
+        "put_volume": 16952,
+        "pcr_stock": 0.385,
+        "atm_iv": 0.9512,
+        "atm_oi": 16361
+      },
+      "ml_prob": 0.1098,
+      "ml_prob_raw": 0.1098,
+      "ml_signal": "\u26a0\ufe0f WEAK",
+      "rs_rating": 91,
+      "rs_signal": "\ud83d\udd25 TOP PERFORMER",
+      "rs_adj": 15,
+      "conviction_signals": [
+        "\ud83d\udcaa RS 91 \u2014 Top Performer",
+        "\ud83d\udcca Options: Bullish PCR 0.39"
+      ],
+      "conviction_boost": 14,
+      "conviction_count": 2,
+      "expected_value": -0.203,
+      "size_guardrail": {
+        "ticker": "QCOM",
+        "category": "SWING",
+        "bucket": "Short-term trades. $100 hard cap \u2014 losses are small and defined.",
+        "bucket_pool": 1.5,
+        "max_raw": 30,
+        "regime_adj": 1.0,
+        "accuracy_adj": 0.4,
+        "recommended": 12.0,
+        "if_zero_pct": 120.0,
+        "regime": "BULL",
+        "survival_note": "If this goes to zero \u2192 you lose 120.0% of account. \ud83d\udd34 Too large"
+      }
+    }
+  ],
   "top_picks": [],
   "etf_top": [
     {
       "ticker": "ARKG",
       "score": 65.2,
-      "ret_90": 36.0
+      "ret_90": 39.1
     },
     {
       "ticker": "QQQ",
       "score": 57.6,
-      "ret_90": 18.3
+      "ret_90": 18.8
     },
     {
       "ticker": "ZEB.TO",
       "score": 56.0,
-      "ret_90": 26.1
+      "ret_90": 25.4
     },
     {
-      "ticker": "VFV.TO",
-      "score": 55.2,
-      "ret_90": 12.5
+      "ticker": "PPA",
+      "score": 55.6,
+      "ret_90": -2.3
     },
     {
-      "ticker": "XIC.TO",
+      "ticker": "XEQT.TO",
       "score": 55.2,
-      "ret_90": 6.4
+      "ret_90": 7.6
     }
   ],
   "macro_signals": []
