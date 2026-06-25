@@ -1,14 +1,18 @@
 {
-  "timestamp": "2026-06-24T22:19:49.069245",
-  "date": "June 24, 2026",
-  "articles_fetched": 150,
+  "timestamp": "2026-06-25T03:42:51.848255",
+  "date": "June 25, 2026",
+  "articles_fetched": 149,
   "feeds_online": 12,
   "feeds_total": 15,
-  "signals_detected": 4,
+  "signals_detected": 5,
   "active_signals": {
     "middle_east_tension": {
       "confidence": 100,
       "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
+    },
+    "oil_price_drop": {
+      "confidence": 68,
+      "note": "Oil drop = Canadian energy stocks under pressure"
     },
     "russia_ukraine": {
       "confidence": 100,
@@ -39,14 +43,19 @@
     },
     "CANADIAN_ENERGY": {
       "bullish_score": 200,
-      "bearish_score": 200,
-      "net_score": 0,
-      "sentiment": "NEUTRAL",
+      "bearish_score": 302.0,
+      "net_score": -102.0,
+      "sentiment": "BEARISH",
       "signals": [
         {
           "name": "middle_east_tension",
           "direction": "bullish",
           "confidence": 100
+        },
+        {
+          "name": "oil_price_drop",
+          "direction": "bearish",
+          "confidence": 68
         },
         {
           "name": "trump_tariff_negative",
@@ -92,15 +101,20 @@
       ]
     },
     "AIRLINES": {
-      "bullish_score": 0,
+      "bullish_score": 102.0,
       "bearish_score": 400,
-      "net_score": -400,
+      "net_score": -298.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "middle_east_tension",
           "direction": "bearish",
           "confidence": 100
+        },
+        {
+          "name": "oil_price_drop",
+          "direction": "bullish",
+          "confidence": 68
         },
         {
           "name": "health_outbreak",
@@ -119,6 +133,58 @@
           "name": "middle_east_tension",
           "direction": "bearish",
           "confidence": 100
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 102.0,
+      "bearish_score": 0,
+      "net_score": 102.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_drop",
+          "direction": "bullish",
+          "confidence": 68
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 102.0,
+      "bearish_score": 0,
+      "net_score": 102.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_drop",
+          "direction": "bullish",
+          "confidence": 68
+        }
+      ]
+    },
+    "TSX_ENERGY": {
+      "bullish_score": 0,
+      "bearish_score": 102.0,
+      "net_score": -102.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_drop",
+          "direction": "bearish",
+          "confidence": 68
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 0,
+      "bearish_score": 102.0,
+      "net_score": -102.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_drop",
+          "direction": "bearish",
+          "confidence": 68
         }
       ]
     },
@@ -333,34 +399,49 @@
   },
   "ticker_adjustments": {
     "ENB.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": -13.6,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_ENERGY (BEARISH)",
+        "\ud83d\udcc9 PIPELINES (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
     },
     "TRP.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": -13.6,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_ENERGY (BEARISH)",
+        "\ud83d\udcc9 PIPELINES (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
     },
     "CNQ.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": -6.8,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_ENERGY (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
     },
     "SU.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": -6.8,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_ENERGY (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
     },
     "CVE.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": -6.8,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_ENERGY (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
     },
     "PPL.TO": {
-      "adjustment": 0.0,
-      "reasons": [],
-      "news_sentiment": "NEUTRAL"
+      "adjustment": -13.6,
+      "reasons": [
+        "\ud83d\udcc9 CANADIAN_ENERGY (BEARISH)",
+        "\ud83d\udcc9 PIPELINES (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH"
     },
     "LMT": {
       "adjustment": 20,
@@ -672,8 +753,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "White House requests $87.6 billion supplemental spending for Iran war, farm aid",
-          "Trump meets defense CEOs as Iran operations strain U.S. missile stockpiles"
+          "Iran declares new Hormuz route 'unacceptable and dangerous,' warns against ships transiting without approval",
+          "Oil prices erase wartime gains as supply concerns ease with Hormuz tanker traffic resuming"
         ]
       },
       {
@@ -684,7 +765,7 @@
         "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported",
         "articles": [
           "Putin\u2019s system is in a state of slow implosion",
-          "A $30 Billion Cancer Breakthrough Is Under Threat From Global Conflicts"
+          "Moscow Refinery May Stay Offline Until 2027"
         ]
       },
       {
@@ -707,6 +788,16 @@
         "articles": [
           "WHO issues comprehensive guidelines on filovirus disease, including Ebola and Marburg disease",
           "Open letter to leaders of G7, G20, BRICS and all nations on finalizing the WHO Pandemic Agreement\u2019s Pathogen Access and Benefit Sharing annex"
+        ]
+      },
+      {
+        "signal": "Oil Price Drop",
+        "magnitude": "MODERATE",
+        "confidence": 68,
+        "bars": "\u2588\u2588\u2588",
+        "note": "Oil drop = Canadian energy stocks under pressure",
+        "articles": [
+          "Oil price back at prewar levels as Gulf flows pick up"
         ]
       }
     ],
