@@ -1806,6 +1806,13 @@ if __name__ == "__main__":
         except Exception as _dfe:
             print(f"  ⚠️  PF drift monitor skipped: {_dfe}")
 
+            # ── Strategy version snapshot (OOS anchor) ──────────────────────────
+        try:
+            import strategy_version as _sv
+            _sv.log_strategy_version(outcomes_path="outcomes_log.json")
+        except Exception as _sve:
+            print(f"  ⚠️ strategy_version log failed: {_sve}")
+
         print("  ✅ InvestOS complete")
 
         if json_metrics and brief:
