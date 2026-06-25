@@ -13,24 +13,6 @@ const https = require('https');
 // ── Allowed origin (your Netlify site only) ──────────────────────────────────
 const ALLOWED_ORIGIN = 'https://investos-proxy.netlify.app';
 
-// ── Rate limiting — prevents token burn from bots/scrapers ───────────────────
-// In-memory: resets on each cold start (Netlify functions are ephemeral)
-// Limit: max 30 calls per 10-minute window globally
-const RATE_WINDOW_MS  = 10 * 60 * 1000;  // 10 minutes
-const RATE_LIMIT      = 30;               // max calls per window
-let   _rateCount      = 0;
-let   _rateWindowStart = Date.now();
-
-function checkRateLimit() {
-  const now = Date.now();
-  if (now - _rateWindowStart > RATE_WINDOW_MS) {
-    _rateCount = 0;
-    _rateWindowStart = now;
-  }
-  _rateCount++;
-  return _rateCount <= RATE_LIMIT;
-}
-
 function httpsGet(url, headers) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers }, (res) => {
@@ -87,15 +69,6 @@ exports.handler = async function(event) {
     };
   }
 
-  // ── Rate limit check ─────────────────────────────────────────────────────
-  if (!checkRateLimit()) {
-    return {
-      statusCode: 429,
-      headers: cors,
-      body: JSON.stringify({ error: 'Rate limit exceeded — try again in a few minutes' }),
-    };
-  }
-
   // ── Input sanitization ────────────────────────────────────────────────────
   const raw    = ((event.queryStringParameters || {}).s || '');
   const ticker = raw.toUpperCase().replace(/[^A-Z0-9.\-]/g, '').slice(0, 20);
@@ -146,12 +119,66 @@ exports.handler = async function(event) {
       body: chartRes.data,
     };
 
-  } catch (err) {
-    // Safe error — no stack trace exposed
+  } catch (yahooErr) {
+    // ── Yahoo failed — try Finnhub as genuine second source ─────────────────
+    // Finnhub free tier: 60 calls/min, no API key needed for basic quote.
+    // Covers all US stocks including AAPL, TSLA, NVDA — exactly the ones Yahoo throttles.
+    // Returns limited data (price + basic fundamentals) — no chart history.
+    try {
+      // Finnhub token: set FINNHUB_API_KEY in Netlify env vars (free at finnhub.io)
+      // Falls back gracefully if not set — just skips Finnhub
+      const finnhubToken = process.env.FINNHUB_API_KEY || '';
+      if (!finnhubToken) throw new Error('no finnhub key');
+      const finnhubUrl = 'https://finnhub.io/api/v1/quote?symbol=' + encodeURIComponent(ticker)
+        + '&token=' + encodeURIComponent(finnhubToken);
+      const fhRes = await httpsGet(finnhubUrl, {
+        'User-Agent': UA,
+        'Accept': 'application/json',
+      });
+
+      if (fhRes.status === 200) {
+        const fh = JSON.parse(fhRes.data);
+        // Finnhub quote: { c: current, d: change, dp: changePct, h: high, l: low, o: open, pc: prevClose }
+        if (fh && fh.c && fh.c > 0) {
+          // Wrap in Yahoo chart format so the browser parser works unchanged
+          const now  = Math.floor(Date.now() / 1000);
+          const fake = {
+            chart: {
+              result: [{
+                meta: {
+                  currency: 'USD',
+                  symbol: ticker,
+                  regularMarketPrice: fh.c,
+                  previousClose: fh.pc,
+                  regularMarketDayHigh: fh.h,
+                  regularMarketDayLow: fh.l,
+                  regularMarketOpen: fh.o,
+                  fiftyTwoWeekHigh: fh.h,
+                  fiftyTwoWeekLow: fh.l,
+                  dataSource: 'finnhub_fallback',
+                },
+                timestamp: [now],
+                indicators: {
+                  quote: [{ open: [fh.o], high: [fh.h], low: [fh.l], close: [fh.c], volume: [0] }],
+                },
+              }],
+              error: null,
+            },
+          };
+          return {
+            statusCode: 200,
+            headers: { ...cors, 'Cache-Control': 'public, max-age=120', 'X-Data-Source': 'finnhub' },
+            body: JSON.stringify(fake),
+          };
+        }
+      }
+    } catch (_) {}
+
+    // Both Yahoo and Finnhub failed — return original Yahoo error
     return {
       statusCode: 502,
       headers: cors,
-      body: JSON.stringify({ error: err.message || 'Proxy error' }),
+      body: JSON.stringify({ error: yahooErr.message || 'Proxy error' }),
     };
   }
 };
