@@ -238,6 +238,14 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
         if cooldown_set and (ticker in cooldown_set or ticker.replace(".TO","").replace("-UN","").upper() in cooldown_set):
             continue
 
+        # ML gate: score≥90 + ML<20% = unprofitable subset — exclude from conviction
+        # Same gate as ml_engine.py sizing step. Prevents QCOM-type false positives
+        # where high score + low ML confidence generates a conviction signal.
+        _ml_prob = pick.get("ml_prob", 0.5) or 0.5
+        _score   = pick.get("score", 0) or 0
+        if _score >= 90 and _ml_prob < 0.20:
+            continue
+
         clean = ticker.replace(".TO","").replace("-UN","").upper()
         sigs  = []
         boost = 0
