@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-25T15:22:27.698376",
+    "run_at": "2026-06-25T18:00:17.987469",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,31 +30,31 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 13,
-        "survival_pct": 72.2,
-        "avg_score_change": 4.0,
+        "survived": 15,
+        "survival_pct": 83.3,
+        "avg_score_change": 4.1,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.0 pts with 10% noise"
+        "note": "Avg score change: \u00b14.1 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 71.2,
-        "stressed_avg": 63.5,
-        "score_drop": 7.7,
+        "normal_avg": 74.7,
+        "stressed_avg": 66.8,
+        "score_drop": 7.9,
         "removed": [
-          "POW.TO",
-          "JPM",
           "BNS.TO",
+          "REI-UN.TO",
+          "JPM",
           "QCOM"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 7.7 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 7.9 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
+        "survived": 16,
+        "survival_pct": 88.9,
         "avg_score_drop": 3.0,
         "verdict": "\u2705 ROBUST",
         "note": "If momentum stops working: avg score drops 3.0 pts"
@@ -62,7 +62,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 71.2,
+      "normal_avg_score": 74.7,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -82,16 +82,16 @@
       "note": "Sharpe from 300 resolved picks \u00b7 price-return \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": -1.92,
-      "ret_30d": -1.03,
-      "ret_90d": 7.66,
-      "ann_ret": 21.5,
+      "ret_7d": -2.02,
+      "ret_30d": -1.13,
+      "ret_90d": 7.55,
+      "ann_ret": 21.1,
       "ann_vol": 14.8,
-      "sharpe": 1.45,
+      "sharpe": 1.43,
       "symbol": "^GSPC"
     },
-    "alpha": -4.477,
-    "neg_alpha_days": 5,
+    "alpha": -4.457,
+    "neg_alpha_days": 6,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
