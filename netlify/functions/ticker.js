@@ -13,6 +13,22 @@ const https = require('https');
 // ── Allowed origin (your Netlify site only) ──────────────────────────────────
 const ALLOWED_ORIGIN = 'https://investos-proxy.netlify.app';
 
+// ── Rate limiting — stops bots burning your Netlify quota ────────────────────
+const RATE_WINDOW_MS   = 10 * 60 * 1000;  // 10 minutes
+const RATE_LIMIT       = 30;              // max calls per window
+let   _rateCount       = 0;
+let   _rateWindowStart = Date.now();
+
+function checkRateLimit() {
+  const now = Date.now();
+  if (now - _rateWindowStart > RATE_WINDOW_MS) {
+    _rateCount = 0;
+    _rateWindowStart = now;
+  }
+  _rateCount++;
+  return _rateCount <= RATE_LIMIT;
+}
+
 function httpsGet(url, headers) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers }, (res) => {
@@ -52,20 +68,37 @@ exports.handler = async function(event) {
     event.headers['X-Investos-Key']
   );
 
-  if (!expectedKey) {
-    // INVESTOS_API_KEY not set in Netlify env — block all requests until configured
-    return {
-      statusCode: 503,
-      headers: cors,
-      body: JSON.stringify({ error: 'Service not configured' }),
-    };
+  // Auth strategy: prefer key-based auth, fall back to origin-only auth
+  // This allows the dashboard to work without exposing the key in client JS
+  // (Netlify secrets scanner blocks builds if key appears in index.html)
+  const originIsValid = (corsOrigin === ALLOWED_ORIGIN);
+
+  if (expectedKey) {
+    // Key configured — require it OR valid origin (dashboard sends empty key now)
+    if (!originIsValid && (!providedKey || providedKey !== expectedKey)) {
+      return {
+        statusCode: 401,
+        headers: cors,
+        body: JSON.stringify({ error: 'Unauthorised' }),
+      };
+    }
+  } else {
+    // No key configured — require valid origin only
+    if (!originIsValid) {
+      return {
+        statusCode: 401,
+        headers: cors,
+        body: JSON.stringify({ error: 'Unauthorised — origin not allowed' }),
+      };
+    }
   }
 
-  if (!providedKey || providedKey !== expectedKey) {
+  // ── Rate limit check ─────────────────────────────────────────────────────
+  if (!checkRateLimit()) {
     return {
-      statusCode: 401,
+      statusCode: 429,
       headers: cors,
-      body: JSON.stringify({ error: 'Unauthorised' }),
+      body: JSON.stringify({ error: 'Rate limit exceeded — try again shortly' }),
     };
   }
 
