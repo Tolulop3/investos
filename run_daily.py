@@ -439,11 +439,16 @@ def write_obsidian_daily(brief, unified_regime, macro_regime,
         today      = start.strftime("%Y-%m-%d")
 
         # ── Determine write path ──────────────────────────────
-        vault_daily = pathlib.Path.home() / "Documents" / "investos-brain" / "daily"
-        if vault_daily.exists():
+        # Check vault ROOT (not daily/ — empty folders don't sync via git)
+        vault_root  = pathlib.Path.home() / "Documents" / "investos-brain"
+        vault_daily = vault_root / "daily"
+
+        if vault_root.exists():
+            # Mac local run — create daily/ subfolder if missing
+            vault_daily.mkdir(parents=True, exist_ok=True)
             note_path = vault_daily / f"{today}.md"
         else:
-            # GitHub Actions fallback — write to investos repo history folder
+            # GitHub Actions cloud run — fall back to history/obsidian/
             fallback = pathlib.Path("history") / "obsidian"
             fallback.mkdir(parents=True, exist_ok=True)
             note_path = fallback / f"{today}.md"
