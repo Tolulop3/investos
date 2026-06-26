@@ -1954,23 +1954,26 @@ if __name__ == "__main__":
         except Exception as _sve:
             print(f"  ⚠️ strategy_version log failed: {_sve}")
 
-        # ── Obsidian Daily Bridge ──────────────────────────────────────────
-        # Pull everything from brief — avoids scope issues with local variables
+        # ── History Analyzer ────────────────────────────────────────────
         try:
-            _rr   = (brief or {}).get("risk_report", {}) or {}
-            _dm   = _rr.get("decay_monitor", {}) or {}
-            _obs_sharpe = float(_dm.get("rolling_sharpe", 0) or 0)
-            _obs_rm     = float(_rr.get("risk_multiplier", 1.0) or 1.0)
-            _obs_na     = int(_dm.get("neg_alpha_days", 0) or 0)
-            _obs_ur     = _rr.get("unified_regime") or                           (unified_regime if "unified_regime" in dir() else "DEFENSIVE")
-            _obs_mr     = (brief or {}).get("macro_regime") or                           (macro_reg if "macro_reg" in dir() else "NORMAL")
+            from history_analyzer import run_history_analysis as _ha
+            _ha(verbose=False)
+        except Exception:
+            pass
+
+        # ── Obsidian Daily Bridge ──────────────────────────────────────────
+        try:
+            _rm  = _risk_multiplier if "_risk_multiplier" in dir() else 1.0
+            _na  = neg_alpha_days   if "neg_alpha_days"   in dir() else 0
+            _mr  = macro_reg        if "macro_reg"        in dir() else \
+                   (news.get("macro_regime", "NORMAL") if "news" in dir() else "NORMAL")
             write_obsidian_daily(
                 brief           = brief,
-                unified_regime  = _obs_ur,
-                macro_regime    = _obs_mr,
-                rolling_sharpe  = _obs_sharpe,
-                risk_multiplier = _obs_rm,
-                neg_alpha_days  = _obs_na,
+                unified_regime  = unified_regime,
+                macro_regime    = _mr,
+                rolling_sharpe  = rolling_sharpe,
+                risk_multiplier = _rm,
+                neg_alpha_days  = _na,
                 start           = start,
             )
         except Exception as _obe:
