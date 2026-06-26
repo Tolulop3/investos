@@ -414,6 +414,142 @@ def rotate_brief_history(brief):
 
 
 # ============================================================
+# OBSIDIAN DAILY BRIDGE
+# ============================================================
+
+def write_obsidian_daily(brief, unified_regime, macro_regime,
+                          rolling_sharpe, risk_multiplier,
+                          neg_alpha_days, start):
+    """
+    Writes a daily markdown note to the investos-brain Obsidian vault.
+
+    On your Mac:
+      → writes to ~/Documents/investos-brain/daily/YYYY-MM-DD.md
+      → Obsidian Git plugin picks it up within 10 minutes automatically
+
+    In GitHub Actions (cloud):
+      → vault folder doesn't exist on cloud machine
+      → falls back to history/obsidian/YYYY-MM-DD.md in investos repo
+      → still committed alongside normal data files
+      → never breaks the pipeline (silent fail)
+    """
+    import pathlib
+
+    try:
+        today      = start.strftime("%Y-%m-%d")
+
+        # ── Determine write path ──────────────────────────────
+        vault_daily = pathlib.Path.home() / "Documents" / "investos-brain" / "daily"
+        if vault_daily.exists():
+            note_path = vault_daily / f"{today}.md"
+        else:
+            # GitHub Actions fallback — write to investos repo history folder
+            fallback = pathlib.Path("history") / "obsidian"
+            fallback.mkdir(parents=True, exist_ok=True)
+            note_path = fallback / f"{today}.md"
+
+        # ── Pull metrics from brief ───────────────────────────
+        wr         = brief.get("win_rate", {}) or {}
+        wr30       = (wr.get("windows", {}).get("30d", {}) or {}).get("win_rate", 0) or 0
+        wr_all     = wr.get("win_rate", 0) or 0
+        streak     = wr.get("streak", 0)
+        stype      = wr.get("streak_type", "WIN")
+
+        br         = brief.get("breadth", {}) or {}
+        p50        = br.get("pct_above_50", 0) or 0
+        p200       = br.get("pct_above_200", 0) or 0
+        b_signal   = br.get("signal", "UNKNOWN")
+
+        risk_rep   = brief.get("risk_report", {}) or {}
+        robustness = risk_rep.get("robustness_score", "N/A")
+
+        pcr_data   = brief.get("pcr_data", {}) or {}
+        pcr_val    = pcr_data.get("pcr", "N/A")
+        pcr_signal = pcr_data.get("signal", "NEUTRAL")
+
+        picks      = brief.get("conviction_picks", []) or []
+        elapsed    = round((datetime.now() - start).total_seconds(), 1)
+
+        # ── Status icons ─────────────────────────────────────
+        regime_icon = {"RISK_ON": "🟢", "NEUTRAL": "🟡",
+                       "DEFENSIVE": "🟠", "CAPITAL_PRESERVATION": "🔴"}.get(unified_regime, "⚪")
+        macro_icon  = {"RISK_ON": "🟢", "CAUTIOUS": "🟡",
+                       "RISK_OFF": "🔴", "NORMAL": "⚪"}.get(macro_regime, "⚪")
+        sharpe_icon = "✅" if rolling_sharpe >= 0.5 else "⚠️" if rolling_sharpe >= 0 else "🔴"
+        wr30_icon   = "✅" if wr30 >= 60 else "⚠️" if wr30 >= 50 else "🔴"
+        b_icon      = "✅" if p200 >= 70 else "⚠️" if p200 >= 55 else "🔴"
+        streak_icon = "✅" if stype == "WIN" else "⚠️"
+
+        # ── Build picks section ───────────────────────────────
+        picks_lines = []
+        for i, p in enumerate(picks[:5], 1):
+            ticker  = p.get("ticker", "?")
+            score   = p.get("score", 0)
+            signals = p.get("signals", [])
+            sig_str = " · ".join(signals[:3]) if signals else "—"
+            conv    = " 🎯 CONVICTION" if p.get("conviction") else ""
+            picks_lines.append(
+                f"{i}. **{ticker}** — score {score}{conv}  \n   {sig_str}"
+            )
+        picks_md = "\n".join(picks_lines) if picks_lines else "_No picks today_"
+
+        # ── Build flags section ───────────────────────────────
+        flags = []
+        if rolling_sharpe < 0:
+            flags.append(f"🔴 Sharpe negative ({rolling_sharpe:.3f}) — guard engaged")
+        if neg_alpha_days > 20:
+            flags.append(f"⚠️ Neg alpha streak: {neg_alpha_days} days")
+        if risk_multiplier < 1.0:
+            flags.append(f"⚠️ Risk multiplier: {risk_multiplier:.2f}× (reduced exposure)")
+        if p200 < 55:
+            flags.append(f"⚠️ Breadth weak: {p200}% above 200MA")
+        if not flags:
+            flags.append("✅ No flags — system healthy")
+        flags_md = "\n".join(f"- {f}" for f in flags)
+
+        # ── Write note ────────────────────────────────────────
+        note = f"""# {today}
+
+## Regime
+| Signal | Value | Status |
+|--------|-------|--------|
+| Unified | {unified_regime} @ {risk_multiplier:.2f}× | {regime_icon} |
+| Macro | {macro_regime} | {macro_icon} |
+| PCR | {pcr_val} | {pcr_signal} |
+| Breadth 50MA | {p50}% | — |
+| Breadth 200MA | {p200}% | {b_icon} {b_signal} |
+
+## System Health
+| Metric | Value | Status |
+|--------|-------|--------|
+| Sharpe (90d) | {rolling_sharpe:.3f} | {sharpe_icon} |
+| WR 30d | {wr30}% | {wr30_icon} |
+| WR overall | {wr_all}% | — |
+| Streak | {streak} {stype} | {streak_icon} |
+| Neg alpha | {neg_alpha_days} days | — |
+| Robustness | {robustness}/100 | — |
+| Runtime | {elapsed}s | — |
+
+## Top Picks
+{picks_md}
+
+## Flags
+{flags_md}
+
+## Notes
+_Add notes here during the day_
+
+---
+_Generated by InvestOS at {datetime.now().strftime("%H:%M ET")} · NFA · Educational only_
+"""
+        note_path.write_text(note, encoding="utf-8")
+        print(f"  📓 Obsidian note → {note_path}")
+
+    except Exception as _oe:
+        print(f"  ⚠️  Obsidian bridge skipped: {_oe}")
+
+
+# ============================================================
 # MAIN RUN
 # ============================================================
 
@@ -1812,6 +1948,24 @@ if __name__ == "__main__":
             _sv.log_strategy_version(outcomes_path="outcomes_log.json")
         except Exception as _sve:
             print(f"  ⚠️ strategy_version log failed: {_sve}")
+
+        # ── Obsidian Daily Bridge ──────────────────────────────────────────
+        try:
+            _rm  = _risk_multiplier if "_risk_multiplier" in dir() else 1.0
+            _na  = neg_alpha_days   if "neg_alpha_days"   in dir() else 0
+            _mr  = macro_reg        if "macro_reg"        in dir() else \
+                   (news.get("macro_regime", "NORMAL") if "news" in dir() else "NORMAL")
+            write_obsidian_daily(
+                brief           = brief,
+                unified_regime  = unified_regime,
+                macro_regime    = _mr,
+                rolling_sharpe  = rolling_sharpe,
+                risk_multiplier = _rm,
+                neg_alpha_days  = _na,
+                start           = start,
+            )
+        except Exception as _obe:
+            print(f"  ⚠️  Obsidian bridge failed: {_obe}")
 
         print("  ✅ InvestOS complete")
 
