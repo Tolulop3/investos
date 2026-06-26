@@ -190,7 +190,7 @@ def get_market_regime(verbose=True):
                     _watermark = 0
             # Always use the HIGHER of: current data vs stored watermark
             if _watermark > 0 and spx < _watermark * 0.970:  # 3% drop threshold — real moves are < 2% overnight
-                print(f"  ⚠️  SPX stale data: {spx:.2f} < watermark {_watermark:.2f} × 0.985")
+                print(f"  ⚠️  SPX stale data: {spx:.2f} < watermark {_watermark:.2f} × 0.970")
                 # The watermark IS the last verified good price — use it directly
                 # max(closes[-5:]) won't help if yfinance returned all stale values
                 print(f"      Using watermark: {_watermark:.2f}")
@@ -770,7 +770,10 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
     sector_sentiment = sector_sentiment or kwargs.get("sector_sentiment", {})
     SECTOR_MAP_BLOCK = {
         "Communication Services": "TELECOM",
-        "Industrials":            "AIRLINES",
+        # "Industrials": "AIRLINES" removed — too broad. TIH.TO, MMM, GE etc are
+        # industrials but NOT airlines. AC.TO is caught via news_analyzer SECTOR_TICKERS.
+        # Only map sectors where the yfinance label reliably predicts the news_analyzer
+        # sector block (Communication Services → TELECOM is 1:1 correct).
         "Consumer Discretionary": "CONSUMER_DISCRETIONARY",
         "Consumer Cyclical":      "CONSUMER_DISCRETIONARY",
         "Materials":              "CANADIAN_MATERIALS",
