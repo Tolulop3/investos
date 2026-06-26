@@ -9,15 +9,15 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-26T21:44:42.271524",
+    "run_at": "2026-06-26T21:57:53.981411",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
+        "survived": 16,
+        "survival_pct": 88.9,
         "verdict": "\u2705 ROBUST",
-        "note": "1 picks unviable after doubling costs"
+        "note": "2 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
@@ -38,31 +38,31 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 74.6,
-        "stressed_avg": 71.3,
-        "score_drop": 3.3,
+        "normal_avg": 73.4,
+        "stressed_avg": 69.9,
+        "score_drop": 3.5,
         "removed": [
-          "BNS.TO",
-          "BAC",
+          "NA.TO",
           "TSM",
-          "POW.TO"
+          "RY.TO",
+          "BAC"
         ],
         "verdict": "\u2705 ROBUST",
-        "note": "Score drops 3.3 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 3.5 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
         "survived": 17,
         "survival_pct": 94.4,
-        "avg_score_drop": 3.7,
+        "avg_score_drop": 3.4,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.7 pts"
+        "note": "If momentum stops working: avg score drops 3.4 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 74.6,
+      "normal_avg_score": 73.4,
       "scenarios_robust": 5,
       "scenarios_fragile": 0,
       "scenarios_broken": 0,
@@ -91,7 +91,7 @@
       "symbol": "^GSPC"
     },
     "alpha": -4.358,
-    "neg_alpha_days": 24,
+    "neg_alpha_days": 25,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
