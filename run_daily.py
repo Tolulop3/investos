@@ -1947,7 +1947,7 @@ if __name__ == "__main__":
         except Exception as _dfe:
             print(f"  ⚠️  PF drift monitor skipped: {_dfe}")
 
-            # ── Strategy version snapshot (OOS anchor) ──────────────────────────
+        # ── Strategy version snapshot (OOS anchor) ──────────────────────────
         try:
             import strategy_version as _sv
             _sv.log_strategy_version(outcomes_path="outcomes_log.json")
@@ -1960,9 +1960,10 @@ if __name__ == "__main__":
             _na  = neg_alpha_days   if "neg_alpha_days"   in dir() else 0
             _mr  = macro_reg        if "macro_reg"        in dir() else \
                    (news.get("macro_regime", "NORMAL") if "news" in dir() else "NORMAL")
+            _ur = unified_regime if "unified_regime" in dir() else                   brief.get("risk_report", {}).get("unified_regime", "DEFENSIVE")
             write_obsidian_daily(
                 brief           = brief,
-                unified_regime  = unified_regime,
+                unified_regime  = _ur,
                 macro_regime    = _mr,
                 rolling_sharpe  = rolling_sharpe,
                 risk_multiplier = _rm,
