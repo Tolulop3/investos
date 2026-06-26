@@ -1947,7 +1947,7 @@ if __name__ == "__main__":
         except Exception as _dfe:
             print(f"  ⚠️  PF drift monitor skipped: {_dfe}")
 
-        # ── Strategy version snapshot (OOS anchor) ──────────────────────────
+            # ── Strategy version snapshot (OOS anchor) ──────────────────────────
         try:
             import strategy_version as _sv
             _sv.log_strategy_version(outcomes_path="outcomes_log.json")
@@ -1955,19 +1955,22 @@ if __name__ == "__main__":
             print(f"  ⚠️ strategy_version log failed: {_sve}")
 
         # ── Obsidian Daily Bridge ──────────────────────────────────────────
+        # Pull everything from brief — avoids scope issues with local variables
         try:
-            _rm  = _risk_multiplier if "_risk_multiplier" in dir() else 1.0
-            _na  = neg_alpha_days   if "neg_alpha_days"   in dir() else 0
-            _mr  = macro_reg        if "macro_reg"        in dir() else \
-                   (news.get("macro_regime", "NORMAL") if "news" in dir() else "NORMAL")
-            _ur = unified_regime if "unified_regime" in dir() else                   brief.get("risk_report", {}).get("unified_regime", "DEFENSIVE")
+            _rr   = (brief or {}).get("risk_report", {}) or {}
+            _dm   = _rr.get("decay_monitor", {}) or {}
+            _obs_sharpe = float(_dm.get("rolling_sharpe", 0) or 0)
+            _obs_rm     = float(_rr.get("risk_multiplier", 1.0) or 1.0)
+            _obs_na     = int(_dm.get("neg_alpha_days", 0) or 0)
+            _obs_ur     = _rr.get("unified_regime") or                           (unified_regime if "unified_regime" in dir() else "DEFENSIVE")
+            _obs_mr     = (brief or {}).get("macro_regime") or                           (macro_reg if "macro_reg" in dir() else "NORMAL")
             write_obsidian_daily(
                 brief           = brief,
-                unified_regime  = _ur,
-                macro_regime    = _mr,
-                rolling_sharpe  = rolling_sharpe,
-                risk_multiplier = _rm,
-                neg_alpha_days  = _na,
+                unified_regime  = _obs_ur,
+                macro_regime    = _obs_mr,
+                rolling_sharpe  = _obs_sharpe,
+                risk_multiplier = _obs_rm,
+                neg_alpha_days  = _obs_na,
                 start           = start,
             )
         except Exception as _obe:
