@@ -26,6 +26,8 @@ from datetime import datetime, timezone
 
 VERSION = "4.1"
 OOS_START_DATE = "2026-06-25"   # Out-of-sample Day 0 — freeze point
+# v4.1 includes the curve steepening (0.6→0.4) — shipped Day 0-1 before any
+# OOS picks resolved. Zero data discarded. Baseline is clean from this point.
 
 RULES = {
 
@@ -36,7 +38,11 @@ RULES = {
     ],
     "score_cap_74_note": "Chronic 90-100 losers capped at 74. Still eligible for 60-74 tier.",
     "diminishing_returns_above": 85,
-    "diminishing_returns_factor": 0.6,
+    "diminishing_returns_factor": 0.4,   # tightened Jun 25 — was 0.6, too soft
+    "diminishing_returns_note": (
+        "Raw 100 → 91 (was 94). Raw 92 → 87.8 (tier shift to 75-89). "
+        "Preserves ordinal ordering and ML gate diagnostic unlike hard ceiling."
+    ),
     "news_adjustment_cap_pts": 8,
 
     # ── ML gate ─────────────────────────────────────────────────────────────
