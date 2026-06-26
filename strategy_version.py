@@ -25,9 +25,11 @@ from datetime import datetime, timezone
 # These are the exact thresholds active at the out-of-sample start date.
 
 VERSION = "4.1"
-OOS_START_DATE = "2026-06-25"   # Out-of-sample Day 0 — freeze point
-# v4.1 includes the curve steepening (0.6→0.4) — shipped Day 0-1 before any
-# OOS picks resolved. Zero data discarded. Baseline is clean from this point.
+OOS_START_DATE = "2026-06-26"   # Out-of-sample Day 0 — curve fix confirmed in code
+# HISTORY: Jun 25 was tagged v4.1 but the curve fix (0.6→0.4) had NOT shipped.
+# BAC scored 94.2 on Jun 26 — confirmed old curve still active.
+# Reset to Jun 26: the actual first run with 0.4 multiplier live.
+# Jun 25 picks (2 logged) excluded from OOS count — correct baseline.
 
 RULES = {
 
@@ -38,7 +40,7 @@ RULES = {
     ],
     "score_cap_74_note": "Chronic 90-100 losers capped at 74. Still eligible for 60-74 tier.",
     "diminishing_returns_above": 85,
-    "diminishing_returns_factor": 0.4,   # tightened Jun 25 — was 0.6, too soft
+    "diminishing_returns_factor": 0.4,   # tightened Jun 26 — was 0.6 (Jun 25 tag was wrong, fix not in code)
     "diminishing_returns_note": (
         "Raw 100 → 91 (was 94). Raw 92 → 87.8 (tier shift to 75-89). "
         "Preserves ordinal ordering and ML gate diagnostic unlike hard ceiling."

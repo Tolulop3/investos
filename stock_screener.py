@@ -683,11 +683,10 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
     # ── V2: Diminishing returns above 85 ─────────────────
     # Prevents late-stage momentum from inflating scores to 95+.
     # Score 90-100 historically wins 39% — this caps crowded breakouts.
-    # Above 85: each additional raw point = 0.4 calibrated points (tightened Jun 25 2026).
-    # Was 0.6 — too soft. Raw 100 landed at 94, still inflating the 90-100 tier.
-    # At 0.4: raw 100 → 91, raw 92 → 87.8 (into 75-89 where edge actually lives).
-    # Preserves ordinal ordering and the ML gate's ≥90 diagnostic — unlike a hard ceiling.
-    # Tagged v4.1 — ships before any OOS picks resolve, so baseline is clean.
+    # Above 85: each additional raw point = 0.4 calibrated points (v4.1 — Jun 26 2026).
+    # Was 0.6 — too soft. Raw 100 landed at 94 (see BAC 94.2 on Jun 26).
+    # At 0.4: raw 100 → 91, raw 94 → 88.6 (shifts bonus-stacked names to 75-89).
+    # Preserves ordinal ordering and ML gate ≥90 diagnostic — unlike hard ceiling.
     if total > 85:
         excess   = total - 85
         adjusted = 85 + (excess * 0.4)
