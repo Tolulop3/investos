@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-27T00:56:01.731808",
+    "run_at": "2026-06-27T00:59:56.889784",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -38,31 +38,31 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 73.5,
-        "stressed_avg": 69.5,
-        "score_drop": 4.0,
+        "normal_avg": 74.2,
+        "stressed_avg": 69.8,
+        "score_drop": 4.4,
         "removed": [
-          "TSM",
-          "MS",
           "RY.TO",
-          "JPM"
+          "CM.TO",
+          "TSM",
+          "POW.TO"
         ],
         "verdict": "\u2705 ROBUST",
-        "note": "Score drops 4.0 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 4.4 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
         "survived": 17,
         "survival_pct": 94.4,
-        "avg_score_drop": 3.6,
+        "avg_score_drop": 3.8,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.6 pts"
+        "note": "If momentum stops working: avg score drops 3.8 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 73.5,
+      "normal_avg_score": 74.2,
       "scenarios_robust": 5,
       "scenarios_fragile": 0,
       "scenarios_broken": 0,
@@ -72,7 +72,7 @@
   },
   "decay_monitor": {
     "date": "June 27, 2026",
-    "robustness_score": 30,
+    "robustness_score": 25,
     "rolling_sharpe": {
       "sharpe": -3.056,
       "avg_ret_pct": -4.15,
@@ -91,7 +91,7 @@
       "symbol": "^GSPC"
     },
     "alpha": -4.356,
-    "neg_alpha_days": 30,
+    "neg_alpha_days": 31,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
