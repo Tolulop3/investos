@@ -1,9 +1,9 @@
-# INVESTOS — Personal Intelligence System
+# INVESTOS — Personal Intelligence Platform
 **@adejuwon_t · Toronto, Canada · Live at [tolulop3.github.io/investos](https://tolulop3.github.io/investos)**
 
 > **FOR AI ASSISTANTS:** This README is the authoritative context document for every session.
-> Read this fully before touching any file. The system is live, running daily, and has 1,638+
-> resolved picks tracked. Do not break what works. Optimise only.
+> Read this fully before touching any file. The system is live, running daily.
+> Do not break what works. Optimise only.
 >
 > Start every session by stating current system state before suggesting anything.
 > Do not re-explain decisions listed in "Architecture Decisions — Do Not Revisit".
@@ -13,50 +13,184 @@
 
 ## WHAT THIS IS
 
-A fully automated daily investment intelligence system. Every weekday at 9:30am ET, GitHub
-Actions runs `run_daily.py`, which screens 176 stocks, scores them with ML, detects macro
-signals from 15 news feeds, sizes positions by volatility, generates ETF picks, tracks NGX
-signals, and bakes everything into a live dashboard at the GitHub Pages URL above.
+A fully automated daily investment intelligence platform. Every weekday at 9:30am ET,
+GitHub Actions runs `run_daily.py`, which screens 189 stocks, scores them with ML,
+detects macro signals from 15 news feeds, sizes positions by volatility, generates ETF
+picks, tracks NGX signals, and bakes everything into a live dashboard.
 
-Personal tool for one user (Toronto). Not a product. Not public-facing.
+Personal tool for one user (Toronto). Not yet a product. Not public-facing.
 Goal: open the dashboard, know what the market is doing, know what to do, trust it.
+
+**Bigger goal: InvestOS is the IP engine. Every product below reads from it.**
 
 ---
 
-## CURRENT SYSTEM STATE (as of June 22, 2026)
+## CURRENT SYSTEM STATE (as of June 27, 2026)
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| Sharpe (90d rolling) | 2.034 | ✅ Healthy |
-| Win rate overall | 54.3% | ✅ Stable |
-| Win rate last 30d | 61.6% | ✅ Strong |
-| TW win rate | 58.8% | ✅ Good |
-| Current streak | 2 LOSS | ⚠️ Watch |
-| Avg return/pick | +1.07% | ✅ Positive |
-| Unified regime | RISK_ON (50%) | ⚠️ Risk multiplier 0.50× active |
+| Sharpe (90d rolling) | -3.056 | 🔴 Guard engaged — recovering |
+| Expected recovery | June 28-30 | ⏳ March picks rolling off |
+| Win rate overall | 49.8% | ⚠️ Depressed — guard period |
+| Win rate last 30d | 46.8% | ⚠️ Watch |
+| Win rate last 90d | 54.6% | ✅ Holding |
+| Current streak | 3 WIN | ✅ |
+| Avg return/pick | +0.16% | ⚠️ Compressed |
+| Unified regime | DEFENSIVE (12%) | 🔴 Guard at 0.25× |
 | Macro regime | CAUTIOUS | ⚠️ War escalation signals |
-| Breadth (50MA) | 58.0% | ⚠️ MODERATE — declining |
-| Breadth (200MA) | 68.8% | ✅ Holding |
-| Robustness | 100/100 | ✅ |
-| Risk multiplier | 0.50× | ⚠️ PCR conflict + convergence |
-| PCR | 1.278 | ⚠️ BEARISH (options hedging) |
-| Regime momentum | DECELERATING | ⚠️ Breadth -0.6%/day |
-| NGX phase | Paper Day 47 | ⏳ RESTRICTED ~Day 31 |
+| Breadth (50MA) | 65.1% | ✅ MODERATE |
+| Breadth (200MA) | 68.3% | ✅ Holding |
+| Robustness | 25/100 | 🔴 Guard period |
+| Risk multiplier | 0.25× | 🔴 PCR conflict + convergence |
+| PCR | 1.253 | ⚠️ BEARISH — rising |
+| Neg alpha streak | 31 days | ⚠️ Clearing |
+| Universe | 189 tickers | ✅ Scout adding 14 dynamic |
+| OOS | Day 1 — v4.1 | ⏳ 0 resolved picks since Jun 26 |
+| NGX phase | RESTRICTED Day 48 | ⏳ Tier 1 ≥80 only |
 | NGX win rate | 0% (159 resolved) | ⚠️ Macro reversed — new signals |
-| Runtime | 50-88s | ✅ Fast |
-| Last commit | June 22 2026 | |
+| Runtime | ~65s | ✅ Fast |
+| Last commit | June 27 2026 | |
 
-**Score tier performance (1,638 resolved picks):**
-| Tier | WR | PF | Notes |
-|------|----|----|-------|
-| 90-100 | 50.0% | 1.55 ✅ | Marginal edge. ML gate removes unprofitable subset |
-| 75-89 | 61.0% | 2.27 ✅ | Strong |
-| 60-74 | 61.7% | 3.07 ✅ | Best tier |
-| below-60 | 47.7% | 3.01 ✅ | High PF but low WR |
+**Score tier performance (1,850 resolved picks):**
+| Tier | n | WR | Avg Return | PF | Notes |
+|------|---|----|------------|-----|-------|
+| 90-100 | 902 | 46.7% | -0.20% | 0.90 🔴 | Loses money — curve fix + ML gate active |
+| 75-89 | 462 | 53.7% | +0.14% | 1.08 ⚠️ | Recovering |
+| 60-74 | 341 | 56.9% | +1.14% | 1.90 ✅ | Real edge — best tier |
+| below-60 | 145 | 40.7% | +0.11% | 1.05 ⚠️ | High PF but low WR |
 
-**ML attribution split (key finding from factor_investigation.py):**
-- 90-100 + ML≥20%: 757 picks, WR=50.5%, PF=1.65 ✅ (profitable)
-- 90-100 + ML<20%: 121 picks, WR=47.1%, PF=0.96 🔴 (losing money)
+**PF Baseline (locked June 25, 2026 — post-dedup + post-backlog):**
+| Tier | Baseline PF | Current | Status |
+|------|------------|---------|--------|
+| 90-100 | 0.91 | 0.90 | ✅ stable |
+| 75-89 | 1.07 | 1.08 | ✅ stable |
+| 60-74 | 1.92 | 1.90 | ✅ stable |
+| below-60 | 1.09 | 1.05 | ✅ stable |
+
+> All PFs depressed due to Sharpe guard period. Compare to 90d baseline, not daily.
+
+---
+
+## THE PLATFORM VISION
+
+InvestOS is the oil well. The products below are the refineries.
+
+```
+INVESTOS ENGINE (private IP — never expose)
+              ↓
+         BAKED_DATA
+    (single source of truth)
+              ↓
+  ┌───────────┼───────────┬──────────────┐
+  ↓           ↓           ↓              ↓
+AllocOS    InvestOS    Regime Feed    Data API
+(personal   Lens        (macro        (B2B
+→ product)  (Chrome     signals)      signal
+            extension)               feed)
+```
+
+---
+
+## PRODUCT ROADMAP
+
+### PRODUCT 1 — AllocOS
+Portfolio allocation intelligence. Reads InvestOS signals + account balances →
+outputs exact deployment plan per account (TFSA/FHSA/RRSP/NGX).
+Telegram morning brief + web dashboard.
+**Tiers:** Free (regime only) · Pro $15 CAD/mo · Elite $35 CAD/mo
+**Status:** Design complete. Needs Telegram bot setup first.
+
+### PRODUCT 2 — InvestOS Lens
+Chrome extension. Hover over any ticker → InvestOS score ring popup.
+**Status:** Design complete. Standalone build — any session.
+
+### PRODUCT 3 — NGX Intelligence
+Institutional macro signals for Nigerian Exchange.
+**FTSE frontier reclassification September 2026 → $840M-$1B+ inflows.**
+**Status:** Engine running. Waitlist page = next marketing step.
+
+### PRODUCT 4 — Data API
+Daily JSON signal feed for advisors, boutique PMs, fintech builders.
+$200-500 USD/month. No extra build — API wrapper on BAKED_DATA.
+
+### PRODUCT 5 — Newsletter
+NFA educational brief via Telegram. Content engine already generates daily.
+
+### PRODUCT 6 — Fund (Year 3+)
+Requires 3yr verified track record + OSC exempt structure.
+
+---
+
+## AUTONOMY STACK (current state)
+
+```
+LAYER 1 — DATA PIPELINE ✅ fully autonomous
+──────────────────────────────────────────────
+GitHub Actions 9:30am ET weekdays
+→ run_daily.py (12 steps, 189 tickers, 65s)
+→ scout_agent.py (Sunday 6am — universe expansion)
+→ ml_retrainer.py (auto-fires when coverage gate hits ~143 picks)
+→ Commits outcomes, history, scores to repo
+
+LAYER 2 — KNOWLEDGE LAYER ✅ live June 27
+──────────────────────────────────────────────
+history/obsidian/YYYY-MM-DD.md — daily notes (GitHub Actions writes)
+history/obsidian/patterns.md   — weekly pattern summary
+history/obsidian/watchlist.md  — signal watchlist
+history/obsidian/tickers/*.md  — per-ticker notes (auto-created)
+history/obsidian/research/*.md — daily strategist research notes
+pattern_signals.json           — machine-readable score boosts
+
+LAYER 3 — PATTERN FEEDBACK LOOP ✅ live June 27
+──────────────────────────────────────────────
+pattern_agent.py (9:45am ET):
+→ reads last 7 daily snapshots + outcomes
+→ detects streaks, velocity, regime drift, sector concentration
+→ writes pattern_signals.json (score boosts/penalties)
+→ stock_screener.py reads this → CONSIDER tickers get +3pts
+→ AVOID tickers get -5pts
+LOOP CLOSED: observation → pattern → score → picks → outcomes → repeat
+
+LAYER 4 — STRATEGIST ✅ live June 27
+──────────────────────────────────────────────
+strategist_agent.py (10:00am ET):
+→ reads brief + patterns + history + Obsidian notes
+→ calls Claude API to reason about the data
+→ writes research note to history/obsidian/research/YYYY-MM-DD.md
+→ flags contradictions, regime drift, opportunities, watch items
+
+LAYER 5 — ML IMPROVEMENT ⏳ on timers
+──────────────────────────────────────────────
+ML retrain: ~143 more featured picks needed (~3 weeks from Jun 26)
+Walk-forward validation: August 2026
+Portfolio optimizer: September 2026 (90d outcomes resolve)
+```
+
+---
+
+## OBSIDIAN VAULT
+
+**On Mac:** `~/Documents/investos-brain` (synced via Obsidian Git plugin)
+**In repo:** `history/obsidian/` (written by GitHub Actions)
+
+Both locations contain the same files. The Git plugin syncs within 10 minutes.
+
+**Why notes may not appear on Mac yet:**
+The Obsidian Git plugin needs to pull from the repo after GitHub Actions commits.
+Check: Obsidian → Command palette → "Obsidian Git: Pull" to force sync.
+Or wait for the auto-pull interval (set in plugin settings, default 5-10 min).
+
+**Vault structure:**
+```
+history/obsidian/
+├── YYYY-MM-DD.md      ← daily system notes (auto-written)
+├── patterns.md        ← weekly pattern summary (pattern_agent)
+├── watchlist.md       ← signal watchlist (pattern_agent)
+├── tickers/           ← per-ticker notes (pattern_agent)
+│   └── TICKER.md
+└── research/          ← daily research notes (strategist_agent)
+    └── YYYY-MM-DD.md
+```
 
 ---
 
@@ -64,189 +198,168 @@ Goal: open the dashboard, know what the market is doing, know what to do, trust 
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `run_daily.py` | ~1746 | Master orchestrator — runs all 12 steps |
-| `stock_screener.py` | 1195 | Screens 176 tickers, scores 0-100 |
-| `ml_engine.py` | 1210 | XGBoost predictor + vol-targeted sizing + Kelly + sector cap + ML gate |
+| `run_daily.py` | ~1982 | Master orchestrator — 12 steps + all agent calls |
+| `stock_screener.py` | ~1210 | Screens 189 tickers, scores 0-100, reads pattern_signals |
+| `ml_engine.py` | 1210 | XGBoost + vol-targeted sizing + Kelly + sector cap + ML gate |
 | `ml_retrainer.py` | 443 | XGBoost retraining with coverage gate |
 | `risk_engine.py` | ~1476 | Stress test, decay monitor, unified regime engine |
 | `news_analyzer.py` | 625 | 15 RSS feeds, sector sentiment, macro regime |
 | `intelligence_layers.py` | ~792 | RS ratings, score history, trend detection |
 | `etf_engine.py` | ~408 | 30 ETFs, RRSP/TFSA/FHSA routing |
-| `content_engine.py` | ~641 | Tweet + thread generation for @adejuwon_t |
+| `content_engine.py` | ~641 | Tweet + thread generation |
 | `portfolio_engine.py` | ~1213 | Trades tracker, scorecard, open positions |
-| `outcome_tracker.py` | 559 | Win rate tracking, score tier analysis, dedup fix |
-| `signal_quality.py` | ~1056 | Signal accuracy metrics |
+| `outcome_tracker.py` | 559 | Win rate tracking, score tier analysis |
+| `factor_investigation.py` | 212 | Factor attribution — runs every daily run |
+| `scout_agent.py` | ~410 | Sunday 6AM: universe expansion (30 ETF sources) |
+| `pattern_agent.py` | 595 | 9:45am: detects patterns, writes signals, closes loop |
+| `strategist_agent.py` | 356 | 10:00am: Claude reasons about data, writes research note |
+| `history_analyzer.py` | 488 | Silent daily: generates history_analysis.json |
+| `strategy_version.py` | — | OOS anchor — logs 41 rule params per run |
+| `congressional_engine.py` | — | SEC EDGAR Form 4. HTTP 403 = DATA UNAVAILABLE |
 | `ngx_screener.py` | ~360 | Nigerian Exchange macro-driven signals |
-| `ngx_outcome_tracker.py` | ~292 | NGX paper phase outcome resolution |
-| `evidence_engine.py` | ~266 | Per-pick historical evidence lookup |
-| `factor_investigation.py` | 212 | Factor attribution report — runs every daily run |
-| `scout_agent.py` | 369 | Weekly universe expansion (176→~300) |
 | `crypto_engine.py` | ~357 | BTC + SOL signals |
 | `index.html` | ~7148 | Full dashboard — baked daily |
-| `.github/workflows/daily_analysis.yml` | ~50 | GitHub Actions — 9:30am ET weekdays |
-| `.github/workflows/weekly_scout.yml` | ~30 | Sunday 6AM ET — universe expansion |
+| `.github/workflows/daily_analysis.yml` | ~30 | 9:30am ET weekdays |
+| `.github/workflows/pattern_agent.yml` | ~30 | 9:45am ET weekdays |
+| `.github/workflows/strategist_agent.yml` | ~30 | 10:00am ET weekdays |
+| `.github/workflows/weekly_scout.yml` | ~30 | Sunday 6AM ET |
 
 **Persistent data files (never delete):**
-
 | File | Contents |
 |------|----------|
-| `outcomes_log.json` | Every pick since Day 1 — 2,002 entries (1,638 resolved) |
+| `outcomes_log.json` | Every pick — 2,020 total (1,850 resolved) |
 | `cooldown_flags.json` | Permanent exclusions + loss-streak cooldowns |
-| `ngx_outcomes.json` | All NGX paper signals |
-| `score_history.json` | Per-stock score history for trend detection |
-| `trades.csv` | Manual trades — gitignored, lives locally only |
+| `pf_baseline.json` | PF baseline locked June 25 |
+| `pattern_signals.json` | Pattern agent score boosts — updated 9:45am |
+| `history_analysis.json` | Weekly structured analysis |
+| `strategy_version.json` | OOS audit trail — v4.1 from June 26 |
+| `universe_current.json` | Current universe (static + dynamic scout) |
 | `history/YYYY-MM-DD.json` | Daily snapshots — started June 6, 2026 |
+| `history/obsidian/` | All Obsidian notes — synced to Mac vault |
 
 ---
 
 ## ARCHITECTURE
 
-### The 12-Step Daily Pipeline
+### The Daily Pipeline (12 steps + agents)
 
 ```
-[1/10]  NEWS & MACRO    → news_analyzer.py      → sector_sentiment, macro_regime
-[2/10]  MARKET REGIME   → risk_engine.py        → SPX vs 200MA → BULL/BEAR
-[3/10]  STOCK SCREEN    → stock_screener.py     → scores 176 tickers 0-100
-[4/10]  APPLY NEWS      → run_daily.py          → sector penalty + news boost
-[5/10]  ML ENGINE       → ml_engine.py          → XGBoost + vol-targeted sizing
-[6/10]  INTELLIGENCE    → intelligence_layers.py → RS, trends, analyst
-[7/10]  X FEEDS         → run_daily.py          → 9 Twitter/X signal feeds
-[8/10]  CONVICTION      → run_daily.py          → 2+ signals aligned = conviction
-[9/12]  FX & GOLD       → risk_engine.py        → EUR/USD, GBP/USD, XAU/USD
-[10/12] CRYPTO          → crypto_engine.py      → BTC + SOL signals
-[11/12] RISK AUDIT      → risk_engine.py        → stress test, Sharpe, regime
-[ETF]   ETF ENGINE      → etf_engine.py         → 30 ETFs scored
-[12/12] CONTENT         → content_engine.py     → tweet + thread
-[NGX]   NGX ENGINE      → ngx_screener.py       → Nigerian Exchange signals
-[END]   FACTOR REPORT   → factor_investigation.py → attribution analysis
+9:30am  [1]  NEWS & MACRO    → news_analyzer.py
+        [2]  MARKET REGIME   → risk_engine.py
+        [3]  STOCK SCREEN    → stock_screener.py (reads pattern_signals.json)
+        [4]  APPLY NEWS      → run_daily.py
+        [4c] CONGRESSIONAL   → congressional_engine.py
+        [5]  ML ENGINE       → ml_engine.py
+        [6]  INTELLIGENCE    → intelligence_layers.py
+        [7]  X FEEDS         → run_daily.py
+        [8]  CONVICTION      → run_daily.py
+        [9]  FX & GOLD       → risk_engine.py
+        [10] CRYPTO          → crypto_engine.py
+        [11] RISK AUDIT      → risk_engine.py
+        [ETF] ETF ENGINE     → etf_engine.py
+        [12] CONTENT         → content_engine.py
+        [NGX] NGX ENGINE     → ngx_screener.py
+        [END] FACTOR REPORT  → factor_investigation.py
+        [END] HISTORY ANALYZER → history_analyzer.py (silent)
+        [END] STRATEGIST     → strategist_agent.py (if ANTHROPIC_API_KEY set)
+        [END] OBSIDIAN BRIDGE → writes daily note
+
+9:45am  pattern_agent.py (separate workflow)
+        → reads snapshots + outcomes
+        → writes pattern_signals.json + Obsidian notes
+
+10:00am strategist_agent.py (separate workflow)
+        → reads everything → calls Claude API
+        → writes research note
+```
+
+### Score Compression (v4.1 — June 26 2026)
+```python
+# Above 85: each raw point = 0.4 calibrated points (was 0.6)
+# Raw 100 → 91. Raw 94 → 88.6 (shifts to 75-89 tier)
+adjusted = 85 + (excess * 0.4)
 ```
 
 ### Three-Layer Unified Regime Engine
-
 ```
 market_score  = +1.0   (SPX vs 200MA)
-macro_score   = -0.3   (news signals — dampened by market confirmation gate)
-health_score  = +1.0   (Sharpe)
-
+macro_score   = -0.3   (news signals)
+health_score  = -1.0   (Sharpe — currently negative)
 unified_score = (0.40 × market) + (0.30 × macro) + (0.30 × health)
-→ outputs: RISK_ON / NEUTRAL / DEFENSIVE / CAPITAL_PRESERVATION
+→ DEFENSIVE (12% exposure, 0.25× risk multiplier)
 ```
 
-### Kelly + Volatility Sizing
+### Safety Gates (in order)
+1. Permanent exclusions — `cooldown_flags.json`
+2. Loss-streak cooldown — 2+ losses ≥1.5% in 10 picks → 7-day block
+3. Sector diversity cap — max 2 picks per normalized sector
+4. ML confidence gate — score≥90 AND ml_prob<0.20 → removed, replaced
+5. Sharpe guard — Sharpe negative → 12% of normal sizing
 
+### Pattern Signal Boost (new — June 27)
 ```python
-MAX_SINGLE = max(0.20, 1.5/n_picks)   # dynamic — prevents equal-weight collapse
-MAX_HARD   = max(0.20, 1.5/n_picks)   # same formula — scales with basket size
-blend = 33% Kelly + 33% vol-targeted + 33% ML-proportional
-TARGET_VOL = 20%
+# Applied last in score_stock() — after all caps
+# CONSIDER (+3pts): 3+ day streak + rising velocity
+# AVOID (-5pts): falling score + poor PF
+# Capped at ±5 — nudges, never overrides fundamentals
 ```
-
-### Safety Gates (in order of application)
-
-1. **Permanent exclusions** — `cooldown_flags.json` read inside `get_cooldown_set()` in `ml_engine.py`
-2. **Loss-streak cooldown** — 2+ losses ≥1.5% in last 10 picks → 7-day block
-3. **Sector diversity cap** — `_apply_sector_cap()` — max 2 picks per normalized sector
-4. **ML confidence gate** — score≥90 AND ml_prob<0.20 → removed, replaced from reserve
-
-**CRITICAL:** `get_cooldown_set()` in `ml_engine.py` reads BOTH `outcomes_log.json` AND `cooldown_flags.json`. If you ever refactor this function, preserve both reads or permanent exclusions will bypass sizing.
 
 ---
 
 ## PERMANENT EXCLUSIONS (cooldown_flags.json)
 
-These 7 tickers are blocked until 2036. Evidence from factor_investigation.py:
+Blocked to 2036 based on factor_investigation.py evidence:
+F, WPM.TO, MDB, DXCM, AEM.TO, ABX.TO, NTR.TO, K.TO
 
-| Ticker | n | WR | Avg Return | PF |
-|--------|---|----|------------|-----|
-| F | 3 | 0% | -10.25% | 0.00 🔴 |
-| DXCM | 5 | 0% | -6.16% | 0.00 🔴 |
-| K.TO | 5 | 0% | -4.92% | 0.00 🔴 |
-| WPM.TO | 11 | 0% | -4.67% | 0.00 🔴 |
-| ABX.TO | 13 | 23% | -3.75% | 0.05 🔴 |
-| NTR.TO | 12 | 42% | -3.15% | 0.24 🔴 |
-| AEM.TO | 19 | 32% | -2.80% | 0.29 🔴 |
-
-Also in `cooldown_flags.json` as temporary: SU.TO, GRT-UN.TO, CP.TO (loss-streak, expire within 7 days of flagging).
+**SCORE_CAP_74** (capped at 74, not excluded):
+F, DXCM, WPM.TO, FM.TO, ABX.TO, AEM.TO, AGI.TO, MDB, MSFT
 
 ---
 
 ## KNOWN ISSUES (open)
 
-| Priority | Issue | Detail | File |
-|----------|-------|--------|------|
-| 🔴 HIGH | Duplicate outcomes in outcomes_log.json | Dedup bug fixed June 22 — new picks clean. Historical data has unknown duplicate rate. Run dedup pass on outcomes_log.json when possible. | outcome_tracker.py |
-| ⚠️ MEDIUM | ML retrain feature coverage 0% | New picks capturing real features since June 20. Coverage gate protects against bad retrain. Real retrain fires at 10% (~160 picks) — ETA ~3-4 weeks. | ml_retrainer.py |
-| ⚠️ MEDIUM | Sector cap replacing financials with financials | _apply_sector_cap() normalizes sub-sectors correctly but the reserve pool often returns more financials anyway | ml_engine.py |
-| ⚠️ MEDIUM | Regime/sector coverage 0% in factor report | Regime and sector capture started June 20. Sections 2+3 fill over time. | factor_investigation.py |
-| ℹ️ LOW | BoC feed 0 articles | Endpoint OK, no recent items in RSS. Not a code issue. | news_analyzer.py |
-| ℹ️ LOW | Reuters/AP/Investopedia ❌ | Permanent GitHub Actions DNS policy — not fixable. Stable ceiling at 12/15 feeds. | Architecture Decision |
-| ℹ️ INFO | NGX individual prices unavailable | Paid API tier required. ngx_diagnostic.py in repo to test endpoints. Run locally with NGN_MARKETS_KEY. | ngx_diagnostic.py |
+| Priority | Issue | Detail | Fix |
+|----------|-------|--------|-----|
+| ⚠️ MEDIUM | ML retrain coverage 8% | Gate fires at ~143 more picks (~3 weeks) | Auto-fires |
+| ⚠️ MEDIUM | Sharpe -3.056 | March picks clearing June 28-30 | Auto-recovers |
+| ⚠️ MEDIUM | pattern_agent needs 30d data | Boosts are noise until patterns accumulate | Wait |
+| ⚠️ MEDIUM | strategist needs ANTHROPIC_API_KEY | Add to GitHub Secrets | One-time setup |
+| ⚠️ MEDIUM | Obsidian not syncing to Mac | Pull manually or check Git plugin interval | Check plugin |
+| ℹ️ LOW | BoC feed 0 articles | No recent items in RSS | Not a code issue |
+| ℹ️ LOW | Reuters/AP/Investopedia ❌ | GitHub Actions DNS — 12/15 stable ceiling | Architecture decision |
+| ℹ️ INFO | Congressional 403 | S3 endpoints gone. api.congress.gov is clean path | Add CONGRESS_API_KEY |
+
+---
+
+## OPEN WATCH ITEMS
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Sharpe recovery | ⏳ June 28-30 | March picks rolling off — auto-recovers |
+| ML retrain | ⏳ ~3 weeks | ~143 more featured picks needed |
+| OOS validation | ⏳ Sept 2026 | 90 days needed for meaningful evidence |
+| Walk-forward | ⏳ Aug 2026 | 60+ days history required |
+| Pattern agent data | ⏳ 30 days | Boosts meaningful after July 27 |
+| NGX FTSE catalyst | ⏳ Sept 2026 | $840M-$1B+ inflows — 3 months away |
+| AGI.TO | ⚠️ Watch | 18 picks, 33% WR — approaching exclusion threshold |
 
 ---
 
 ## ARCHITECTURE DECISIONS — DO NOT REVISIT
 
 1. **Regime engine: 3 inputs → 1 output.** market + macro + health. Correct as-is.
-2. **9/15 news feeds is the stable ceiling.** GitHub Actions DNS. Not fixable.
+2. **9/15 news feeds ceiling.** GitHub Actions DNS. Not fixable. 12/15 stable.
 3. **NGX 0% WR** — macro reversed during resolution. Thesis failed correctly. Not a bug.
-4. **Score tier inversion** — ML gate + permanent exclusions address the root cause. Monitor PF.
-5. **No DCA for NGX** — FX conversion cost. WAIT/WATCH/ENTER framework instead.
-6. **No product launch yet** — backend, auth, Stripe = separate project.
-7. **Double bake** — intentional pipeline design. First bake fast (pre-NGX), second includes NGX.
-8. **Email not configured** — intentional. Dashboard is primary interface.
-9. **Double-log dedup was `resolved is False`** — fixed June 22 to `not outcome`. Historical data has duplicates but directionally correct.
-10. **Duplicate outcomes do NOT necessarily invalidate WR** — duplicates of same pick resolve to same outcome so they inflate count but WR ratio stays approximately correct. Real clean number requires dedup pass on outcomes_log.json.
-
----
-
-## WHAT WAS BUILT (Sessions 751–Present, June 20–22 2026)
-
-### Completed ✅
-
-| Build | File | What It Does |
-|-------|------|-------------|
-| Kelly fix (MAX_SINGLE dynamic) | ml_engine.py | `max(0.20, 1.5/n_picks)` — fixes equal-weight collapse on 4-pick baskets |
-| Sector diversity cap | ml_engine.py | `_apply_sector_cap()` — max 2 per normalized sector, full normalization map |
-| Loss-streak cooldown | outcome_tracker.py + run_daily.py | Auto-flags tickers with 2+ losses ≥1.5% in 10 picks → cooldown_flags.json |
-| 90d outcome fields | outcome_tracker.py | `outcome_90d`, `return_90d` — portfolio optimizer unlocks Sept 2026 |
-| Factor attribution fields | outcome_tracker.py | score_rank, score_pct, options_signal, conviction, kelly_wt on every new pick |
-| Profit factor in tier report | outcome_tracker.py | PF shown next to WR for every score tier in daily log |
-| Factor investigation | factor_investigation.py | Runs every daily run. Answers: what is making money? |
-| ML confidence gate | ml_engine.py | score≥90 + ML<20% → removed, replaced. Evidence: PF 0.96→1.65 |
-| Permanent exclusion list | cooldown_flags.json | 7 tickers blocked to 2036 based on factor report |
-| get_cooldown_set reads flags | ml_engine.py | Closes gap where permanent exclusions bypassed sizing (F bug) |
-| Coverage gate fix | ml_retrainer.py | rs_rating default 50→0, per-feature zero diagnostics, correct gate logic |
-| Error repr fix | news_analyzer.py | Full exception type+message instead of truncated string |
-| Dedup fix | outcome_tracker.py | `not outcome` instead of `resolved is False` — stops duplicate logging |
-| EWG → EWJ swap | stock_screener.py | Removes 404 warning |
-| Evidence engine verbose | run_daily.py | Targets sized_positions not empty conviction_picks |
-| SOL $0.15 → $150 fix | run_daily.py | crypto_engine uses hardcoded 10000 not CONFIG balance of 10 |
-| Pre-risk-multiplier label | ml_engine.py | Clarifies ML log shows raw not adjusted sizes |
-| Scout agent | scout_agent.py + weekly_scout.yml | Sunday 6AM: universe 176→~300 |
-| Regime predictor | run_daily.py | Fires at 5/5 consecutive days — first directional signal |
-| Regime momentum tracking | run_daily.py | Sharpe slope + breadth slope + WR slope — DECELERATING signal |
-
-### Next Build: UI (Track 3)
-
-README roadmap UI section still applies. The "Today" tab is the landing. Score rings, regime band, search overlay. Nothing gets removed.
-
----
-
-## FACTOR ATTRIBUTION — CURRENT STATE
-
-**factor_investigation.py runs automatically at end of every daily run.**
-
-Key findings as of June 22:
-- **Section 5:** 7 repeat losers identified and permanently excluded
-- **Section 6:** ML<20% is the fault line within 90-100 tier (PF 0.96 = losing money)
-- **Section 4 (date trend):** PF improving: 1.06 → 1.96 → 1.97 across three periods
-- **Sections 2+3:** regime/sector still 0% coverage — filling from June 20 new picks
-
-Coverage ticking up:
-- ml_prob: 100% (1,638 picks)
-- rs_rating: 1% (16 picks — new since June 20)
-- regime: 1% (16 picks — new since June 20)
-- sector: 0% (not yet captured)
+4. **No DCA for NGX** — FX conversion cost. WAIT/WATCH/ENTER framework instead.
+5. **No product launch yet** — engine must recover. Target: Sharpe > 1.0 sustained.
+6. **Double bake** — intentional. First bake fast (pre-NGX), second includes NGX.
+7. **Score ceiling → 0.4 curve** — NOT a hard ceiling at 89. Curve steepening ships.
+   Raw 100 → 91. Raw 94 → 88.6. Ordinal ordering preserved. ML gate diagnostic intact.
+8. **Pattern boost capped at ±5** — nudges, never overrides fundamentals.
+9. **Strategist agent is read-only** — it observes and writes notes. Never touches scores.
+10. **Obsidian notes live in repo** — `history/obsidian/`. Mac vault = same files via Git.
+11. **No auto-execution** — system generates signals and research. Human decides.
+12. **InvestOS never exposes raw engine logic** — BAKED_DATA is the interface layer.
 
 ---
 
@@ -256,32 +369,31 @@ Coverage ticking up:
 |------|--------|
 | Hardcoded secrets | ✅ None — all via os.environ / GitHub Secrets |
 | trades.csv | ✅ Gitignored |
+| ANTHROPIC_API_KEY | ⚠️ Add to GitHub Secrets for strategist agent |
 | Netlify function auth | ✅ x-investos-key header required |
-| CORS | ✅ Restricted to investos-proxy.netlify.app only |
 | ML model cache (.pkl) | ✅ Gitignored |
-| Netlify env var | INVESTOS_API_KEY = inv-2026-personal |
+| __pycache__ | ✅ Gitignored (fixed June 27) |
 
 ---
 
 ## ETF ENGINE
 
 30 ETFs across 5 categories. Account routing:
-- **RRSP** → US-listed ETFs (IRS treaty)
+- **RRSP** → US-listed ETFs (IRS treaty exemption on dividends)
 - **TFSA** → .TO ETFs, sector/thematic OK
 - **FHSA** → Conservative Canadian only. Excludes thematic + GLD, TLT, VWO, EEM, XLE, QQQ, VOO
-
-XOM + CVX confirmation for energy ETFs. DCA vs lump sum: top 80%+ of 52-week range → DCA.
 
 ---
 
 ## NGX ENGINE
 
 Macro-driven scoring for 30 Nigerian Exchange stocks.
-- Scoring inputs: Brent (primary), DXY, SPY, VIX, EEM
-- Resolution window: 14 days
-- Current phase: RESTRICTED (Day 47) — Tier 1 stocks, score ≥80 only
-- Entry framework: WAIT / WATCH / ENTER (not DCA/lump — FX conversion cost)
-- Individual prices: require paid NGN Markets API tier. `ngx_diagnostic.py` in repo — run with `NGN_MARKETS_KEY=your_key python ngx_diagnostic.py`
+Inputs: Brent (primary), DXY, SPY, VIX, EEM. Resolution: 14 days.
+Phase: RESTRICTED (Day 48) — Tier 1 stocks, score ≥80 only.
+Entry: WAIT / WATCH / ENTER (not DCA — FX conversion cost).
+
+**FTSE frontier reclassification September 2026 → institutional window opens now.**
+GTCO(~₦135), MTNN(~₦820), SEPLAT(~₦11,363) — primary targets for passive inflows.
 
 ---
 
@@ -302,91 +414,55 @@ Macro-driven scoring for 30 Nigerian Exchange stocks.
 |------|--------|--------|-------|
 | Early 2026 | 1.07 | ~60% | BCE.TO losses begin |
 | May 22 | 0.47 | 62.4% | ETF engine v1 launched |
-| May 27 | -0.661 | 63.2% | Sharpe guard fires — 20% exposure |
-| Jun 6 | +0.715 | 63.6% | Guard OFF — RISK_ON |
+| May 27 | -0.661 | 63.2% | Sharpe guard fires |
+| Jun 6 | +0.715 | 63.6% | Guard OFF — all-time high WR |
 | Jun 21 | 1.964 | 62.1% | Regime RISK_OFF (war escalation) |
-| Jun 22 | 2.034 | 61.6% | Macro CAUTIOUS, regime recovering |
+| Jun 22 | 2.034 | 61.6% | Macro CAUTIOUS, recovering |
+| Jun 26 | -3.058 | 47.6% | Guard re-engaged — DEFENSIVE 0.25× |
+| Jun 27 | -3.056 | 46.8% | First Sharpe micro-recovery |
 
 ---
 
-## OPEN ROADMAP
+## IMMEDIATE NEXT BUILDS (in order)
 
-### Immediate — before next session
-- [ ] Dedup pass on `outcomes_log.json` — remove duplicate entries (same ticker + signal_date)
-  - Run locally: `python dedup_outcomes.py` (needs to be written, trivial)
-  - This cleans the WR denominator and makes factor attribution more accurate
-- [ ] NGX diagnostic — run locally: `NGN_MARKETS_KEY=your_key python ngx_diagnostic.py`
-  - Paste results in next chat to determine which free endpoints work
+```
+1. Add ANTHROPIC_API_KEY to GitHub Secrets
+   → unlocks strategist_agent.py daily research notes
 
-### Next build session
-- [ ] **UI — Track 3** — wire Trader UI prototype to BAKED_DATA
-  - Today tab, score rings, regime band, search overlay
-  - See roadmap section in previous README for full spec
-  - `investos_trader.html` prototype exists (hardcoded data, not yet wired)
+2. UI — search overlay (⌘K)
+   → ticker search → full research card
+   → replaces Lookup tab
+   → highest UI value remaining
 
-### Monitor (no action needed)
-- [ ] ML retrain coverage: watch for 10% threshold (~160 new picks) — auto fires
-- [ ] 90-100 tier PF: should rise as ML gate filters new picks — watch monthly
-- [ ] Factor attribution regime/sector: filling from June 20 — meaningful in ~30 days
-- [ ] Walk-forward validation: mid-August 2026 (60+ days history)
-- [ ] 90d outcomes resolve: mid-September 2026 → portfolio optimizer
+3. Telegram bot setup (5 min via @BotFather)
+   → needed for AllocOS Phase 1
+
+4. AllocOS Phase 1 (personal build)
+   → you are user zero
+   → Telegram morning brief from BAKED_DATA
+
+5. InvestOS Lens (Chrome extension)
+   → standalone, any session
+
+6. NGX waitlist page (Carrd.co)
+   → email capture before FTSE catalyst
+```
 
 ---
 
 ## HOW TO CONTINUE A SESSION
 
-Start a new chat with:
-> "I'm continuing InvestOS development. Read the README.md and the latest log, then tell me system state before we build anything."
+Start with:
+> "I'm continuing InvestOS development. Read the README.md and the latest log,
+> then tell me system state before we build anything."
 
 The AI should:
 1. Read this README fully
 2. Read the latest GitHub Actions log if provided
-3. State current system state (metrics table above, updated)
+3. State current system state (metrics table above)
 4. Confirm what was last built
-5. Not re-explain decisions in Architecture Decisions section
-6. Not flag intentional design choices as bugs
-7. Pick up from the open roadmap
-
----
-
-## QUICK COMMANDS
-
-```bash
-# Run locally
-python run_daily.py
-
-# Run in GitHub Actions mode
-python run_daily.py --github
-
-# Run factor investigation
-python factor_investigation.py
-
-# Run NGX diagnostic (needs API key)
-NGN_MARKETS_KEY=your_key python ngx_diagnostic.py
-
-# Remove trades.csv from git if accidentally committed
-git rm --cached trades.csv
-echo "trades.csv" >> .gitignore
-
-# Hard refresh dashboard after push
-# Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac)
-```
-
----
-
-## CONVERSATION CONTEXT
-
-- "Uncle" = Claude
-- Quant friend + hedge fund advisor both reviewed system
-- $5,000 hero number = deployable capital at 0.50× risk multiplier
-- Score inversion reframed: 90-100 profitable (PF=1.55) but ML<20% subset loses (PF=0.96)
-- Dedup bug found June 22: pick count inflated but WR directionally correct
-- All Kelly bugs confirmed fixed — monotonic ML ordering across 4 and 5-pick baskets
-
----
-
-*InvestOS v4.1 — Built session by session. Every line has a reason.*
-*NFA · Educational only · Personal use only*
+5. Not re-explain Architecture Decisions
+6. Pick up from Immediate Next Builds — in order
 
 ---
 
@@ -394,37 +470,43 @@ echo "trades.csv" >> .gitignore
 
 | Date | Change | File(s) | Notes |
 |------|--------|---------|-------|
-| Jun 22 2026 | Dedup pass on outcomes_log.json | outcomes_log.json | 2005→1881 entries. Removed picks had 61.8% WR — disproportionate winners. WR delta -0.49pp. Clean baseline from this date. |
-| Jun 22 2026 | SCORE_CAP_74: F, DXCM, WPM.TO capped at 74 | stock_screener.py | Cap not exclude — still eligible for 60-74 tier. Chronic 90-100 losers. |
-| Jun 22 2026 | PF baseline locked + drift monitor | run_daily.py, pf_baseline.json | Baseline: 90-100=1.43, 75-89=2.29, 60-74=3.17, below-60=2.78. Drift alert at >0.20 drop. |
-| Jun 22 2026 | Congressional engine wired | run_daily.py, congressional_engine.py | Step 4c. Graceful fallback if file missing. Score boost capped at +12pts. |
-| Jun 22 2026 | Congressional engine error messaging fixed | congressional_engine.py | HTTP 403/301 now clearly labelled as DATA UNAVAILABLE, not zero activity. data_available flag added. |
-| Jun 22 2026 | Score ring font fix | index.html | var(--display) inside inline SVG → concrete font stack. Math.round(sc) prevents float display. |
-| Jun 22 2026 | .gitignore updated | .gitignore | Added congressional_cache.json + congressional_signals.json |
-| Jun 22 2026 | TELECOM roadmap item closed | — | Was already correct in ml_engine.py before this session. |
-| Jun 23 2026 | SCORE_CAP_74: FM.TO added | stock_screener.py | -14.3% at score 100 — worst single loss in dataset. Scored 100, lost worst. |
+| Jun 22 | Dedup pass | outcomes_log.json | 2005→1881 entries |
+| Jun 22 | SCORE_CAP_74: F, DXCM, WPM.TO | stock_screener.py | |
+| Jun 22 | PF baseline locked | pf_baseline.json | |
+| Jun 22 | Congressional engine | congressional_engine.py | HTTP 403 = DATA UNAVAILABLE |
+| Jun 23 | SCORE_CAP_74: FM.TO added | stock_screener.py | -14.3% worst single loss |
+| Jun 25 | PF baseline reset (post-backlog) | pf_baseline.json | Clean baseline |
+| Jun 26 | Curve steepening 0.6→0.4 | stock_screener.py | v4.1 OOS Day 0 |
+| Jun 26 | ML gate fix in conviction engine | run_daily.py | QCOM false positive fixed |
+| Jun 26 | TIH.TO airline fix | ml_engine.py | Industrials→AIRLINES removed |
+| Jun 26 | Obsidian vault created | investos-brain repo | ~/Documents/investos-brain |
+| Jun 26 | Obsidian daily bridge fixed | run_daily.py | Variable scope: all from brief |
+| Jun 26 | history_analyzer.py built | history_analyzer.py | 6 modules, silent daily |
+| Jun 26 | strategy_version.py built | strategy_version.py | OOS anchor, 41 params |
+| Jun 26 | __pycache__ gitignored | .gitignore | Stops binary conflicts |
+| Jun 27 | pattern_agent.py built | pattern_agent.py | 595 lines, closes autonomy loop |
+| Jun 27 | pattern_agent.yml workflow | .github/workflows/ | 9:45am ET weekdays |
+| Jun 27 | scout_agent upgraded | scout_agent.py | 17→30 ETF sources, RSI 80→75 |
+| Jun 27 | pattern_signals wired to screener | stock_screener.py | ±3-5pt boost/penalty |
+| Jun 27 | strategist_agent.py built | strategist_agent.py | Claude API, daily research note |
+| Jun 27 | strategist_agent.yml workflow | .github/workflows/ | 10:00am ET weekdays |
+| Jun 27 | README updated | README.md | Full platform state captured |
 
-## OPEN WATCH ITEMS
+---
 
-| Item | Status | Notes |
-|------|--------|-------|
-| Below-60 PF drift | 🔴 3 consecutive readings, worsening | cur=2.23 vs base=2.78 (drift -0.55). Expected: penalised names (ABX, RCI-B, FM, NTR) routing into this tier. NOT structural decay — penalty system working correctly. Watch for stabilisation. |
-| BULL-regime sub-slice PF | ⚠️ Watch | n=14, PF=0.69. Four declining readings. Only 3% regime coverage. Actionable at n≥50. |
-| Congressional data source | ⏳ Shelf | S3 endpoints 403/gone. api.congress.gov (free, needs API key) is clean path. Add CONGRESS_API_KEY to GitHub Secrets when ready. |
-| ABX.TO, AEM.TO cap decision | ⏳ Watch | ABX on cooldown. AEM still in 90-100 tier with 31.6% WR. Monitor. |
-| NGX 0% WR | ⏳ Paper phase | 159 resolved, all losses. Macro reversed on first batch. New signals loading post-June 11 restricted phase. |
+## CONVERSATION CONTEXT
 
-## KNOWN BASELINE (Jun 22 2026 — post-dedup)
+- "Uncle" = Claude
+- OOS start: June 26 2026 (v4.1 — curve fix confirmed in code)
+- $5,000 hero number = deployable capital at current 0.25× multiplier
+- Score ceiling decision: curve 0.4 (NOT hard cap at 89) — ordinal ordering preserved
+- Pattern agent: boosts are noise for ~30 days — meaningful after July 27
+- Strategist agent: needs ANTHROPIC_API_KEY in GitHub Secrets
+- Obsidian sync: check Git plugin pull interval if notes not appearing on Mac
+- AllocOS: next product build after Telegram bot setup
+- NGX FTSE: September 2026 catalyst — 3 months to institutional window
 
-| Metric | Value |
-|--------|-------|
-| outcomes_log.json entries | 1881 (deduped) |
-| Total resolved | 1439 |
-| Overall WR | 58.2% |
-| Overall PF | 1.89 |
-| 90-100 tier PF | 1.43 ⚠️ |
-| 75-89 tier PF | 2.29 ✅ |
-| 60-74 tier PF | 3.17 ✅ |
-| below-60 tier PF | 2.78 ✅ |
+---
 
-> All future factor attribution compares against these numbers. PF drift >0.20 = investigate.
+*InvestOS v4.2 — Built session by session. Every line has a reason.*
+*NFA · Educational only · Personal use only*
