@@ -1954,6 +1954,16 @@ if __name__ == "__main__":
         except Exception:
             pass
 
+        # ── Strategist Agent ──────────────────────────────────────────────
+        # Calls Claude API to write daily research note — silent fail
+        try:
+            if os.environ.get("ANTHROPIC_API_KEY"):
+                from strategist_agent import run_strategist as _sa
+                _sa(verbose=False)
+                print("  🧠 Strategist note → history/obsidian/research/")
+        except Exception:
+            pass
+
         # ── Obsidian Daily Bridge ─────────────────────────────────────────
         # All values pulled from brief — no bare local variable deps
         try:
