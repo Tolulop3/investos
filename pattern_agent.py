@@ -180,11 +180,22 @@ def detect_regime_drift(snaps):
         b = s.get("breadth", {})
         p200 = b.get("pct_above_200") if isinstance(b, dict) else None
         if p200 is not None:
-            breadths.append(float(p200))
+            try:
+                breadths.append(float(p200))
+            except (TypeError, ValueError):
+                pass
 
         sh = s.get("sharpe")
         if sh is not None:
-            sharpes.append(float(sh))
+            # history snapshot stores sharpe as dict {"sharpe": -3.058, ...}
+            # or sometimes as a raw float — handle both
+            if isinstance(sh, dict):
+                sh = sh.get("sharpe")
+            if sh is not None:
+                try:
+                    sharpes.append(float(sh))
+                except (TypeError, ValueError):
+                    pass
 
     result = {"status": "stable", "flags": []}
 
