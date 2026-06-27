@@ -1955,14 +1955,15 @@ if __name__ == "__main__":
             pass
 
         # ── Obsidian Daily Bridge ─────────────────────────────────────────
-        # Pulls everything from brief — no bare local variable deps
+        # All values pulled from brief — no bare local variable deps
         try:
-            _rr   = (brief or {}).get("risk_report", {}) or {}
-            _dm   = _rr.get("decay_monitor", {}) or {}
-            _obs_sharpe = float(_dm.get("rolling_sharpe", {}).get("sharpe", 0) if isinstance(_dm.get("rolling_sharpe"), dict) else _dm.get("rolling_sharpe", 0) or 0)
+            _rr         = (brief or {}).get("risk_report", {}) or {}
+            _dm         = _rr.get("decay_monitor", {}) or {}
+            _rs_raw     = _dm.get("rolling_sharpe", 0)
+            _obs_sharpe = float(_rs_raw.get("sharpe", 0) if isinstance(_rs_raw, dict) else _rs_raw or 0)
             _obs_rm     = float(_rr.get("risk_multiplier", 1.0) or 1.0)
             _obs_na     = int(_dm.get("neg_alpha_days", 0) or 0)
-            _obs_ur     = _rr.get("unified_regime") or                           (brief or {}).get("system_exposure", {}).get("unified_regime", "DEFENSIVE")
+            _obs_ur     = (brief or {}).get("system_exposure", {}).get("unified_regime") or "DEFENSIVE"
             _obs_mr     = (brief or {}).get("macro", {}).get("regime", "NORMAL")
             write_obsidian_daily(
                 brief           = brief,
@@ -1971,7 +1972,7 @@ if __name__ == "__main__":
                 rolling_sharpe  = _obs_sharpe,
                 risk_multiplier = _obs_rm,
                 neg_alpha_days  = _obs_na,
-                start           = start,
+                start           = datetime.now(),
             )
         except Exception as _obe:
             print(f"  ⚠️  Obsidian bridge failed: {_obe}")
