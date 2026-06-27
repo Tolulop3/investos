@@ -21,6 +21,18 @@ try:
 except ImportError:
     _STRATEGY_ENGINE = False
 
+# ── Pattern Signal Boosts (written by pattern_agent.py) ──────────────────────
+# Loaded once at import. Tickers with 3+ day streaks get +3 pts.
+# Tickers flagged AVOID get -5 pts. File written every 15 min after daily run.
+_PATTERN_SIGNALS = {}
+try:
+    import pathlib as _pl
+    _ps = _pl.Path("pattern_signals.json")
+    if _ps.exists():
+        _PATTERN_SIGNALS = json.loads(_ps.read_text())
+except Exception:
+    pass
+
 # ============================================================
 # SCREENING UNIVERSE
 # Broad list of TSX + US stocks across all sectors
@@ -699,6 +711,22 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
     if ticker in SCORE_CAP_74 and total > 74:
         flags.append(f"⚠️ Score capped at 74 (performance blacklist — chronic 90-100 loser)")
         total = 74.0
+
+    # ── PATTERN SIGNAL BOOST (from pattern_agent.py) ──────────────────────────
+    # Applied last — after all caps — so it nudges but never overrides safety rules.
+    # CONSIDER: +3 pts (3+ day streak + rising velocity)
+    # AVOID:    -5 pts (falling score + poor PF)
+    # Cap boost at +5 / -5 to prevent pattern from dominating fundamentals.
+    if ticker in _PATTERN_SIGNALS:
+        _ps_data  = _PATTERN_SIGNALS[ticker]
+        _ps_boost = float(_ps_data.get("boost", 0))
+        _ps_act   = _ps_data.get("action", "")
+        if _ps_boost != 0:
+            _ps_boost = max(-5.0, min(5.0, _ps_boost))
+            total     = round(max(0, min(100, total + _ps_boost)), 1)
+            _icon     = "🔁" if _ps_boost > 0 else "⚠️"
+            flags.append(f"{_icon} Pattern {_ps_act}: {_ps_boost:+.0f}pts — "
+                         f"{_ps_data.get('reason', '')}")
 
     return total, pillars, reasons, flags
 
