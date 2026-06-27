@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-27T00:26:17.980336",
+    "run_at": "2026-06-27T00:56:01.731808",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,39 +30,39 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
-        "avg_score_change": 3.5,
+        "survived": 17,
+        "survival_pct": 94.4,
+        "avg_score_change": 3.8,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.5 pts with 10% noise"
+        "note": "Avg score change: \u00b13.8 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 69.2,
-        "stressed_avg": 64.5,
-        "score_drop": 4.7,
+        "normal_avg": 73.5,
+        "stressed_avg": 69.5,
+        "score_drop": 4.0,
         "removed": [
-          "MS",
           "TSM",
-          "POW.TO",
-          "DOL.TO"
+          "MS",
+          "RY.TO",
+          "JPM"
         ],
         "verdict": "\u2705 ROBUST",
-        "note": "Score drops 4.7 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 4.0 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
-        "avg_score_drop": 3.4,
+        "survived": 17,
+        "survival_pct": 94.4,
+        "avg_score_drop": 3.6,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.4 pts"
+        "note": "If momentum stops working: avg score drops 3.6 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 69.2,
+      "normal_avg_score": 73.5,
       "scenarios_robust": 5,
       "scenarios_fragile": 0,
       "scenarios_broken": 0,
@@ -74,9 +74,9 @@
     "date": "June 27, 2026",
     "robustness_score": 30,
     "rolling_sharpe": {
-      "sharpe": -3.058,
+      "sharpe": -3.056,
       "avg_ret_pct": -4.15,
-      "std_ret_pct": 9.78,
+      "std_ret_pct": 9.79,
       "picks_used": 300,
       "source": "resolved_returns",
       "note": "Sharpe from 300 resolved picks \u00b7 price-return \u00b7 weekly horizon \u00b7 capped at 4.0"
@@ -90,8 +90,8 @@
       "sharpe": 1.3,
       "symbol": "^GSPC"
     },
-    "alpha": -4.358,
-    "neg_alpha_days": 29,
+    "alpha": -4.356,
+    "neg_alpha_days": 30,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
