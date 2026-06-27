@@ -57,24 +57,38 @@ ETF_SOURCES = [
     # ── Broad market ─────────────────────────────────────────────────────
     {"ticker": "QQQ",     "max": 100, "region": "US", "label": "scout_qqq"},   # Nasdaq 100
     {"ticker": "SPY",     "max": 150, "region": "US", "label": "scout_spy"},   # S&P 500
-    {"ticker": "IWM",     "max": 100, "region": "US", "label": "scout_iwm"},   # Russell 2000 small cap
+    {"ticker": "IWM",     "max": 100, "region": "US", "label": "scout_iwm"},   # Russell 2000
     {"ticker": "VTI",     "max": 100, "region": "US", "label": "scout_vti"},   # Total US market
+    {"ticker": "MDY",     "max": 60,  "region": "US", "label": "scout_mdy"},   # Mid-cap (S&P 400)
     # ── Sector ───────────────────────────────────────────────────────────
     {"ticker": "SMH",     "max": 30,  "region": "US", "label": "scout_smh"},   # Semiconductors
+    {"ticker": "SOXX",    "max": 30,  "region": "US", "label": "scout_soxx"},  # Semiconductors alt
     {"ticker": "XLF",     "max": 50,  "region": "US", "label": "scout_xlf"},   # Financials
+    {"ticker": "KBE",     "max": 30,  "region": "US", "label": "scout_kbe"},   # Banks
     {"ticker": "XLK",     "max": 50,  "region": "US", "label": "scout_xlk"},   # Technology
     {"ticker": "XLE",     "max": 30,  "region": "US", "label": "scout_xle"},   # Energy
     {"ticker": "XLV",     "max": 50,  "region": "US", "label": "scout_xlv"},   # Healthcare
+    {"ticker": "XBI",     "max": 30,  "region": "US", "label": "scout_xbi"},   # Biotech
     {"ticker": "XLI",     "max": 50,  "region": "US", "label": "scout_xli"},   # Industrials
-    {"ticker": "ARKK",    "max": 30,  "region": "US", "label": "scout_arkk"},  # Innovation/disruptive
+    {"ticker": "XLP",     "max": 30,  "region": "US", "label": "scout_xlp"},   # Consumer staples
+    {"ticker": "XLY",     "max": 30,  "region": "US", "label": "scout_xly"},   # Consumer discretionary
+    {"ticker": "PPA",     "max": 30,  "region": "US", "label": "scout_ppa"},   # Aerospace & defense
+    # ── Innovation / thematic ────────────────────────────────────────────
+    {"ticker": "ARKK",    "max": 30,  "region": "US", "label": "scout_arkk"},  # Disruptive innovation
+    {"ticker": "ARKF",    "max": 30,  "region": "US", "label": "scout_arkf"},  # Fintech
+    {"ticker": "CIBR",    "max": 30,  "region": "US", "label": "scout_cibr"},  # Cybersecurity
+    {"ticker": "BOTZ",    "max": 30,  "region": "US", "label": "scout_botz"},  # Robotics & AI
     # ── Momentum / factor ────────────────────────────────────────────────
-    {"ticker": "MTUM",    "max": 50,  "region": "US", "label": "scout_mtum"},  # US momentum factor
-    {"ticker": "QUAL",    "max": 50,  "region": "US", "label": "scout_qual"},  # US quality factor
+    {"ticker": "MTUM",    "max": 50,  "region": "US", "label": "scout_mtum"},  # US momentum
+    {"ticker": "QUAL",    "max": 50,  "region": "US", "label": "scout_qual"},  # US quality
+    {"ticker": "DGRO",    "max": 50,  "region": "US", "label": "scout_dgro"},  # Dividend growth
     # ── Canadian ─────────────────────────────────────────────────────────
     {"ticker": "XIC.TO",  "max": 60,  "region": "CA", "label": "scout_xic"},   # TSX composite
     {"ticker": "XEQT.TO", "max": 50,  "region": "CA", "label": "scout_xeqt"}, # All equity
     {"ticker": "ZEB.TO",  "max": 30,  "region": "CA", "label": "scout_zeb"},   # Canadian banks
     {"ticker": "XIU.TO",  "max": 60,  "region": "CA", "label": "scout_xiu"},   # TSX 60
+    {"ticker": "XEG.TO",  "max": 20,  "region": "CA", "label": "scout_xeg"},   # Canadian energy
+    {"ticker": "ZLB.TO",  "max": 30,  "region": "CA", "label": "scout_zlb"},   # Canadian low-vol
 ]
 
 
@@ -196,8 +210,8 @@ def momentum_pre_filter(tickers, region="US", verbose=True):
             rsi = 100 - (100 / (1 + gains / losses)) if losses > 0 else 100.0
 
             # RSI ceiling — don't scout overbought names
-            if rsi > 80:
-                continue  # e.g. RY.TO/TD.TO at RSI 87/82 — already extended
+            if rsi > 75:
+                continue  # RSI ceiling: exclude overbought names (>75 = extended)
 
             # 52-week high check (single extended history call)
             hist_1y = t.history(period="1y", auto_adjust=True)
@@ -356,6 +370,19 @@ def run_scout(verbose=True):
             "top_ca_scouts":  [(t, meta["return_3m"]) for t, _, meta in ca_top[:5]],
         })
         json.dump(log[-52:], open(ROTATION_LOG, "w"), indent=2)
+    except Exception:
+        pass
+
+    # Step 6b: Log if pattern_signals.json boosts overlap with scout
+    try:
+        import pathlib
+        ps = pathlib.Path("pattern_signals.json")
+        if ps.exists():
+            pattern_signals = json.load(open(ps))
+            overlap = [t for t in dynamic if t in pattern_signals
+                       and pattern_signals[t].get("boost", 0) > 0]
+            if overlap:
+                print(f"  🔁 Pattern-boosted tickers also scouted: {overlap[:5]}")
     except Exception:
         pass
 
