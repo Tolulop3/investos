@@ -1,0 +1,48 @@
+name: InvestOS Pattern Agent
+
+on:
+  # Runs 15 min after each daily run (6:15am, 11:15am, 4:15pm Toronto)
+  schedule:
+    - cron: '15 11 * * 1-5'   # 6:15am Toronto
+    - cron: '15 16 * * 1-5'   # 11:15am Toronto
+    - cron: '15 21 * * 1-5'   # 4:15pm Toronto
+  workflow_dispatch:           # manual trigger anytime
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  pattern-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.4.0
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pattern agent
+        run: python pattern_agent.py
+
+      - name: Commit pattern outputs
+        run: |
+          git config --global user.name "InvestOS Bot"
+          git config --global user.email "investos-bot@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "Patterns $(date +'%Y-%m-%d %H:%M') UTC"
+          git pull --rebase origin main
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
