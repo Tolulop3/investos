@@ -30,10 +30,15 @@
     "note": "Rally is broad \u2014 most stocks above 200MA",
     "momentum_breadth": "EXPANDING",
     "sector_breadth": {
-      "Technology": {
-        "pct_above_50": 70,
-        "pct_above_200": 74,
-        "count": 47
+      "Communication Services": {
+        "pct_above_50": 22,
+        "pct_above_200": 56,
+        "count": 9
+      },
+      "Consumer Defensive": {
+        "pct_above_50": 75,
+        "pct_above_200": 75,
+        "count": 12
       },
       "Financial Services": {
         "pct_above_50": 80,
@@ -45,50 +50,45 @@
         "pct_above_200": 100,
         "count": 8
       },
-      "": {
-        "pct_above_50": 82,
-        "pct_above_200": 90,
-        "count": 49
+      "Consumer Cyclical": {
+        "pct_above_50": 59,
+        "pct_above_200": 47,
+        "count": 17
+      },
+      "Technology": {
+        "pct_above_50": 70,
+        "pct_above_200": 74,
+        "count": 47
       },
       "Real Estate": {
         "pct_above_50": 70,
         "pct_above_200": 60,
         "count": 10
       },
-      "Consumer Cyclical": {
-        "pct_above_50": 59,
-        "pct_above_200": 47,
-        "count": 17
-      },
-      "Basic Materials": {
-        "pct_above_50": 0,
-        "pct_above_200": 25,
-        "count": 8
-      },
-      "Communication Services": {
-        "pct_above_50": 22,
-        "pct_above_200": 56,
-        "count": 9
-      },
-      "Utilities": {
-        "pct_above_50": 89,
-        "pct_above_200": 100,
-        "count": 9
-      },
-      "Industrials": {
-        "pct_above_50": 76,
-        "pct_above_200": 84,
-        "count": 25
+      "": {
+        "pct_above_50": 82,
+        "pct_above_200": 90,
+        "count": 49
       },
       "Healthcare": {
         "pct_above_50": 87,
         "pct_above_200": 65,
         "count": 23
       },
-      "Consumer Defensive": {
-        "pct_above_50": 75,
-        "pct_above_200": 75,
-        "count": 12
+      "Basic Materials": {
+        "pct_above_50": 0,
+        "pct_above_200": 25,
+        "count": 8
+      },
+      "Industrials": {
+        "pct_above_50": 76,
+        "pct_above_200": 84,
+        "count": 25
+      },
+      "Utilities": {
+        "pct_above_50": 89,
+        "pct_above_200": 100,
+        "count": 9
       }
     }
   },
@@ -130,9 +130,9 @@
       ]
     },
     "DEFENSE": {
-      "bullish_score": 290.0,
+      "bullish_score": 320.0,
       "bearish_score": 150.0,
-      "net_score": 140.0,
+      "net_score": 170.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -141,21 +141,21 @@
           "confidence": 100
         },
         {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 80
+        },
+        {
           "name": "peace_deal",
           "direction": "bearish",
           "confidence": 100
-        },
-        {
-          "name": "russia_ukraine",
-          "direction": "bullish",
-          "confidence": 60
         }
       ]
     },
     "GOLD": {
-      "bullish_score": 402.0,
+      "bullish_score": 432.0,
       "bearish_score": 150.0,
-      "net_score": 252.0,
+      "net_score": 282.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -169,14 +169,14 @@
           "confidence": 75
         },
         {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 80
+        },
+        {
           "name": "peace_deal",
           "direction": "bearish",
           "confidence": 100
-        },
-        {
-          "name": "russia_ukraine",
-          "direction": "bullish",
-          "confidence": 60
         }
       ]
     },
@@ -463,6 +463,58 @@
         }
       ]
     },
+    "EUROPEAN_ENERGY": {
+      "bullish_score": 120.0,
+      "bearish_score": 0,
+      "net_score": 120.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 80
+        }
+      ]
+    },
+    "AGRICULTURE": {
+      "bullish_score": 120.0,
+      "bearish_score": 0,
+      "net_score": 120.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 80
+        }
+      ]
+    },
+    "EUROPEAN_STOCKS": {
+      "bullish_score": 0,
+      "bearish_score": 120.0,
+      "net_score": -120.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bearish",
+          "confidence": 80
+        }
+      ]
+    },
+    "NATURAL_GAS": {
+      "bullish_score": 0,
+      "bearish_score": 120.0,
+      "net_score": -120.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bearish",
+          "confidence": 80
+        }
+      ]
+    },
     "CONSUMER": {
       "bullish_score": 150.0,
       "bearish_score": 0,
@@ -499,58 +551,6 @@
           "name": "peace_deal",
           "direction": "bullish",
           "confidence": 100
-        }
-      ]
-    },
-    "EUROPEAN_ENERGY": {
-      "bullish_score": 90.0,
-      "bearish_score": 0,
-      "net_score": 90.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "russia_ukraine",
-          "direction": "bullish",
-          "confidence": 60
-        }
-      ]
-    },
-    "AGRICULTURE": {
-      "bullish_score": 90.0,
-      "bearish_score": 0,
-      "net_score": 90.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "russia_ukraine",
-          "direction": "bullish",
-          "confidence": 60
-        }
-      ]
-    },
-    "EUROPEAN_STOCKS": {
-      "bullish_score": 0,
-      "bearish_score": 90.0,
-      "net_score": -90.0,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "russia_ukraine",
-          "direction": "bearish",
-          "confidence": 60
-        }
-      ]
-    },
-    "NATURAL_GAS": {
-      "bullish_score": 0,
-      "bearish_score": 90.0,
-      "net_score": -90.0,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "russia_ukraine",
-          "direction": "bearish",
-          "confidence": 60
         }
       ]
     }
