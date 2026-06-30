@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-30T21:39:13.647402",
+    "run_at": "2026-06-30T21:55:46.762646",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,46 +30,45 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 13,
-        "survival_pct": 72.2,
-        "avg_score_change": 3.6,
+        "survived": 15,
+        "survival_pct": 83.3,
+        "avg_score_change": 4.1,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.6 pts with 10% noise"
+        "note": "Avg score change: \u00b14.1 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 70.1,
-        "stressed_avg": 60.0,
-        "score_drop": 10.1,
+        "normal_avg": 73.6,
+        "stressed_avg": 65.4,
+        "score_drop": 8.2,
         "removed": [
-          "CAT",
           "C",
           "NVT",
-          "REI-UN.TO",
-          "LRCX"
+          "CAT",
+          "RY.TO"
         ],
-        "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 10.1 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 8.2 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
         "survived": 15,
         "survival_pct": 83.3,
-        "avg_score_drop": 3.2,
+        "avg_score_drop": 3.4,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.2 pts"
+        "note": "If momentum stops working: avg score drops 3.4 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 70.1,
+      "normal_avg_score": 73.6,
       "scenarios_robust": 4,
-      "scenarios_fragile": 0,
-      "scenarios_broken": 1,
-      "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
+      "scenarios_fragile": 1,
+      "scenarios_broken": 0,
+      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
-    "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
+    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
     "date": "June 30, 2026",
@@ -92,7 +91,7 @@
       "symbol": "^GSPC"
     },
     "alpha": -4.491,
-    "neg_alpha_days": 44,
+    "neg_alpha_days": 45,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
