@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-30T21:55:46.762646",
+    "run_at": "2026-06-30T22:17:24.975621",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,37 +32,38 @@
         "normal_count": 18,
         "survived": 15,
         "survival_pct": 83.3,
-        "avg_score_change": 4.1,
+        "avg_score_change": 3.8,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.1 pts with 10% noise"
+        "note": "Avg score change: \u00b13.8 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 73.6,
-        "stressed_avg": 65.4,
-        "score_drop": 8.2,
+        "normal_avg": 68.3,
+        "stressed_avg": 61.6,
+        "score_drop": 6.7,
         "removed": [
-          "C",
+          "POW.TO",
           "NVT",
           "CAT",
-          "RY.TO"
+          "JPM",
+          "C"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 8.2 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 6.7 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
         "survived": 15,
         "survival_pct": 83.3,
-        "avg_score_drop": 3.4,
+        "avg_score_drop": 2.9,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.4 pts"
+        "note": "If momentum stops working: avg score drops 2.9 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 73.6,
+      "normal_avg_score": 68.3,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -91,7 +92,7 @@
       "symbol": "^GSPC"
     },
     "alpha": -4.491,
-    "neg_alpha_days": 45,
+    "neg_alpha_days": 46,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
