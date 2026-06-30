@@ -463,7 +463,7 @@ def write_obsidian_daily(brief, unified_regime, macro_regime,
         risk_rep   = brief.get("risk_report", {}) or {}
         robustness = risk_rep.get("robustness_score", "N/A")
 
-        pcr_data   = brief.get("pcr_data", {}) or {}
+        pcr_data   = brief.get("market_pcr", {}) or {}
         pcr_val    = pcr_data.get("pcr", "N/A")
         pcr_signal = pcr_data.get("signal", "NEUTRAL")
 
@@ -1982,7 +1982,7 @@ if __name__ == "__main__":
                 rolling_sharpe  = _obs_sharpe,
                 risk_multiplier = _obs_rm,
                 neg_alpha_days  = _obs_na,
-                start           = datetime.now(),
+                start           = start,
             )
         except Exception as _obe:
             print(f"  ⚠️  Obsidian bridge failed: {_obe}")

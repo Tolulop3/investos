@@ -503,7 +503,7 @@ def write_pattern_signals(scored_watchlist):
             reason = f"Pattern: {item['streak_days']}d streak + rising velocity"
         elif action == "AVOID":
             boost = -5.0
-            reason = f"Pattern: falling score + PF {item['pf_30d']}"
+            reason = f"Pattern: falling score + PF {item['pf_30d'] or 'n/a'}"
         else:
             boost = 0.0
             reason = "Pattern: watch — no strong signal"
