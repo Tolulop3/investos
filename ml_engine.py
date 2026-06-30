@@ -963,6 +963,19 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
             for w in final_wts
         ]
 
+    # Hard concentration cap for thin baskets — no re-normalization (surplus = cash)
+    CONC_CAP = 0.25
+    if n_picks < 6:
+        capped = [min(w, CONC_CAP) if w > 0 else 0.0 for w in final_wts]
+        if capped != final_wts:
+            total_deployed = sum(capped)
+            if verbose:
+                print(f"   ⚠️  Concentration cap ({n_picks} picks): "
+                      f"max weight → {CONC_CAP*100:.0f}% | "
+                      f"deploying {total_deployed*100:.0f}% of budget "
+                      f"({(1-total_deployed)*100:.0f}% cash)")
+            final_wts = capped
+
     sized = []
     for i, pick in enumerate(picks[:n_picks]):
         sc = pick.get("score", 70)

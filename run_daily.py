@@ -1975,6 +1975,10 @@ if __name__ == "__main__":
             _obs_na     = int(_dm.get("neg_alpha_days", 0) or 0)
             _obs_ur     = (brief or {}).get("system_exposure", {}).get("unified_regime") or "DEFENSIVE"
             _obs_mr     = (brief or {}).get("macro", {}).get("regime", "NORMAL")
+            # start is a local inside run_daily() — recover from brief["generated_at"]
+            _gen_at     = (brief or {}).get("generated_at", "")
+            _obs_start  = (datetime.fromisoformat(_gen_at) if _gen_at
+                           else datetime.now())
             write_obsidian_daily(
                 brief           = brief,
                 unified_regime  = _obs_ur,
@@ -1982,7 +1986,7 @@ if __name__ == "__main__":
                 rolling_sharpe  = _obs_sharpe,
                 risk_multiplier = _obs_rm,
                 neg_alpha_days  = _obs_na,
-                start           = start,
+                start           = _obs_start,
             )
         except Exception as _obe:
             print(f"  ⚠️  Obsidian bridge failed: {_obe}")
