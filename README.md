@@ -325,6 +325,7 @@ F, DXCM, WPM.TO, FM.TO, ABX.TO, AEM.TO, AGI.TO, MDB, MSFT
 | ⚠️ MEDIUM | pattern_agent needs 30d data | Boosts are noise until patterns accumulate | Wait |
 | ⚠️ MEDIUM | strategist needs ANTHROPIC_API_KEY | Add to GitHub Secrets | One-time setup |
 | ⚠️ MEDIUM | Obsidian not syncing to Mac | Pull manually or check Git plugin interval | Check plugin |
+| ℹ️ INFO | 75-89 tier Kelly oscillating near zero | avg_ret compressed to ~0-1% during Sharpe guard → Kelly flips between 0.000 and ~0.027 run to run. Expected — not a bug. Resolves when guard lifts. | Wait |
 | ℹ️ LOW | BoC feed 0 articles | No recent items in RSS | Not a code issue |
 | ℹ️ LOW | Reuters/AP/Investopedia ❌ | GitHub Actions DNS — 12/15 stable ceiling | Architecture decision |
 | ℹ️ INFO | Congressional 403 | S3 endpoints gone. api.congress.gov is clean path | Add CONGRESS_API_KEY |
