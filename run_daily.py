@@ -98,7 +98,7 @@ def apply_news_to_screener(screener_results, news_analysis):
             adj = ticker_adj.get(pick["ticker"], {})
             n   = adj.get("adjustment", 0)
             if n != 0:
-                n_capped = max(-8, min(8, n))
+                n_capped = max(-15, min(15, n))
                 pick["score"]           = max(0, min(100, pick["score"] + n_capped))
                 pick["news_adjustment"] = n_capped
                 pick["news_original"]   = n
@@ -1314,7 +1314,7 @@ def run_daily(test_mode=False, dry_run=False):
         current_prices = {p["ticker"]: p.get("data",{}).get("price",0)
                          for p in all_picks_to_log if p.get("data",{}).get("price")}
         resolve_outcomes(current_prices)
-        log_picks(all_picks_to_log, regime=regime)
+        log_picks(all_picks_to_log, regime=regime, unified_regime=unified_regime)
 
         # ── SIGNAL LEDGER (tamper-evident audit trail) ────────────
         try:

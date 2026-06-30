@@ -54,7 +54,7 @@ def save_outcomes(outcomes):
         json.dump(outcomes, f, indent=2, default=str)
 
 
-def log_picks(picks, run_time=None, regime=None):
+def log_picks(picks, run_time=None, regime=None, unified_regime=None):
     """
     Log today's picks with entry price and full ML feature snapshot.
 
@@ -142,14 +142,15 @@ def log_picks(picks, run_time=None, regime=None):
                                    pick.get("news_original", 0) or 0),
 
             # ── ML features: market context at signal time ─────────────────
-            "regime":        regime_str,
-            "spx_vs_ma200":  spx_vs_ma200,
+            "regime":         regime_str,
+            "unified_regime": unified_regime or "UNKNOWN",
+            "spx_vs_ma200":   spx_vs_ma200,
 
             # ── Extra context (not ML features but useful for analysis) ─────
             "rsi":           d.get("rsi_approx", 50) or 50,
             "above_ma200":   bool(d.get("above_ma200", True)),
             "above_ma50":    bool(d.get("above_ma50", True)),
-            "sector":        (d.get("sector", "") or "").strip() or d.get("yf_sector", ""),
+            "sector":        (d.get("sector", "") or d.get("industry", "") or "").strip(),
 
             # ── Factor attribution fields (for leaderboard analysis) ──────
             # These enable the hedge fund critique's factor isolation question:

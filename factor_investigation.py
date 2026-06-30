@@ -169,6 +169,7 @@ def main():
     has_news  = [o for o in resolved if o.get("news_boost") not in (None, 0)]
     has_sect  = [o for o in resolved if o.get("sector")]
     has_reg   = [o for o in resolved if o.get("regime") and o["regime"] != "Unknown"]
+    has_ureg  = [o for o in resolved if o.get("unified_regime") and o["unified_regime"] != "UNKNOWN"]
 
     n_res = len(resolved) or 1  # guard against div/zero
     print(f"  ml_prob (real, not 0.5 default): {len(has_ml):>4} picks  "
@@ -178,6 +179,7 @@ def main():
     print(f"  news_boost:     {len(has_news):>4} picks  ({len(has_news)/n_res*100:.0f}% coverage)")
     print(f"  sector:         {len(has_sect):>4} picks  ({len(has_sect)/n_res*100:.0f}% coverage)")
     print(f"  regime:         {len(has_reg):>4} picks  ({len(has_reg)/n_res*100:.0f}% coverage)")
+    print(f"  unified_regime: {len(has_ureg):>4} picks  ({len(has_ureg)/n_res*100:.0f}% coverage)")
     print()
 
     if len(has_ml) >= 50:
