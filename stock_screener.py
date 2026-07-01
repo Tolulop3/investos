@@ -364,6 +364,19 @@ def fetch_ticker_full(ticker, retries=2):
             except Exception:
                 pass
 
+            # --- Earnings surprise (most recent reported quarter) ---
+            # earnings_dates rows are newest-first; "Surprise(%)" column is
+            # the % by which EPS beat/missed consensus. None if not reported yet.
+            earnings_surprise_pct = None
+            try:
+                _ed = t.earnings_dates
+                if _ed is not None and not _ed.empty and "Surprise(%)" in _ed.columns:
+                    _valid = _ed["Surprise(%)"].dropna()
+                    if not _valid.empty:
+                        earnings_surprise_pct = round(float(_valid.iloc[0]), 1)
+            except Exception:
+                pass
+
             # --- Fundamentals ---
             pe_ratio      = info.get("trailingPE") or info.get("forwardPE")
             peg_ratio     = info.get("pegRatio")
@@ -423,9 +436,10 @@ def fetch_ticker_full(ticker, retries=2):
                 "sector":           info.get("sector", "") or info.get("industryKey", "") or "",
                 "industry":         info.get("industry", "") or "",
                 "next_earnings":    next_earnings,
-                "short_pct_float":  round((info.get("shortPercentOfFloat") or 0) * 100, 1),
-                "vol_accum_score":  vol_accum_score,
-                "status":           "ok",
+                "short_pct_float":      round((info.get("shortPercentOfFloat") or 0) * 100, 1),
+                "vol_accum_score":      vol_accum_score,
+                "earnings_surprise_pct": earnings_surprise_pct,
+                "status":               "ok",
                 "closes_30d":       [round(c, 4) for c in closes[-30:]] if len(closes) >= 30 else [],
                 # Pullback feature: distance from recent 20d high
                 # Negative = pulled back (potential early entry)
@@ -638,6 +652,26 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
         flags.append(f"🩳 Elevated short interest: {si}% of float")
     elif si >= 5:
         bonus -= 2  # mild caution, no flag shown
+
+    # ── EARNINGS SURPRISE BONUS ──────────────────────────────────────────────
+    # Recent beat/miss vs consensus — captured at fetch time from earnings_dates.
+    # Addresses 90-100 tier PF problem: high scorers with earnings misses get
+    # penalised; beat stocks get a nudge toward the ML-gated conviction tier.
+    # Cap ±6 pts so it never dominates the score.
+    _surp = data.get("earnings_surprise_pct")
+    if _surp is not None:
+        if _surp > 15:
+            _earn_adj = 6
+            reasons.append(f"📈 Strong earnings beat: +{_surp:.1f}% vs est. (strong_beat)")
+        elif _surp > 5:
+            _earn_adj = 4
+            reasons.append(f"📈 Earnings beat: +{_surp:.1f}% vs est. (earnings_beat)")
+        elif _surp < -5:
+            _earn_adj = -3
+            flags.append(f"⚠️ Earnings miss: {_surp:.1f}% vs est. (earnings_miss)")
+        else:
+            _earn_adj = 0
+        bonus += max(-6, min(6, _earn_adj))
 
     # ── STRATEGY ENGINE: Dynamic factor weights ─────────────────────────────
     if strategy_profile and _STRATEGY_ENGINE:
