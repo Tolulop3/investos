@@ -735,7 +735,12 @@ def run_decay_monitor(score_history=None, screener_results=None, verbose=True, w
         "robustness_score":   robustness,
     }
 
-    # Append to history (keep 365 days)
+    # Upsert by date — drop any existing entry for today before appending.
+    # Without this, two pipeline runs on the same calendar day write two entries
+    # both dated YYYY-MM-DD, causing count_consecutive_negative_alpha to count
+    # today twice and inflate the streak by 1 per extra run.
+    _today_str = now.strftime("%Y-%m-%d")
+    health["entries"] = [e for e in health["entries"] if e.get("date", "") != _today_str]
     health["entries"].append(entry)
     cutoff = (now - timedelta(days=365)).strftime("%Y-%m-%d")
     health["entries"] = [e for e in health["entries"] if e.get("date","") >= cutoff]
