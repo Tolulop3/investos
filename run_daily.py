@@ -1121,8 +1121,17 @@ def run_daily(test_mode=False, dry_run=False):
         print(f"     → Reduce new position sizing. Watch 200MA breadth for regime reclassification.")
 
     if _risk_multiplier < 1.0:
-        print(f"  📐 RISK MULTIPLIER: {_risk_multiplier:.2f}× "
-              f"({'convergence+conflict' if _convergence_fired and _conflict_fired else 'convergence' if _convergence_fired else 'PCR conflict'})")
+        if unified_regime in ("CAPITAL_PRESERVATION", "DEFENSIVE"):
+            _rm_reason = f"{unified_regime} regime"
+        elif unified_regime == "NEUTRAL":
+            _rm_reason = "NEUTRAL regime"
+        elif _convergence_fired and _conflict_fired:
+            _rm_reason = "convergence+PCR conflict"
+        elif _convergence_fired:
+            _rm_reason = "convergence"
+        else:
+            _rm_reason = "PCR conflict"
+        print(f"  📐 RISK MULTIPLIER: {_risk_multiplier:.2f}× ({_rm_reason})")
         print(f"     → Positions sized at {_risk_multiplier*100:.0f}% of full allocation | {_cash_reserve:.0f}% held as cash")
     else:
         print(f"  ✅ RISK MULTIPLIER: 1.00× — full deployment, no caution flags")
