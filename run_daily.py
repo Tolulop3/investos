@@ -612,6 +612,34 @@ def run_daily(test_mode=False, dry_run=False):
                     "TFSA_swing_top3":[], "FHSA_all":[], "TFSA_core_all":[],
                     "TFSA_income_all":[], "TFSA_swing_all":[], "breadth":None, "stats":{}}
 
+    # ── all_scores.json — full scored universe snapshot ─────────────────────
+    # Union of all ranked bucket lists before news/insider/regime filters.
+    # Deduplicated by ticker; highest score wins when a ticker appears in
+    # multiple buckets. Consumed by VETT for full-universe coverage.
+    try:
+        import json as _asj
+        _all_scored = {}
+        for _bkt in ["FHSA_all", "TFSA_core_all", "TFSA_income_all", "TFSA_swing_all"]:
+            for _p in screener.get(_bkt, []):
+                _t  = _p.get("ticker")
+                _sc = float(_p.get("score", 0) or 0)
+                _sec = (_p.get("sector") or
+                        (_p.get("data") or {}).get("sector", "") or "Unknown")
+                if _t and (_t not in _all_scored or _sc > _all_scored[_t]["score"]):
+                    if   _sc >= 90: _tier = "90-100"
+                    elif _sc >= 75: _tier = "75-89"
+                    elif _sc >= 60: _tier = "60-74"
+                    else:           _tier = "below-60"
+                    _all_scored[_t] = {"score": round(_sc, 1), "tier": _tier, "sector": _sec}
+        _as_out = {"generated_at": datetime.now().isoformat(),
+                   "universe_size": len(_all_scored)}
+        _as_out.update(_all_scored)
+        with open("all_scores.json", "w") as _asf:
+            _asj.dump(_as_out, _asf, indent=2)
+        print(f"  📋 all_scores.json: {len(_all_scored)} tickers saved")
+    except Exception as _ase:
+        print(f"  ⚠️  all_scores.json write failed: {_ase}")
+
     # ── 4. News Adjustment ───────────────────────────────────
     print(f"\n[4/10] 🔗 APPLYING NEWS TO SCORES")
     screener = apply_news_to_screener(screener, news)
