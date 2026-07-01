@@ -76,11 +76,11 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None):
     now      = run_time or datetime.now().isoformat()
     date_str = datetime.now().strftime("%Y-%m-%d")
 
-    # Don't double-log same picks on same date
-    # Note: unresolved picks have outcome=None, not resolved=False
-    # Using not o.get("outcome") catches both None and False correctly
+    # Don't double-log same (ticker, signal_date) — check all entries, not just unresolved.
+    # The old guard had `and not o.get("outcome")` which allowed re-logging a same-day
+    # pick that had already been resolved (e.g. on a second pipeline run).
     logged_today = {o["ticker"] for o in outcomes
-                    if o.get("signal_date") == date_str and not o.get("outcome")}
+                    if o.get("signal_date") == date_str}
 
     # Extract regime context once (same for all picks this run)
     regime_str   = "BULL"
