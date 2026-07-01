@@ -1,5 +1,5 @@
 {
-  "date": "June 30, 2026",
+  "date": "July 01, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,44 +9,44 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-06-30T22:17:24.975621",
+    "run_at": "2026-07-01T13:36:28.902025",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
+        "survived": 17,
+        "survival_pct": 94.4,
         "verdict": "\u2705 ROBUST",
-        "note": "3 picks unviable after doubling costs"
+        "note": "1 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
+        "survived": 17,
+        "survival_pct": 94.4,
         "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
-        "avg_score_change": 3.8,
+        "survived": 16,
+        "survival_pct": 88.9,
+        "avg_score_change": 3.9,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.8 pts with 10% noise"
+        "note": "Avg score change: \u00b13.9 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 68.3,
-        "stressed_avg": 61.6,
+        "normal_avg": 73.9,
+        "stressed_avg": 67.2,
         "score_drop": 6.7,
         "removed": [
-          "POW.TO",
-          "NVT",
+          "C",
+          "GE",
           "CAT",
-          "JPM",
-          "C"
+          "ETN",
+          "RY.TO"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
         "note": "Score drops 6.7 pts without top 5 \u2014 system depth check"
@@ -54,16 +54,16 @@
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
-        "avg_score_drop": 2.9,
+        "survived": 16,
+        "survival_pct": 88.9,
+        "avg_score_drop": 4.1,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.9 pts"
+        "note": "If momentum stops working: avg score drops 4.1 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 68.3,
+      "normal_avg_score": 73.9,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -72,7 +72,7 @@
     "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
-    "date": "June 30, 2026",
+    "date": "July 01, 2026",
     "robustness_score": 25,
     "rolling_sharpe": {
       "sharpe": -2.891,
@@ -83,22 +83,22 @@
       "note": "Sharpe from 300 resolved picks \u00b7 price-return \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": 0.36,
-      "ret_30d": 1.3,
-      "ret_90d": 8.54,
-      "ann_ret": 23.9,
+      "ret_7d": 1.2,
+      "ret_30d": 1.36,
+      "ret_90d": 9.01,
+      "ann_ret": 25.2,
       "ann_vol": 14.9,
-      "sharpe": 1.6,
+      "sharpe": 1.69,
       "symbol": "^GSPC"
     },
-    "alpha": -4.491,
-    "neg_alpha_days": 46,
+    "alpha": -4.581,
+    "neg_alpha_days": 47,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 83.3,
-      "momentum_picks": 18,
-      "note": "15/18 rising-score picks also rose in price"
+      "alignment_pct": 84.2,
+      "momentum_picks": 19,
+      "note": "16/19 rising-score picks also rose in price"
     },
     "alerts": [
       {
