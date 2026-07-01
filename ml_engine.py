@@ -1137,17 +1137,25 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
             passed.append(pick)
 
     if gated_out:
-        # Replace gated picks with next-best from screener reserve
+        # Replace gated picks with next-best from screener reserve.
+        # Filters: not already in basket, not cooldown, no negative news
+        # adjustment, not itself hitting the ML gate.
+        _cd_set, _ = get_cooldown_set(verbose=False)
         reserve = []
         for grp in ["TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3"]:
             for p in screener_picks.get(grp, []):
-                if p.get("ticker") not in basket_tickers:
-                    s  = p.get("score", 0) or 0
-                    mp = p.get("ml_prob", 0.5) or 0.5
-                    # Reserve pick must not itself hit the gate
-                    if not (s >= ML_GATE_SCORE_MIN and mp < ML_GATE_PROB_MIN):
-                        reserve.append(p)
-                        basket_tickers.add(p.get("ticker"))
+                _tkr = p.get("ticker")
+                if _tkr in basket_tickers:
+                    continue
+                if _tkr in _cd_set:                          # skip cooldown tickers
+                    continue
+                if (p.get("news_adjustment", 0) or 0) < 0:  # skip news-penalised tickers
+                    continue
+                s  = p.get("score", 0) or 0
+                mp = p.get("ml_prob", 0.5) or 0.5
+                if not (s >= ML_GATE_SCORE_MIN and mp < ML_GATE_PROB_MIN):
+                    reserve.append(p)
+                    basket_tickers.add(_tkr)
         reserve.sort(key=lambda x: x.get("score", 0), reverse=True)
         replacements = reserve[:len(gated_out)]
         tfsa_picks   = passed + replacements
