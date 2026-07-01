@@ -661,6 +661,10 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2):
     from collections import Counter
     sector_counts = Counter(_get_sector(p) for p in picks)
 
+    # Sort by score descending before splitting so the cap always keeps the
+    # highest-scoring tickers within each sector — deterministic across runs.
+    picks = sorted(picks, key=lambda x: x.get("score", 0), reverse=True)
+
     # Identify over-represented picks (keep first max_per_sector, flag rest)
     seen = Counter()
     kept   = []
