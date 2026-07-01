@@ -554,6 +554,10 @@ def apply_sector_cap(picks, max_per_sector=2, regime=None):
         "TSLA":"AUTO","RIVN":"AUTO","F":"AUTO","GM":"AUTO","MG.TO":"AUTO",
     }
 
+    # Sort by score before cap — ensures deterministic
+    # survivor selection across all cap rounds
+    picks = sorted(picks, key=lambda x: x.get("score", 0), reverse=True)
+
     sector_counts = {}
     filtered      = []
     removed       = []
