@@ -364,18 +364,8 @@ def fetch_ticker_full(ticker, retries=2):
             except Exception:
                 pass
 
-            # --- Earnings surprise (most recent reported quarter) ---
-            # earnings_dates rows are newest-first; "Surprise(%)" column is
-            # the % by which EPS beat/missed consensus. None if not reported yet.
+            # earnings_surprise_pct populated post-sort for top-50 only (see run_full_screen)
             earnings_surprise_pct = None
-            try:
-                _ed = t.earnings_dates
-                if _ed is not None and not _ed.empty and "Surprise(%)" in _ed.columns:
-                    _valid = _ed["Surprise(%)"].dropna()
-                    if not _valid.empty:
-                        earnings_surprise_pct = round(float(_valid.iloc[0]), 1)
-            except Exception:
-                pass
 
             # --- Fundamentals ---
             pe_ratio      = info.get("trailingPE") or info.get("forwardPE")
@@ -1071,6 +1061,70 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
     tfsa_core_cands.sort(  key=lambda x: x["score"], reverse=True)
     tfsa_swing_cands.sort( key=lambda x: x["score"], reverse=True)
     tfsa_income_cands.sort(key=lambda x: x["score"], reverse=True)
+
+    # ── Earnings surprise enrichment — top-50 unique tickers only ────────────
+    # Fetching earnings_dates on all 252 tickers adds ~95s to runtime.
+    # Collect the top-15 per bucket (at most 50 unique), fetch surprise pct
+    # for those only, patch data dicts, re-score, re-sort.
+    try:
+        import yfinance as _yfe
+        _earn_seen  = {}   # ticker → surprise_pct
+        _earn_picks = []   # list of pick dicts to enrich
+        for _cands in [fhsa_candidates, tfsa_core_cands,
+                        tfsa_income_cands, tfsa_swing_cands]:
+            for _ep in _cands[:15]:
+                if _ep["ticker"] not in _earn_seen:
+                    _earn_seen[_ep["ticker"]] = None
+                    _earn_picks.append(_ep)
+                if len(_earn_seen) >= 50:
+                    break
+            if len(_earn_seen) >= 50:
+                break
+
+        for _ep in _earn_picks:
+            try:
+                _yt   = _yfe.Ticker(_ep["ticker"])
+                _edf  = _yt.earnings_dates
+                if (_edf is not None and not _edf.empty
+                        and "Surprise(%)" in _edf.columns):
+                    _ev = _edf["Surprise(%)"].dropna()
+                    if not _ev.empty:
+                        _earn_seen[_ep["ticker"]] = round(float(_ev.iloc[0]), 1)
+            except Exception:
+                pass
+
+        # Patch data dicts and re-score only picks whose surprise was found
+        def _repatch(candidates, acct):
+            changed = False
+            for _p in candidates:
+                _surp = _earn_seen.get(_p["ticker"])
+                if _surp is None:
+                    continue
+                _p["data"]["earnings_surprise_pct"] = _surp
+                _ns, _npl, _nrs, _nfl = score_stock(
+                    _p["data"], acct, strategy_profile=strategy_profile)
+                _p["score"]   = _ns
+                _p["pillars"] = _npl
+                _p["reasons"] = _nrs
+                _p["flags"]   = _nfl
+                changed = True
+            return changed
+
+        if _repatch(fhsa_candidates,   "FHSA"):
+            fhsa_candidates.sort(  key=lambda x: x["score"], reverse=True)
+        if _repatch(tfsa_core_cands,   "TFSA_core"):
+            tfsa_core_cands.sort(  key=lambda x: x["score"], reverse=True)
+        if _repatch(tfsa_income_cands, "TFSA_core"):
+            tfsa_income_cands.sort(key=lambda x: x["score"], reverse=True)
+        if _repatch(tfsa_swing_cands,  "TFSA_core"):
+            tfsa_swing_cands.sort( key=lambda x: x["score"], reverse=True)
+
+        if verbose and any(v is not None for v in _earn_seen.values()):
+            _n_found = sum(1 for v in _earn_seen.values() if v is not None)
+            print(f"  📊 Earnings surprise: {_n_found}/{len(_earn_seen)} tickers enriched")
+    except Exception as _earn_err:
+        if verbose:
+            print(f"  ⚠️  Earnings enrichment skipped: {_earn_err}")
 
     # ── Earnings filter on swings ───────────────────────────
     # Rule: no new swing entry within 14 days of earnings
