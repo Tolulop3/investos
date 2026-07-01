@@ -6,9 +6,9 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-07-01
 
 ## Regime Drift
-- ✅ Regime stable — no drift signals
-- Breadth (200MA): 73.4%  (+0.81%/day)
-- Sharpe: -2.891  (+0.019/day)
+- ⚠️ Sharpe improving 0.072/day — guard disengagement approaching
+- Breadth (200MA): 75.0%  (+1.04%/day)
+- Sharpe: -2.522  (+0.072/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - No tickers with 3+ day streaks this week
@@ -29,8 +29,8 @@ tags: [investos, patterns, weekly]
 | SO | 🔴 AVOID | 0d | -16.5 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
-| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | BB.TO | 🔴 AVOID | 0d | -8.5 | — |
 | PLD | 🔴 AVOID | 0d | -8.4 | — |
