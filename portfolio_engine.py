@@ -499,7 +499,7 @@ def apply_sector_cap(picks, max_per_sector=2, regime=None):
         # Semiconductors
         "NVDA":"TECH_SEMIS","AMD":"TECH_SEMIS",
         # Software platforms
-        "MSFT":"TECH_SOFTWARE","AAPL":"TECH_SOFTWARE","VEEV":"TECH_SOFTWARE",
+        "MSFT":"TECH_SOFTWARE","AAPL":"TECH_SOFTWARE",
         # Internet/ad platforms
         "GOOGL":"TECH_INTERNET","META":"TECH_INTERNET","AMZN":"TECH_INTERNET",
         # Cybersecurity / cloud data
@@ -552,6 +552,55 @@ def apply_sector_cap(picks, max_per_sector=2, regime=None):
         "NTR.TO":"MATERIALS","AGI.TO":"MATERIALS","LUN.TO":"MATERIALS","FM.TO":"MATERIALS",
         # ── EV / Auto ──────────────────────────────────────────────────
         "TSLA":"AUTO","RIVN":"AUTO","F":"AUTO","GM":"AUTO","MG.TO":"AUTO",
+        # ── Defense / Aerospace ────────────────────────────────────────
+        "LMT":"DEFENSE","RTX":"DEFENSE","NOC":"DEFENSE","GD":"DEFENSE",
+        "BA":"DEFENSE","RKLB":"DEFENSE","CAE.TO":"DEFENSE",
+        # ── Industrials ────────────────────────────────────────────────
+        "GE":"INDUSTRIALS","CAT":"INDUSTRIALS","DE":"INDUSTRIALS","MMM":"INDUSTRIALS",
+        "ETN":"INDUSTRIALS","HWM":"INDUSTRIALS","GEV":"INDUSTRIALS","NVT":"INDUSTRIALS",
+        "XPO":"INDUSTRIALS","FLEX":"INDUSTRIALS","TIH.TO":"INDUSTRIALS",
+        "BYD.TO":"INDUSTRIALS","GFL.TO":"INDUSTRIALS",
+        # ── Infra additions ────────────────────────────────────────────
+        "STN.TO":"INFRA","UNP":"INFRA",
+        # ── Telecom additions ──────────────────────────────────────────
+        "QBR-B.TO":"TELECOM",
+        # ── Tech — semis additions (full family) ───────────────────────
+        "AVGO":"TECH_SEMIS","QCOM":"TECH_SEMIS","INTC":"TECH_SEMIS",
+        "AMAT":"TECH_SEMIS","LRCX":"TECH_SEMIS","KLAC":"TECH_SEMIS",
+        "TXN":"TECH_SEMIS","TSM":"TECH_SEMIS","MU":"TECH_SEMIS","MRVL":"TECH_SEMIS",
+        # ── Tech — IT / enterprise networking ─────────────────────────
+        "CSCO":"TECH_IT","FFIV":"TECH_IT","IBM":"TECH_IT",
+        # ── Tech — Internet additions ──────────────────────────────────
+        "GOOG":"TECH_INTERNET","UBER":"TECH_INTERNET",
+        # ── Tech — Cyber additions ─────────────────────────────────────
+        "FTNT":"TECH_CYBER",
+        # ── Tech — Canadian additions ──────────────────────────────────
+        "KXS.TO":"TECH_CA","CLS.TO":"TECH_CA","WELL.TO":"TECH_CA",
+        # ── Consumer additions ─────────────────────────────────────────
+        "PG":"CONSUMER","HD":"CONSUMER","LOW":"CONSUMER",
+        "MO":"CONSUMER","PM":"CONSUMER","CL":"CONSUMER","MAR":"CONSUMER",
+        # ── Healthcare additions ────────────────────────────────────────
+        "LLY":"HEALTHCARE","UNH":"HEALTHCARE","NBIX":"HEALTHCARE","ILMN":"HEALTHCARE",
+        "EXEL":"HEALTHCARE","BEAM":"HEALTHCARE","ARWR":"HEALTHCARE","CRSP":"HEALTHCARE",
+        # ── Banks additions ─────────────────────────────────────────────
+        "WAFD":"BANKS","EWBC":"BANKS","C":"BANKS",
+        # ── Financials additions ────────────────────────────────────────
+        "BNY":"FINANCIALS","NTRS":"FINANCIALS","VOYA":"FINANCIALS",
+        "APO":"FINANCIALS","BRK-B":"FINANCIALS","V":"FINANCIALS",
+        # ── Fintech additions ───────────────────────────────────────────
+        "UPST":"FINTECH","XYZ":"FINTECH",
+        # ── Materials additions ─────────────────────────────────────────
+        "CCO.TO":"MATERIALS",
+        # ── Energy additions ────────────────────────────────────────────
+        "TVE.TO":"ENERGY","BE":"ENERGY",
+        # ── ETF additions ───────────────────────────────────────────────
+        "ITOT":"ETF_US",
+        "XRE.TO":"ETF_CA","CDZ.TO":"ETF_CA","XDV.TO":"ETF_CA",
+        "XCNS.TO":"ETF_CA","ZLB.TO":"ETF_CA","XEF.TO":"ETF_CA",
+        "IEMG":"ETF_INTL",
+        "ITA":"ETF_SECTOR","SKYY":"ETF_SECTOR","CIBR":"ETF_SECTOR","SMH":"ETF_SECTOR",
+        # ── International exchange-listed stocks ───────────────────────
+        "6383.T":"INTL_JP","6861.T":"INTL_JP","6506.T":"INTL_JP","ABBN.SW":"INTL_EU",
     }
 
     # Sort by score before cap — ensures deterministic
@@ -563,8 +612,9 @@ def apply_sector_cap(picks, max_per_sector=2, regime=None):
     removed       = []
 
     for pick in picks:
-        ticker = pick["ticker"]
-        sector = SECTOR_MAP.get(ticker, "OTHER")
+        ticker  = pick["ticker"]
+        _yf_sec = (pick.get("data", {}).get("sector") or "").strip()
+        sector  = SECTOR_MAP.get(ticker) or _yf_sec or "OTHER"
         count  = sector_counts.get(sector, 0)
         if count < effective_max:
             sector_counts[sector] = count + 1

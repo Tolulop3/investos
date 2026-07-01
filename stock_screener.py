@@ -1156,7 +1156,9 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
     # ── Sector cap on all buckets ───────────────────────────
     try:
         from portfolio_engine import apply_sector_cap, CONFIG
-        regime_now  = CONFIG.get("current_regime", "NORMAL")
+        # Derive regime from breadth — more accurate than static CONFIG key
+        _pct200 = sum(1 for d in raw_data if d.get("above_ma200", False)) / max(len(raw_data), 1)
+        regime_now  = "BULL" if _pct200 >= 0.65 else ("BEAR" if _pct200 < 0.35 else "NORMAL")
         max_sect    = CONFIG.get("risk_rules", {}).get("max_picks_per_sector", 2)
         tfsa_core_cands,   _ = apply_sector_cap(tfsa_core_cands,   max_sect, regime=regime_now)
         tfsa_income_cands, _ = apply_sector_cap(tfsa_income_cands, max_sect, regime=regime_now)
