@@ -1105,6 +1105,12 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     tfsa_picks = (screener_picks.get("TFSA_growth_top5", []) +
                   screener_picks.get("TFSA_income_top5", []))
 
+    # Filter cooldown tickers from basket before sector cap and ML gate.
+    # calculate_position_sizes() also checks, but filtering here means the
+    # sector cap and ML gate substitution see a clean basket from the start.
+    _cd_basket, _ = get_cooldown_set(verbose=False)
+    tfsa_picks = [p for p in tfsa_picks if p.get("ticker", "") not in _cd_basket]
+
     # ── Sector diversity cap ──────────────────────────────────────────────
     # Max 2 picks per sector in the final basket.
     # Problem it solves: JPM + TD.TO + REI-UN.TO all land in financials

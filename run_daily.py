@@ -1348,6 +1348,11 @@ def run_daily(test_mode=False, dry_run=False):
             screener.get("TFSA_growth_top5", []) +
             screener.get("TFSA_swing_top3", [])
         )
+        # Strip cooldown tickers — they are filtered from position sizing and must
+        # not appear in the outcome log (would inflate logged-pick count and skew WR).
+        _log_cd = cooldown_set if isinstance(cooldown_set, set) else set()
+        all_picks_to_log = [p for p in all_picks_to_log
+                            if p.get("ticker") not in _log_cd]
         current_prices = {p["ticker"]: p.get("data",{}).get("price",0)
                          for p in all_picks_to_log if p.get("data",{}).get("price")}
         resolve_outcomes(current_prices)

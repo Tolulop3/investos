@@ -550,8 +550,20 @@ def compute_rolling_sharpe(score_history, days=90):
                 pass  # fall through to score-proxy
             else:
                 resolved_sorted = sorted(resolved, key=lambda x: x.get("resolved_date","") or x.get("signal_date",""))
-                recent = resolved_sorted[-300:]  # last 300 picks (~3-4 months)
+                # Use 90-day time window — more stable than a count-based window.
+                # At ~20 picks/day a count of 300 was only ~12 days; one bad batch
+                # could swing Sharpe by a full point. 90 days gives ~1600 picks,
+                # a proper sample, and a predictable roll-off date.
+                import datetime as _dt_sh
+                _cutoff_90 = (_dt_sh.datetime.now() - _dt_sh.timedelta(days=90)).strftime("%Y-%m-%d")
+                recent = [o for o in resolved_sorted
+                          if (o.get("resolved_date","") or o.get("signal_date","")) >= _cutoff_90]
+                # Fall back to last 300 if date fields are missing / insufficient
+                if len(recent) < 50:
+                    recent = resolved_sorted[-300:]
                 if len(recent) >= 50:
+                    date_from = (recent[0].get("resolved_date","") or recent[0].get("signal_date",""))[:10]
+                    date_to   = (recent[-1].get("resolved_date","") or recent[-1].get("signal_date",""))[:10]
                     returns = [o["actual_return"] / 100 for o in recent]
                     n = len(returns)
                     avg_r = sum(returns) / n
@@ -571,8 +583,10 @@ def compute_rolling_sharpe(score_history, days=90):
                             "avg_ret_pct":   round(avg_r * 100, 2),
                             "std_ret_pct":   round(std * 100, 2),
                             "picks_used":    n,
+                            "date_from":     date_from,
+                            "date_to":       date_to,
                             "source":        "resolved_returns",
-                            "note":          f"Sharpe from {n} resolved picks · price-return · weekly horizon · capped at 4.0",
+                            "note":          f"Sharpe from {n} resolved picks ({date_from} → {date_to}) · 90d window · weekly horizon · capped at 4.0",
                         }
     except Exception:
         pass
@@ -752,7 +766,9 @@ def run_decay_monitor(score_history=None, screener_results=None, verbose=True, w
         print(f"  STRATEGY HEALTH REPORT — {now.strftime('%B %d, %Y')}")
         print(f"  {'─'*45}")
         print(f"  Robustness Score:  {robustness}/100")
-        print(f"  Rolling Sharpe:    {our_sharpe if our_sharpe is not None else 'Building...'}")
+        _sh_note = rolling_sharpe.get("note", "")
+        _sh_range = f"  ({rolling_sharpe.get('date_from','')} → {rolling_sharpe.get('date_to','')})" if rolling_sharpe.get("date_from") else ""
+        print(f"  Rolling Sharpe:    {our_sharpe if our_sharpe is not None else 'Building...'}{_sh_range}")
         if benchmark:
             print(f"  S&P 500 Sharpe:   {benchmark['sharpe']}")
             print(f"  Alpha vs SPX:     {alpha:+.3f}" if alpha is not None else "  Alpha:            Building...")
