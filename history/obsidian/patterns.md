@@ -6,9 +6,9 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-07-02
 
 ## Regime Drift
-- ⚠️ Sharpe improving 0.079/day — guard disengagement approaching
-- Breadth (200MA): 75.0%  (+0.96%/day)
-- Sharpe: -2.505  (+0.079/day)
+- ✅ Regime stable — no drift signals
+- Breadth (200MA): 73.8%  (+0.79%/day)
+- Sharpe: -3.302  (-0.035/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - No tickers with 3+ day streaks this week
