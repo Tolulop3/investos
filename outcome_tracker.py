@@ -134,7 +134,9 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None, run_type=N
             "debt_equity":   d.get("debt_equity", 1) or 1,
 
             # ── ML features: relative strength ─────────────────────────────
-            "rs_rating":     pick.get("rs_rating", 50) or 50,
+            # Use None when unavailable — never default to 50 which masks missing data
+            # (ml_retrainer.py treats None as 0 sentinel, not inflated 50)
+            "rs_rating":     pick.get("rs_rating") if pick.get("rs_rating") not in (None, 0) else None,
 
             # ── ML features: news signal applied ───────────────────────────
             # news_adjustment = raw points added/removed (capped at ±8)
@@ -438,6 +440,9 @@ def compute_win_rate():
     avg_loss   = sum(o["actual_return"] for o in losses) / len(losses) if losses else 0.0
     loss_rate  = len(losses) / len(resolved)
     expectancy = round((win_rate/100 * avg_win) - (loss_rate * abs(avg_loss)), 3)
+    _win_sum  = sum(o["actual_return"] for o in wins)
+    _loss_sum = sum(abs(o["actual_return"]) for o in losses)
+    profit_factor = round(_win_sum / _loss_sum, 2) if _loss_sum else 0.0
 
     # Calibration curve
     calibration = {}
@@ -537,6 +542,7 @@ def compute_win_rate():
         "losses":         len(losses),
         "flats":          len(flats),
         "win_rate":       round(win_rate, 1),
+        "profit_factor":  profit_factor,
         "avg_return":     round(avg_return, 2),
         "avg_win":        round(avg_win, 2),
         "avg_loss":       round(avg_loss, 2),
@@ -568,8 +574,9 @@ def print_win_rate_report(wr):
     if wr.get("win_rate") is None:
         print(f"  {wr['message']}"); return
 
-    print(f"  Total resolved:  {wr['total_resolved']} picks")
-    print(f"  Win rate:        {wr['win_rate']}%  (flat average)")
+    print(f"  Total resolved:  {wr['total_resolved']} picks (ex-NGX, ex-dupes)")
+    print(f"  ✅ CORRECTED WR: {wr['win_rate']}%  | PF: {wr.get('profit_factor', 0):.2f}")
+    print(f"  NGX:             tracked separately — UNRESOLVED (paid API needed)")
     print(f"  Avg return/pick: {wr['avg_return']:+.2f}%")
     print(f"  Best:  {wr['best_return']:+.2f}%   Worst: {wr['worst_return']:+.2f}%")
 
