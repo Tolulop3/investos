@@ -816,6 +816,24 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception:
         pass
 
+    # ── Permanent chronic losers from permanent_exclusions.json ───────────
+    # Evidence-backed: these 10 tickers have PF ≤ 0.14 across 90-100 tier,
+    # most with 0% WR. Blocked until evidence reverses (edit the JSON file).
+    try:
+        import json as _jpe, os as _ose
+        if _ose.path.exists("permanent_exclusions.json"):
+            _pe_data = _jpe.load(open("permanent_exclusions.json"))
+            _perm_blocked = [t["ticker"] for t in _pe_data.get("tickers", [])]
+            _newly_added = [t for t in _perm_blocked if t not in cooldown_set]
+            for _ptk in _perm_blocked:
+                cooldown_set.add(_ptk)
+            if _newly_added:
+                print(f"  🚫 Permanent exclusions: {', '.join(_newly_added)}")
+    except Exception as _pe_e:
+        print(f"  ⚠️  permanent_exclusions.json error: {_pe_e}")
+
+    print(f"  📋 Consolidated exclusion set: {len(cooldown_set)} tickers total")
+
     score_history_for_decay = intel.get("history", {})
     all_picks_for_decay = (
         screener.get("FHSA_top5", []) + screener.get("TFSA_growth_top5", []) +

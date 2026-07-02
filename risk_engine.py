@@ -736,25 +736,25 @@ def run_decay_monitor(score_history=None, screener_results=None, verbose=True, w
     robustness = compute_robustness_score(rolling_sharpe, benchmark, momentum_health, neg_alpha_days)
 
     # ── 9. Build health entry ─────────────────────────────
+    _today_date_str = now.strftime("%Y-%m-%d")
     entry = {
-        "date":               now.strftime("%Y-%m-%d"),
-        "timestamp":          now.isoformat(),
-        "rolling_sharpe":     rolling_sharpe,
-        "benchmark_spx":      benchmark,
-        "benchmark_tsx":      tsx,
-        "alpha_vs_spx":       alpha,
-        "neg_alpha_days":     neg_alpha_days,
-        "momentum_health":    momentum_health,
-        "alerts":             alerts,
-        "robustness_score":   robustness,
+        "date":                        _today_date_str,
+        "timestamp":                   now.isoformat(),
+        "rolling_sharpe":              rolling_sharpe,
+        "benchmark_spx":               benchmark,
+        "benchmark_tsx":               tsx,
+        "alpha_vs_spx":                alpha,
+        "neg_alpha_days":              neg_alpha_days,
+        "last_streak_increment_date":  _today_date_str if (alpha is not None and alpha < 0) else None,
+        "momentum_health":             momentum_health,
+        "alerts":                      alerts,
+        "robustness_score":            robustness,
     }
 
     # Upsert by date — drop any existing entry for today before appending.
-    # Without this, two pipeline runs on the same calendar day write two entries
-    # both dated YYYY-MM-DD, causing count_consecutive_negative_alpha to count
-    # today twice and inflate the streak by 1 per extra run.
-    _today_str = now.strftime("%Y-%m-%d")
-    health["entries"] = [e for e in health["entries"] if e.get("date", "") != _today_str]
+    # count_consecutive_negative_alpha also de-dupes by date as a safety net,
+    # but the upsert here is the primary guard against multi-run inflation.
+    health["entries"] = [e for e in health["entries"] if e.get("date", "") != _today_date_str]
     health["entries"].append(entry)
     cutoff = (now - timedelta(days=365)).strftime("%Y-%m-%d")
     health["entries"] = [e for e in health["entries"] if e.get("date","") >= cutoff]
@@ -773,7 +773,7 @@ def run_decay_monitor(score_history=None, screener_results=None, verbose=True, w
             print(f"  S&P 500 Sharpe:   {benchmark['sharpe']}")
             print(f"  Alpha vs SPX:     {alpha:+.3f}" if alpha is not None else "  Alpha:            Building...")
         print(f"  Momentum Factor:  {momentum_health.get('verdict','N/A')}")
-        print(f"  Neg Alpha Streak: {neg_alpha_days} days")
+        print(f"  Neg Alpha Streak: {neg_alpha_days} calendar days (deduplicated)")
 
         if alerts:
             print(f"\n  {'─'*45}")
@@ -856,18 +856,24 @@ def check_momentum_factor_health(score_history, screener_results):
 
 
 def count_consecutive_negative_alpha(health_history, current_alpha):
-    """Count how many recent consecutive days alpha was negative"""
-    entries = sorted(health_history.get("entries", []), key=lambda x: x.get("date", ""), reverse=True)
-    count   = 0
+    """Count consecutive CALENDAR DAYS with negative alpha.
 
-    # Check current
-    if current_alpha is not None and current_alpha < 0:
-        count = 1
-    elif current_alpha is None:
+    De-duplicates by date before counting so multi-run days count as one.
+    Sorting + dict keying ensures the most recent entry per date wins.
+    """
+    if current_alpha is None or current_alpha >= 0:
         return 0
-    else:
-        return 0  # Current alpha positive — reset streak
 
+    # One entry per date — most-recent-run wins
+    by_date = {}
+    for e in health_history.get("entries", []):
+        d = e.get("date", "")
+        if d:
+            by_date[d] = e  # later entries overwrite earlier same-day entries
+
+    entries = sorted(by_date.values(), key=lambda x: x.get("date", ""), reverse=True)
+
+    count = 1  # current day is negative
     for entry in entries[:90]:
         a = entry.get("alpha_vs_spx")
         if a is not None and a < 0:
