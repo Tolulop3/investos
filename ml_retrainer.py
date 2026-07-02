@@ -83,6 +83,11 @@ FEATURES = [
     "market_regime",
     "spx_vs_ma200",
     "news_boost",
+    # NOTE: unified_regime_num and market_breadth are logged in outcomes_log.json
+    # but not yet added here. Adding them requires syncing ML_CONFIG["features"]
+    # in ml_engine.py and updating prepare_features() — do in a dedicated session.
+    # Also: joblib is not installed so ml_model_cache.pkl cannot be loaded by
+    # ml_engine.py — prediction always uses the heuristic formula in predict().
 ]
 
 XGB_PARAMS = {

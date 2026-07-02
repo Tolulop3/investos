@@ -871,10 +871,36 @@ def calculate_position_sizes(picks, portfolio_value, market_regime, current_draw
             return 75.0
         return base
 
-    kelly_wts = [score_to_kelly_wt(
-                     _trend_adjusted_score(p, _score_hist, _outcomes_lookup),
-                     win_rate_data)
-                 for p in picks[:n_picks]]
+    def _ml_edge_multiplier(ml_prob):
+        """Scale Kelly by ML calibration evidence.
+        Sweet spot (60-80%): 1.5× | Neutral (40-59%): 1.0×
+        Weak signal (20-39%): 0.6× | Overconfidence (>85%): 0.3×
+        Below 20%: blocked by gate — should not reach sizing.
+        Buckets with N<50 in calibration data use conservative defaults.
+        """
+        p = float(ml_prob or 0)
+        if p > 0.85:  return 0.30   # N=266: PF=0.46 — overconfidence collapse
+        if p >= 0.60: return 1.50   # N=307: PF=2.60/2.19 — verified sweet spot
+        if p >= 0.40: return 1.00   # N=118: PF=1.02 — neutral
+        if p >= 0.20: return 0.60   # N=66: PF=0.41 — weak signal (gate misses 20-39%)
+        return 0.30                 # <20%: gate should have blocked; penalise if not
+
+    raw_kelly_wts = [score_to_kelly_wt(
+                         _trend_adjusted_score(p, _score_hist, _outcomes_lookup),
+                         win_rate_data)
+                     for p in picks[:n_picks]]
+
+    # Apply ml_edge_multiplier to each pick's Kelly fraction before normalization
+    kelly_wts = [raw_kelly_wts[i] * _ml_edge_multiplier(picks[i].get("ml_prob", 0.5))
+                 for i in range(n_picks)]
+
+    if verbose:
+        for i, p in enumerate(picks[:n_picks]):
+            _mult = _ml_edge_multiplier(p.get("ml_prob", 0.5))
+            if abs(_mult - 1.0) > 0.05:
+                _tag = "✅" if _mult > 1.0 else "⚠️ "
+                print(f"   {p['ticker']:<10} ml_edge_mult={_mult:.2f}× {_tag}  (ml_prob={p.get('ml_prob',0):.2f})")
+
     total_kelly = sum(kelly_wts)
     n_positive_kelly = sum(1 for w in kelly_wts if w > 0)
 
