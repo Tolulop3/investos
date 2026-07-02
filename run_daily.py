@@ -1356,7 +1356,16 @@ def run_daily(test_mode=False, dry_run=False):
         current_prices = {p["ticker"]: p.get("data",{}).get("price",0)
                          for p in all_picks_to_log if p.get("data",{}).get("price")}
         resolve_outcomes(current_prices)
-        log_picks(all_picks_to_log, regime=regime, unified_regime=unified_regime)
+        import hashlib as _hl, subprocess as _sp, time as _t
+        _is_gh  = "--github" in sys.argv
+        _ts_b   = str(int(_t.time())).encode()
+        try:    _git_h = _sp.check_output(["git","rev-parse","--short","HEAD"],
+                                          stderr=_sp.DEVNULL).decode().strip().encode()
+        except: _git_h = b"unknown"
+        _run_id = _hl.sha256(_ts_b + _git_h).hexdigest()[:8]
+        log_picks(all_picks_to_log, regime=regime, unified_regime=unified_regime,
+                  run_type="scheduled" if _is_gh else "manual",
+                  run_id=_run_id)
 
         # ── SIGNAL LEDGER (tamper-evident audit trail) ────────────
         try:

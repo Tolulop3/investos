@@ -661,9 +661,9 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2):
     from collections import Counter
     sector_counts = Counter(_get_sector(p) for p in picks)
 
-    # Sort by score descending before splitting so the cap always keeps the
-    # highest-scoring tickers within each sector — deterministic across runs.
-    picks = sorted(picks, key=lambda x: x.get("score", 0), reverse=True)
+    # Sort by score desc, ticker asc as tiebreaker — fully deterministic even
+    # when two picks share the same composite score across all cap rounds.
+    picks = sorted(picks, key=lambda x: (-(x.get("score", 0) or 0), x.get("ticker", "") or ""))
 
     # Identify over-represented picks (keep first max_per_sector, flag rest)
     seen = Counter()
@@ -1105,11 +1105,15 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     tfsa_picks = (screener_picks.get("TFSA_growth_top5", []) +
                   screener_picks.get("TFSA_income_top5", []))
 
-    # Filter cooldown tickers from basket before sector cap and ML gate.
-    # calculate_position_sizes() also checks, but filtering here means the
-    # sector cap and ML gate substitution see a clean basket from the start.
+    # Consolidated exclusion — applied once here so sector cap and ML gate
+    # both see a fully filtered basket from the start.
+    # Covers: outcome-based cooldown tiers + loss-streak flags + news-penalised picks.
     _cd_basket, _ = get_cooldown_set(verbose=False)
-    tfsa_picks = [p for p in tfsa_picks if p.get("ticker", "") not in _cd_basket]
+    tfsa_picks = [
+        p for p in tfsa_picks
+        if p.get("ticker", "") not in _cd_basket          # cooldown / loss-streak
+        and (p.get("news_adjustment", 0) or 0) >= 0       # no negative news signal
+    ]
 
     # ── Sector diversity cap ──────────────────────────────────────────────
     # Max 2 picks per sector in the final basket.

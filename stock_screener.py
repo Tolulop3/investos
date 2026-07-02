@@ -193,6 +193,7 @@ SCORE_CAP_74 = {
     "AGI.TO",   # 33% WR, 18 picks, avg -8.77%, PF=0.10 — surfaced Jun 25
     "MDB",      #  0% WR,  7 picks, avg -7.89%, PF=0.00 — surfaced Jun 25
     "MSFT",     # 60% WR,  5 picks, avg -6.93%, PF=0.08 — asymmetric loss pattern
+    "HOOD",     #  0% WR,  3 picks, avg -6.22%, PF=0.00 — added Jul 2 counterfactual
 }
 
 # Tag each ticker with its venue type for pick routing

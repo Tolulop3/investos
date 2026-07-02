@@ -54,7 +54,7 @@ def save_outcomes(outcomes):
         json.dump(outcomes, f, indent=2, default=str)
 
 
-def log_picks(picks, run_time=None, regime=None, unified_regime=None):
+def log_picks(picks, run_time=None, regime=None, unified_regime=None, run_type=None, run_id=None):
     """
     Log today's picks with entry price and full ML feature snapshot.
 
@@ -150,7 +150,10 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None):
             "rsi":           d.get("rsi_approx", 50) or 50,
             "above_ma200":   bool(d.get("above_ma200", True)),
             "above_ma50":    bool(d.get("above_ma50", True)),
-            "sector":        (d.get("sector", "") or d.get("industry", "") or "").strip(),
+            # Prefer the curated SECTOR_MAP label (set by apply_sector_cap on the
+            # pick dict), then fall back to the raw yfinance sector string.
+            "sector":        (pick.get("sector") or
+                              d.get("sector", "") or d.get("industry", "") or "").strip(),
 
             # ── Factor attribution fields (for leaderboard analysis) ──────
             # These enable the hedge fund critique's factor isolation question:
@@ -160,6 +163,10 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None):
             "options_signal": pick.get("options_signal", ""), # HIGH_IV / BULLISH_PCR / etc
             "conviction":    pick.get("conviction", False),   # was this a 2+ signal pick
             "kelly_wt":      float(pick.get("kelly_wt", 0) or 0),  # kelly fraction at signal
+
+            # ── Run provenance ─────────────────────────────────────────────
+            "run_type":      run_type or "manual",   # "scheduled" | "manual"
+            "run_id":        run_id or "",
         }
         outcomes.append(entry)
         new_logged += 1

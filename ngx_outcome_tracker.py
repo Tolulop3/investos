@@ -178,16 +178,20 @@ def resolve_ngx_outcomes(ngx_result):
         score_exit    = current_scores.get(ticker)
         regime_exit   = current_regime
 
+        # score_exit is None → ticker dropped from the NGX scored universe.
+        # This means we have NO signal to evaluate (not the same as a LOSS).
+        # Mark resolved=False and skip — it will retry on the next run.
+        if score_exit is None:
+            o["outcome_reason"] = "Ticker no longer scoring — left as UNRESOLVED"
+            continue
+
         o["resolved"]          = True
         o["resolved_date"]     = today.isoformat()
         o["score_at_resolve"]  = score_exit
         o["regime_at_resolve"] = regime_exit
 
         # Determine outcome
-        if score_exit is None:
-            o["outcome"]        = "LOSS"
-            o["outcome_reason"] = "Ticker no longer scoring — macro shifted"
-        elif regime_exit == "RISK_OFF":
+        if regime_exit == "RISK_OFF":
             o["outcome"]        = "LOSS"
             o["outcome_reason"] = f"Macro flipped RISK_OFF (score now {score_exit})"
         elif score_exit >= 65:

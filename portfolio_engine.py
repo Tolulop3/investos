@@ -603,9 +603,9 @@ def apply_sector_cap(picks, max_per_sector=2, regime=None):
         "6383.T":"INTL_JP","6861.T":"INTL_JP","6506.T":"INTL_JP","ABBN.SW":"INTL_EU",
     }
 
-    # Sort by score before cap — ensures deterministic
-    # survivor selection across all cap rounds
-    picks = sorted(picks, key=lambda x: x.get("score", 0), reverse=True)
+    # Sort by score desc, then ticker asc as tiebreaker — fully deterministic
+    # across all cap rounds even when two picks share the same composite score.
+    picks = sorted(picks, key=lambda x: (-(x.get("score", 0) or 0), x.get("ticker", "") or ""))
 
     sector_counts = {}
     filtered      = []
