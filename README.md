@@ -30,44 +30,53 @@ Goal: open the dashboard, know what the market is doing, know what to do, trust 
 | Metric | Value | Status |
 |--------|-------|--------|
 | Sharpe (90d rolling) | -3.056 | 🔴 Guard engaged — recovering |
-| Expected recovery | June 28-30 | ⏳ March picks rolling off |
-| Win rate overall | 49.8% | ⚠️ Depressed — guard period |
-| Win rate last 30d | 46.8% | ⚠️ Watch |
-| Win rate last 90d | 54.6% | ✅ Holding |
-| Current streak | 3 WIN | ✅ |
-| Avg return/pick | +0.16% | ⚠️ Compressed |
-| Unified regime | DEFENSIVE (12%) | 🔴 Guard at 0.25× |
+| Win rate overall | **49.5%** (ex-NGX, ex-dupes, N=1967) | ⚠️ Depressed — guard period |
+| Win rate (ex-10 losers) | **51.5%** | ✅ Improving |
+| PF overall | **1.05** | ⚠️ Near break-even |
+| PF (ex-10 losers) | **1.37** | ✅ Edge confirmed |
+| Avg return/pick | +0.09% | ⚠️ Compressed |
+| Unified regime | DEFENSIVE | 🔴 Guard at 0.25× |
 | Macro regime | CAUTIOUS | ⚠️ War escalation signals |
 | Breadth (50MA) | 65.1% | ✅ MODERATE |
-| Breadth (200MA) | 68.3% | ✅ Holding |
 | Robustness | 25/100 | 🔴 Guard period |
 | Risk multiplier | 0.25× | 🔴 PCR conflict + convergence |
-| PCR | 1.253 | ⚠️ BEARISH — rising |
-| Neg alpha streak | 31 days | ⚠️ Clearing |
-| Universe | 189 tickers | ✅ Scout adding 14 dynamic |
-| OOS | Day 1 — v4.1 | ⏳ 0 resolved picks since Jun 26 |
-| NGX phase | RESTRICTED Day 48 | ⏳ Tier 1 ≥80 only |
-| NGX win rate | 0% (159 resolved) | ⚠️ Macro reversed — new signals |
+| Neg alpha streak | **9 days** (was inflated to 49 — fixed) | ⚠️ Clearing |
+| Universe | 252 tickers | ✅ |
+| OOS | Day 7 — v4.2 | ⏳ 153 pending picks (0 resolved yet) |
+| NGX phase | RESTRICTED Day 48 | ⏳ Tier 1 ≥80 only — tracked separately |
+| NGX win rate | tracked in ngx_outcomes.json (excl. from main metrics) | ⚠️ |
 | Runtime | ~65s | ✅ Fast |
-| Last commit | June 27 2026 | |
+| Last audit | July 2, 2026 | Phase 0–5 complete |
 
-**Score tier performance (1,850 resolved picks):**
+**Score tier performance (N=1,967 resolved picks, post-July 2 audit):**
 | Tier | n | WR | Avg Return | PF | Notes |
 |------|---|----|------------|-----|-------|
-| 90-100 | 902 | 46.7% | -0.20% | 0.90 🔴 | Loses money — curve fix + ML gate active |
-| 75-89 | 462 | 53.7% | +0.14% | 1.08 ⚠️ | Recovering |
-| 60-74 | 341 | 56.9% | +1.14% | 1.90 ✅ | Real edge — best tier |
-| below-60 | 145 | 40.7% | +0.11% | 1.05 ⚠️ | High PF but low WR |
+| 90-100 (all) | 919 | 46.2% | -0.22% | 0.89 🔴 | Chronic losers drag |
+| 90-100 (ex-10 losers) | 816 | 49.5% | +0.59% | 1.43 ✅ | Real edge after exclusion |
+| 65-74 | ~264 | 56.8% | — | 1.80 ✅ | Best sub-range |
+| 60-74 | 362 | 56.4% | — | 1.76 ✅ | Sweet spot tier |
+| 60-69 | 220 | 56.8% | +0.85% | 1.57 ✅ | Strong edge |
+| below-60 | 177 | 44.9% | — | 1.04 ⚠️ | Weak |
 
-**PF Baseline (locked June 25, 2026 — post-dedup + post-backlog):**
-| Tier | Baseline PF | Current | Status |
+**ML calibration (post-audit, by ml_prob bucket):**
+| ml_prob | N | WR | PF | Signal |
+|---------|---|----|----|--------|
+| 60-69% | 103 | 62.1% | 2.89 | ✅ Sweet spot |
+| 70-79% | 180 | 55.6% | 3.48 | ✅ Sweet spot |
+| 80-89% | 318 | 49.7% | 1.17 | ⚠️ Neutral |
+| 90-99% | 166 | 39.2% | 0.33 | 🔴 Overconfidence — Kelly penalised 0.30× |
+
+**PF Baseline (locked June 25, 2026 — re-anchored post-audit July 2, 2026):**
+| Tier | Pre-audit PF | Post-audit PF | Delta |
 |------|------------|---------|--------|
-| 90-100 | 0.91 | 0.90 | ✅ stable |
-| 75-89 | 1.07 | 1.08 | ✅ stable |
-| 60-74 | 1.92 | 1.90 | ✅ stable |
-| below-60 | 1.09 | 1.05 | ✅ stable |
+| 90-100 (all) | 0.90 | 0.89 | -0.01 |
+| 90-100 (ex-losers) | — | 1.43 | +0.54 new |
+| 60-74 | 1.90 | 1.76 | -0.14 |
+| Overall | 1.06 | 1.05 | -0.01 |
+| Overall (ex-losers) | — | 1.37 | new |
 
-> All PFs depressed due to Sharpe guard period. Compare to 90d baseline, not daily.
+> NGX excluded from all main metrics. Figures are ex-NGX, ex-dupes unless stated.
+> Chronic losers (10 tickers) now permanently excluded via permanent_exclusions.json.
 
 ---
 
