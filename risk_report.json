@@ -9,63 +9,62 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-02T22:10:45.572261",
+    "run_at": "2026-07-02T23:24:16.861304",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 18,
-        "survived": 14,
-        "survival_pct": 77.8,
+        "survived": 15,
+        "survival_pct": 83.3,
         "verdict": "\u2705 ROBUST",
-        "note": "4 picks unviable after doubling costs"
+        "note": "3 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 18,
-        "survived": 14,
-        "survival_pct": 77.8,
-        "verdict": "\u26a0\ufe0f FRAGILE",
+        "survived": 15,
+        "survival_pct": 83.3,
+        "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
-        "avg_score_change": 3.7,
+        "survived": 14,
+        "survival_pct": 77.8,
+        "avg_score_change": 3.8,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.7 pts with 10% noise"
+        "note": "Avg score change: \u00b13.8 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 67.7,
-        "stressed_avg": 59.0,
-        "score_drop": 8.7,
+        "normal_avg": 68.5,
+        "stressed_avg": 61.2,
+        "score_drop": 7.3,
         "removed": [
-          "C",
-          "LRCX",
+          "REI-UN.TO",
+          "CAT",
           "CSCO",
-          "BNS.TO",
-          "JPM"
+          "C"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 8.7 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 7.3 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
         "survived": 15,
         "survival_pct": 83.3,
-        "avg_score_drop": 2.8,
+        "avg_score_drop": 2.9,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.8 pts"
+        "note": "If momentum stops working: avg score drops 2.9 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 67.7,
-      "scenarios_robust": 3,
-      "scenarios_fragile": 2,
+      "normal_avg_score": 68.5,
+      "scenarios_robust": 4,
+      "scenarios_fragile": 1,
       "scenarios_broken": 0,
       "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
