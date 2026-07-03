@@ -716,7 +716,7 @@ def run_fx_engine(news_analysis=None, verbose=True):
     except Exception:
         pass
 
-    active_calls = [r for r in results.values() if r.get("direction") != "NEUTRAL" and r.get("conviction", 0) >= 40]
+    active_calls = [r for r in results.values() if r.get("direction") != "NEUTRAL" and r.get("conviction", 0) >= 50]
 
     if verbose:
         print(f"\n{'='*55}")

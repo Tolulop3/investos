@@ -536,6 +536,58 @@ def compute_win_rate():
             "total": len(resolved),
         }
 
+    # ── OOS performance block (signal_date >= OOS start) ────────────────
+    OOS_START = "2026-06-26"
+    oos_all      = [o for o in outcomes if (o.get("signal_date") or "") >= OOS_START]
+    oos_resolved = [o for o in oos_all if o.get("resolved") and o.get("outcome") in ("WIN","LOSS","FLAT")]
+    oos_wins     = [o for o in oos_resolved if o["outcome"] == "WIN"]
+    oos_losses   = [o for o in oos_resolved if o["outcome"] == "LOSS"]
+    oos_wr       = round(100 * len(oos_wins) / len(oos_resolved), 1) if oos_resolved else None
+    oos_avg_ret  = round(sum(o["actual_return"] for o in oos_resolved) / len(oos_resolved), 2) if oos_resolved else None
+
+    # SPY return over OOS period
+    oos_spx_return = None
+    try:
+        import urllib.request as _ur, json as _jspx
+        _spy_url = "https://query1.finance.yahoo.com/v8/finance/chart/SPY?interval=1d&range=30d"
+        _req = _ur.Request(_spy_url, headers={"User-Agent": "Mozilla/5.0"})
+        with _ur.urlopen(_req, timeout=8) as _r:
+            _d = _jspx.loads(_r.read().decode())
+        _ts   = _d["chart"]["result"][0]["timestamp"]
+        _cls  = _d["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+        _dates = [__import__("datetime").date.fromtimestamp(t).isoformat() for t in _ts]
+        # find closest close on or after OOS_START
+        _pairs = [(d, c) for d, c in zip(_dates, _cls) if d >= OOS_START and c]
+        if _pairs:
+            _start_px = _pairs[0][1]
+            _end_px   = next((c for d, c in reversed(_pairs) if c), _pairs[-1][1])
+            oos_spx_return = round((_end_px - _start_px) / _start_px * 100, 2)
+    except Exception:
+        pass
+
+    # OOS tier breakdown
+    oos_tiers = {}
+    for lo, hi in [(90, 100), (75, 89), (60, 74), (0, 59)]:
+        bucket = [o for o in oos_resolved if lo <= (o.get("score") or 0) <= hi]
+        label  = f"{lo}-{hi}"
+        oos_tiers[label] = {
+            "n":       len(bucket),
+            "wr":      round(100 * sum(1 for o in bucket if o["outcome"] == "WIN") / len(bucket), 1) if bucket else None,
+        }
+
+    oos_block = {
+        "start_date":   OOS_START,
+        "logged":       len(oos_all),
+        "resolved":     len(oos_resolved),
+        "wins":         len(oos_wins),
+        "losses":       len(oos_losses),
+        "win_rate":     oos_wr,
+        "avg_return":   oos_avg_ret,
+        "spx_return":   oos_spx_return,
+        "active_return": round(oos_avg_ret - oos_spx_return, 2) if (oos_avg_ret is not None and oos_spx_return is not None) else None,
+        "tiers":        oos_tiers,
+    }
+
     result = {
         "total_resolved": len(resolved),
         "wins":           len(wins),
@@ -558,6 +610,7 @@ def compute_win_rate():
         "calibration":    calibration,
         "windows":        windows,
         "feature_coverage": feature_coverage,
+        "oos":            oos_block,
         "message":        f"{win_rate:.0f}% win rate | Expectancy: {expectancy:+.3f}% per pick",
     }
 
@@ -579,6 +632,30 @@ def print_win_rate_report(wr):
     print(f"  NGX:             tracked separately — UNRESOLVED (paid API needed)")
     print(f"  Avg return/pick: {wr['avg_return']:+.2f}%")
     print(f"  Best:  {wr['best_return']:+.2f}%   Worst: {wr['worst_return']:+.2f}%")
+
+    oos = wr.get("oos")
+    if oos:
+        print(f"\n  OOS PERFORMANCE (since {oos['start_date']}):")
+        print(f"    Picks logged:    {oos['logged']}")
+        print(f"    Resolved:        {oos['resolved']}")
+        if oos["resolved"] > 0:
+            wr_str  = f"{oos['win_rate']}%" if oos["win_rate"] is not None else "—"
+            ret_str = f"{oos['avg_return']:+.2f}%" if oos["avg_return"] is not None else "—"
+            spx_str = f"{oos['spx_return']:+.2f}%" if oos["spx_return"] is not None else "—"
+            act_str = f"{oos['active_return']:+.2f}%" if oos.get("active_return") else "—"
+            print(f"    Win rate:        {wr_str}")
+            print(f"    Avg return:      {ret_str}")
+            print(f"    SPX return (same period): {spx_str}")
+            print(f"    Active return vs SPX:     {act_str}")
+            print(f"    Score tier breakdown:")
+            for tier_label in ["90-100", "75-89", "60-74", "0-59"]:
+                td = oos["tiers"].get(tier_label, {})
+                n  = td.get("n", 0)
+                if n > 0:
+                    wr_t = f"{td['wr']}%" if td["wr"] is not None else "—"
+                    print(f"      {tier_label}: {n} picks | WR {wr_t}")
+        else:
+            print(f"    No resolved OOS picks yet — check back in a few days")
 
     tw = wr.get("time_weighted")
     if tw and tw.get("tw_win_rate") is not None:

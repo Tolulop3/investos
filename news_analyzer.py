@@ -57,21 +57,21 @@ SIGNAL_MAP = {
         "keywords": ["tariff", "trade war", "import duty", "trade barrier", "protectionist",
                      "sanctions", "trade dispute", "tariff increase", "levy on"],
         "sectors_bullish":  [],
-        "sectors_bearish":  ["TSX_EXPORTERS", "CANADIAN_ENERGY", "CANADIAN_MATERIALS", "AUTOS"],
+        "sectors_bearish":  ["TSX_EXPORTERS", "TRADE_SENSITIVE_US", "CANADIAN_ENERGY", "CANADIAN_MATERIALS", "AUTOS"],
         "macro_effects":    {"CAD_USD": "negative", "TSX_BROAD": "negative"},
         "score_adjust":     {"safety_weight": +5, "momentum_weight": -3},
         "magnitude":        "HIGH",
-        "note":             "Tariffs hurt Canadian exporters — reduce TSX exposure"
+        "note":             "Tariffs hurt Canadian exporters and US cross-border freight carriers — reduce exposure"
     },
     "trump_tariff_canada_specific": {
         "keywords": ["canada tariff", "canadian goods", "usmca", "nafta", "25% tariff canada",
                      "steel tariff", "aluminum tariff", "lumber tariff"],
         "sectors_bullish":  ["US_DEFENSE", "US_DOMESTIC"],
-        "sectors_bearish":  ["TSX_EXPORTERS", "TSX_MATERIALS", "TSX_ENERGY", "TSX_AUTOS"],
+        "sectors_bearish":  ["TSX_EXPORTERS", "TRADE_SENSITIVE_US", "TSX_MATERIALS", "TSX_ENERGY", "TSX_AUTOS"],
         "macro_effects":    {"CAD_USD": "very_negative", "TSX_BROAD": "very_negative"},
         "score_adjust":     {"safety_weight": +8, "fhsa_conservative_boost": +5},
         "magnitude":        "CRITICAL",
-        "note":             "Direct Canada tariff — defensive FHSA positioning, reduce TSX exporters"
+        "note":             "Direct Canada tariff — defensive FHSA positioning, reduce TSX exporters and US cross-border freight"
     },
     "trump_deregulation_positive": {
         "keywords": ["deregulation", "cut regulations", "executive order business",
@@ -287,6 +287,7 @@ SECTOR_TICKERS = {
     "CANADIAN_UTILITIES": ["FTS.TO", "AQN.TO", "EMA.TO", "H.TO"],
     "CANADIAN_MATERIALS": ["ABX.TO", "WPM.TO", "AEM.TO", "K.TO", "NTR.TO"],
     "TSX_EXPORTERS":      ["CNR.TO", "CP.TO", "MG.TO", "ATD.TO"],
+    "TRADE_SENSITIVE_US": ["UNP", "CSX", "NSC", "FDX", "UPS"],
     "TSX_BROAD":          ["XGRO.TO", "XEQT.TO", "XIU.TO", "XIC.TO", "ZCN.TO"],
     "DEFENSE":            ["LMT", "RTX", "NOC", "GD", "CAE.TO"],
     "GOLD":               ["ABX.TO", "WPM.TO", "AEM.TO", "GLD"],
