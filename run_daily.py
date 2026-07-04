@@ -816,22 +816,25 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception:
         pass
 
-    # ── Permanent chronic losers from permanent_exclusions.json ───────────
-    # Evidence-backed: these 10 tickers have PF ≤ 0.14 across 90-100 tier,
-    # most with 0% WR. Blocked until evidence reverses (edit the JSON file).
+    # ── Long-cooldown tickers from long_cooldowns.json ───────────────────
+    # 90-day rolling block with auto-renew if rolling WR < 35% at expiry.
+    # Replaces permanent_exclusions.json — no more indefinite blocks.
+    # Auto-renew and write-back happen in get_cooldown_set() (ml_engine.py).
     try:
-        import json as _jpe, os as _ose
-        if _ose.path.exists("permanent_exclusions.json"):
-            _pe_data = _jpe.load(open("permanent_exclusions.json"))
-            _perm_blocked = [t["ticker"] for t in _pe_data.get("tickers", [])]
-            for _ptk in _perm_blocked:
-                cooldown_set.add(_ptk)
-            # Always print the full list — previously only showed tickers not already
-            # in cooldown_set, which silently dropped tickers with recent losses logged.
-            if _perm_blocked:
-                print(f"  🚫 Permanent exclusions ({len(_perm_blocked)}): {', '.join(_perm_blocked)}")
-    except Exception as _pe_e:
-        print(f"  ⚠️  permanent_exclusions.json error: {_pe_e}")
+        import json as _jlc2, os as _olc2, datetime as _dtlc2
+        if _olc2.path.exists("long_cooldowns.json"):
+            _lc2_data  = _jlc2.load(open("long_cooldowns.json"))
+            _today_lc2 = _dtlc2.date.today().isoformat()
+            _lc2_active = {t: v for t, v in _lc2_data.items()
+                           if _today_lc2 <= v.get("blocked_until", "")}
+            for _ltk in _lc2_active:
+                cooldown_set.add(_ltk)
+            if _lc2_active:
+                _lc2_parts = [f"{t} (until {v['blocked_until']})"
+                              for t, v in _lc2_active.items()]
+                print(f"  🔄 Long cooldowns ({len(_lc2_active)}): {', '.join(_lc2_parts)}")
+    except Exception as _lc2_e:
+        print(f"  ⚠️  long_cooldowns.json error: {_lc2_e}")
 
     print(f"  📋 Consolidated exclusion set: {len(cooldown_set)} tickers total")
 

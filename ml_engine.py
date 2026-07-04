@@ -590,10 +590,9 @@ def get_cooldown_set(verbose=False):
     except Exception:
         pass
 
-    # ── Also read cooldown_flags.json (permanent exclusions + loss-streak flags) ──
-    # Without this: permanent exclusions (F, DXCM etc.) bypass ML engine's
-    # cooldown check and reach position sizing. The flags file is only read
-    # in run_daily.py AFTER ml_engine runs — too late to block sizing.
+    # ── Read cooldown_flags.json (loss-streak flags) ──────────────────────
+    # Without this: loss-streak flags written by run_daily.py bypass ML
+    # engine's cooldown check and reach position sizing.
     try:
         import json as _jf2, datetime as _dttf2
         _today_str2 = _dttf2.date.today().isoformat()
@@ -601,7 +600,74 @@ def get_cooldown_set(verbose=False):
         for _ftk2, _fdata2 in _flags2.items():
             if _fdata2.get("expires", "") >= _today_str2:
                 blocked.add(_ftk2)
-                tiers[_ftk2] = "permanent" if _fdata2.get("permanent") else "flag"
+                tiers[_ftk2] = "flag"
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+
+    # ── Read long_cooldowns.json (90-day rolling cooldown with auto-renew) ─
+    # Replaces the old permanent_exclusions.json concept. Each ticker has a
+    # blocked_until date; on expiry, rolling WR from last 20 resolved picks
+    # determines renewal (WR < 35%) or clearance (WR >= 35%).
+    try:
+        import json as _jlc, datetime as _dtlc, os as _olc
+        if _olc.path.exists("long_cooldowns.json"):
+            _lc_data = _jlc.load(open("long_cooldowns.json"))
+            _today_lc     = _dtlc.date.today()
+            _today_str_lc = _today_lc.isoformat()
+            _lc_modified  = False
+            _lc_to_remove = []
+
+            # Load outcomes for rolling WR check on expired entries
+            _lc_outcomes = []
+            try:
+                _lc_outcomes = _jlc.load(open("outcomes_log.json"))
+            except Exception:
+                pass
+
+            for _tkr_lc, _entry_lc in list(_lc_data.items()):
+                _blocked_until_lc = _entry_lc.get("blocked_until", "")
+                if _today_str_lc <= _blocked_until_lc:
+                    # Still within the 90-day window — block unconditionally
+                    blocked.add(_tkr_lc)
+                    tiers[_tkr_lc] = "long_cd"
+                elif _entry_lc.get("auto_renew", False):
+                    # Block expired — check rolling WR from last 20 resolved picks
+                    _threshold_lc = _entry_lc.get("renew_threshold_WR", 0.35)
+                    _resolved_lc  = sorted(
+                        [o for o in _lc_outcomes
+                         if o.get("ticker") == _tkr_lc
+                         and o.get("resolved") is True
+                         and o.get("outcome") in ("WIN", "LOSS", "FLAT")],
+                        key=lambda x: x.get("resolved_date") or x.get("signal_date") or ""
+                    )[-20:]
+                    _rwr_lc = (
+                        sum(1 for o in _resolved_lc if o["outcome"] == "WIN") / len(_resolved_lc)
+                        if _resolved_lc else 0.0
+                    )
+                    if _rwr_lc < _threshold_lc:
+                        _new_until_lc = (_today_lc + _dtlc.timedelta(days=90)).isoformat()
+                        _lc_data[_tkr_lc]["blocked_until"] = _new_until_lc
+                        blocked.add(_tkr_lc)
+                        tiers[_tkr_lc] = "long_cd"
+                        _lc_modified = True
+                        print(f"  🔄 Long cooldown renewed: {_tkr_lc} "
+                              f"(rolling WR {_rwr_lc:.0%} < {_threshold_lc:.0%} threshold, "
+                              f"blocked until {_new_until_lc})")
+                    else:
+                        _lc_to_remove.append(_tkr_lc)
+                        print(f"  ✅ Long cooldown cleared: {_tkr_lc} "
+                              f"(rolling WR {_rwr_lc:.0%} >= {_threshold_lc:.0%} threshold, "
+                              f"returning to universe)")
+
+            for _tkr_rm in _lc_to_remove:
+                del _lc_data[_tkr_rm]
+                _lc_modified = True
+
+            if _lc_modified:
+                with open("long_cooldowns.json", "w") as _lc_f:
+                    _jlc.dump(_lc_data, _lc_f, indent=2)
     except FileNotFoundError:
         pass
     except Exception:
