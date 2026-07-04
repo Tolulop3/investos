@@ -1894,24 +1894,6 @@ if __name__ == "__main__":
         except: pass
 
 
-        # ── Round score_history.json floats before baking ───────────────
-        try:
-            import json as _cj
-            _sh = _cj.load(open("score_history.json"))
-            for _recs in _sh.values():
-                for _r in _recs:
-                    if "score" in _r:
-                        _r["score"] = round(float(_r["score"]), 1)
-            _cj.dump(_sh, open("score_history.json","w"), indent=2)
-        except Exception:
-            pass
-        bake_dashboard(brief, fx, cry)
-        try:
-            from signal_ledger import bake_audit_page
-            bake_audit_page()
-        except Exception as _sle2:
-            pass   # non-critical
-
         # ── NGX Engine ────────────────────────────────────────
         if HAS_NGX:
             try:
@@ -1932,24 +1914,29 @@ if __name__ == "__main__":
                     with open("latest_brief.json","w") as _f:
                         json.dump(brief, _f, indent=2, default=str)
                 except Exception: pass
-
-                # ── Round score_history.json floats before baking ───────
-                try:
-                    import json as _cj2
-                    _sh2 = _cj2.load(open("score_history.json"))
-                    for _recs2 in _sh2.values():
-                        for _r2 in _recs2:
-                            if "score" in _r2:
-                                _r2["score"] = round(float(_r2["score"]), 1)
-                    _cj2.dump(_sh2, open("score_history.json","w"), indent=2)
-                except Exception:
-                    pass
-                bake_dashboard(brief, fx, cry)
             except Exception as _ngx_e:
                 import traceback as _tb
                 print(f"  ⚠️  NGX engine error: {_ngx_e}")
                 _tb.print_exc()
                 brief["ngx"] = {"error": str(_ngx_e), "picks": []}
+
+        # ── Round score_history.json floats before baking ───────────────
+        try:
+            import json as _cj
+            _sh = _cj.load(open("score_history.json"))
+            for _recs in _sh.values():
+                for _r in _recs:
+                    if "score" in _r:
+                        _r["score"] = round(float(_r["score"]), 1)
+            _cj.dump(_sh, open("score_history.json","w"), indent=2)
+        except Exception:
+            pass
+        bake_dashboard(brief, fx, cry)
+        try:
+            from signal_ledger import bake_audit_page
+            bake_audit_page()
+        except Exception as _sle2:
+            pass   # non-critical
 
         if github_mode and not dry_run:
             print("  📧 Sending morning brief...")
