@@ -413,8 +413,75 @@ def write_watchlist(streaks, velocity, outcomes):
     return scored
 
 
+def check_alpha_half_life(verbose=True):
+    """
+    Monthly WR for 90-100 tier picks over the last 6 months.
+    Flags ALERT if 2 consecutive months fall below 45%.
+    """
+    try:
+        all_outcomes = json.loads(OUTCOMES_PATH.read_text())
+    except Exception:
+        return {"status": "error", "months": [], "flag": False}
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=200)).date().isoformat()
+    top_tier = [
+        o for o in all_outcomes
+        if o.get("resolved") is True
+        and o.get("outcome") in ("WIN", "LOSS", "FLAT")
+        and (o.get("score", 0) or 0) >= 90
+        and (o.get("signal_date") or o.get("date") or "") >= cutoff
+    ]
+
+    if not top_tier:
+        return {"status": "insufficient_data", "months": [], "flag": False}
+
+    by_month = defaultdict(list)
+    for o in top_tier:
+        sig_date = o.get("signal_date") or o.get("date") or ""
+        if sig_date:
+            by_month[sig_date[:7]].append(o)
+
+    today = datetime.now(timezone.utc).date()
+    months = []
+    for i in range(5, -1, -1):
+        m = today.month - i
+        y = today.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        key  = f"{y:04d}-{m:02d}"
+        picks = by_month.get(key, [])
+        wr = (sum(1 for p in picks if p["outcome"] == "WIN") / len(picks) * 100
+              if picks else None)
+        months.append({"month": key, "n": len(picks),
+                       "wr": round(wr, 1) if wr is not None else None})
+
+    THRESHOLD = 45.0
+    flag, consecutive = False, 0
+    for m in months:
+        if m["wr"] is not None and m["wr"] < THRESHOLD:
+            consecutive += 1
+            if consecutive >= 2:
+                flag = True
+                break
+        else:
+            consecutive = 0
+
+    status = "ALERT" if flag else "OK"
+    if verbose:
+        icon = "🚨" if flag else "✅"
+        print(f"  {icon} Alpha half-life ({status}): 90-100 tier monthly WR (last 6 months)")
+        for m in months:
+            wr_str = f"{m['wr']:.0f}%" if m["wr"] is not None else "—"
+            warn   = " ⚠️" if m["wr"] is not None and m["wr"] < THRESHOLD else ""
+            print(f"     {m['month']}: n={m['n']}  WR={wr_str}{warn}")
+
+    return {"status": status, "months": months, "threshold": THRESHOLD, "flag": flag}
+
+
 def write_patterns_summary(snaps, streaks, velocity,
-                           regime_drift, sector_conc, scored_watchlist):
+                           regime_drift, sector_conc, scored_watchlist,
+                           alpha_half_life=None):
     """Write weekly patterns summary note."""
     OBSIDIAN_DIR.mkdir(parents=True, exist_ok=True)
     today = datetime.now(timezone.utc).date().isoformat()
@@ -476,6 +543,16 @@ def write_patterns_summary(snaps, streaks, velocity,
         pf_str  = str(item["pf_30d"]) if item["pf_30d"] else "—"
         lines.append(f"| {item['ticker']} | {action_icon} {item['action']} | "
                      f"{item['streak_days']}d | {vel_str} | {pf_str} |")
+
+    if alpha_half_life and alpha_half_life.get("months"):
+        thr  = alpha_half_life.get("threshold", 45)
+        icon = "🚨 ALERT" if alpha_half_life.get("flag") else "✅ OK"
+        lines += ["", f"## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)"]
+        lines.append(f"- Status: **{icon}** (flag if 2 consecutive months < {thr}%)")
+        for m in alpha_half_life["months"]:
+            wr_str = f"{m['wr']:.0f}%" if m["wr"] is not None else "—"
+            warn   = " ⚠️" if m["wr"] is not None and m["wr"] < thr else ""
+            lines.append(f"- {m['month']}: n={m['n']}  WR={wr_str}{warn}")
 
     lines += [
         "", "---",
@@ -575,9 +652,14 @@ def run_pattern_agent(verbose=True):
         if avoid:
             print(f"  🔴 AVOID:    {[s['ticker'] for s in avoid[:5]]}")
 
+    # Alpha half-life monitor
+    alpha_hl = check_alpha_half_life(verbose=verbose)
+    if verbose and alpha_hl.get("flag"):
+        print(f"  🚨 ALPHA ALERT: 90-100 tier WR below 45% for 2+ consecutive months")
+
     # Write patterns summary
     write_patterns_summary(snaps, streaks, velocity,
-                           regime_drift, sector_conc, scored)
+                           regime_drift, sector_conc, scored, alpha_hl)
 
     # Write machine-readable signals for score_screener
     signals = write_pattern_signals(scored)

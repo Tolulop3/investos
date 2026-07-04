@@ -83,9 +83,10 @@ FEATURES = [
     "market_regime",
     "spx_vs_ma200",
     "news_boost",
-    # NOTE: unified_regime_num and market_breadth are logged in outcomes_log.json
-    # but not yet added here. Adding them requires syncing ML_CONFIG["features"]
-    # in ml_engine.py and updating prepare_features() — do in a dedicated session.
+    "close_to_ema20_ratio",  # overextension signal added 2026-07-04
+    # NOTE: unified_regime_num and market_breadth are at 0% coverage in
+    # outcomes_log.json — not added until logged. Sector (100% coverage) skipped
+    # because it requires one-hot encoding — add in a dedicated session.
     # Also: joblib is not installed so ml_model_cache.pkl cannot be loaded by
     # ml_engine.py — prediction always uses the heuristic formula in predict().
 ]
@@ -102,6 +103,15 @@ XGB_PARAMS = {
     "random_state":     42,
     "eval_metric":      "auc",
     "verbosity":        0,
+    # Monotonic constraints: +1=higher is better, -1=higher is worse
+    # Only applied to features with clear directional relationships to alpha
+    "monotone_constraints": {
+        "roe":                  1,   # higher ROE → better stock
+        "profit_margin":        1,   # higher margin → better stock
+        "earnings_yield":       1,   # higher E/P → cheaper → better
+        "volatility_90d":      -1,   # higher vol → worse risk-adj returns
+        "close_to_ema20_ratio": -1,  # more overbought → lower forward return
+    },
 }
 
 MIN_ROWS_TO_TRAIN  = 80
@@ -129,13 +139,13 @@ def load_resolved_outcomes():
 def build_feature_matrix(resolved):
     if not HAS_PANDAS:
         print("  ⚠️  pandas not available.")
-        return None, None, None
+        return None, None, None, None
 
     returns = [o.get("actual_return", 0) or 0 for o in resolved]
     median_return = float(np.median(returns))
     print(f"  📊 Label threshold: actual_return > {median_return:.2f}% (median)")
 
-    rows_X, rows_y, weights = [], [], []
+    rows_X, rows_y, weights, dates_list = [], [], [], []
     now_ts = datetime.now().timestamp()
 
     for o in sorted(resolved, key=lambda x: x.get("signal_date","2020-01-01")):
@@ -164,32 +174,39 @@ def build_feature_matrix(resolved):
         raw_boost    = o.get("news_boost", 0) or o.get("news_adjustment", 0) or 0
         news_boost   = float(np.clip(raw_boost / 20.0, -1.0, 1.0))
 
+        # close_to_ema20_ratio: logged for new picks; default 1.0 for legacy picks
+        close_to_ema20_ratio = float(np.clip(
+            o.get("close_to_ema20_ratio", 1.0) or 1.0, 0.5, 2.0
+        ))
+
         feat = {
-            "momentum_6m":      round(mom_6m, 4),
-            "momentum_12m":     round(mom_6m * 1.4, 4),
-            "vol_adj_momentum": round(vol_adj_mom, 4),
-            "roe":              round(roe, 4),
-            "profit_margin":    round(pm, 4),
-            "earnings_yield":   round(earnings_yield, 4),
-            "fcf_yield":        round(fcf_yield, 4),
-            "volatility_90d":   round(vol_raw, 4),
-            "beta":             round(beta, 4),
-            "rev_growth":       round(rev_growth, 4),
-            "earn_growth":      round(earn_growth, 4),
-            "div_yield":        round(div_yield, 4),
-            "debt_equity":      round(debt_equity, 4),
-            "rs_rating":        round(rs_rating, 4),
-            "sector_momentum":  0.0,
-            "market_regime":    market_regime,
-            "spx_vs_ma200":     round(spx_vs_ma200, 4),
-            "news_boost":       round(news_boost, 4),
+            "momentum_6m":          round(mom_6m, 4),
+            "momentum_12m":         round(mom_6m * 1.4, 4),
+            "vol_adj_momentum":     round(vol_adj_mom, 4),
+            "roe":                  round(roe, 4),
+            "profit_margin":        round(pm, 4),
+            "earnings_yield":       round(earnings_yield, 4),
+            "fcf_yield":            round(fcf_yield, 4),
+            "volatility_90d":       round(vol_raw, 4),
+            "beta":                 round(beta, 4),
+            "rev_growth":           round(rev_growth, 4),
+            "earn_growth":          round(earn_growth, 4),
+            "div_yield":            round(div_yield, 4),
+            "debt_equity":          round(debt_equity, 4),
+            "rs_rating":            round(rs_rating, 4),
+            "sector_momentum":      0.0,
+            "market_regime":        market_regime,
+            "spx_vs_ma200":         round(spx_vs_ma200, 4),
+            "news_boost":           round(news_boost, 4),
+            "close_to_ema20_ratio": round(close_to_ema20_ratio, 4),
         }
 
         actual_return = o.get("actual_return", 0) or 0
         label = 1 if actual_return > median_return else 0
+        sig_date = o.get("signal_date", "2020-01-01")
 
         try:
-            sig_ts   = datetime.strptime(o.get("signal_date","2020-01-01"),"%Y-%m-%d").timestamp()
+            sig_ts   = datetime.strptime(sig_date, "%Y-%m-%d").timestamp()
             days_old = max((now_ts - sig_ts) / 86400, 0)
             w        = float(np.exp(-math.log(2) / 90.0 * days_old))
         except Exception:
@@ -198,6 +215,7 @@ def build_feature_matrix(resolved):
         rows_X.append(feat)
         rows_y.append(label)
         weights.append(max(w, 0.05))
+        dates_list.append(sig_date)
 
     X = pd.DataFrame(rows_X)[FEATURES]
     y = pd.Series(rows_y, dtype=int)
@@ -229,14 +247,15 @@ def build_feature_matrix(resolved):
         print(f"  ⛔ Coverage {coverage_pct:.1f}% < {MIN_COVERAGE_PCT}% — preserving cached model.")
         print(f"     ~{max(0, int(MIN_COVERAGE_PCT/100 * len(y)) - real_rows)} more feature-complete picks needed.")
         print(f"     New picks capturing features daily. Auto-retrain fires when threshold crossed.")
-        return None, None, None   # signals train_and_save to abort
+        return None, None, None, None   # signals train_and_save to abort
     print(f"  ✅ Coverage {coverage_pct:.1f}% ≥ {MIN_COVERAGE_PCT}% — proceeding with retrain")
     # ──────────────────────────────────────────────────────────────────────
 
-    return X, y, w
+    dates_arr = np.array(dates_list)
+    return X, y, w, dates_arr
 
 
-def train_and_save(X, y, w):
+def train_and_save(X, y, w, dates=None):
     if not (HAS_XGB and HAS_SKLEARN and HAS_JOBLIB and HAS_PANDAS):
         print("  ⚠️  Missing libraries — cannot train.")
         return None
@@ -246,6 +265,29 @@ def train_and_save(X, y, w):
     X_train, X_val = X.iloc[:split], X.iloc[split:]
     y_train, y_val = y.iloc[:split], y.iloc[split:]
     w_train        = w[:split]
+
+    # ── 90-day purge buffer ───────────────────────────────────────────────
+    # Prevents training on data within 90 days of the validation start date.
+    # Guards against lookahead via long-lookback features (90d vol, 200d MA).
+    PURGE_DAYS = 90
+    if dates is not None and len(dates) >= split + 1:
+        try:
+            from datetime import datetime as _dtp, timedelta as _tdp
+            val_start_dt   = _dtp.strptime(dates[split], "%Y-%m-%d")
+            purge_cutoff   = (val_start_dt - _tdp(days=PURGE_DAYS)).strftime("%Y-%m-%d")
+            keep_mask      = np.array([d < purge_cutoff for d in dates[:split]])
+            n_purged       = int((~keep_mask).sum())
+            if n_purged > 0:
+                X_train = X_train.iloc[keep_mask]
+                y_train = y_train.iloc[keep_mask]
+                w_train = w_train[keep_mask]
+                print(f"  🧹 Purge buffer ({PURGE_DAYS}d): removed {n_purged} training rows "
+                      f"near val start {val_start_dt.date()} — {len(y_train)} remain")
+            else:
+                print(f"  🧹 Purge buffer ({PURGE_DAYS}d): no rows in contamination window")
+        except Exception as _pe:
+            print(f"  ⚠️  Purge buffer skipped ({_pe})")
+    # ──────────────────────────────────────────────────────────────────────
 
     scaler    = StandardScaler()
     X_train_s = scaler.fit_transform(X_train)
@@ -375,11 +417,11 @@ def retrain(verbose=True):
         print(f"  ⚠️  Only {len(resolved)} resolved picks (need {MIN_ROWS_TO_TRAIN}). Skipping.")
         return None
 
-    X, y, w = build_feature_matrix(resolved)
+    X, y, w, dates = build_feature_matrix(resolved)
     if X is None or len(y) < MIN_ROWS_TO_TRAIN:
         return None
 
-    report = train_and_save(X, y, w)
+    report = train_and_save(X, y, w, dates)
 
     with open(RETRAIN_LOCK, "w") as f:
         f.write(datetime.now().isoformat())

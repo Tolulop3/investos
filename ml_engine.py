@@ -71,6 +71,7 @@ ML_CONFIG = {
         "debt_equity",
         "rs_rating",
         "sector_momentum",
+        "close_to_ema20_ratio",
     ],
     "xgb_params": {
         "n_estimators":     100,
@@ -262,6 +263,25 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
             mom_12m = stock_data.get("perf_90d", 0) / 100 * 1.5
             vol_90d = stock_data.get("volatility", 2.0) / 100
 
+        # EMA20 ratio — overextension signal: >1.05 = overbought, <0.95 = oversold
+        try:
+            ema_url = (f"https://query1.finance.yahoo.com/v8/finance/chart/"
+                       f"{urllib.parse.quote(ticker)}?interval=1d&range=3mo")
+            ema_req = urllib.request.Request(ema_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(ema_req, timeout=6) as er:
+                ema_d = json.loads(er.read().decode())
+            d_cls = [c for c in ema_d['chart']['result'][0]['indicators']['quote'][0]['close'] if c]
+            if len(d_cls) >= 20:
+                alpha_e = 2.0 / 21.0
+                ema_20d = d_cls[0]
+                for c in d_cls[1:]:
+                    ema_20d = alpha_e * c + (1.0 - alpha_e) * ema_20d
+                close_to_ema20_ratio = round(d_cls[-1] / ema_20d if ema_20d > 0 else 1.0, 4)
+            else:
+                close_to_ema20_ratio = 1.0
+        except Exception:
+            close_to_ema20_ratio = 1.0
+
         roe           = stock_data.get("roe", 0) / 100
         profit_margin = stock_data.get("profit_margin", 0) / 100
         pe            = stock_data.get("pe_ratio", 20) or 20
@@ -288,9 +308,10 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
             "earn_growth":    round(earn_growth, 4),
             "div_yield":      round(div_yield, 4),
             "debt_equity":    round(debt_equity, 4),
-            "rs_rating":      round(rs_norm, 4),
-            "market_regime":  0,
-            "sector_momentum": 0,
+            "rs_rating":           round(rs_norm, 4),
+            "market_regime":       0,
+            "sector_momentum":     0,
+            "close_to_ema20_ratio": close_to_ema20_ratio,
         }
     except Exception:
         return None
