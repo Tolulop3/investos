@@ -1,5 +1,5 @@
 {
-  "date": "July 03, 2026",
+  "date": "July 04, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,60 +9,60 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-03T22:07:55.896052",
+    "run_at": "2026-07-04T04:24:51.028026",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
+        "survived": 15,
+        "survival_pct": 83.3,
         "verdict": "\u2705 ROBUST",
-        "note": "1 picks unviable after doubling costs"
+        "note": "3 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
+        "survived": 15,
+        "survival_pct": 83.3,
         "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
-        "avg_score_change": 3.9,
+        "survived": 16,
+        "survival_pct": 88.9,
+        "avg_score_change": 4.0,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.9 pts with 10% noise"
+        "note": "Avg score change: \u00b14.0 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 73.6,
-        "stressed_avg": 64.4,
-        "score_drop": 9.2,
+        "normal_avg": 73.9,
+        "stressed_avg": 65.6,
+        "score_drop": 8.3,
         "removed": [
-          "GE",
-          "CAT",
           "GEV",
-          "C"
+          "CAT",
+          "CSCO",
+          "HWM"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 9.2 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 8.3 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
-        "survived": 15,
-        "survival_pct": 83.3,
-        "avg_score_drop": 3.8,
+        "survived": 16,
+        "survival_pct": 88.9,
+        "avg_score_drop": 3.3,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.8 pts"
+        "note": "If momentum stops working: avg score drops 3.3 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 73.6,
+      "normal_avg_score": 73.9,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -71,7 +71,7 @@
     "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
-    "date": "July 03, 2026",
+    "date": "July 04, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
       "sharpe": 0.421,
