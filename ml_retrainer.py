@@ -84,9 +84,17 @@ FEATURES = [
     "spx_vs_ma200",
     "news_boost",
     "close_to_ema20_ratio",  # overextension signal added 2026-07-04
-    # NOTE: unified_regime_num and market_breadth are at 0% coverage in
-    # outcomes_log.json — not added until logged. Sector (100% coverage) skipped
-    # because it requires one-hot encoding — add in a dedicated session.
+    # Regime context features — wired into log_picks() 2026-07-04
+    # unified_regime/macro_regime: ordinal-encoded (0=worst, 3=best)
+    # market_breadth_50ma: normalized [0,1]. Coverage grows as new picks resolve.
+    # July 6 retrain: market_breadth_50ma=12% usable; others default (constant) → OK.
+    # August retrain: all three will have real variance as fresh picks resolve.
+    "unified_regime_enc",    # CAPITAL_PRESERVATION=0, DEFENSIVE=1, NEUTRAL=2, RISK_ON=3
+    "macro_regime_enc",      # RISK_OFF/BEAR=0, CAUTIOUS=1, NORMAL=2, RISK_ON/BULL=3
+    "market_breadth_50ma",   # pct of universe above 50MA, normalized to [0,1]
+    # NOTE: These are training-only features for now. Prediction path (ML_CONFIG in
+    # ml_engine.py) to be updated in a dedicated session when prediction values are
+    # plumbed through to build_features_for_stock().
     # Also: joblib is not installed so ml_model_cache.pkl cannot be loaded by
     # ml_engine.py — prediction always uses the heuristic formula in predict().
 ]
@@ -174,6 +182,19 @@ def build_feature_matrix(resolved):
         raw_boost    = o.get("news_boost", 0) or o.get("news_adjustment", 0) or 0
         news_boost   = float(np.clip(raw_boost / 20.0, -1.0, 1.0))
 
+        # Unified + macro regime: ordinal-encoded (higher = more bullish)
+        _ur_map = {"CAPITAL_PRESERVATION": 0, "DEFENSIVE": 1, "NEUTRAL": 2, "RISK_ON": 3}
+        _mr_map = {"RISK_OFF": 0, "BEAR": 0, "CAUTIOUS": 1, "NORMAL": 2,
+                   "RISK_ON": 3, "BULL": 3}
+        ur_raw           = (o.get("unified_regime") or "NEUTRAL").upper()
+        mr_raw           = (o.get("macro_regime") or "NORMAL").upper()
+        unified_regime_enc = float(_ur_map.get(ur_raw, 2))   # default NEUTRAL=2
+        macro_regime_enc   = float(_mr_map.get(mr_raw, 2))   # default NORMAL=2
+
+        # Market breadth above 50MA — normalized [0,1]; default 0.5 (unknown)
+        _b50 = o.get("market_breadth_50ma")
+        market_breadth_50ma = float(_b50) / 100.0 if _b50 is not None else 0.5
+
         # close_to_ema20_ratio: logged for new picks; default 1.0 for legacy picks
         close_to_ema20_ratio = float(np.clip(
             o.get("close_to_ema20_ratio", 1.0) or 1.0, 0.5, 2.0
@@ -199,6 +220,9 @@ def build_feature_matrix(resolved):
             "spx_vs_ma200":         round(spx_vs_ma200, 4),
             "news_boost":           round(news_boost, 4),
             "close_to_ema20_ratio": round(close_to_ema20_ratio, 4),
+            "unified_regime_enc":   round(unified_regime_enc, 4),
+            "macro_regime_enc":     round(macro_regime_enc, 4),
+            "market_breadth_50ma":  round(market_breadth_50ma, 4),
         }
 
         actual_return = o.get("actual_return", 0) or 0

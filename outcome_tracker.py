@@ -54,7 +54,9 @@ def save_outcomes(outcomes):
         json.dump(outcomes, f, indent=2, default=str)
 
 
-def log_picks(picks, run_time=None, regime=None, unified_regime=None, run_type=None, run_id=None):
+def log_picks(picks, run_time=None, regime=None, unified_regime=None,
+              macro_regime=None, market_breadth_50ma=None,
+              run_type=None, run_id=None):
     """
     Log today's picks with entry price and full ML feature snapshot.
 
@@ -66,6 +68,7 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None, run_type=N
       - rs_rating from intelligence_layers
       - news_adjustment from news_analyzer
       - regime, spx_vs_ma200 from market regime at signal time
+      - unified_regime, macro_regime, market_breadth_50ma (added 2026-07-04)
 
     These unlock ML training on real data instead of zeros.
     """
@@ -144,9 +147,11 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None, run_type=N
                                    pick.get("news_original", 0) or 0),
 
             # ── ML features: market context at signal time ─────────────────
-            "regime":         regime_str,
-            "unified_regime": unified_regime or "UNKNOWN",
-            "spx_vs_ma200":   spx_vs_ma200,
+            "regime":              regime_str,
+            "unified_regime":      unified_regime or "UNKNOWN",
+            "macro_regime":        macro_regime,          # RISK_OFF/CAUTIOUS/NORMAL/RISK_ON
+            "market_breadth_50ma": market_breadth_50ma,  # % of universe above 50MA
+            "spx_vs_ma200":        spx_vs_ma200,
 
             # ── Extra context (not ML features but useful for analysis) ─────
             "rsi":           d.get("rsi_approx", 50) or 50,

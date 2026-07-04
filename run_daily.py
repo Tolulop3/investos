@@ -1408,6 +1408,8 @@ def run_daily(test_mode=False, dry_run=False):
         except: _git_h = b"unknown"
         _run_id = _hl.sha256(_ts_b + _git_h).hexdigest()[:8]
         log_picks(all_picks_to_log, regime=regime, unified_regime=unified_regime,
+                  macro_regime=macro_reg,
+                  market_breadth_50ma=screener.get("breadth", {}).get("pct_above_50"),
                   run_type="scheduled" if _is_gh else "manual",
                   run_id=_run_id)
 
