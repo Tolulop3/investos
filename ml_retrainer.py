@@ -119,6 +119,7 @@ XGB_PARAMS = {
         "earnings_yield":       1,   # higher E/P → cheaper → better
         "volatility_90d":      -1,   # higher vol → worse risk-adj returns
         "close_to_ema20_ratio": -1,  # more overbought → lower forward return
+        "rs_rating":            0,   # no directional constraint — momentum can mean revert
     },
 }
 
