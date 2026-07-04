@@ -824,11 +824,12 @@ def run_daily(test_mode=False, dry_run=False):
         if _ose.path.exists("permanent_exclusions.json"):
             _pe_data = _jpe.load(open("permanent_exclusions.json"))
             _perm_blocked = [t["ticker"] for t in _pe_data.get("tickers", [])]
-            _newly_added = [t for t in _perm_blocked if t not in cooldown_set]
             for _ptk in _perm_blocked:
                 cooldown_set.add(_ptk)
-            if _newly_added:
-                print(f"  🚫 Permanent exclusions: {', '.join(_newly_added)}")
+            # Always print the full list — previously only showed tickers not already
+            # in cooldown_set, which silently dropped tickers with recent losses logged.
+            if _perm_blocked:
+                print(f"  🚫 Permanent exclusions ({len(_perm_blocked)}): {', '.join(_perm_blocked)}")
     except Exception as _pe_e:
         print(f"  ⚠️  permanent_exclusions.json error: {_pe_e}")
 

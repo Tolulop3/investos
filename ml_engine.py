@@ -1141,6 +1141,21 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         and (p.get("news_adjustment", 0) or 0) >= 0       # no negative news signal
     ]
 
+    # ── Materials sector block at score ≥ 75 ────────────────────────────
+    # Evidence (2,019 picks): MATERIALS at score≥90 → N=114, WR=28.9%, PF=0.17
+    # Extends the exclusion down to score≥75 to catch WPM.TO/AGI.TO/AEM.TO/ABX.TO
+    # before they accumulate loss history at that tier.
+    _mats_filtered = []
+    for _p in tfsa_picks:
+        _sec   = (_p.get("sector") or "").strip().upper()
+        _score = _p.get("score", 0) or 0
+        if _sec == "MATERIALS" and _score >= 75:
+            if verbose:
+                print(f"  🚫 Materials≥75 block: {_p.get('ticker')} (score {_score:.0f})")
+        else:
+            _mats_filtered.append(_p)
+    tfsa_picks = _mats_filtered
+
     # ── Sector diversity cap ──────────────────────────────────────────────
     # Max 2 picks per sector in the final basket.
     # Problem it solves: JPM + TD.TO + REI-UN.TO all land in financials
@@ -1149,33 +1164,54 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     # next-best scoring pick from a different sector.
     tfsa_picks = _apply_sector_cap(tfsa_picks, screener_picks, max_per_sector=2)
 
-    # ── ML Confidence Gate on 90-100 tier ────────────────────────────────
-    # Evidence from factor_investigation.py (875 picks, June 21 2026):
-    #   90-100 + ML≥20%: 754 picks, WR=50.4%, PF=1.65 ✅ (profitable)
-    #   90-100 + ML<20%: 121 picks, WR=47.1%, PF=0.96 🔴 (losing money)
-    #
-    # High composite score + low ML confidence = the fault line.
-    # Removing picks where score≥90 but ml_prob<0.20 eliminates the
-    # unprofitable subset without touching the 754-pick profitable subset.
-    # Replacement: next-best pick from screener that doesn't hit the gate.
-    ML_GATE_SCORE_MIN  = 90
-    ML_GATE_PROB_MIN   = 0.20
-    basket_tickers     = {p.get("ticker") for p in tfsa_picks}
-    gated_out          = []
-    passed             = []
+    # ── Sector-first gate on 90-100 tier ─────────────────────────────────
+    # Sector performance at score≥90 (2,019 picks, July 2026):
+    #   ALLOW:  ENERGY N=157 PF=2.30 | BANKS N=129 PF=2.89 | FINANCIALS N=69 PF=6.31
+    #   BLOCK:  MATERIALS N=114 PF=0.17 | TELECOM N=65 PF=0.20 | HEALTHCARE N=48 PF=0.39
+    #           REIT N=57 PF=0.46 | CONSUMER N=65 PF=0.89
+    #   OTHER:  Fall through to ML confidence gate (ml_prob ≥ 20% required)
+    SECTOR_ALLOW = {'ENERGY', 'BANKS', 'FINANCIALS'}
+    SECTOR_BLOCK = {'MATERIALS', 'TELECOM', 'HEALTHCARE', 'REIT', 'CONSUMER'}
+    ML_GATE_SCORE_MIN = 90
+    ML_GATE_PROB_MIN  = 0.20
+    basket_tickers    = {p.get("ticker") for p in tfsa_picks}
+    gated_out         = []
+    passed            = []
 
     for pick in tfsa_picks:
-        score    = pick.get("score", 0) or 0
-        ml_prob  = pick.get("ml_prob", 0.5) or 0.5
-        if score >= ML_GATE_SCORE_MIN and ml_prob < ML_GATE_PROB_MIN:
-            gated_out.append(pick)
-        else:
+        score   = pick.get("score", 0) or 0
+        ml_prob = pick.get("ml_prob", 0.5) or 0.5
+        sector  = (pick.get("sector") or "").strip().upper()
+
+        if score < ML_GATE_SCORE_MIN:
             passed.append(pick)
+            continue
+
+        if sector in SECTOR_ALLOW:
+            passed.append(pick)
+            if verbose:
+                print(f"  ✅ sector allow: {pick.get('ticker')} ({sector}, score {score:.0f})")
+        elif sector in SECTOR_BLOCK:
+            gated_out.append(pick)
+            if verbose:
+                print(f"  🚫 sector block: {pick.get('ticker')} ({sector}, score {score:.0f})")
+        else:
+            # Unknown or neutral sector — fall through to ML confidence gate
+            if ml_prob < ML_GATE_PROB_MIN:
+                gated_out.append(pick)
+                if verbose:
+                    print(f"  🚦 ML gate: {pick.get('ticker')} ({sector or 'UNKNOWN'}, "
+                          f"score {score:.0f}, ML {ml_prob:.0%}) → blocked")
+            else:
+                passed.append(pick)
+                if verbose:
+                    print(f"  🚦 ML gate: {pick.get('ticker')} ({sector or 'UNKNOWN'}, "
+                          f"score {score:.0f}, ML {ml_prob:.0%}) → pass")
 
     if gated_out:
         # Replace gated picks with next-best from screener reserve.
-        # Filters: not already in basket, not cooldown, no negative news
-        # adjustment, not itself hitting the ML gate.
+        # Reserve candidates must: not be in basket, not be on cooldown,
+        # have no negative news adjustment, and pass the sector-first gate.
         _cd_set, _ = get_cooldown_set(verbose=False)
         reserve = []
         for grp in ["TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3"]:
@@ -1183,22 +1219,29 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
                 _tkr = p.get("ticker")
                 if _tkr in basket_tickers:
                     continue
-                if _tkr in _cd_set:                          # skip cooldown tickers
+                if _tkr in _cd_set:
                     continue
-                if (p.get("news_adjustment", 0) or 0) < 0:  # skip news-penalised tickers
+                if (p.get("news_adjustment", 0) or 0) < 0:
                     continue
-                s  = p.get("score", 0) or 0
-                mp = p.get("ml_prob", 0.5) or 0.5
-                if not (s >= ML_GATE_SCORE_MIN and mp < ML_GATE_PROB_MIN):
-                    reserve.append(p)
-                    basket_tickers.add(_tkr)
+                _sec_r = (p.get("sector") or "").strip().upper()
+                _scr   = p.get("score", 0) or 0
+                _mp_r  = p.get("ml_prob", 0.5) or 0.5
+                if _sec_r == "MATERIALS" and _scr >= 75:
+                    continue                                  # materials≥75 blocked in reserve too
+                if _scr >= ML_GATE_SCORE_MIN:
+                    if _sec_r in SECTOR_BLOCK:
+                        continue                              # sector-blocked in reserve too
+                    if _sec_r not in SECTOR_ALLOW and _mp_r < ML_GATE_PROB_MIN:
+                        continue                              # ML-gated in reserve too
+                reserve.append(p)
+                basket_tickers.add(_tkr)
         reserve.sort(key=lambda x: x.get("score", 0), reverse=True)
         replacements = reserve[:len(gated_out)]
         tfsa_picks   = passed + replacements
 
         gated_tickers = [p.get("ticker") for p in gated_out]
         repl_tickers  = [p.get("ticker") for p in replacements]
-        print(f"  🚦 ML gate (score≥90, ML<20%): removed {gated_tickers}"
+        print(f"  🔄 Gate removed {gated_tickers}"
               + (f", added {repl_tickers}" if repl_tickers else " (no replacements)"))
 
     sized = calculate_position_sizes(
