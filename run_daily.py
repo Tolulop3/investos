@@ -1407,6 +1407,9 @@ def run_daily(test_mode=False, dry_run=False):
                                           stderr=_sp.DEVNULL).decode().strip().encode()
         except: _git_h = b"unknown"
         _run_id = _hl.sha256(_ts_b + _git_h).hexdigest()[:8]
+        # unified_regime:      set at lines 1017-1035 (3-layer regime engine output)
+        # macro_regime:        news.get("macro_regime") — RISK_OFF/CAUTIOUS/NORMAL/RISK_ON
+        # market_breadth_50ma: screener breadth dict, pct of universe above 50MA
         log_picks(all_picks_to_log, regime=regime, unified_regime=unified_regime,
                   macro_regime=macro_reg,
                   market_breadth_50ma=screener.get("breadth", {}).get("pct_above_50"),
