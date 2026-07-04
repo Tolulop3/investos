@@ -1362,6 +1362,28 @@ def run_daily(test_mode=False, dry_run=False):
         ],
     }
 
+    # ── GATE STATUS (baked so dashboard can display active filters) ──────
+    try:
+        import json as _jgs, os as _osg, datetime as _dtgs
+        _lc_gs_data = {}
+        if _osg.path.exists("long_cooldowns.json"):
+            _lc_raw = _jgs.load(open("long_cooldowns.json"))
+            _today_gs = _dtgs.date.today().isoformat()
+            _lc_gs_data = {t: v.get("blocked_until","")
+                           for t, v in _lc_raw.items()
+                           if _today_gs <= v.get("blocked_until", "")}
+        brief["gate_status"] = {
+            "sector_first_gate":       True,
+            "sector_allow":            ["ENERGY", "BANKS", "FINANCIALS"],
+            "sector_block":            ["MATERIALS", "TELECOM", "HEALTHCARE", "REIT", "CONSUMER"],
+            "materials_75_block":      True,
+            "ml_gate_threshold_pct":   20,
+            "long_cooldowns":          _lc_gs_data,
+            "long_cooldowns_count":    len(_lc_gs_data),
+        }
+    except Exception:
+        brief["gate_status"] = None
+
     # ── OUTCOME TRACKING ─────────────────────────────────────
     try:
         from outcome_tracker import log_picks, resolve_outcomes, compute_win_rate, print_win_rate_report
@@ -1577,6 +1599,7 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
             "signal_accuracy", "screen_stats", "breadth", "crypto",
             "deployment_plan", "risk_report", "content", "win_rate", "shortlist",
             "etf_signals", "ngx",
+            "gate_status",
             "FHSA_top5", "TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3",
             "screen_results",
             # NOTE: open_trades and portfolio_scorecard intentionally excluded

@@ -25,38 +25,43 @@ Goal: open the dashboard, know what the market is doing, know what to do, trust 
 
 ---
 
-## CURRENT SYSTEM STATE (as of June 27, 2026)
+## CURRENT SYSTEM STATE (as of July 4, 2026)
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| Sharpe (90d rolling) | -3.056 | 🔴 Guard engaged — recovering |
-| Win rate overall | **49.5%** (ex-NGX, ex-dupes, N=1967) | ⚠️ Depressed — guard period |
-| Win rate (ex-10 losers) | **51.5%** | ✅ Improving |
-| PF overall | **1.05** | ⚠️ Near break-even |
-| PF (ex-10 losers) | **1.37** | ✅ Edge confirmed |
-| Avg return/pick | +0.09% | ⚠️ Compressed |
+| Sharpe (90d rolling) | **0.416** (1,654 picks, Apr 6 → Jul 4) | ✅ Recovering |
+| Win rate overall | **49.5%** (ex-NGX, ex-dupes, N=2,019) | ⚠️ Pre-sector-gate era picks drag |
+| PF overall | **1.05** | ⚠️ Near break-even (chronic losers removed) |
+| Avg return/pick | +0.02% (OOS period) | ⚠️ Compressed — early OOS |
 | Unified regime | DEFENSIVE | 🔴 Guard at 0.25× |
-| Macro regime | CAUTIOUS | ⚠️ War escalation signals |
-| Breadth (50MA) | 65.1% | ✅ MODERATE |
-| Robustness | 25/100 | 🔴 Guard period |
-| Risk multiplier | 0.25× | 🔴 PCR conflict + convergence |
-| Neg alpha streak | **9 days** (was inflated to 49 — fixed) | ⚠️ Clearing |
-| Universe | 252 tickers | ✅ |
-| OOS | Day 7 — v4.2 | ⏳ 153 pending picks (0 resolved yet) |
+| Macro regime | RISK_OFF | 🔴 6 active signals (tariff + ME tension + health) |
+| Robustness | 50/100 | ⚠️ Recovering (was 25) |
+| Risk multiplier | 0.25× | 🔴 RISK_OFF + DEFENSIVE |
+| Neg alpha streak | **12 calendar days** | ⚠️ Clearing — SPX +2.17% vs OOS +0.02% |
+| Universe | 153 tickers (all_scores.json) | ✅ |
+| OOS | Day 8 — v4.2 | ⏳ 174 logged / 52 resolved / WR 50.0% |
 | NGX phase | RESTRICTED Day 48 | ⏳ Tier 1 ≥80 only — tracked separately |
 | NGX win rate | tracked in ngx_outcomes.json (excl. from main metrics) | ⚠️ |
-| Runtime | ~65s | ✅ Fast |
-| Last audit | July 2, 2026 | Phase 0–5 complete |
+| Runtime | ~90s | ✅ |
+| Last audit | July 4, 2026 | Post-sector-gate + long-cooldown system |
 
-**Score tier performance (N=1,967 resolved picks, post-July 2 audit):**
+**Score tier performance (N=2,019 resolved picks, July 4, 2026):**
 | Tier | n | WR | Avg Return | PF | Notes |
 |------|---|----|------------|-----|-------|
-| 90-100 (all) | 919 | 46.2% | -0.22% | 0.89 🔴 | Chronic losers drag |
-| 90-100 (ex-10 losers) | 816 | 49.5% | +0.59% | 1.43 ✅ | Real edge after exclusion |
-| 65-74 | ~264 | 56.8% | — | 1.80 ✅ | Best sub-range |
-| 60-74 | 362 | 56.4% | — | 1.76 ✅ | Sweet spot tier |
-| 60-69 | 220 | 56.8% | +0.85% | 1.57 ✅ | Strong edge |
-| below-60 | 177 | 44.9% | — | 1.04 ⚠️ | Weak |
+| 90-100 | 927 | 46.1% | -0.24% | 0.88 🔴 | Sector gate now blocks chronic losers |
+| 75-89 | 533 | 53.3% | +0.05% | 1.03 ⚠️ | Marginal — monitor |
+| 60-74 | 380 | 55.8% | +0.89% | 1.71 ✅ | Sweet spot — strong edge |
+| below-60 | 167 | 42.5% | +0.01% | 1.00 ⚠️ | Weak |
+
+**OOS performance (since 2026-06-26, v4.2):**
+| Metric | Value | Note |
+|--------|-------|------|
+| Picks logged | 174 | 8 days into OOS |
+| Resolved | 52 | ~14-day horizon resolving |
+| OOS WR | 50.0% | Neutral — too early to signal |
+| OOS avg return | +0.02% | Compressed by DEFENSIVE regime |
+| SPX (same period) | +2.17% | Benchmark |
+| Active return | -2.15% | Expected under 0.25× deployment |
 
 **ML calibration (post-audit, by ml_prob bucket):**
 | ml_prob | N | WR | PF | Signal |
@@ -299,11 +304,14 @@ unified_score = (0.40 × market) + (0.30 × macro) + (0.30 × health)
 ```
 
 ### Safety Gates (in order)
-1. Permanent exclusions — `cooldown_flags.json`
-2. Loss-streak cooldown — 2+ losses ≥1.5% in 10 picks → 7-day block
-3. Sector diversity cap — max 2 picks per normalized sector
-4. ML confidence gate — score≥90 AND ml_prob<0.20 → removed, replaced
-5. Sharpe guard — Sharpe negative → 12% of normal sizing
+1. Long cooldowns — `long_cooldowns.json` — 90-day rolling block, 10 chronic losers, auto-renew WR<35%
+2. Loss-streak cooldown — 2+ losses in 7d → 3d block; 3+ in 14d → 7d block
+3. Materials≥75 block — Materials sector picks at score≥75 → pre-emptive exclusion
+4. Sector diversity cap — max 2 picks per normalized sector
+5. Sector-first gate (July 2026) — score≥90: ENERGY/BANKS/FINANCIALS pass without ML gate.
+   MATERIALS/TELECOM/HEALTHCARE/REIT/CONSUMER blocked regardless of ML.
+   All other sectors → ML gate (ml_prob ≥ 20% required).
+6. Sharpe guard — Sharpe negative → 12% of normal sizing
 
 ### Pattern Signal Boost (new — June 27)
 ```python
@@ -315,10 +323,15 @@ unified_score = (0.40 × market) + (0.30 × macro) + (0.30 × health)
 
 ---
 
-## PERMANENT EXCLUSIONS (cooldown_flags.json)
+## LONG COOLDOWNS (long_cooldowns.json)
 
-Blocked to 2036 based on factor_investigation.py evidence:
-F, WPM.TO, MDB, DXCM, AEM.TO, ABX.TO, NTR.TO, K.TO
+90-day rolling block with auto-renew. Replaces permanent_exclusions.json (no indefinite blocks).
+On expiry: rolling WR from last 20 resolved picks. WR < 35% → renew 90 days. WR ≥ 35% → clear.
+
+Current 10 tickers (blocked until 2026-10-02):
+F, DXCM, WPM.TO, FM.TO, ABX.TO, AEM.TO, AGI.TO, MDB, MSFT, HOOD
+
+K.TO and NTR.TO removed from block (July 4, 2026 — dropped from July 2 review list).
 
 **SCORE_CAP_74** (capped at 74, not excluded):
 F, DXCM, WPM.TO, FM.TO, ABX.TO, AEM.TO, AGI.TO, MDB, MSFT
@@ -327,14 +340,26 @@ F, DXCM, WPM.TO, FM.TO, ABX.TO, AEM.TO, AGI.TO, MDB, MSFT
 
 ## KNOWN ISSUES (open)
 
+**Fixed since June 27 audit:**
+- ✅ JPM duplicate in conviction picks — fixed
+- ✅ Neg alpha streak double-count (49 runs → 12 calendar days) — fixed
+- ✅ ML gate cooldown bypass — permanent exclusions now in get_cooldown_set()
+- ✅ Permanent block too aggressive — replaced with 90-day rolling cooldown (long_cooldowns.json)
+- ✅ Sector-first gate (July 4) — ENERGY/BANKS/FINANCIALS bypass ML gate; MATERIALS/TELECOM/HEALTHCARE/REIT/CONSUMER blocked at score≥90
+- ✅ Materials≥75 block — pre-emptive filter before sector gate
+- ✅ Permanent exclusion display bug — now shows all 10 tickers, not just newly-added
+- ✅ Dashboard stale metrics — gate_status + OOS block now baked dynamically
+
+**Open issues:**
 | Priority | Issue | Detail | Fix |
 |----------|-------|--------|-----|
-| ⚠️ MEDIUM | ML retrain coverage 8% | Gate fires at ~143 more picks (~3 weeks) | Auto-fires |
-| ⚠️ MEDIUM | Sharpe -3.056 | March picks clearing June 28-30 | Auto-recovers |
-| ⚠️ MEDIUM | pattern_agent needs 30d data | Boosts are noise until patterns accumulate | Wait |
+| ⚠️ MEDIUM | ML retrain imminent | Coverage gate approaching — watch for auto-fire | Auto-fires |
+| ⚠️ MEDIUM | OOS 0 confirmed alpha | 52 resolved, WR=50%, active=-2.15% — too early; first checkpoint Jul 15-20 | Wait |
+| ⚠️ MEDIUM | 60-74 tier PF drifting | Was 1.76-1.92, now 1.71 — monitor trend | Monitor |
+| ⚠️ MEDIUM | pattern_agent needs 30d data | Boosts are noise until patterns accumulate | Wait (Jul 27) |
 | ⚠️ MEDIUM | strategist needs ANTHROPIC_API_KEY | Add to GitHub Secrets | One-time setup |
-| ⚠️ MEDIUM | Obsidian not syncing to Mac | Pull manually or check Git plugin interval | Check plugin |
-| ℹ️ INFO | 75-89 tier Kelly oscillating near zero | avg_ret compressed to ~0-1% during Sharpe guard → Kelly flips between 0.000 and ~0.027 run to run. Expected — not a bug. Resolves when guard lifts. | Wait |
+| ⚠️ MEDIUM | unified_regime historical coverage low | Historical picks lack unified_regime tag | Auto-improves |
+| ℹ️ INFO | 75-89 tier Kelly oscillating near zero | avg_ret compressed during DEFENSIVE regime → Kelly ~0.000-0.027 per run. Expected. | Wait |
 | ℹ️ LOW | BoC feed 0 articles | No recent items in RSS | Not a code issue |
 | ℹ️ LOW | Reuters/AP/Investopedia ❌ | GitHub Actions DNS — 12/15 stable ceiling | Architecture decision |
 | ℹ️ INFO | Congressional 403 | S3 endpoints gone. api.congress.gov is clean path | Add CONGRESS_API_KEY |
