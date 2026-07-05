@@ -38,6 +38,37 @@ try:
 except ImportError:
     HAS_YF = False
 
+
+def safe_parse_records(raw, list_keys=('filings', 'results', 'data', 'items')):
+    """
+    Normalise an API response into a list of dicts.
+    Handles: response objects with .json(), raw dicts, lists, strings, None.
+    Returns [] (never raises) and prints a warning on unexpected shapes.
+    """
+    try:
+        data = raw.json() if hasattr(raw, 'json') else raw
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"  ⚠️ [safe_parse_records] JSON decode failed: {e} "
+              f"| type={type(raw).__name__} | head={repr(str(raw))[:200]}")
+        return []
+    if data is None:
+        return []
+    if isinstance(data, dict):
+        for k in list_keys:
+            if k in data and isinstance(data[k], list):
+                data = data[k]
+                break
+        else:
+            print(f"  ⚠️ [safe_parse_records] dict with no known list key "
+                  f"— keys={list(data.keys())[:10]}")
+            return []
+    if not isinstance(data, list):
+        print(f"  ⚠️ [safe_parse_records] expected list, got "
+              f"{type(data).__name__}: {repr(data)[:200]}")
+        return []
+    return [r for r in data if isinstance(r, dict)]
+
+
 CACHE_FILE = "options_cache.json"
 MARKET_TICKERS = ["SPY", "QQQ"]  # market-wide PCR
 
@@ -82,8 +113,14 @@ def get_market_pcr(verbose=False):
                 continue
             # Use nearest expiry (most volume, most current sentiment)
             chain   = t.option_chain(expiries[0])
-            total_calls += chain.calls["volume"].fillna(0).sum()
-            total_puts  += chain.puts["volume"].fillna(0).sum()
+            try:
+                total_calls += chain.calls["volume"].fillna(0).sum()
+                total_puts  += chain.puts["volume"].fillna(0).sum()
+            except TypeError:
+                print(f"  ⚠️ Market PCR {ticker}: unexpected chain type "
+                      f"calls={type(chain.calls).__name__} "
+                      f"| head={repr(chain.calls)[:200]}")
+                continue
             tickers_ok  += 1
             time.sleep(0.2)
         except Exception:
@@ -147,8 +184,13 @@ def get_stock_options_signal(ticker, current_price=None, verbose=False):
                 calls = chain.calls
                 puts  = chain.puts
 
-                total_call_vol += calls["volume"].fillna(0).sum()
-                total_put_vol  += puts["volume"].fillna(0).sum()
+                try:
+                    total_call_vol += calls["volume"].fillna(0).sum()
+                    total_put_vol  += puts["volume"].fillna(0).sum()
+                except TypeError:
+                    print(f"  ⚠️ Options chain {ticker}/{exp}: unexpected type "
+                          f"calls={type(calls).__name__} | head={repr(calls)[:200]}")
+                    continue
 
                 # ATM IV — closest strike to current price
                 if current_price and atm_iv is None:

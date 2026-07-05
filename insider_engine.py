@@ -28,6 +28,37 @@ import urllib.request
 import urllib.parse
 from datetime import datetime, timedelta
 
+
+def safe_parse_records(raw, list_keys=('filings', 'results', 'data', 'items')):
+    """
+    Normalise an API response into a list of dicts.
+    Handles: response objects with .json(), raw dicts, lists, strings, None.
+    Returns [] (never raises) and prints a warning on unexpected shapes.
+    """
+    try:
+        data = raw.json() if hasattr(raw, 'json') else raw
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"  ⚠️ [safe_parse_records] JSON decode failed: {e} "
+              f"| type={type(raw).__name__} | head={repr(str(raw))[:200]}")
+        return []
+    if data is None:
+        return []
+    if isinstance(data, dict):
+        for k in list_keys:
+            if k in data and isinstance(data[k], list):
+                data = data[k]
+                break
+        else:
+            print(f"  ⚠️ [safe_parse_records] dict with no known list key "
+                  f"— keys={list(data.keys())[:10]}")
+            return []
+    if not isinstance(data, list):
+        print(f"  ⚠️ [safe_parse_records] expected list, got "
+              f"{type(data).__name__}: {repr(data)[:200]}")
+        return []
+    return [r for r in data if isinstance(r, dict)]
+
+
 # ── KNOWN CIKs — avoids EDGAR company search API call (saves time + quota) ───
 KNOWN_CIKS = {
     "JPM":    "0000019617", "MS":     "0000895421", "GS":     "0000886982",
@@ -177,6 +208,11 @@ def fetch_recent_form4(cik, days_back=30):
         url  = f"https://data.sec.gov/submissions/CIK{cik}.json"
         data = _edgar_request(url, timeout=10)
 
+        if not isinstance(data, dict):
+            print(f"  ⚠️ EDGAR CIK{cik}: unexpected response type "
+                  f"{type(data).__name__} — skipping. head={repr(data)[:200]}")
+            return []
+
         recent   = data.get("filings", {}).get("recent", {})
         forms    = recent.get("form", [])
         dates    = recent.get("filingDate", [])
@@ -250,6 +286,11 @@ def fetch_form4_aggregated(cik, ticker, days_back=30):
         url  = f"https://data.sec.gov/submissions/CIK{cik}.json"
         data = _edgar_request(url, timeout=10)
 
+        if not isinstance(data, dict):
+            print(f"  ⚠️ EDGAR CIK{cik} ({ticker}): unexpected response type "
+                  f"{type(data).__name__} — skipping. head={repr(data)[:200]}")
+            return []
+
         name    = data.get("name", ticker)
         recent  = data.get("filings", {}).get("recent", {})
         forms   = recent.get("form", [])
@@ -284,8 +325,14 @@ def score_insider_signal(form4s, ticker):
         return 0, ""
 
     count    = len(form4s)
-    recent5d = [f for f in form4s if f["date"] >= (datetime.now()-timedelta(days=5)).strftime("%Y-%m-%d")]
-    recent14d = [f for f in form4s if f["date"] >= (datetime.now()-timedelta(days=14)).strftime("%Y-%m-%d")]
+    try:
+        recent5d  = [f for f in form4s if f["date"] >= (datetime.now()-timedelta(days=5)).strftime("%Y-%m-%d")]
+        recent14d = [f for f in form4s if f["date"] >= (datetime.now()-timedelta(days=14)).strftime("%Y-%m-%d")]
+    except TypeError:
+        sample = type(form4s[0]).__name__ if form4s else "?"
+        print(f"  ⚠️ score_insider_signal ({ticker}): unexpected record type "
+              f"{sample} | head={repr(form4s)[:300]}")
+        return 0, ""
 
     if len(recent5d) >= 3:
         return 6, f"🔍 Insider cluster: {len(recent5d)} Form 4s in 5d"
