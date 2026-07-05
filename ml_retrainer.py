@@ -111,16 +111,22 @@ XGB_PARAMS = {
     "random_state":     42,
     "eval_metric":      "auc",
     "verbosity":        0,
-    # Monotonic constraints: +1=higher is better, -1=higher is worse
-    # Only applied to features with clear directional relationships to alpha
-    "monotone_constraints": {
-        "roe":                  1,   # higher ROE → better stock
-        "profit_margin":        1,   # higher margin → better stock
-        "earnings_yield":       1,   # higher E/P → cheaper → better
-        "volatility_90d":      -1,   # higher vol → worse risk-adj returns
-        "close_to_ema20_ratio": -1,  # more overbought → lower forward return
-        "rs_rating":            0,   # no directional constraint — momentum can mean revert
-    },
+    # Monotonic constraints — POSITIONAL TUPLE (required for numpy arrays in XGBoost 2.x)
+    # Dict-form is silently ignored when training data is a numpy array (post-StandardScaler).
+    # Tuple maps 1:1 to FEATURES order: +1=higher→better, -1=higher→worse, 0=unconstrained
+    #
+    # Constrained features:
+    #   [3]  roe:                  +1  (higher ROE → better stock)
+    #   [4]  profit_margin:        +1  (higher margin → better)
+    #   [5]  earnings_yield:       +1  (higher E/P → cheaper → better)
+    #   [7]  volatility_90d:       -1  (higher vol → worse risk-adj returns)
+    #   [18] close_to_ema20_ratio: -1  (more overbought → lower forward return)
+    #   [13] rs_rating:             0  (no constraint — momentum can mean-revert)
+    #
+    # If FEATURES order changes, regenerate this tuple:
+    #   tuple({"roe":1,"profit_margin":1,"earnings_yield":1,"volatility_90d":-1,
+    #          "close_to_ema20_ratio":-1,"rs_rating":0}.get(f,0) for f in FEATURES)
+    "monotone_constraints": (0, 0, 0, 1, 1, 1, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0),
 }
 
 MIN_ROWS_TO_TRAIN  = 80
