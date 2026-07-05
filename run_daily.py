@@ -229,6 +229,25 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
     conviction = []
     seen       = set()
 
+    # ── Distributional ML gate (Part C) ──────────────────────────────────────
+    # Static thresholds (20%, 35%) pass everything when probs cluster 41-48%.
+    # Use median of today's scored picks as the gate, floored at 0.20.
+    _all_probs = [p.get("ml_prob") for p in all_picks if p.get("ml_prob") is not None]
+    if _all_probs:
+        _sorted_p = sorted(_all_probs)
+        _n = len(_sorted_p)
+        _median_prob = (_sorted_p[_n // 2] if _n % 2 else
+                        (_sorted_p[_n // 2 - 1] + _sorted_p[_n // 2]) / 2)
+        _ml_gate = max(0.20, _median_prob)
+        # Log distribution for calibration (only useful after model retrain)
+        _p10 = _sorted_p[max(0, _n // 10)]
+        _p90 = _sorted_p[min(_n - 1, 9 * _n // 10)]
+        print(f"  📊 ML prob distribution ({_n} picks): "
+              f"p10={_p10:.3f} median={_median_prob:.3f} p90={_p90:.3f} → gate={_ml_gate:.3f}")
+    else:
+        _ml_gate = 0.20
+    # ─────────────────────────────────────────────────────────────────────────
+
     for pick in all_picks:
         ticker = pick["ticker"]
         if ticker in seen:
@@ -238,12 +257,10 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
         if cooldown_set and (ticker in cooldown_set or ticker.replace(".TO","").replace("-UN","").upper() in cooldown_set):
             continue
 
-        # ML gate: score≥90 + ML<20% = unprofitable subset — exclude from conviction
-        # Same gate as ml_engine.py sizing step. Prevents QCOM-type false positives
-        # where high score + low ML confidence generates a conviction signal.
+        # ML gate: score≥90 + ML below distributional threshold → exclude from conviction
         _ml_prob = pick.get("ml_prob", 0.5) or 0.5
         _score   = pick.get("score", 0) or 0
-        if _score >= 90 and _ml_prob < 0.20:
+        if _score >= 90 and _ml_prob < _ml_gate:
             continue
 
         clean = ticker.replace(".TO","").replace("-UN","").upper()
@@ -577,6 +594,9 @@ def run_daily(test_mode=False, dry_run=False):
     # ── 2. Market Regime ─────────────────────────────────────
     print(f"\n[2/10] 📊 MARKET REGIME FILTER")
     regime = get_market_regime(verbose=True)
+    # Sentinel: overwritten by 3-layer engine at step [11/12].
+    # Ensures log_picks() always receives a string even if the risk block fails early.
+    unified_regime = "NEUTRAL"
 
     # ── 2b. Strategy Engine ─────────────────────────────────
     # early_regime isn't computed until step 4.5 (after news + market combine)

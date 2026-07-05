@@ -54,6 +54,38 @@ except ImportError:
 # CONFIG
 # ============================================================
 
+# ── Sector / regime encoding — MUST match ml_retrainer.py exactly ─────────────
+_SECTOR_NORM_INF = {
+    "financial services": "FINANCIALS", "financials": "FINANCIALS",
+    "banks": "FINANCIALS", "insurance": "FINANCIALS",
+    "asset management": "FINANCIALS", "capital markets": "FINANCIALS",
+    "diversified financials": "FINANCIALS",
+    "real estate": "REIT", "reits": "REIT", "reit": "REIT",
+    "real estate investment trusts": "REIT",
+    "energy": "ENERGY", "oil & gas": "ENERGY", "oil and gas": "ENERGY",
+    "utilities": "UTILITIES",
+    "consumer discretionary": "CONSUMER", "consumer staples": "CONSUMER",
+    "technology": "TECH", "information technology": "TECH",
+    "communication services": "TELECOM", "telecommunications": "TELECOM",
+    "telecom": "TELECOM",
+    "health care": "HEALTHCARE", "healthcare": "HEALTHCARE",
+    "pharmaceuticals": "HEALTHCARE", "biotechnology": "HEALTHCARE",
+    "industrials": "INDUSTRIALS",
+    "materials": "MATERIALS",
+    "pipelines": "PIPELINES",
+}
+_SECTOR_ENC_INF = {
+    "FINANCIALS": 0, "REIT": 1, "ENERGY": 2, "UTILITIES": 3,
+    "CONSUMER": 4, "TECH": 5, "TELECOM": 6, "HEALTHCARE": 7,
+    "INDUSTRIALS": 8, "MATERIALS": 9, "PIPELINES": 10, "UNKNOWN": -1,
+}
+
+
+def _encode_sector(raw_sector_string):
+    key = _SECTOR_NORM_INF.get((raw_sector_string or "").strip().lower(), "UNKNOWN")
+    return _SECTOR_ENC_INF.get(key, -1)
+
+
 ML_CONFIG = {
     "features": [
         "momentum_6m",
@@ -71,7 +103,14 @@ ML_CONFIG = {
         "debt_equity",
         "rs_rating",
         "sector_momentum",
+        "market_regime",
+        "spx_vs_ma200",
+        "news_boost",
         "close_to_ema20_ratio",
+        "unified_regime_enc",
+        "macro_regime_enc",
+        "market_breadth_50ma",
+        "sector_encoded",
     ],
     "xgb_params": {
         "n_estimators":     100,
@@ -294,6 +333,9 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
         beta          = min(vol_90d / 0.15, 3.0)
         rs_norm       = rs_rating / 100
 
+        raw_sector = stock_data.get("sector", "") or ""
+        sector_enc = _encode_sector(raw_sector)
+
         return {
             "ticker": ticker,
             "momentum_6m":    round(mom_6m, 4),
@@ -311,7 +353,13 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
             "rs_rating":           round(rs_norm, 4),
             "market_regime":       0,
             "sector_momentum":     0,
+            "spx_vs_ma200":        0.0,
+            "news_boost":          0.0,
             "close_to_ema20_ratio": close_to_ema20_ratio,
+            "unified_regime_enc":  2.0,  # default NEUTRAL; overwritten by run_daily.py
+            "macro_regime_enc":    2.0,  # default NORMAL
+            "market_breadth_50ma": 0.5,  # default unknown
+            "sector_encoded":      sector_enc,
         }
     except Exception:
         return None
@@ -547,12 +595,15 @@ class StockMLPredictor:
             features_dict["vol_adj_momentum"] = max(min(mom_6m / vol, 5.0), -5.0)
             features_dict["sector_momentum"]  = features_dict.get("sector_momentum", 0)
             feat_order = ML_CONFIG["features"]
-            vec   = np.array([[features_dict.get(f, 0) for f in feat_order]])
-            vec_s = self.scaler.transform(vec)
+            # Build DataFrame so XGBoost sees column names and categorical dtype
+            row = {f: features_dict.get(f, 0) for f in feat_order}
+            df  = pd.DataFrame([row])
+            df["sector_encoded"] = df["sector_encoded"].astype("category")
+            model_input = df
             if self.calibrator is not None:
-                prob = self.calibrator.predict_proba(vec_s)[0][1]
+                prob = self.calibrator.predict_proba(model_input)[0][1]
             else:
-                prob = self.model.predict_proba(vec_s)[0][1]
+                prob = self.model.predict_proba(model_input)[0][1]
             return round(float(prob), 4)
         except: return 0.5
 

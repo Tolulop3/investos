@@ -60,6 +60,60 @@ except ImportError:
 OUTCOMES_FILE  = "outcomes_log.json"
 MODEL_CACHE    = "ml_model_cache.pkl"
 REPORT_FILE    = "ml_retrainer_report.json"
+
+# ── Sector normalization: yfinance raw string → canonical key ─────────────────
+# Must stay in sync with _apply_sector_cap() in ml_engine.py
+SECTOR_NORM = {
+    "financial services":        "FINANCIALS",
+    "financials":                "FINANCIALS",
+    "banks":                     "FINANCIALS",
+    "insurance":                 "FINANCIALS",
+    "asset management":          "FINANCIALS",
+    "capital markets":           "FINANCIALS",
+    "diversified financials":    "FINANCIALS",
+    "real estate":               "REIT",
+    "reits":                     "REIT",
+    "reit":                      "REIT",
+    "real estate investment trusts": "REIT",
+    "energy":                    "ENERGY",
+    "oil & gas":                 "ENERGY",
+    "oil and gas":               "ENERGY",
+    "utilities":                 "UTILITIES",
+    "consumer discretionary":    "CONSUMER",
+    "consumer staples":          "CONSUMER",
+    "technology":                "TECH",
+    "information technology":    "TECH",
+    "communication services":    "TELECOM",
+    "telecommunications":        "TELECOM",
+    "telecom":                   "TELECOM",
+    "health care":               "HEALTHCARE",
+    "healthcare":                "HEALTHCARE",
+    "pharmaceuticals":           "HEALTHCARE",
+    "biotechnology":             "HEALTHCARE",
+    "industrials":               "INDUSTRIALS",
+    "materials":                 "MATERIALS",
+    "pipelines":                 "PIPELINES",
+}
+
+# FIXED integer codes — never reorder (would break feature hash and cross-retrain comparability).
+# UNKNOWN uses -1; pandas Categorical handles negative codes correctly.
+# Regime codes are ORDINAL (risk-ordered). Sector codes are NOMINAL
+# (XGBoost categorical handles non-ordinal splits).
+SECTOR_ENCODING = {
+    "FINANCIALS":  0, "REIT":       1, "ENERGY":      2,
+    "UTILITIES":   3, "CONSUMER":   4, "TECH":        5,
+    "TELECOM":     6, "HEALTHCARE": 7, "INDUSTRIALS": 8,
+    "MATERIALS":   9, "PIPELINES": 10,
+    "UNKNOWN":    -1,
+}
+
+REGIME_ENCODING = {
+    "CAPITAL_PRESERVATION": 0, "DEFENSIVE": 1, "NEUTRAL": 2, "RISK_ON": 3,
+}
+
+MACRO_ENCODING = {
+    "RISK_OFF": 0, "BEAR": 0, "CAUTIOUS": 1, "NORMAL": 2, "RISK_ON": 3, "BULL": 3,
+}
 RETRAIN_LOCK   = "ml_last_retrain.txt"
 
 # CRITICAL: must match ML_CONFIG["features"] in ml_engine.py exactly
@@ -92,11 +146,7 @@ FEATURES = [
     "unified_regime_enc",    # CAPITAL_PRESERVATION=0, DEFENSIVE=1, NEUTRAL=2, RISK_ON=3
     "macro_regime_enc",      # RISK_OFF/BEAR=0, CAUTIOUS=1, NORMAL=2, RISK_ON/BULL=3
     "market_breadth_50ma",   # pct of universe above 50MA, normalized to [0,1]
-    # NOTE: These are training-only features for now. Prediction path (ML_CONFIG in
-    # ml_engine.py) to be updated in a dedicated session when prediction values are
-    # plumbed through to build_features_for_stock().
-    # Also: joblib is not installed so ml_model_cache.pkl cannot be loaded by
-    # ml_engine.py — prediction always uses the heuristic formula in predict().
+    "sector_encoded",        # categorical: SECTOR_ENCODING (int codes, XGBoost categorical)
 ]
 
 XGB_PARAMS = {
@@ -111,22 +161,19 @@ XGB_PARAMS = {
     "random_state":     42,
     "eval_metric":      "auc",
     "verbosity":        0,
-    # Monotonic constraints — POSITIONAL TUPLE (required for numpy arrays in XGBoost 2.x)
-    # Dict-form is silently ignored when training data is a numpy array (post-StandardScaler).
-    # Tuple maps 1:1 to FEATURES order: +1=higher→better, -1=higher→worse, 0=unconstrained
-    #
-    # Constrained features:
-    #   [3]  roe:                  +1  (higher ROE → better stock)
-    #   [4]  profit_margin:        +1  (higher margin → better)
-    #   [5]  earnings_yield:       +1  (higher E/P → cheaper → better)
-    #   [7]  volatility_90d:       -1  (higher vol → worse risk-adj returns)
-    #   [18] close_to_ema20_ratio: -1  (more overbought → lower forward return)
-    #   [13] rs_rating:             0  (no constraint — momentum can mean-revert)
-    #
-    # If FEATURES order changes, regenerate this tuple:
-    #   tuple({"roe":1,"profit_margin":1,"earnings_yield":1,"volatility_90d":-1,
-    #          "close_to_ema20_ratio":-1,"rs_rating":0}.get(f,0) for f in FEATURES)
-    "monotone_constraints": (0, 0, 0, 1, 1, 1, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0),
+    "enable_categorical": True,      # required for sector_encoded 'category' dtype column
+    # Monotonic constraints — DICT-FORM (works because training uses pandas DataFrame,
+    # so XGBoost sees column names, not numpy auto-names f0,f1,...).
+    # Unmentioned features default to 0 (unconstrained) — sector_encoded is nominal,
+    # no monotonic assumption. Regime features are ordinal (higher = more bullish) but
+    # the model is free to learn non-monotonic interactions, so also left at 0.
+    "monotone_constraints": {
+        "roe":                  1,   # higher ROE → better stock
+        "profit_margin":        1,   # higher margin → better
+        "earnings_yield":       1,   # higher E/P → cheaper → better
+        "volatility_90d":      -1,   # higher vol → worse risk-adj returns
+        "close_to_ema20_ratio": -1,  # more overbought → lower forward return
+    },
 }
 
 MIN_ROWS_TO_TRAIN  = 80
@@ -189,14 +236,16 @@ def build_feature_matrix(resolved):
         raw_boost    = o.get("news_boost", 0) or o.get("news_adjustment", 0) or 0
         news_boost   = float(np.clip(raw_boost / 20.0, -1.0, 1.0))
 
-        # Unified + macro regime: ordinal-encoded (higher = more bullish)
-        _ur_map = {"CAPITAL_PRESERVATION": 0, "DEFENSIVE": 1, "NEUTRAL": 2, "RISK_ON": 3}
-        _mr_map = {"RISK_OFF": 0, "BEAR": 0, "CAUTIOUS": 1, "NORMAL": 2,
-                   "RISK_ON": 3, "BULL": 3}
-        ur_raw           = (o.get("unified_regime") or "NEUTRAL").upper()
-        mr_raw           = (o.get("macro_regime") or "NORMAL").upper()
-        unified_regime_enc = float(_ur_map.get(ur_raw, 2))   # default NEUTRAL=2
-        macro_regime_enc   = float(_mr_map.get(mr_raw, 2))   # default NORMAL=2
+        # Unified + macro regime: ordinal-encoded via module-level dicts
+        ur_raw             = (o.get("unified_regime") or "NEUTRAL").upper()
+        mr_raw             = (o.get("macro_regime") or "NORMAL").upper()
+        unified_regime_enc = float(REGIME_ENCODING.get(ur_raw, 2))   # default NEUTRAL=2
+        macro_regime_enc   = float(MACRO_ENCODING.get(mr_raw, 2))    # default NORMAL=2
+
+        # Sector: normalize raw yfinance string → canonical key → integer code
+        sector_raw = (o.get("sector") or "").strip().lower()
+        sector_key = SECTOR_NORM.get(sector_raw, "UNKNOWN")
+        sector_enc = SECTOR_ENCODING.get(sector_key, -1)  # int; -1 = UNKNOWN
 
         # Market breadth above 50MA — normalized [0,1]; default 0.5 (unknown)
         _b50 = o.get("market_breadth_50ma")
@@ -230,6 +279,7 @@ def build_feature_matrix(resolved):
             "unified_regime_enc":   round(unified_regime_enc, 4),
             "macro_regime_enc":     round(macro_regime_enc, 4),
             "market_breadth_50ma":  round(market_breadth_50ma, 4),
+            "sector_encoded":       sector_enc,  # int, set to 'category' after DataFrame build
         }
 
         actual_return = o.get("actual_return", 0) or 0
@@ -249,12 +299,32 @@ def build_feature_matrix(resolved):
         dates_list.append(sig_date)
 
     X = pd.DataFrame(rows_X)[FEATURES]
+    # Set sector_encoded to 'category' dtype so XGBoost treats it as nominal
+    # (avoids false ordinal ordering implied by raw integer codes)
+    X["sector_encoded"] = X["sector_encoded"].astype("category")
     y = pd.Series(rows_y, dtype=int)
     w = np.array(weights, dtype=float)
 
     pos_rate = float(y.mean())
     print(f"  ✅ Feature matrix: {len(y)} rows × {len(FEATURES)} features")
     print(f"     Label balance: {pos_rate:.1%} positive | {1-pos_rate:.1%} negative")
+
+    # ── Part D: per-feature coverage report ──────────────────────────────────
+    print(f"  📊 Feature coverage (non-null / non-default):")
+    print(f"     REGIME_ENCODING : {REGIME_ENCODING}")
+    print(f"     MACRO_ENCODING  : {MACRO_ENCODING}")
+    print(f"     SECTOR_ENCODING : {SECTOR_ENCODING}")
+    for feat in FEATURES:
+        col = X[feat]
+        if feat == "sector_encoded":
+            n_known = int((col.cat.codes >= 0).sum())
+            print(f"     {feat:<25} {n_known:>5}/{len(X)} ({100*n_known/len(X):>4.0f}%) known sector")
+        elif feat == "market_breadth_50ma":
+            n_non = int((col != 0.5).sum())
+            print(f"     {feat:<25} {n_non:>5}/{len(X)} ({100*n_non/len(X):>4.0f}%) non-default(0.5)")
+        else:
+            n_non = int((col.abs() > 0.001).sum())
+            print(f"     {feat:<25} {n_non:>5}/{len(X)} ({100*n_non/len(X):>4.0f}%) non-zero")
 
     # ── COVERAGE GATE ─────────────────────────────────────────────────────
     # Historical picks (pre feature-capture era) have perf_90d=0, roe=0 etc.
@@ -320,22 +390,22 @@ def train_and_save(X, y, w, dates=None):
             print(f"  ⚠️  Purge buffer skipped ({_pe})")
     # ──────────────────────────────────────────────────────────────────────
 
-    scaler    = StandardScaler()
-    X_train_s = scaler.fit_transform(X_train)
-    X_val_s   = scaler.transform(X_val)
-    X_all_s   = scaler.transform(X)
+    # No StandardScaler — XGBoost (tree-based) needs no feature scaling,
+    # and categorical dtype (sector_encoded) would be destroyed by numpy conversion.
+    # Training directly on the pandas DataFrame lets XGBoost see column names,
+    # which is required for dict-form monotone_constraints and categorical support.
 
     n_splits  = min(5, max(3, n // 50))
     tscv      = TimeSeriesSplit(n_splits=n_splits)
     cv_aucs   = []
 
-    for fold_train_idx, fold_val_idx in tscv.split(X_all_s):
+    for fold_train_idx, fold_val_idx in tscv.split(X):
         try:
             fm = XGBClassifier(**XGB_PARAMS)
-            fm.fit(X_all_s[fold_train_idx], y.iloc[fold_train_idx],
+            fm.fit(X.iloc[fold_train_idx], y.iloc[fold_train_idx],
                    sample_weight=w[fold_train_idx], verbose=False)
             fa = roc_auc_score(y.iloc[fold_val_idx],
-                               fm.predict_proba(X_all_s[fold_val_idx])[:,1])
+                               fm.predict_proba(X.iloc[fold_val_idx])[:,1])
             cv_aucs.append(fa)
         except Exception:
             pass
@@ -345,17 +415,17 @@ def train_and_save(X, y, w, dates=None):
     print(f"  📊 CV AUC: {cv_mean:.3f} ± {cv_std:.3f} ({n_splits} folds)")
 
     model = XGBClassifier(**XGB_PARAMS)
-    model.fit(X_train_s, y_train, sample_weight=w_train,
-              eval_set=[(X_val_s, y_val)], verbose=False)
+    model.fit(X_train, y_train, sample_weight=w_train,
+              eval_set=[(X_val, y_val)], verbose=False)
 
-    val_probs   = model.predict_proba(X_val_s)[:,1]
+    val_probs   = model.predict_proba(X_val)[:,1]
     holdout_auc = roc_auc_score(y_val, val_probs) if len(y_val.unique())>1 else 0.5
     print(f"  📊 Holdout AUC: {holdout_auc:.3f}  "
           f"({'✅ better than random' if holdout_auc > 0.53 else '⚠️ near random — more data needed'})")
 
     try:
         calibrator = CalibratedClassifierCV(model, method="isotonic", cv="prefit")
-        calibrator.fit(X_train_s, y_train)
+        calibrator.fit(X_train, y_train)
         print("  ✅ Probability calibration: isotonic")
     except Exception:
         calibrator = None
@@ -366,11 +436,21 @@ def train_and_save(X, y, w, dates=None):
             zip(FEATURES, [round(float(v),4) for v in model.feature_importances_]),
             key=lambda x: x[1], reverse=True
         ))
+    print(f"  📊 Feature importances (top {min(10, len(feat_imp))}):")
+    for fname, fimp in list(feat_imp.items())[:10]:
+        bar = "█" * int(fimp * 200)
+        print(f"     {fname:<25} {fimp:.4f}  {bar}")
+    if "sector_encoded" in feat_imp:
+        s_imp = feat_imp["sector_encoded"]
+        if s_imp < 0.005:
+            print(f"  ⚠️  sector_encoded importance {s_imp:.4f} near zero — check sector wiring")
+        else:
+            print(f"  ✅ sector_encoded importance {s_imp:.4f} — sector signal confirmed")
 
     # Calibration check
     calib_check = {}
     try:
-        all_probs = calibrator.predict_proba(X_all_s)[:,1] if calibrator else                     model.predict_proba(X_all_s)[:,1]
+        all_probs = calibrator.predict_proba(X)[:,1] if calibrator else model.predict_proba(X)[:,1]
         df_check  = pd.DataFrame({"prob": all_probs, "label": y.values})
         df_check["decile"] = pd.qcut(df_check["prob"], q=5,
                                       labels=["Q1","Q2","Q3","Q4","Q5"],
@@ -400,17 +480,20 @@ def train_and_save(X, y, w, dates=None):
 
     payload = {
         "model":              model,
-        "scaler":             scaler,
+        "scaler":             None,  # removed — XGBoost tree needs no scaling
         "calibrator":         calibrator,
         "feature_importance": feat_imp,
         "feature_hash":       feat_hash,
-        "_trained_on":        "real_outcomes",  # tells ml_engine.py this is not synthetic
+        "_trained_on":        "real_outcomes",
         "_retrained_at":      datetime.now().isoformat(),
         "_n_training_rows":   len(y_train),
         "_holdout_auc":       round(holdout_auc, 4),
         "_cv_auc":            round(cv_mean, 4),
         "_label_definition":  "actual_return > median(actual_return)",
         "_features":          FEATURES,
+        "_sector_encoding":   SECTOR_ENCODING,
+        "_regime_encoding":   REGIME_ENCODING,
+        "_macro_encoding":    MACRO_ENCODING,
     }
     joblib.dump(payload, MODEL_CACHE)
     print(f"  💾 Saved to {MODEL_CACHE} (feature_hash: {feat_hash})")

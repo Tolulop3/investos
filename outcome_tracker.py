@@ -538,17 +538,37 @@ def compute_win_rate():
     # Feature coverage report — shows ML data quality
     feature_fields = ["perf_90d","volatility","roe","profit_margin","pe_ratio",
                       "rev_growth","earn_growth","div_yield","debt_equity","rs_rating",
-                      "regime","spx_vs_ma200","news_boost","sector"]
+                      "regime","spx_vs_ma200","news_boost","sector",
+                      "unified_regime","macro_regime","market_breadth_50ma"]
     feature_coverage = {}
     for field in feature_fields:
         filled = sum(1 for o in resolved
                      if o.get(field) is not None and o.get(field) != 0
-                     and o.get(field) != "" and o.get(field) != 20)  # 20 = pe default
+                     and o.get(field) != "" and o.get(field) != 20   # 20 = pe default
+                     and o.get(field) != "UNKNOWN")                  # UNKNOWN = missing regime
         feature_coverage[field] = {
             "pct": round(filled/len(resolved)*100, 1),
             "filled": filled,
             "total": len(resolved),
         }
+
+    # Regime field coverage across ALL logged picks (not just resolved)
+    # Shows current-run capture rate; resolved coverage lags by 90-day hold period.
+    try:
+        all_outcomes = json.load(open(OUTCOMES_FILE)) if os.path.exists(OUTCOMES_FILE) else []
+        _n_all = len(all_outcomes)
+        if _n_all > 0:
+            for _rf in ("unified_regime", "macro_regime", "market_breadth_50ma", "sector"):
+                _filled = sum(1 for o in all_outcomes
+                              if o.get(_rf) is not None
+                              and o.get(_rf) not in ("", 0, "UNKNOWN"))
+                feature_coverage[f"ALL_{_rf}"] = {
+                    "pct": round(_filled / _n_all * 100, 1),
+                    "filled": _filled,
+                    "total": _n_all,
+                }
+    except Exception:
+        pass
 
     # ── OOS performance block (signal_date >= OOS start) ────────────────
     OOS_START = "2026-06-26"
