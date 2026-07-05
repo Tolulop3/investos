@@ -492,6 +492,62 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
     }
 
 
+def test_lg_suffix():
+    """
+    Test whether yfinance can fetch NGX tickers with the .LG suffix.
+    Does NOT modify the live ticker list — diagnostic only.
+    If 4+/5 work, flag for full NGX yfinance rewrite.
+    """
+    TEST_TICKERS = [
+        "DANGCEM.LG", "MTNN.LG", "GTCO.LG", "ZENITHBANK.LG", "ACCESS.LG"
+    ]
+    print("\n" + "="*55)
+    print("  .LG SUFFIX TEST — yfinance NGX ticker probe")
+    print("="*55)
+
+    try:
+        import yfinance as yf
+        import sys, io
+    except ImportError:
+        print("  ❌ yfinance not installed — cannot run test")
+        return
+
+    results = []
+    for ticker in TEST_TICKERS:
+        try:
+            _s = sys.stderr; sys.stderr = io.StringIO()
+            try:
+                hist = yf.Ticker(ticker).history(period="1mo", interval="1d", auto_adjust=True)
+            finally:
+                sys.stderr = _s
+            rows = len(hist) if hist is not None else 0
+            if rows > 0:
+                last_close = round(hist["Close"].dropna().iloc[-1], 4)
+                status = "✅ WORKING"
+                results.append(True)
+            else:
+                last_close = None
+                status = "❌ FAILED (empty)"
+                results.append(False)
+        except Exception as e:
+            last_close = None
+            status = f"❌ FAILED ({type(e).__name__})"
+            results.append(False)
+        rows_str = str(rows) if rows else "—"
+        close_str = str(last_close) if last_close else "—"
+        print(f"  {ticker:<18} {status:<25} rows={rows_str:<4} last_close={close_str}")
+
+    working = sum(results)
+    print(f"\n  .LG suffix test: {working}/5 tickers working")
+    if working >= 4:
+        print("  🚩 FLAG: 4+/5 working — eligible for full NGX yfinance rewrite next session")
+    elif working > 0:
+        print(f"  ⚠️  Partial coverage — {working}/5 working, not enough for reliable price data")
+    else:
+        print("  ❌ No tickers working — .LG suffix not supported by yfinance")
+    return working
+
+
 if __name__ == "__main__":
     result = run_ngx_screen(investos_macro="NORMAL", verbose=True)
     print(f"\nNGX: {len(result['signals'])} signals | "

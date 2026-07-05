@@ -14,6 +14,8 @@ v2: Fixed double https:// typo in 5 feed URLs (was silently failing since Day 1)
 """
 
 import json
+import random
+import time
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -21,6 +23,21 @@ import xml.etree.ElementTree as ET
 import re
 from datetime import datetime, timedelta
 from collections import defaultdict
+
+# Rotating user-agents for feeds that block the default Python UA (Reuters, AP, Investopedia)
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/125.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+    "Version/17.4.1 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) "
+    "Gecko/20100101 Firefox/126.0",
+]
+
+# Apply rotating UA + rate-limit delay to feeds known to 403 on the default UA
+ROTATING_UA_SOURCES = {"Reuters Business", "AP Business", "Investopedia"}
 
 NEWS_SOURCES = [
     # Global macro — v2: fixed double https:// typo, Barrons→AP, Yahoo→Reuters
@@ -314,11 +331,20 @@ SECTOR_TICKERS = {
 
 def fetch_news_feed(source):
     try:
+        use_rotating = source["name"] in ROTATING_UA_SOURCES
+        ua = random.choice(USER_AGENTS) if use_rotating else (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        )
+        if use_rotating:
+            time.sleep(random.uniform(1, 2))
+
         req = urllib.request.Request(
             source["url"],
             headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Accept": "application/rss+xml, application/xml, text/xml, */*"
+                "User-Agent": ua,
+                "Accept": "application/rss+xml, application/xml, text/xml, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Cache-Control": "no-cache",
             }
         )
         # Single retry for transient DNS/network errors (not 403/auth failures)

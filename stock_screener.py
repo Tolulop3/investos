@@ -129,6 +129,8 @@ UNIVERSE = {
         "URTH",  # MSCI World (all countries)
         "ACWI",  # All country world
         "MCHI",  # China broad
+        # Frontier markets
+        "NGE",   # Global X MSCI Nigeria ETF — Nigeria macro proxy (NYSE, liquid)
     ],
 
     # ── CANADIAN ETFs ─────────────────────────────────────────
