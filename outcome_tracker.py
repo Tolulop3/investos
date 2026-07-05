@@ -71,6 +71,15 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None,
       - unified_regime, macro_regime, market_breadth_50ma (added 2026-07-04)
 
     These unlock ML training on real data instead of zeros.
+
+    COVERAGE TIMELINE (audited 2026-07-05):
+      Call site: run_daily.py:1413 — ONE call site, all three fields confirmed wired.
+      unified_regime:      live since 2026-07-01. Resolved coverage = 0% (timing:
+                           picks resolve after 90d hold; first real values resolve ~Sep 29).
+      macro_regime:        live since 2026-07-05. Resolved coverage = 0% (same timing).
+      market_breadth_50ma: live since 2026-06-28. Resolved coverage = 12.8% (backfilled
+                           from history snapshots; strategy_health.json has no regime data).
+      Action: no code fix needed. Coverage self-corrects as new picks resolve Oct 2026+.
     """
     if not picks:
         return
