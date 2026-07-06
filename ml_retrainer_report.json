@@ -1,12 +1,13 @@
 {
-  "retrained_at": "2026-06-29T14:50:05.630904",
-  "n_rows": 1891,
-  "n_train": 1512,
-  "n_val": 379,
-  "holdout_auc": 0.5,
-  "cv_auc_mean": 0.5,
-  "cv_auc_std": 0.0,
+  "retrained_at": "2026-07-06T18:03:20.806565",
+  "n_rows": 2054,
+  "n_train": 1643,
+  "n_val": 411,
+  "holdout_auc": 0.4506,
+  "cv_auc_mean": 0.6252,
+  "cv_auc_std": 0.0743,
   "feature_importance": {
+    "sector_encoded": 1.0,
     "momentum_6m": 0.0,
     "momentum_12m": 0.0,
     "vol_adj_momentum": 0.0,
@@ -24,9 +25,39 @@
     "sector_momentum": 0.0,
     "market_regime": 0.0,
     "spx_vs_ma200": 0.0,
-    "news_boost": 0.0
+    "news_boost": 0.0,
+    "close_to_ema20_ratio": 0.0,
+    "unified_regime_enc": 0.0,
+    "macro_regime_enc": 0.0,
+    "market_breadth_50ma": 0.0
   },
-  "calibration_check": {},
+  "calibration_check": {
+    "Q1": {
+      "mean_pred_prob": 0.187,
+      "actual_win_rate": 0.345,
+      "count": 426
+    },
+    "Q2": {
+      "mean_pred_prob": 0.309,
+      "actual_win_rate": 0.655,
+      "count": 664
+    },
+    "Q3": {
+      "mean_pred_prob": 0.359,
+      "actual_win_rate": 0.448,
+      "count": 221
+    },
+    "Q4": {
+      "mean_pred_prob": 0.49,
+      "actual_win_rate": 0.449,
+      "count": 514
+    },
+    "Q5": {
+      "mean_pred_prob": 0.643,
+      "actual_win_rate": 0.485,
+      "count": 229
+    }
+  },
   "features_used": [
     "momentum_6m",
     "momentum_12m",
@@ -45,7 +76,12 @@
     "sector_momentum",
     "market_regime",
     "spx_vs_ma200",
-    "news_boost"
+    "news_boost",
+    "close_to_ema20_ratio",
+    "unified_regime_enc",
+    "macro_regime_enc",
+    "market_breadth_50ma",
+    "sector_encoded"
   ],
   "label_definition": "actual_return > median(actual_return)"
 }
