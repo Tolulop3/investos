@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ⚠️ Sharpe improving 0.471/day — guard disengagement approaching
-- Breadth (200MA): 75.8%  (+0.40%/day)
+- Breadth (200MA): 76.2%  (+0.46%/day)
 - Sharpe: 0.409  (+0.471/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -31,8 +31,8 @@ tags: [investos, patterns, weekly]
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
