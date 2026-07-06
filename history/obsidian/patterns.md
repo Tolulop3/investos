@@ -6,9 +6,9 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-07-06
 
 ## Regime Drift
-- ⚠️ Sharpe improving 0.472/day — guard disengagement approaching
+- ⚠️ Sharpe improving 0.471/day — guard disengagement approaching
 - Breadth (200MA): 75.8%  (+0.40%/day)
-- Sharpe: 0.410  (+0.472/day)
+- Sharpe: 0.409  (+0.471/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - No tickers with 3+ day streaks this week
@@ -24,17 +24,18 @@ tags: [investos, patterns, weekly]
 - 📉 **BB.TO** -8.5 pts/day  (100.0 → 83.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 100.0% of recent picks (1 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 50.0% of recent picks (1 picks) — HIGH_CONCENTRATION
+- **INDUSTRIALS**: 50.0% of recent picks (1 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
-| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | BB.TO | 🔴 AVOID | 0d | -8.5 | — |
 | PLD | 🔴 AVOID | 0d | -8.4 | — |
