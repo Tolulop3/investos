@@ -1,5 +1,5 @@
 {
-  "date": "July 06, 2026",
+  "date": "July 07, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-06T22:16:33.856565",
+    "run_at": "2026-07-07T13:24:41.164467",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,58 +30,58 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 18,
-        "survival_pct": 100.0,
+        "survived": 17,
+        "survival_pct": 94.4,
         "avg_score_change": 4.3,
         "verdict": "\u2705 ROBUST",
         "note": "Avg score change: \u00b14.3 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 82.1,
-        "stressed_avg": 77.4,
-        "score_drop": 4.7,
+        "normal_avg": 84.1,
+        "stressed_avg": 78.9,
+        "score_drop": 5.2,
         "removed": [
+          "BMO.TO",
           "GEV",
           "CAT",
-          "UMBF",
-          "C"
+          "UMBF"
         ],
-        "verdict": "\u2705 ROBUST",
-        "note": "Score drops 4.7 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 5.2 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
-        "survived": 18,
-        "survival_pct": 100.0,
-        "avg_score_drop": 3.8,
+        "survived": 17,
+        "survival_pct": 94.4,
+        "avg_score_drop": 3.9,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.8 pts"
+        "note": "If momentum stops working: avg score drops 3.9 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 82.1,
-      "scenarios_robust": 5,
-      "scenarios_fragile": 0,
+      "normal_avg_score": 84.1,
+      "scenarios_robust": 4,
+      "scenarios_fragile": 1,
       "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ROBUST \u2014 System survives stress well"
+      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
-    "verdict": "\u2705 ROBUST \u2014 System survives stress well"
+    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
-    "date": "July 06, 2026",
+    "date": "July 07, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 0.409,
-      "avg_ret_pct": 0.36,
-      "std_ret_pct": 6.33,
-      "picks_used": 1683,
-      "date_from": "2026-04-07",
+      "sharpe": 0.388,
+      "avg_ret_pct": 0.34,
+      "std_ret_pct": 6.36,
+      "picks_used": 1659,
+      "date_from": "2026-04-08",
       "date_to": "2026-07-06",
       "source": "resolved_returns",
-      "note": "Sharpe from 1683 resolved picks (2026-04-07 \u2192 2026-07-06) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 1659 resolved picks (2026-04-08 \u2192 2026-07-06) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": 2.45,
@@ -92,7 +92,7 @@
       "sharpe": 1.62,
       "symbol": "^GSPC"
     },
-    "alpha": -1.211,
+    "alpha": -1.232,
     "neg_alpha_days": 14,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
