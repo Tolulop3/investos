@@ -6,12 +6,12 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-07-07
 
 ## Regime Drift
-- ⚠️ Sharpe improving 0.413/day — guard disengagement approaching
-- Breadth (200MA): 75.8%  (+0.11%/day)
-- Sharpe: 0.388  (+0.413/day)
+- ⚠️ Sharpe improving 0.411/day — guard disengagement approaching
+- Breadth (200MA): 76.6%  (+0.23%/day)
+- Sharpe: 0.375  (+0.411/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **GEV** — 3d streak, avg score 100.0
+- No tickers with 3+ day streaks this week
 
 ## Score Velocity (rising/falling fast)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
@@ -24,7 +24,7 @@ tags: [investos, patterns, weekly]
 - 📉 **BB.TO** -8.5 pts/day  (100.0 → 83.0)
 
 ## ⚠️ Sector Concentration Risk
-- **INDUSTRIALS**: 100.0% of recent picks (2 picks) — HIGH_CONCENTRATION
+- **INDUSTRIALS**: 100.0% of recent picks (1 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
