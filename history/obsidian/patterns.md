@@ -7,11 +7,11 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ⚠️ Sharpe improving 0.411/day — guard disengagement approaching
-- Breadth (200MA): 76.6%  (+0.23%/day)
+- Breadth (200MA): 76.2%  (+0.17%/day)
 - Sharpe: 0.375  (+0.411/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- No tickers with 3+ day streaks this week
+- **GEV** — 3d streak, avg score 100.0
 
 ## Score Velocity (rising/falling fast)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
@@ -24,14 +24,14 @@ tags: [investos, patterns, weekly]
 - 📉 **BB.TO** -8.5 pts/day  (100.0 → 83.0)
 
 ## ⚠️ Sector Concentration Risk
-- **INDUSTRIALS**: 100.0% of recent picks (1 picks) — HIGH_CONCENTRATION
+- **INDUSTRIALS**: 100.0% of recent picks (2 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
 | ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
