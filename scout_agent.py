@@ -51,6 +51,20 @@ ROTATION_LOG  = "universe_rotation_log.json"
 FAILURE_LOG   = "universe_failure_log.json"
 MAX_CONSECUTIVE_FAILURES = 3   # drop from universe after this many consecutive scout failures
 
+# Only US (no suffix) and Canadian (.TO, .V) exchange listings are allowed.
+# Global ETFs are exempt — they're US-listed with no suffix.
+# This filter prevents foreign-exchange individual equities (e.g. 6383.T)
+# from entering the universe via ETF holdings data.
+_ALLOWED_EXCHANGE_SUFFIXES = frozenset({"TO", "V"})
+
+
+def _is_valid_exchange(ticker):
+    """True if ticker is a US listing (no dot) or Canadian (.TO / .V)."""
+    if "." not in ticker:
+        return True    # US listing
+    suffix = ticker.rsplit(".", 1)[-1].upper()
+    return suffix in _ALLOWED_EXCHANGE_SUFFIXES
+
 # ETF sources — yfinance holdings fetch
 # Note: yfinance top_holdings returns ~10 names per ETF regardless of max.
 # Wider coverage comes from diversity of ETF sources, not higher max values.
@@ -332,11 +346,16 @@ def run_scout(verbose=True):
     # S&P 500 from Wikipedia
     print(f"  Fetching S&P 500 from Wikipedia...")
     sp500 = fetch_sp500_wikipedia()
+    _sp500_rejected = 0
     if sp500:
         for t in sp500:
+            if not _is_valid_exchange(t):
+                print(f"  Scout: rejected {t} (foreign listing)")
+                _sp500_rejected += 1
+                continue
             us_candidates.add(t)
             source_map[t] = "scout_sp500"
-        print(f"    → {len(sp500)} tickers")
+        print(f"    → {len(sp500)} tickers ({_sp500_rejected} foreign rejected)")
     else:
         print(f"    → failed, continuing without")
 
@@ -345,14 +364,21 @@ def run_scout(verbose=True):
         print(f"  Fetching {cfg['ticker']} holdings...")
         holdings = fetch_etf_holdings(cfg["ticker"], cfg["max"])
         if holdings:
+            _etf_rejected = 0
             for t in holdings:
+                if not _is_valid_exchange(t):
+                    print(f"  Scout: rejected {t} (foreign listing)")
+                    _etf_rejected += 1
+                    continue
                 if cfg["region"] == "CA":
                     ca_candidates.add(t)
                 else:
                     us_candidates.add(t)
                 if t not in source_map:
                     source_map[t] = cfg["label"]
-            print(f"    → {len(holdings)} holdings")
+            _accepted = len(holdings) - _etf_rejected
+            suffix = f" ({_etf_rejected} foreign rejected)" if _etf_rejected else ""
+            print(f"    → {_accepted} holdings{suffix}")
         else:
             print(f"    → no holdings returned")
 
