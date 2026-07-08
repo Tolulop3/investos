@@ -77,6 +77,7 @@ def apply_news_to_screener(screener_results, news_analysis):
     sector_sent    = news_analysis.get("sector_sentiment",   {})
     count          = 0
     sector_penalised = 0
+    hard_excluded  = set()   # tickers with news_penalty>=15 + HIGH/CRITICAL signal
 
     SECTOR_MAP = {
         "Communication Services": "TELECOM",
@@ -104,6 +105,10 @@ def apply_news_to_screener(screener_results, news_analysis):
                 pick["news_original"]   = n
                 pick["news_sentiment"]  = adj.get("news_sentiment", "NEUTRAL")
                 pick["news_reasons"]    = adj.get("reasons", [])
+                mag = adj.get("causing_magnitude", "LOW")
+                if n_capped <= -15 and mag in ("HIGH", "CRITICAL"):
+                    pick["news_hard_exclude"] = True
+                    hard_excluded.add(pick["ticker"])
                 if n_capped > 0:
                     pick.setdefault("reasons", []).append(
                         f"📰 News +{n_capped}pts: {', '.join(adj.get('reasons',[])[:1])}")
@@ -126,10 +131,20 @@ def apply_news_to_screener(screener_results, news_analysis):
                         f"⚠️ Sector headwind ({news_sector} net:{net}): {penalty}pts")
                     sector_penalised += 1
 
+    # Hard-exclude picks from top-5 buckets so they don't enter sizing or logging
+    if hard_excluded:
+        print(f"   🚫 News hard-exclude (penalty≥15 + HIGH/CRITICAL): {sorted(hard_excluded)}")
+        for bucket in ["FHSA_top5","TFSA_growth_top5","TFSA_income_top5","TFSA_swing_top3"]:
+            screener_results[bucket] = [
+                p for p in screener_results.get(bucket, [])
+                if not p.get("news_hard_exclude")
+            ]
+
     for bucket in ["FHSA_top5","TFSA_growth_top5","TFSA_income_top5","TFSA_swing_top3"]:
         screener_results[bucket] = sorted(
             screener_results.get(bucket, []), key=lambda x: x["score"], reverse=True
         )
+    screener_results["_news_hard_excluded"] = hard_excluded
     print(f"   Applied news adjustments: {count} picks | Regime: {news_analysis.get('macro_regime','NORMAL')}")
     if sector_penalised:
         print(f"   ⚠️ Sector headwind penalty: {sector_penalised} picks docked")
@@ -229,24 +244,10 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
     conviction = []
     seen       = set()
 
-    # ── Distributional ML gate (Part C) ──────────────────────────────────────
-    # Static thresholds (20%, 35%) pass everything when probs cluster 41-48%.
-    # Use median of today's scored picks as the gate, floored at 0.20.
-    _all_probs = [p.get("ml_prob") for p in all_picks if p.get("ml_prob") is not None]
-    if _all_probs:
-        _sorted_p = sorted(_all_probs)
-        _n = len(_sorted_p)
-        _median_prob = (_sorted_p[_n // 2] if _n % 2 else
-                        (_sorted_p[_n // 2 - 1] + _sorted_p[_n // 2]) / 2)
-        _ml_gate = max(0.20, _median_prob)
-        # Log distribution for calibration (only useful after model retrain)
-        _p10 = _sorted_p[max(0, _n // 10)]
-        _p90 = _sorted_p[min(_n - 1, 9 * _n // 10)]
-        print(f"  📊 ML prob distribution ({_n} picks): "
-              f"p10={_p10:.3f} median={_median_prob:.3f} p90={_p90:.3f} → gate={_ml_gate:.3f}")
-    else:
-        _ml_gate = 0.20
-    # ─────────────────────────────────────────────────────────────────────────
+    # Conviction is signal-count only — 2+ independent signals aligned.
+    # ML prob is one of those signals (≥0.68 adds a signal), but it is NOT a gate.
+    # The ML gate (sector-first + compression-aware ML) was already applied in the
+    # sizing path. Conviction does not re-gate; it only counts evidence signals.
 
     for pick in all_picks:
         ticker = pick["ticker"]
@@ -255,12 +256,6 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
         seen.add(ticker)
         # Skip tickers on cooldown — invisible to conviction AND content engine
         if cooldown_set and (ticker in cooldown_set or ticker.replace(".TO","").replace("-UN","").upper() in cooldown_set):
-            continue
-
-        # ML gate: score≥90 + ML below distributional threshold → exclude from conviction
-        _ml_prob = pick.get("ml_prob", 0.5) or 0.5
-        _score   = pick.get("score", 0) or 0
-        if _score >= 90 and _ml_prob < _ml_gate:
             continue
 
         clean = ticker.replace(".TO","").replace("-UN","").upper()
@@ -665,6 +660,7 @@ def run_daily(test_mode=False, dry_run=False):
     screener = apply_news_to_screener(screener, news)
 
     # ── 4b. Insider Engine ────────────────────────────────────
+    _insider_ok = True
     try:
         all_picks = []
         for acct_picks in screener.values():
@@ -673,9 +669,11 @@ def run_daily(test_mode=False, dry_run=False):
         updated_picks, insider_scores = run_insider_engine(all_picks, verbose=True)
         screener["insider_scores"] = insider_scores
     except Exception as _ie:
+        _insider_ok = False
         print(f"  ⚠️  Insider engine error: {_ie} — continuing without")
 
     # ── 4c. Options Flow Engine ──────────────────────────────
+    _options_ok = True
     options_signals = {}
     market_pcr_data = {"pcr": None, "signal": "NEUTRAL", "macro_adj": 0.0}
     try:
@@ -684,6 +682,7 @@ def run_daily(test_mode=False, dry_run=False):
             us_picks_for_opts, verbose=True
         )
     except Exception as _oe:
+        _options_ok = False
         print(f"  ⚠️  Options engine error: {_oe} — continuing without")
 
     # ── 4.5 Regime Authority Filter ──────────────────────────
@@ -855,6 +854,12 @@ def run_daily(test_mode=False, dry_run=False):
                 print(f"  🔄 Long cooldowns ({len(_lc2_active)}): {', '.join(_lc2_parts)}")
     except Exception as _lc2_e:
         print(f"  ⚠️  long_cooldowns.json error: {_lc2_e}")
+
+    # ── News hard-exclusion (penalty≥15 + HIGH/CRITICAL signal) ─────────────
+    _news_hard_excl = screener.get("_news_hard_excluded", set())
+    if isinstance(_news_hard_excl, set) and _news_hard_excl:
+        cooldown_set.update(_news_hard_excl)
+        print(f"  🚫 News hard-exclusions added to cooldown: {sorted(_news_hard_excl)}")
 
     print(f"  📋 Consolidated exclusion set: {len(cooldown_set)} tickers total")
 
@@ -1327,11 +1332,12 @@ def run_daily(test_mode=False, dry_run=False):
         "fx_signals":        fx_signals,
 
         "ml": {
-            "regime":             ml_results.get("regime",{}),
-            "position_sizing":    ml_results.get("position_sizing",[]),
-            "backtest_summary":   ml_results.get("backtest_summary",{}),
-            "feature_importance": ml_results.get("feature_importance",{}),
-            "regime_signal":      ml_results.get("regime_signal",""),
+            "regime":              ml_results.get("regime",{}),
+            "position_sizing":     ml_results.get("target_weights",[]),
+            "account_allocations": ml_results.get("account_allocations",{}),
+            "backtest_summary":    ml_results.get("backtest_summary",{}),
+            "feature_importance":  ml_results.get("feature_importance",{}),
+            "regime_signal":       ml_results.get("regime_signal",""),
         },
 
         "intelligence": {
@@ -1350,6 +1356,8 @@ def run_daily(test_mode=False, dry_run=False):
             "screened": screener["screened"]
         },
         "breadth":         screener.get("breadth"),
+        "unified_regime":  unified_regime,    # logged to outcomes + shown in dashboard
+        "macro_regime":    macro_reg,          # RISK_OFF/CAUTIOUS/NORMAL/RISK_ON
         "crypto":          crypto_signals,
         "deployment_plan": deployment_plan,
         "portfolio_scorecard": get_scorecard(),
@@ -1392,12 +1400,15 @@ def run_daily(test_mode=False, dry_run=False):
             _lc_gs_data = {t: v.get("blocked_until","")
                            for t, v in _lc_raw.items()
                            if _today_gs <= v.get("blocked_until", "")}
+        _gate_obj = ml_results.get("gate") if ml_results else None
+        _gate_summary = _gate_obj.summary() if _gate_obj else {}
         brief["gate_status"] = {
             "sector_first_gate":       True,
             "sector_allow":            ["ENERGY", "BANKS", "FINANCIALS"],
             "sector_block":            ["MATERIALS", "TELECOM", "HEALTHCARE", "REIT", "CONSUMER"],
             "materials_75_block":      True,
-            "ml_gate_threshold_pct":   20,
+            "ml_gate_threshold_pct":   round((_gate_summary.get("ml_gate_threshold") or 0) * 100, 1),
+            **_gate_summary,
             "long_cooldowns":          _lc_gs_data,
             "long_cooldowns_count":    len(_lc_gs_data),
         }
@@ -1412,11 +1423,12 @@ def run_daily(test_mode=False, dry_run=False):
             screener.get("TFSA_growth_top5", []) +
             screener.get("TFSA_swing_top3", [])
         )
-        # Strip cooldown tickers — they are filtered from position sizing and must
-        # not appear in the outcome log (would inflate logged-pick count and skew WR).
+        # Strip cooldown tickers and hard-excluded picks — they must not appear
+        # in the outcome log (would skew WR and inflate logged-pick count).
         _log_cd = cooldown_set if isinstance(cooldown_set, set) else set()
         all_picks_to_log = [p for p in all_picks_to_log
-                            if p.get("ticker") not in _log_cd]
+                            if p.get("ticker") not in _log_cd
+                            and not p.get("news_hard_exclude")]
         current_prices = {p["ticker"]: p.get("data",{}).get("price",0)
                          for p in all_picks_to_log if p.get("data",{}).get("price")}
         resolve_outcomes(current_prices)
@@ -1588,6 +1600,26 @@ def run_daily(test_mode=False, dry_run=False):
     print(f"  {content['tweet'][:120]}...")
     print(f"\n  💾 Files saved: latest_brief.json | fx_signals.json | content_output.json")
     print(f"  🖥  Open: index.html\n")
+
+    # ── Run manifest — consumed by scripts/verify_run.py ─────────────────────
+    try:
+        _gate_obj_m  = ml_results.get("gate") if ml_results else None
+        _gate_sum_m  = _gate_obj_m.summary() if _gate_obj_m else {}
+        _manifest = {
+            "run_date":             datetime.now().strftime("%Y-%m-%d"),
+            "insider_ok":           _insider_ok,
+            "options_ok":           _options_ok,
+            "gate_status":          _gate_sum_m.get("ml_gate_status", "UNKNOWN"),
+            "gate_decisions_count": len(_gate_sum_m),
+            "unified_regime":       unified_regime,
+            "substitution_tickers": ml_results.get("substitution_tickers", []) if ml_results else [],
+            "pre_gate_excluded":    ml_results.get("pre_gate_excluded", []) if ml_results else [],
+            "all_scores_count":     brief.get("screen_stats", {}).get("screened", 0),
+        }
+        with open("run_manifest.json", "w") as _mf:
+            json.dump(_manifest, _mf, indent=2)
+    except Exception as _me:
+        print(f"  ⚠️  run_manifest.json write failed: {_me}")
 
     return brief
 
@@ -2033,12 +2065,16 @@ if __name__ == "__main__":
                     if _cur is None:
                         continue
                     _drift = _cur - _base
-                    if _drift < -PF_ALERT_THRESHOLD:
-                        _icon = "🔴"
-                        _note = "— investigate"
-                    elif _drift > PF_ALERT_THRESHOLD:
-                        _icon = "✅"
-                        _note = "— improving"
+                    _adrift = abs(_drift)
+                    if _adrift >= 0.20:
+                        _icon = "🔴" if _drift < 0 else "✅"
+                        _note = "— ALERT" if _drift < 0 else "— ALERT ↑"
+                    elif _adrift >= 0.10:
+                        _icon = "🟠" if _drift < 0 else "🟡"
+                        _note = "— significant"
+                    elif _adrift >= 0.05:
+                        _icon = "🟡"
+                        _note = "— drifting"
                     else:
                         _icon = "↔ "
                         _note = "— stable"
