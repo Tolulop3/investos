@@ -142,17 +142,25 @@ ML_CONFIG = {
         "sector_encoded",
     ],
     "xgb_params": {
-        "n_estimators":     100,
+        "n_estimators":     150,   # aligned with ml_retrainer.py
         "max_depth":        3,
-        "learning_rate":    0.05,
+        "learning_rate":    0.04,  # aligned with ml_retrainer.py
         "subsample":        0.8,
         "colsample_bytree": 0.7,
-        "min_child_weight": 5,
-        "reg_alpha":        0.1,
+        "min_child_weight": 4,     # aligned with ml_retrainer.py
+        "reg_alpha":        0.15,  # aligned with ml_retrainer.py
         "reg_lambda":       1.0,
         "random_state":     42,
         "eval_metric":      "auc",
-        "use_label_encoder":False,
+        "verbosity":        0,
+        "enable_categorical": True,   # required: sector_encoded uses 'category' dtype
+        "monotone_constraints": {     # must match ml_retrainer.py exactly
+            "roe":                  1,
+            "profit_margin":        1,
+            "earnings_yield":       1,
+            "volatility_90d":      -1,
+            "close_to_ema20_ratio":-1,
+        },
     },
     "max_positions":        20,
     "min_positions":        10,
