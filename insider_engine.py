@@ -29,6 +29,19 @@ import urllib.parse
 from datetime import datetime, timedelta
 
 
+def safe_parse_api_response(data, list_key):
+    """
+    Guard: normalise any API response into a plain Python list.
+    Called before any iteration in both insider + options engines.
+    Handles: list (pass-through), dict (extract list_key), anything else → [].
+    """
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        return data.get(list_key, [])
+    return []
+
+
 def safe_parse_records(raw, list_keys=('filings', 'results', 'data', 'items')):
     """
     Normalise an API response into a list of dicts.
@@ -286,6 +299,13 @@ def fetch_form4_aggregated(cik, ticker, days_back=30):
         url  = f"https://data.sec.gov/submissions/CIK{cik}.json"
         data = _edgar_request(url, timeout=10)
 
+        # Diagnostic: print raw response shape on first call (shows actual API format)
+        if not hasattr(fetch_form4_aggregated, "_diag_done"):
+            fetch_form4_aggregated._diag_done = True
+            print(f"  🔍 EDGAR raw response type={type(data).__name__} "
+                  f"keys={list(data.keys())[:6] if isinstance(data, dict) else '—'} "
+                  f"head={repr(str(data))[:200]}")
+
         if not isinstance(data, dict):
             print(f"  ⚠️ EDGAR CIK{cik} ({ticker}): unexpected response type "
                   f"{type(data).__name__} — skipping. head={repr(data)[:200]}")
@@ -321,17 +341,19 @@ def score_insider_signal(form4s, ticker):
     - 1-2 Form 4s = normal reporting
     Returns (adjustment, reason) tuple.
     """
+    form4s = safe_parse_records(form4s)  # normalise: ensure all items are dicts
     if not form4s:
         return 0, ""
 
     count    = len(form4s)
     try:
-        recent5d  = [f for f in form4s if f["date"] >= (datetime.now()-timedelta(days=5)).strftime("%Y-%m-%d")]
-        recent14d = [f for f in form4s if f["date"] >= (datetime.now()-timedelta(days=14)).strftime("%Y-%m-%d")]
-    except TypeError:
-        sample = type(form4s[0]).__name__ if form4s else "?"
-        print(f"  ⚠️ score_insider_signal ({ticker}): unexpected record type "
-              f"{sample} | head={repr(form4s)[:300]}")
+        cutoff5d  = (datetime.now()-timedelta(days=5)).strftime("%Y-%m-%d")
+        cutoff14d = (datetime.now()-timedelta(days=14)).strftime("%Y-%m-%d")
+        recent5d  = [f for f in form4s if f.get("date", "") >= cutoff5d]
+        recent14d = [f for f in form4s if f.get("date", "") >= cutoff14d]
+    except Exception as _e:
+        print(f"  ⚠️ score_insider_signal ({ticker}): {type(_e).__name__}={_e} "
+              f"| head={repr(form4s)[:200]}")
         return 0, ""
 
     if len(recent5d) >= 3:
@@ -339,7 +361,7 @@ def score_insider_signal(form4s, ticker):
     elif len(recent14d) >= 2:
         return 3, f"🔍 Insider activity: {len(recent14d)} Form 4s in 14d"
     elif count >= 1:
-        return 1, f"🔍 Recent Form 4 filed ({form4s[0]['date']})"
+        return 1, f"🔍 Recent Form 4 filed ({form4s[0].get('date', 'unknown')})"
     return 0, ""
 
 
@@ -348,10 +370,16 @@ def run_insider_engine(picks, verbose=True):
     Main entry point. Called from run_daily.py with the screener picks list.
     Returns (updated_picks, insider_scores_dict).
     """
+    # Guard: normalise picks to list-of-dicts before any key access.
+    # Prevents "string indices must be integers" when a screener bucket
+    # returns ticker strings instead of pick dicts.
+    picks = [p for p in safe_parse_api_response(picks, "picks") if isinstance(p, dict)]
+
     if verbose:
         print("\n" + "="*55)
         print("  INSIDER ENGINE v2 — SEC EDGAR Form 4 Auto-Fetch")
         print("="*55)
+        print(f"  🔍 Input guard: {len(picks)} valid pick dicts received")
 
     cik_cache    = _load_cik_cache()
     insider_scores = {}

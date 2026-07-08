@@ -39,6 +39,19 @@ except ImportError:
     HAS_YF = False
 
 
+def safe_parse_api_response(data, list_key):
+    """
+    Guard: normalise any API response into a plain Python list.
+    Called before any iteration in both insider + options engines.
+    Handles: list (pass-through), dict (extract list_key), anything else → [].
+    """
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        return data.get(list_key, [])
+    return []
+
+
 def safe_parse_records(raw, list_keys=('filings', 'results', 'data', 'items')):
     """
     Normalise an API response into a list of dicts.
@@ -116,8 +129,9 @@ def get_market_pcr(verbose=False):
             try:
                 total_calls += chain.calls["volume"].fillna(0).sum()
                 total_puts  += chain.puts["volume"].fillna(0).sum()
-            except TypeError:
-                print(f"  ⚠️ Market PCR {ticker}: unexpected chain type "
+            except Exception as _cex:
+                print(f"  ⚠️ Market PCR {ticker}: chain parse error "
+                      f"{type(_cex).__name__}={_cex} | "
                       f"calls={type(chain.calls).__name__} "
                       f"| head={repr(chain.calls)[:200]}")
                 continue
@@ -184,11 +198,19 @@ def get_stock_options_signal(ticker, current_price=None, verbose=False):
                 calls = chain.calls
                 puts  = chain.puts
 
+                # Diagnostic: print raw chain shape on first call per engine run
+                if not hasattr(get_stock_options_signal, "_diag_done"):
+                    get_stock_options_signal._diag_done = True
+                    print(f"  🔍 Options chain type={type(chain).__name__} "
+                          f"calls={type(calls).__name__} "
+                          f"head={repr(calls)[:200]}")
+
                 try:
                     total_call_vol += calls["volume"].fillna(0).sum()
                     total_put_vol  += puts["volume"].fillna(0).sum()
-                except TypeError:
-                    print(f"  ⚠️ Options chain {ticker}/{exp}: unexpected type "
+                except Exception as _cex:
+                    print(f"  ⚠️ Options chain {ticker}/{exp}: parse error "
+                          f"{type(_cex).__name__}={_cex} | "
                           f"calls={type(calls).__name__} | head={repr(calls)[:200]}")
                     continue
 
@@ -258,10 +280,16 @@ def run_options_engine(picks, verbose=True):
     Main entry. Run options analysis for screener picks.
     Returns (updated_picks, options_signals, market_pcr_data).
     """
+    # Guard: normalise picks to list-of-dicts before any key access.
+    # Prevents "string indices must be integers" when a screener bucket
+    # returns ticker strings instead of pick dicts.
+    picks = [p for p in safe_parse_api_response(picks, "picks") if isinstance(p, dict)]
+
     if verbose:
         print("\n" + "="*55)
         print("  OPTIONS FLOW ENGINE")
         print("="*55)
+        print(f"  🔍 Input guard: {len(picks)} valid pick dicts received")
 
     if not HAS_YF:
         if verbose: print("  ⚠️ yfinance not available — skipping")
@@ -291,7 +319,7 @@ def run_options_engine(picks, verbose=True):
     market_pcr_data["macro_adj"] = pcr_macro_adj
 
     # ── Per-stock options signals ─────────────────────────────────────────────
-    us_picks = [p for p in picks if not p["ticker"].endswith(".TO")]
+    us_picks = [p for p in picks if not p.get("ticker","").endswith(".TO")]
     if verbose:
         print(f"\n  📊 Scanning {len(us_picks)} US picks for unusual options activity...")
 
