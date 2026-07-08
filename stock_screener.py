@@ -130,7 +130,7 @@ UNIVERSE = {
         "ACWI",  # All country world
         "MCHI",  # China broad
         # Frontier markets
-        "NGE",   # Global X MSCI Nigeria ETF — Nigeria macro proxy (NYSE, liquid)
+        # NGE removed: 3 consecutive yfinance fetch failures (July 4-7 2026)
     ],
 
     # ── CANADIAN ETFs ─────────────────────────────────────────
@@ -153,6 +153,7 @@ ALL_TICKERS = list(set(
 # Add any ticker here that causes consistent errors across runs.
 EXCLUDED_TICKERS = {
     "NVEI.TO",   # Delisted — removed from TSX, causes yfinance 404 every run
+    "NGE",       # Global X MSCI Nigeria ETF — yfinance coverage unavailable (3 consecutive failures Jul 2026)
 }
 ALL_TICKERS = [t for t in ALL_TICKERS if t not in EXCLUDED_TICKERS]
 
