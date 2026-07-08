@@ -852,6 +852,14 @@ def run_daily(test_mode=False, dry_run=False):
                 _lc2_parts = [f"{t} (until {v['blocked_until']})"
                               for t, v in _lc2_active.items()]
                 print(f"  🔄 Long cooldowns ({len(_lc2_active)}): {', '.join(_lc2_parts)}")
+                # ── Cooldown watch: momentum on blocked names for Oct 3 evaluation ──
+                _rs_map = intel.get("rs_ratings", {})
+                for _lc_t, _lc_v in sorted(_lc2_active.items()):
+                    _rs_entry = _rs_map.get(_lc_t, {})
+                    _rs_val   = int(_rs_entry.get("rs_rating", 0))
+                    if _rs_val >= 90:
+                        print(f"  👁 Cooldown watch: {_lc_t} RS={_rs_val} "
+                              f"(blocked until {_lc_v['blocked_until']})")
     except Exception as _lc2_e:
         print(f"  ⚠️  long_cooldowns.json error: {_lc2_e}")
 
