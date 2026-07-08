@@ -430,6 +430,22 @@ def train_and_save(X, y, w, dates=None):
     except Exception:
         calibrator = None
 
+    # ── Probability distribution diagnostic ──────────────────────────────────
+    # Saturation check: p10=0.25, median=0.50, p90=0.50 means the model barely
+    # discriminates (all probs clustered at 0.50). Sector as a feature should
+    # widen the spread. Watch this after each retrain.
+    try:
+        _all_probs = (calibrator if calibrator else model).predict_proba(X)[:,1]
+        _p10  = float(np.percentile(_all_probs, 10))
+        _p50  = float(np.percentile(_all_probs, 50))
+        _p90  = float(np.percentile(_all_probs, 90))
+        _sprd = round(_p90 - _p10, 3)
+        _sat  = "⚠️  SATURATED — discriminates poorly" if _sprd < 0.10 else "✅ adequate spread"
+        print(f"  📊 ML prob distribution: p10={_p10:.3f}  p50={_p50:.3f}  p90={_p90:.3f}"
+              f"  spread={_sprd:.3f}  {_sat}")
+    except Exception as _de:
+        print(f"  ⚠️  Prob distribution diagnostic failed: {_de}")
+
     feat_imp = {}
     if hasattr(model, "feature_importances_"):
         feat_imp = dict(sorted(
