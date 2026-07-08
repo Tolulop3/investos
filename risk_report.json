@@ -1,5 +1,5 @@
 {
-  "date": "July 07, 2026",
+  "date": "July 08, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-07T22:13:35.994542",
+    "run_at": "2026-07-08T12:26:31.293239",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,30 +30,31 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
+        "survived": 18,
+        "survival_pct": 100.0,
         "avg_score_change": 4.4,
         "verdict": "\u2705 ROBUST",
         "note": "Avg score change: \u00b14.4 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 83.3,
-        "stressed_avg": 77.8,
-        "score_drop": 5.5,
+        "normal_avg": 85.7,
+        "stressed_avg": 78.1,
+        "score_drop": 7.6,
         "removed": [
+          "FBP",
+          "BMO.TO",
           "UMBF",
-          "GEV",
-          "FBP"
+          "GEV"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 5.5 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 7.6 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
+        "survived": 18,
+        "survival_pct": 100.0,
         "avg_score_drop": 3.2,
         "verdict": "\u2705 ROBUST",
         "note": "If momentum stops working: avg score drops 3.2 pts"
@@ -61,7 +62,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 83.3,
+      "normal_avg_score": 85.7,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -70,17 +71,17 @@
     "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
-    "date": "July 07, 2026",
+    "date": "July 08, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 0.375,
-      "avg_ret_pct": 0.33,
-      "std_ret_pct": 6.34,
-      "picks_used": 1686,
-      "date_from": "2026-04-08",
+      "sharpe": 0.391,
+      "avg_ret_pct": 0.35,
+      "std_ret_pct": 6.37,
+      "picks_used": 1667,
+      "date_from": "2026-04-09",
       "date_to": "2026-07-07",
       "source": "resolved_returns",
-      "note": "Sharpe from 1686 resolved picks (2026-04-08 \u2192 2026-07-07) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 1667 resolved picks (2026-04-09 \u2192 2026-07-07) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": 2.04,
@@ -91,14 +92,14 @@
       "sharpe": 1.64,
       "symbol": "^GSPC"
     },
-    "alpha": -1.265,
+    "alpha": -1.249,
     "neg_alpha_days": 15,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 73.9,
-      "momentum_picks": 23,
-      "note": "17/23 rising-score picks also rose in price"
+      "alignment_pct": 75.0,
+      "momentum_picks": 24,
+      "note": "18/24 rising-score picks also rose in price"
     },
     "alerts": [],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
