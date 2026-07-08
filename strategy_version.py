@@ -133,6 +133,61 @@ RULES = {
         "First OOS reading: Sep 25 2026 (~90 days, ~60-70 new resolved picks). "
         "Bug fixes and non-strategy changes (UI, security, logging) are exempt."
     ),
+
+    # ── OOS Period attribution boundaries ────────────────────────────────────
+    # Each period's label, start, and logic change that defines it.
+    # Used to slice outcomes_log.json in attribution reports.
+    # Do NOT overlap periods — end is exclusive / start is inclusive.
+    "oos_periods": [
+        {
+            "period": 1,
+            "label": "OOS — baseline",
+            "start": "2026-06-26",
+            "end":   "2026-06-30",   # exclusive — last day of baseline rule set
+            "note":  "v4.1 frozen rule set. Diminishing-returns factor 0.4 live. Gate not yet added.",
+        },
+        {
+            "period": 2,
+            "label": "OOS — post-curve",
+            "start": "2026-06-30",
+            "end":   "2026-07-01",
+            "note":  "Curve fix confirmed active (BAC=94.2→91). Gate still off. Very short window.",
+        },
+        {
+            "period": 3,
+            "label": "OOS — pre-gate",
+            "start": "2026-07-01",
+            "end":   "2026-07-01",
+            "note":  "Placeholder — gate not yet live. Adjust if gate shipped before 2026-07-01.",
+        },
+        {
+            "period": 4,
+            "label": "OOS — post-gate",
+            "start": "2026-07-01",
+            "end":   None,   # open-ended — current period
+            "note":  (
+                "ML gate activated (score≥90 AND ml_prob<0.20 → removed from sizing+conviction). "
+                "Sector diversity cap added. Reserve pool integrity fix live. "
+                "First attributable gate-era picks from this date forward."
+            ),
+        },
+    ],
+
+    # ── GEV resolution tracker ────────────────────────────────────────────────
+    # Tracks individual high-stakes picks pending OOS resolution.
+    # Format: ticker | Score | Gate path | ML prob | Outcome (PENDING/WIN/LOSS)
+    "gev_resolution_tracker": [
+        {
+            "ticker":    "GEV",
+            "score":     100,
+            "sector":    "INDUSTRIALS",   # tagged INDUSTRIALS in pipeline (not Energy)
+            "gate_path": "ML gate — INDUSTRIALS is neither SECTOR_ALLOW nor SECTOR_BLOCK, falls through to ML gate",
+            "ml_prob":   0.50,
+            "outcome":   "PENDING",
+            "expected_resolution": "2026-07-11",
+            "note":      "Score 100 but not ML-removed (ml_prob=0.50 ≥ 0.20 threshold). Watch for resolution Jul 11.",
+        },
+    ],
 }
 
 
