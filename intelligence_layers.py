@@ -35,8 +35,16 @@ def update_score_history(todays_picks):
     today   = datetime.now().strftime("%Y-%m-%d")
     for pick in todays_picks:
         ticker = pick["ticker"]; score = pick["score"]; price = pick.get("data", {}).get("price", 0)
-        if ticker not in history: history[ticker] = []
-        history[ticker].append({"date": today, "score": round(float(score), 1), "price": round(float(price), 4) if price else 0})
+        if ticker not in history:
+            history[ticker] = []
+        new_entry = {"date": today, "score": round(float(score), 1), "price": round(float(price), 4) if price else 0}
+        # Overwrite today's existing entry rather than appending — prevents
+        # double-counting on same-day runs (two runs 10 min apart = one snapshot).
+        _today_idx = next((i for i, h in enumerate(history[ticker]) if h["date"] == today), None)
+        if _today_idx is not None:
+            history[ticker][_today_idx] = new_entry
+        else:
+            history[ticker].append(new_entry)
         cutoff = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
         history[ticker] = [h for h in history[ticker] if h["date"] >= cutoff]
     save_score_history(history)

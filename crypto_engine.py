@@ -27,10 +27,33 @@ RISK WARNING:
 """
 
 import json
+import os
 import time
 import urllib.request
 import urllib.parse
 from datetime import datetime
+
+CRYPTO_SIGNAL_STATE_FILE = "crypto_signal_state.json"
+
+
+def _load_crypto_signal_state():
+    """
+    Load per-asset signal state (direction, entry_price, start_date).
+    Returns {} if file absent.
+    """
+    try:
+        with open(CRYPTO_SIGNAL_STATE_FILE) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_crypto_signal_state(state):
+    try:
+        with open(CRYPTO_SIGNAL_STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
+    except Exception:
+        pass
 
 CRYPTO_ASSETS = {
     "BTC-USD": {
@@ -380,6 +403,8 @@ def run_crypto_engine(news_analysis=None, portfolio_value=10000, verbose=True):
     if verbose and dom_signal["signal"] != "NEUTRAL":
         print(f"\n  📊 Dominance: {dom_signal['note']}")
 
+    signal_state = _load_crypto_signal_state()
+    new_state    = {}
     results = {}
     price_map = {"BTC-USD": btc_data, "SOL-USD": sol_data}
 
@@ -410,6 +435,44 @@ def run_crypto_engine(news_analysis=None, portfolio_value=10000, verbose=True):
             combined["conviction"] = conviction
             if verbose and whale_adj != 0:
                 print(f"     🐋 Whale signal: {whale_summary}")
+
+        # ── Adverse-move breaker ──────────────────────────────────────────────
+        # BEAR signal that's wrong: price rising since the signal was first issued.
+        # >7% rise since entry → halve conviction (signal weakening).
+        # >12% rise since entry → force NEUTRAL (signal invalidated).
+        cur_price = pd["price"]
+        prev      = signal_state.get(symbol, {})
+        if prev.get("direction") == direction:
+            entry_price = prev.get("entry_price", cur_price)
+            entry_date  = prev.get("start_date", now.strftime("%Y-%m-%d"))
+        else:
+            entry_price = cur_price
+            entry_date  = now.strftime("%Y-%m-%d")
+        new_state[symbol] = {"direction": direction, "entry_price": entry_price,
+                             "start_date": entry_date}
+
+        if direction == "SHORT" and entry_price > 0:
+            adverse_move = (cur_price - entry_price) / entry_price
+            if adverse_move > 0.12:
+                if verbose:
+                    print(f"  ⛔ ADVERSE-MOVE BREAKER ({symbol}): "
+                          f"BEAR signal but price +{adverse_move:.1%} since {entry_date} "
+                          f"(${entry_price:,.0f} → ${cur_price:,.0f}) — forcing NEUTRAL")
+                direction              = "NEUTRAL"
+                conviction             = 0
+                combined["direction"]  = "NEUTRAL"
+                combined["conviction"] = 0
+                combined["alignment"]  = "BEAR INVALIDATED ⛔"
+                combined["verdict"]    = "⚪ NEUTRAL — Bear signal invalidated by adverse move"
+            elif adverse_move > 0.07:
+                halved = max(0, conviction // 2)
+                if verbose:
+                    print(f"  ⚠️ Adverse-move warning ({symbol}): "
+                          f"BEAR signal but price +{adverse_move:.1%} since {entry_date} "
+                          f"— halving conviction {conviction}% → {halved}%")
+                conviction             = halved
+                combined["conviction"] = halved
+        # ─────────────────────────────────────────────────────────────────────
 
         atr = pd["atr"]
 
@@ -485,6 +548,8 @@ def run_crypto_engine(news_analysis=None, portfolio_value=10000, verbose=True):
                     print(f"     Size: ${size_usd:,} ({round(size_pct*100,1)}% of portfolio)")
 
     if verbose: print(f"\n{'='*55}")
+
+    _save_crypto_signal_state(new_state)
 
     return {
         "generated_at":     now.isoformat(),

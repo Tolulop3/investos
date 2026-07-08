@@ -48,6 +48,8 @@ MIN_3M_RETURN      = 0.05     # 5% min 3-month return to pass filter
 DYNAMIC_FILE  = "universe_dynamic.json"
 CURRENT_FILE  = "universe_current.json"
 ROTATION_LOG  = "universe_rotation_log.json"
+FAILURE_LOG   = "universe_failure_log.json"
+MAX_CONSECUTIVE_FAILURES = 3   # drop from universe after this many consecutive scout failures
 
 # ETF sources — yfinance holdings fetch
 # Note: yfinance top_holdings returns ~10 names per ETF regardless of max.
@@ -252,6 +254,58 @@ def momentum_pre_filter(tickers, region="US", verbose=True):
     return results
 
 
+def _load_failure_log():
+    try:
+        with open(FAILURE_LOG) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_failure_log(data):
+    try:
+        with open(FAILURE_LOG, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
+
+def update_failure_log(passed_tickers, failed_tickers):
+    """
+    Track consecutive fetch failures per ticker.
+    A ticker that fails MAX_CONSECUTIVE_FAILURES times in a row gets
+    status='inactive' — it will be dropped from universe_current.json.
+    Returns set of tickers now marked inactive.
+    """
+    log = _load_failure_log()
+    newly_inactive = set()
+
+    for ticker in passed_tickers:
+        if ticker in log:
+            log[ticker]["consecutive_failures"] = 0  # reset on success
+
+    for ticker in failed_tickers:
+        if ticker not in log:
+            log[ticker] = {"consecutive_failures": 0, "status": "active"}
+        log[ticker]["consecutive_failures"] += 1
+        if log[ticker]["consecutive_failures"] >= MAX_CONSECUTIVE_FAILURES:
+            if log[ticker].get("status") != "inactive":
+                log[ticker]["status"] = "inactive"
+                newly_inactive.add(ticker)
+                print(f"  🚫 Scout: {ticker} → inactive "
+                      f"({MAX_CONSECUTIVE_FAILURES} consecutive fetch failures — "
+                      f"possibly delisted)")
+
+    _save_failure_log(log)
+    return newly_inactive
+
+
+def get_inactive_tickers():
+    """Return set of tickers marked inactive in the failure log."""
+    log = _load_failure_log()
+    return {t for t, v in log.items() if v.get("status") == "inactive"}
+
+
 def run_scout(verbose=True):
     """
     Main weekly scout run.
@@ -317,9 +371,21 @@ def run_scout(verbose=True):
     ca_results = momentum_pre_filter(ca_new[:120], region="CA", verbose=verbose)
     ca_top     = ca_results[:MAX_DYNAMIC_CA]
 
-    # Step 4: Build dynamic dict
+    # Update failure log: track passed vs failed for consecutive-failure deactivation
+    all_scouted = set(us_new[:250]) | set(ca_new[:120])
+    all_passed  = {t for t, _, _ in us_results + ca_results}
+    all_failed  = all_scouted - all_passed
+    newly_inactive = update_failure_log(list(all_passed), list(all_failed))
+    inactive_set   = get_inactive_tickers()
+    if inactive_set:
+        print(f"  🚫 Inactive tickers (3+ consecutive failures): {sorted(inactive_set)}")
+
+    # Step 4: Build dynamic dict — exclude inactive tickers
     dynamic = {}
     for ticker, score, meta in us_top + ca_top:
+        if ticker in inactive_set:
+            print(f"    Skipping inactive ticker: {ticker}")
+            continue
         dynamic[ticker] = {
             "scout_score": round(score, 2),
             "source":      source_map.get(ticker, "scout_unknown"),
@@ -331,11 +397,14 @@ def run_scout(verbose=True):
     json.dump(dynamic, open(DYNAMIC_FILE, "w"), indent=2)
     print(f"\n  ✅ {DYNAMIC_FILE}: {len(dynamic)} dynamic tickers")
 
-    # Step 5: Merge into universe_current.json
+    # Step 5: Merge into universe_current.json — exclude inactive tickers
     current_tickers = {}
 
     for t in sorted(static):
-        current_tickers[t] = {"source": "static", "static": True}
+        if t not in inactive_set:
+            current_tickers[t] = {"source": "static", "static": True}
+        else:
+            print(f"  🚫 Dropping inactive static ticker: {t}")
 
     added = 0
     for t, meta in dynamic.items():

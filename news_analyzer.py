@@ -304,7 +304,7 @@ SECTOR_TICKERS = {
     "CANADIAN_UTILITIES": ["FTS.TO", "AQN.TO", "EMA.TO", "H.TO"],
     "CANADIAN_MATERIALS": ["ABX.TO", "WPM.TO", "AEM.TO", "K.TO", "NTR.TO"],
     "TSX_EXPORTERS":      ["CNR.TO", "CP.TO", "MG.TO", "ATD.TO"],
-    "TRADE_SENSITIVE_US": ["UNP", "CSX", "NSC", "FDX", "UPS"],
+    "TRADE_SENSITIVE_US": ["UNP", "CSX", "NSC", "FDX", "UPS", "CAT", "DE"],
     "TSX_BROAD":          ["XGRO.TO", "XEQT.TO", "XIU.TO", "XIC.TO", "ZCN.TO"],
     "DEFENSE":            ["LMT", "RTX", "NOC", "GD", "CAE.TO"],
     "GOLD":               ["ABX.TO", "WPM.TO", "AEM.TO", "GLD"],
@@ -449,18 +449,38 @@ def build_sector_sentiment(detected_signals):
 
 
 def build_ticker_adjustments(sector_sentiment, detected_signals):
-    ticker_adj = defaultdict(lambda: {"adjustment": 0, "reasons": [], "news_sentiment": "NEUTRAL"})
+    ticker_adj = defaultdict(lambda: {
+        "adjustment": 0, "reasons": [], "news_sentiment": "NEUTRAL",
+        "causing_magnitude": "LOW",   # highest-magnitude bearish signal touching this ticker
+    })
+
+    # Per-sector highest magnitude (for hard-exclusion threshold check)
+    sector_max_mag = {}
+    for sig_name, det in detected_signals.items():
+        if det["confidence"] < 20:
+            continue
+        mag = det["signal_data"].get("magnitude", "LOW")
+        for sector in det["signal_data"].get("sectors_bearish", []):
+            if mag in ("CRITICAL", "HIGH"):
+                if sector_max_mag.get(sector, "LOW") not in ("CRITICAL", "HIGH") or mag == "CRITICAL":
+                    sector_max_mag[sector] = mag
 
     for sector, sentiment in sector_sentiment.items():
         if sector not in SECTOR_TICKERS:
             continue
         net = sentiment["net_score"]
         adj = max(-20, min(20, net / 15))
+        sector_mag = sector_max_mag.get(sector, "LOW")
         for ticker in SECTOR_TICKERS[sector]:
             ticker_adj[ticker]["adjustment"] += adj
-            if abs(adj) > 2:
-                direction = "📈" if adj > 0 else "📉"
-                ticker_adj[ticker]["reasons"].append(f"{direction} {sector} ({sentiment['sentiment']})")
+            if adj < -2:
+                ticker_adj[ticker]["reasons"].append(f"📉 {sector} ({sentiment['sentiment']})")
+                # Track the highest-magnitude bearish signal causing a penalty
+                cur = ticker_adj[ticker]["causing_magnitude"]
+                if sector_mag == "CRITICAL" or (sector_mag == "HIGH" and cur == "LOW"):
+                    ticker_adj[ticker]["causing_magnitude"] = sector_mag
+            elif adj > 2:
+                ticker_adj[ticker]["reasons"].append(f"📈 {sector} ({sentiment['sentiment']})")
 
     for ticker in ticker_adj:
         ticker_adj[ticker]["adjustment"] = round(max(-25, min(25, ticker_adj[ticker]["adjustment"])), 1)
