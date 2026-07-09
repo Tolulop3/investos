@@ -571,7 +571,7 @@ class StockMLPredictor:
         X_arr = self.scaler.transform(X)
         for train_idx, val_idx in tscv.split(X_arr):
             try:
-                cv_model = XGBClassifier(**params, verbosity=0)
+                cv_model = XGBClassifier(**params)
                 cv_model.fit(X_arr[train_idx], y.iloc[train_idx],
                              sample_weight=sample_weights[train_idx], verbose=False)
                 cv_aucs.append(roc_auc_score(y.iloc[val_idx],
@@ -579,7 +579,7 @@ class StockMLPredictor:
             except Exception: pass
 
         np.random.seed(42)   # deterministic: same closed-market double-run → identical ML probs
-        self.model = XGBClassifier(**params, verbosity=0)
+        self.model = XGBClassifier(**params)
         self.model.fit(X_train_s, y_train, sample_weight=w_train,
                        eval_set=[(X_val_s, y_val)], verbose=False)
 
