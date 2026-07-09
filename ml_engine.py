@@ -1007,20 +1007,28 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
 
     # ── HALF-KELLY WEIGHTS ────────────────────────────────────────────────────
     def score_to_kelly_wt(score, wr_data=None):
+        # Static calibration — used when live data absent or too thin (n < 10)
+        if score >= 90:   p, aw, al = 0.492, 0.70, 1.0
+        elif score >= 75: p, aw, al = 0.595, 1.10, 1.0
+        elif score >= 60: p, aw, al = 0.658, 1.80, 1.0
+        else:             p, aw, al = 0.556, 1.10, 1.0
         if wr_data and wr_data.get("by_score_tier"):
             t = wr_data["by_score_tier"]
             if score >= 90:   d = t.get("90-100", {})
             elif score >= 75: d = t.get("75-89",  {})
             elif score >= 60: d = t.get("60-74",  {})
             else:             d = t.get("below-60", {})
-            p  = d.get("win_rate", 50) / 100
-            aw = abs(d.get("avg_return", 1.0)) or 1.0
-            al = 1.0
-        else:
-            if score >= 90:   p, aw, al = 0.492, 0.70, 1.0
-            elif score >= 75: p, aw, al = 0.595, 1.10, 1.0
-            elif score >= 60: p, aw, al = 0.658, 1.80, 1.0
-            else:             p, aw, al = 0.556, 1.10, 1.0
+            _aw = d.get("avg_win")    # mean return on winning picks
+            _al = d.get("avg_loss")   # mean abs-return on losing picks
+            _n  = d.get("count", 0)
+            _nw = round(_n * d.get("win_rate", 0) / 100)
+            _nl = _n - _nw
+            if _aw and _al and _al > 0 and _nw >= 10 and _nl >= 10:
+                p  = d.get("win_rate", 50) / 100
+                aw = _aw   # proper odds ratio numerator
+                al = _al   # proper odds ratio denominator
+            else:
+                print(f"    [Kelly] thin data (nw={_nw}, nl={_nl}) → static fallback")
         b = aw / al
         kelly = (p * b - (1 - p)) / b
         return max(0.0, kelly * 0.50)
