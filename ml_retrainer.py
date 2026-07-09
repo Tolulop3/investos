@@ -367,10 +367,14 @@ def train_and_save(X, y, w, dates=None):
     y_train, y_val = y.iloc[:split], y.iloc[split:]
     w_train        = w[:split]
 
-    # ── 90-day purge buffer ───────────────────────────────────────────────
-    # Prevents training on data within 90 days of the validation start date.
-    # Guards against lookahead via long-lookback features (90d vol, 200d MA).
-    PURGE_DAYS = 90
+    # ── Purge buffer ──────────────────────────────────────────────────────
+    # Labels resolve in 7 days. Purge = label horizon + 3d buffer = 10d.
+    # Point-in-time features (90d vol, 200d MA) do NOT leak across the split —
+    # they are computed from prices available at signal_date. Only the label
+    # (outcome 7 days later) can leak, so the purge window is label-sized, not
+    # feature-lookback-sized. The old 90d window removed 1355/1682 training rows,
+    # leaving only 327 and producing a degenerate single-feature model (AUC 0.454).
+    PURGE_DAYS = 10
     if dates is not None and len(dates) >= split + 1:
         try:
             from datetime import datetime as _dtp, timedelta as _tdp
@@ -462,6 +466,17 @@ def train_and_save(X, y, w, dates=None):
             print(f"  ⚠️  sector_encoded importance {s_imp:.4f} near zero — check sector wiring")
         else:
             print(f"  ✅ sector_encoded importance {s_imp:.4f} — sector signal confirmed")
+
+    # ── Degenerate model check ────────────────────────────────────────────────
+    # A single feature dominating at >0.90 means the training set is too small
+    # or the constraints are misaligned — the model becomes a lookup table for
+    # that feature. Root cause: purge window too wide → shrinks training set.
+    if feat_imp:
+        top_feat, top_imp = next(iter(feat_imp.items()))
+        if top_imp > 0.90:
+            print(f"\n  ⚠️  DEGENERATE MODEL: {top_feat} dominates (importance={top_imp:.4f})")
+            print(f"     Check training set size and purge window.")
+            print(f"     Training rows: {len(y_train)} — minimum recommended: 300+")
 
     # Calibration check
     calib_check = {}
