@@ -51,6 +51,9 @@ ROTATION_LOG  = "universe_rotation_log.json"
 FAILURE_LOG   = "universe_failure_log.json"
 MAX_CONSECUTIVE_FAILURES = 3   # drop from universe after this many consecutive scout failures
 
+GLOBAL_WATCH_FILE = "global_watch.json"
+MAX_GLOBAL_WATCH  = 25         # cap: never exceed this many foreign-listed tickers
+
 # Only US (no suffix) and Canadian (.TO, .V) exchange listings are allowed.
 # Global ETFs are exempt — they're US-listed with no suffix.
 # This filter prevents foreign-exchange individual equities (e.g. 6383.T)
@@ -320,6 +323,36 @@ def get_inactive_tickers():
     return {t for t, v in log.items() if v.get("status") == "inactive"}
 
 
+# ── GLOBAL_WATCH helpers ──────────────────────────────────────────────────────
+
+def _load_global_watch():
+    try:
+        with open(GLOBAL_WATCH_FILE) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_global_watch(data):
+    try:
+        with open(GLOBAL_WATCH_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
+
+def quarantine_to_global_watch(ticker, source="unknown"):
+    """Route foreign-listed ticker to global_watch.json instead of dropping."""
+    data = _load_global_watch()
+    if ticker not in data:
+        if len(data) >= MAX_GLOBAL_WATCH:
+            print(f"  Scout: GLOBAL_WATCH full ({MAX_GLOBAL_WATCH}) — {ticker} not added")
+            return
+        data[ticker] = {"source": source, "consecutive_failures": 0, "status": "active"}
+        _save_global_watch(data)
+    print(f"  Scout: quarantined {ticker} → GLOBAL_WATCH")
+
+
 def run_scout(verbose=True):
     """
     Main weekly scout run.
@@ -350,12 +383,12 @@ def run_scout(verbose=True):
     if sp500:
         for t in sp500:
             if not _is_valid_exchange(t):
-                print(f"  Scout: rejected {t} (foreign listing)")
+                quarantine_to_global_watch(t, "scout_sp500")
                 _sp500_rejected += 1
                 continue
             us_candidates.add(t)
             source_map[t] = "scout_sp500"
-        print(f"    → {len(sp500)} tickers ({_sp500_rejected} foreign rejected)")
+        print(f"    → {len(sp500)} tickers ({_sp500_rejected} foreign quarantined)")
     else:
         print(f"    → failed, continuing without")
 
@@ -367,7 +400,7 @@ def run_scout(verbose=True):
             _etf_rejected = 0
             for t in holdings:
                 if not _is_valid_exchange(t):
-                    print(f"  Scout: rejected {t} (foreign listing)")
+                    quarantine_to_global_watch(t, cfg["label"])
                     _etf_rejected += 1
                     continue
                 if cfg["region"] == "CA":
@@ -377,7 +410,7 @@ def run_scout(verbose=True):
                 if t not in source_map:
                     source_map[t] = cfg["label"]
             _accepted = len(holdings) - _etf_rejected
-            suffix = f" ({_etf_rejected} foreign rejected)" if _etf_rejected else ""
+            suffix = f" ({_etf_rejected} foreign quarantined)" if _etf_rejected else ""
             print(f"    → {_accepted} holdings{suffix}")
         else:
             print(f"    → no holdings returned")

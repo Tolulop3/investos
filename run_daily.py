@@ -2099,6 +2099,69 @@ if __name__ == "__main__":
         except Exception as _sve:
             print(f"  ⚠️ strategy_version log failed: {_sve}")
 
+        # ── GLOBAL_WATCH scoring (foreign-listed quarantine) ──────────────────
+        # Foreign exchange tickers scored for reference only — NEVER traded.
+        # Strict containment: MUST NOT appear in picks, sizing, ledger, or any
+        # main output (all_scores.json, latest_brief.json, outcomes_log.json).
+        try:
+            import json as _gwj
+            from stock_screener import fetch_ticker_full as _gw_fetch, score_stock as _gw_score
+            _gw_path = "global_watch.json"
+            _gs_path = "global_scores.json"
+            if os.path.exists(_gw_path):
+                _gw_data = _gwj.load(open(_gw_path))
+                _gw_scores = {}
+                _gw_pass   = []
+                _gw_fail   = []
+                for _gw_ticker, _gw_meta in list(_gw_data.items()):
+                    if _gw_meta.get("status") != "active":
+                        continue
+                    try:
+                        _gw_tdata = _gw_fetch(_gw_ticker)
+                        if _gw_tdata and _gw_tdata.get("status") == "ok":
+                            _gw_s, _, _, _ = _gw_score(_gw_tdata)
+                            _gw_scores[_gw_ticker] = {
+                                "score":  round(float(_gw_s), 1),
+                                "source": _gw_meta.get("source", "unknown"),
+                            }
+                            _gw_pass.append(_gw_ticker)
+                        else:
+                            _gw_fail.append(_gw_ticker)
+                    except Exception:
+                        _gw_fail.append(_gw_ticker)
+
+                # Reset failures on success; increment on failure; prune at 3
+                for _gw_t in _gw_pass:
+                    if _gw_t in _gw_data:
+                        _gw_data[_gw_t]["consecutive_failures"] = 0
+                for _gw_t in _gw_fail:
+                    if _gw_t in _gw_data:
+                        _gw_data[_gw_t]["consecutive_failures"] = (
+                            _gw_data[_gw_t].get("consecutive_failures", 0) + 1
+                        )
+                        if _gw_data[_gw_t]["consecutive_failures"] >= 3:
+                            print(f"  🌏 Global watch: removed {_gw_t} (3 consecutive fetch failures)")
+                            del _gw_data[_gw_t]
+
+                # Persist updated failure counts
+                with open(_gw_path, "w") as _gwf:
+                    _gwj.dump(_gw_data, _gwf, indent=2)
+
+                # Write scores to global_scores.json ONLY — never to main outputs
+                with open(_gs_path, "w") as _gsf:
+                    _gwj.dump(_gw_scores, _gsf, indent=2)
+
+                # Display line
+                _gw_active = [t for t, m in _gw_data.items() if m.get("status") == "active"]
+                if _gw_scores:
+                    _gw_top = max(_gw_scores.items(), key=lambda x: x[1]["score"])
+                    print(f"\n  🌏 Global watch: {len(_gw_active)} tickers | "
+                          f"top: {_gw_top[0]} {_gw_top[1]['score']}")
+                else:
+                    print(f"\n  🌏 Global watch: {len(_gw_active)} tickers | no scores available")
+        except Exception as _gwe:
+            print(f"  ⚠️  Global watch scoring failed: {_gwe}")
+
         # ── History Analyzer ─────────────────────────────────────────────
         try:
             from history_analyzer import run_history_analysis as _ha
