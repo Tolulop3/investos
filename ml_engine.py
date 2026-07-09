@@ -419,91 +419,55 @@ class StockMLPredictor:
         if not HAS_PANDAS:
             return None, None, None
 
-        outcomes_file = "pick_outcomes.json"
-        if os.path.exists(outcomes_file):
-            try:
-                raw = json.load(open(outcomes_file))
-                resolved = [o for o in raw if o.get("outcome") and o.get("actual_return") is not None]
-                if len(resolved) >= 100:
-                    rows_X, rows_y, weights = [], [], []
-                    now_ts = datetime.now().timestamp()
-                    resolved_sorted = sorted(resolved, key=lambda o: o.get("signal_date", "2020-01-01"))
-                    returns = [o.get("actual_return", 0) or 0 for o in resolved_sorted]
-                    import numpy as _np2
-                    global_med = float(_np2.median(returns))
-
-                    for o in resolved_sorted:
-                        mom_6m = o.get("perf_90d", 0) / 100
-                        vol    = max(o.get("volatility", 2), 0.5) / 100
-                        vol_adj_mom = max(min(mom_6m / max(vol, 0.01), 5.0), -5.0)
-                        feat = {
-                            "momentum_6m":    mom_6m,
-                            "momentum_12m":   o.get("perf_90d", 0) / 100 * 1.4,
-                            "vol_adj_momentum": vol_adj_mom,
-                            "roe":            min(o.get("roe", 0) or 0, 100) / 100,
-                            "profit_margin":  min(o.get("profit_margin", 0) or 0, 100) / 100,
-                            "earnings_yield": 1/max(o.get("pe_ratio", 20) or 20, 1),
-                            "fcf_yield":      max(o.get("profit_margin", 0) or 0, 0) / 100 * 0.8,
-                            "volatility_90d": vol,
-                            "beta":           min(vol / 0.15, 3.0),
-                            "rev_growth":     o.get("rev_growth", 0) / 100,
-                            "earn_growth":    o.get("earn_growth", 0) / 100,
-                            "div_yield":      o.get("div_yield", 0) / 100,
-                            "debt_equity":    min(o.get("debt_equity", 1) or 1, 10) / 10,
-                            "rs_rating":      o.get("rs_rating", 50) / 100,
-                            "sector_momentum":0.0,
-                        }
-                        rows_X.append(feat)
-                        actual_ret = o.get("actual_return", 0) or 0
-                        rows_y.append(1 if actual_ret > global_med else 0)
-                        try:
-                            sig_ts = datetime.strptime(o.get("signal_date","2020-01-01"),"%Y-%m-%d").timestamp()
-                            days_old = max((now_ts - sig_ts) / 86400, 0)
-                            w = float(_np2.exp(-days_old / 180.0))
-                        except Exception:
-                            w = 0.5
-                        weights.append(max(w, 0.1))
-
-                    X = pd.DataFrame(rows_X)[ML_CONFIG["features"]]
-                    y = pd.Series(rows_y, dtype=int)
-                    w_arr = _np2.array(weights)
+        # PRIMARY: use the same feature builder as ml_retrainer.py — one builder, two callers.
+        # This guarantees the daily training matrix has the same 23 columns in the same order,
+        # including close_to_ema20_ratio (constrained), sector_encoded, and all regime features.
+        try:
+            from ml_retrainer import build_feature_matrix, load_resolved_outcomes
+            resolved = load_resolved_outcomes()
+            if len(resolved) >= 80:
+                X, y, w_arr, _ = build_feature_matrix(resolved)
+                if X is not None and len(y) >= 50:
                     win_rate = float(y.mean())
-                    print(f"   ✅ Loaded {len(y)} real outcomes | WR: {win_rate:.1%} | Market-neutral target | Recency-weighted")
+                    print(f"   ✅ Loaded {len(y)} real outcomes | WR: {win_rate:.1%} "
+                          f"| {len(X.columns)} features via build_feature_matrix")
                     return X, y, w_arr
-            except Exception as _e:
-                print(f"   ⚠️ Real outcome load failed ({_e}) — using bootstrap")
+        except Exception as _e:
+            print(f"   ⚠️ build_feature_matrix failed ({_e}) — using bootstrap")
 
-        training_file = "training_data.json"
-        if os.path.exists(training_file):
-            with open(training_file) as f:
-                saved = json.load(f)
-            X = pd.DataFrame(saved["X"])
-            y = pd.Series(saved["y"])
-            w = np.ones(len(y))
-            return X, y, w
-
-        print("   First run — bootstrapping model from factor research...")
+        # FALLBACK: bootstrap with all 23 features so constraints never reference
+        # a column that isn't in the training matrix.
+        print("   First run — bootstrapping model from factor research (23 features)...")
         np.random.seed(42)
         n = 2000
         X_data = {
-            "momentum_6m":    np.random.normal(0.05, 0.15, n),
-            "momentum_12m":   np.random.normal(0.08, 0.20, n),
-            "roe":            np.random.beta(2, 5, n),
-            "profit_margin":  np.random.beta(1.5, 4, n),
-            "earnings_yield": np.random.beta(2, 3, n) * 0.15,
-            "fcf_yield":      np.random.beta(1.5, 4, n) * 0.10,
-            "volatility_90d": np.random.beta(2, 5, n) * 0.6 + 0.1,
-            "beta":           np.random.normal(1.0, 0.4, n).clip(0.2, 3.0),
-            "rev_growth":     np.random.normal(0.08, 0.20, n),
-            "earn_growth":    np.random.normal(0.10, 0.30, n),
-            "div_yield":      np.random.beta(1.5, 6, n) * 0.10,
-            "debt_equity":    np.random.beta(2, 3, n),
-            "rs_rating":      np.random.uniform(0, 1, n),
-            "sector_momentum":np.random.normal(0, 0.10, n),
+            "momentum_6m":          np.random.normal(0.05, 0.15, n),
+            "momentum_12m":         np.random.normal(0.08, 0.20, n),
+            "roe":                  np.random.beta(2, 5, n),
+            "profit_margin":        np.random.beta(1.5, 4, n),
+            "earnings_yield":       np.random.beta(2, 3, n) * 0.15,
+            "fcf_yield":            np.random.beta(1.5, 4, n) * 0.10,
+            "volatility_90d":       np.random.beta(2, 5, n) * 0.6 + 0.1,
+            "beta":                 np.random.normal(1.0, 0.4, n).clip(0.2, 3.0),
+            "rev_growth":           np.random.normal(0.08, 0.20, n),
+            "earn_growth":          np.random.normal(0.10, 0.30, n),
+            "div_yield":            np.random.beta(1.5, 6, n) * 0.10,
+            "debt_equity":          np.random.beta(2, 3, n),
+            "rs_rating":            np.random.uniform(0, 1, n),
+            "sector_momentum":      np.random.normal(0, 0.10, n),
+            "market_regime":        np.random.choice([0.0, 1.0], n),
+            "spx_vs_ma200":         np.random.normal(0, 0.3, n).clip(-1, 1),
+            "news_boost":           np.zeros(n),
+            "close_to_ema20_ratio": np.ones(n),   # default 1.0 = at EMA (no overextension)
+            "unified_regime_enc":   np.random.choice([0.0, 1.0, 2.0, 3.0], n),
+            "macro_regime_enc":     np.random.choice([0.0, 1.0, 2.0, 3.0], n),
+            "market_breadth_50ma":  np.random.uniform(0.3, 0.7, n),
+            "sector_encoded":       np.random.randint(0, 11, n).astype(float),
         }
         X_data["vol_adj_momentum"] = np.clip(
             X_data["momentum_6m"] / np.maximum(X_data["volatility_90d"], 0.01), -5.0, 5.0)
-        X = pd.DataFrame(X_data)
+        X = pd.DataFrame(X_data)[ML_CONFIG["features"]]
+        X["sector_encoded"] = X["sector_encoded"].astype("category")
         score = (
             X["momentum_6m"]    * 0.20 + X["momentum_12m"]   * 0.15 +
             X["vol_adj_momentum"] * 0.10 + X["roe"]           * 0.15 +
@@ -527,15 +491,18 @@ class StockMLPredictor:
                 import joblib as _jl, hashlib as _hl
                 cached = _jl.load(cache_file)
                 self.model              = cached["model"]
-                self.scaler             = cached["scaler"]
+                self.scaler             = None   # scaler removed; model trained on DataFrame
                 self.calibrator         = cached.get("calibrator")
                 self.feature_importance = cached.get("feature_importance", {})
                 _feat_hash = _hl.md5(str(ML_CONFIG["features"]).encode()).hexdigest()[:8]
                 if cached.get("feature_hash") != _feat_hash:
                     os.remove(cache_file)
                     raise ValueError("feature_hash_mismatch")
-                dummy = np.zeros((1, len(ML_CONFIG["features"])))
-                self.scaler.transform(dummy)
+                # Validate model with a dummy DataFrame prediction (no scaler needed)
+                _test = {f: 0.0 for f in ML_CONFIG["features"]}
+                _test_df = pd.DataFrame([_test])
+                _test_df["sector_encoded"] = _test_df["sector_encoded"].astype("category")
+                self.model.predict_proba(_test_df)
                 self.trained = True
                 if verbose:
                     top = list(self.feature_importance.keys())[:5]
@@ -561,41 +528,50 @@ class StockMLPredictor:
         y_train, y_val = y.iloc[:split], y.iloc[split:]
         w_train        = sample_weights[:split]
 
-        self.scaler = StandardScaler()
-        X_train_s   = self.scaler.fit_transform(X_train)
-        X_val_s     = self.scaler.transform(X_val)
+        # No StandardScaler: XGBoost (tree-based) doesn't need feature scaling,
+        # and scaling destroys (a) column names needed for dict-form monotone_constraints
+        # and (b) category dtype needed for sector_encoded with enable_categorical=True.
+        # Train directly on the pandas DataFrame — same approach as ml_retrainer.py.
+        self.scaler = None
+
+        # DEFENSIVE: intersect constraints with actual DataFrame columns so a future
+        # feature drift degrades gracefully instead of crashing the engine.
+        params = {k: v for k, v in ML_CONFIG["xgb_params"].items() if k != "use_label_encoder"}
+        if "monotone_constraints" in params:
+            params["monotone_constraints"] = {
+                k: v for k, v in params["monotone_constraints"].items()
+                if k in X.columns
+            }
 
         tscv = TimeSeriesSplit(n_splits=3)
         cv_aucs = []
-        params = {k: v for k, v in ML_CONFIG["xgb_params"].items() if k != "use_label_encoder"}
-        X_arr = self.scaler.transform(X)
-        for train_idx, val_idx in tscv.split(X_arr):
+        for fold_train_idx, fold_val_idx in tscv.split(X):
             try:
                 cv_model = XGBClassifier(**params)
-                cv_model.fit(X_arr[train_idx], y.iloc[train_idx],
-                             sample_weight=sample_weights[train_idx], verbose=False)
-                cv_aucs.append(roc_auc_score(y.iloc[val_idx],
-                               cv_model.predict_proba(X_arr[val_idx])[:, 1]))
+                cv_model.fit(X.iloc[fold_train_idx], y.iloc[fold_train_idx],
+                             sample_weight=sample_weights[fold_train_idx], verbose=False)
+                cv_aucs.append(roc_auc_score(y.iloc[fold_val_idx],
+                               cv_model.predict_proba(X.iloc[fold_val_idx])[:, 1]))
             except Exception: pass
 
         np.random.seed(42)   # deterministic: same closed-market double-run → identical ML probs
         self.model = XGBClassifier(**params)
-        self.model.fit(X_train_s, y_train, sample_weight=w_train,
-                       eval_set=[(X_val_s, y_val)], verbose=False)
+        self.model.fit(X_train, y_train, sample_weight=w_train,
+                       eval_set=[(X_val, y_val)], verbose=False)
 
-        val_preds = self.model.predict_proba(X_val_s)[:, 1]
+        val_preds = self.model.predict_proba(X_val)[:, 1]
         try: holdout_auc = roc_auc_score(y_val, val_preds)
         except: holdout_auc = 0.5
 
         try:
             from sklearn.calibration import CalibratedClassifierCV
             self.calibrator = CalibratedClassifierCV(self.model, method="isotonic", cv="prefit")
-            self.calibrator.fit(X_train_s, y_train)
+            self.calibrator.fit(X_train, y_train)
         except: self.calibrator = None
 
         if hasattr(self.model, 'feature_importances_'):
             self.feature_importance = dict(sorted(
-                zip(ML_CONFIG["features"],
+                zip(X.columns,
                     [round(float(i), 4) for i in self.model.feature_importances_]),
                 key=lambda x: x[1], reverse=True))
 
@@ -603,12 +579,13 @@ class StockMLPredictor:
         if verbose:
             cv_mean = float(np.mean(cv_aucs)) if cv_aucs else 0.5
             print(f"   ✅ Model trained | CV AUC: {cv_mean:.3f} | Holdout AUC: {holdout_auc:.3f}")
+            print(f"   Daily columns == retrainer columns: "
+                  f"{list(X.columns) == ML_CONFIG['features']}")
             print(f"   Top features: {list(self.feature_importance.keys())[:5]}")
 
         try:
             import joblib as _jl, hashlib as _hl2
-            _jl.dump({"model": self.model, "scaler": self.scaler,
-                      "calibrator": self.calibrator,
+            _jl.dump({"model": self.model, "calibrator": self.calibrator,
                       "feature_importance": self.feature_importance,
                       "feature_hash": _hl2.md5(str(ML_CONFIG["features"]).encode()).hexdigest()[:8]},
                      cache_file)
@@ -1430,14 +1407,16 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
             smoothed_prob = smooth_ml_prob(ticker, calibrated, alpha=0.4)
             if abs(smoothed_prob - calibrated) > 0.03:
                 smoothed_count += 1
-            pick["ml_prob"]     = smoothed_prob
-            pick["ml_prob_raw"] = calibrated   # post-calibration, pre-smoothing
-            pick["ml_prob_xgb"] = xgb_raw      # raw XGBoost output (pre-calibration)
+            pick["ml_prob"]        = smoothed_prob
+            pick["ml_prob_raw"]    = calibrated   # post-calibration, pre-smoothing
+            pick["ml_prob_xgb"]    = xgb_raw      # raw XGBoost output (pre-calibration)
+            pick["ml_prob_source"] = "model"
             _raw_calib_log.append((ticker, xgb_raw, calibrated, smoothed_prob))
         else:
-            pick["ml_prob"]     = 0.5
-            pick["ml_prob_raw"] = 0.5
-            pick["ml_prob_xgb"] = 0.5
+            pick["ml_prob"]        = 0.5
+            pick["ml_prob_raw"]    = 0.5
+            pick["ml_prob_xgb"]    = 0.5
+            pick["ml_prob_source"] = "default"
             _raw_calib_log.append((ticker, 0.5, 0.5, 0.5))
 
         pick["ml_signal"] = ("🔥 STRONG BUY"  if pick["ml_prob"] >= 0.70 else

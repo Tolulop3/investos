@@ -194,7 +194,9 @@ def load_resolved_outcomes():
                 if o.get("resolved") is True
                 and o.get("actual_return") is not None
                 and o.get("outcome") in ("WIN","LOSS","FLAT")]
-    print(f"  📂 {OUTCOMES_FILE}: {len(raw)} total rows, {len(resolved)} resolved")
+    n_default = sum(1 for o in resolved if o.get("ml_prob_source") == "default")
+    print(f"  📂 {OUTCOMES_FILE}: {len(raw)} total rows, {len(resolved)} resolved "
+          f"({n_default} crash-path ml_prob=0.5 — exclude these for ml_prob attribution)")
     return resolved
 
 
