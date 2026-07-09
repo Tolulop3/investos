@@ -33,8 +33,8 @@ tags: [investos, patterns, weekly]
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
-| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | BB.TO | 🔴 AVOID | 0d | -8.5 | — |
 | PLD | 🔴 AVOID | 0d | -8.4 | — |
