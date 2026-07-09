@@ -1,6 +1,6 @@
 ---
 ticker: GEV
-updated: 2026-07-08
+updated: 2026-07-09
 streak_days: 4
 score_now: 100.0
 velocity: 0
