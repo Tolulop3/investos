@@ -1,5 +1,5 @@
 {
-  "date": "July 09, 2026",
+  "date": "July 10, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-09T22:25:59.417144",
+    "run_at": "2026-07-10T13:16:50.423916",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -38,32 +38,32 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 84.3,
-        "stressed_avg": 80.4,
-        "score_drop": 3.9,
+        "normal_avg": 83.7,
+        "stressed_avg": 80.1,
+        "score_drop": 3.6,
         "removed": [
-          "JPM",
-          "KLAC",
-          "MS",
           "UMBF",
-          "FBP"
+          "MS",
+          "KLAC",
+          "FBP",
+          "BAC"
         ],
         "verdict": "\u2705 ROBUST",
-        "note": "Score drops 3.9 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 3.6 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
         "survived": 18,
         "survival_pct": 100.0,
-        "avg_score_drop": 4.3,
+        "avg_score_drop": 4.1,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 4.3 pts"
+        "note": "If momentum stops working: avg score drops 4.1 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 84.3,
+      "normal_avg_score": 83.7,
       "scenarios_robust": 5,
       "scenarios_fragile": 0,
       "scenarios_broken": 0,
@@ -72,17 +72,17 @@
     "verdict": "\u2705 ROBUST \u2014 System survives stress well"
   },
   "decay_monitor": {
-    "date": "July 09, 2026",
+    "date": "July 10, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 0.375,
-      "avg_ret_pct": 0.33,
+      "sharpe": 0.348,
+      "avg_ret_pct": 0.31,
       "std_ret_pct": 6.32,
-      "picks_used": 1696,
-      "date_from": "2026-04-10",
+      "picks_used": 1683,
+      "date_from": "2026-04-13",
       "date_to": "2026-07-09",
       "source": "resolved_returns",
-      "note": "Sharpe from 1696 resolved picks (2026-04-10 \u2192 2026-07-09) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 1683 resolved picks (2026-04-13 \u2192 2026-07-09) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": 0.59,
@@ -93,7 +93,7 @@
       "sharpe": 1.83,
       "symbol": "^GSPC"
     },
-    "alpha": -1.455,
+    "alpha": -1.482,
     "neg_alpha_days": 17,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
