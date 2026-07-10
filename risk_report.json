@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-10T17:39:43.192238",
+    "run_at": "2026-07-10T22:08:04.286415",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,24 +32,23 @@
         "normal_count": 18,
         "survived": 18,
         "survival_pct": 100.0,
-        "avg_score_change": 4.3,
+        "avg_score_change": 4.4,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.3 pts with 10% noise"
+        "note": "Avg score change: \u00b14.4 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 82.0,
-        "stressed_avg": 77.3,
-        "score_drop": 4.7,
+        "normal_avg": 84.2,
+        "stressed_avg": 78.9,
+        "score_drop": 5.3,
         "removed": [
-          "UMBF",
-          "MNST",
-          "MS",
+          "BNS.TO",
           "LRCX",
-          "AVGO"
+          "MNST",
+          "MS"
         ],
-        "verdict": "\u2705 ROBUST",
-        "note": "Score drops 4.7 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 5.3 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -63,13 +62,13 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 82.0,
-      "scenarios_robust": 5,
-      "scenarios_fragile": 0,
+      "normal_avg_score": 84.2,
+      "scenarios_robust": 4,
+      "scenarios_fragile": 1,
       "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ROBUST \u2014 System survives stress well"
+      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
-    "verdict": "\u2705 ROBUST \u2014 System survives stress well"
+    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
     "date": "July 10, 2026",
@@ -85,15 +84,15 @@
       "note": "Sharpe from 1694 resolved picks (2026-04-13 \u2192 2026-07-10) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": 1.15,
-      "ret_30d": 0.08,
-      "ret_90d": 11.05,
-      "ann_ret": 30.9,
+      "ret_7d": 1.23,
+      "ret_30d": 0.16,
+      "ret_90d": 11.13,
+      "ann_ret": 31.2,
       "ann_vol": 14.7,
-      "sharpe": 2.1,
+      "sharpe": 2.12,
       "symbol": "^GSPC"
     },
-    "alpha": -1.757,
+    "alpha": -1.777,
     "neg_alpha_days": 18,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
