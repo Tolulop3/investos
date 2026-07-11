@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-11T22:32:56.580012",
+    "run_at": "2026-07-11T22:59:06.099684",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -38,14 +38,14 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 84.0,
-        "stressed_avg": 78.8,
+        "normal_avg": 84.5,
+        "stressed_avg": 79.3,
         "score_drop": 5.2,
         "removed": [
-          "MNST",
-          "MS",
           "BNS.TO",
-          "LRCX"
+          "MS",
+          "LRCX",
+          "MNST"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
         "note": "Score drops 5.2 pts without top 5 \u2014 system depth check"
@@ -62,7 +62,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 84.0,
+      "normal_avg_score": 84.5,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -74,14 +74,14 @@
     "date": "July 11, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 0.343,
+      "sharpe": 0.346,
       "avg_ret_pct": 0.3,
-      "std_ret_pct": 6.3,
-      "picks_used": 1694,
+      "std_ret_pct": 6.29,
+      "picks_used": 1702,
       "date_from": "2026-04-13",
-      "date_to": "2026-07-10",
+      "date_to": "2026-07-11",
       "source": "resolved_returns",
-      "note": "Sharpe from 1694 resolved picks (2026-04-13 \u2192 2026-07-10) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 1702 resolved picks (2026-04-13 \u2192 2026-07-11) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": 1.23,
@@ -92,14 +92,14 @@
       "sharpe": 2.12,
       "symbol": "^GSPC"
     },
-    "alpha": -1.777,
-    "neg_alpha_days": 18,
+    "alpha": -1.774,
+    "neg_alpha_days": 19,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 81.0,
-      "momentum_picks": 21,
-      "note": "17/21 rising-score picks also rose in price"
+      "alignment_pct": 81.8,
+      "momentum_picks": 22,
+      "note": "18/22 rising-score picks also rose in price"
     },
     "alerts": [],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
