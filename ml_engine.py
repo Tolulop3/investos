@@ -67,13 +67,17 @@ _SECTOR_NORM_INF = {
     "energy": "ENERGY", "oil & gas": "ENERGY", "oil and gas": "ENERGY",
     "utilities": "UTILITIES",
     "consumer discretionary": "CONSUMER", "consumer staples": "CONSUMER",
+    "consumer defensive": "CONSUMER",   # yfinance sub-label for staples/non-cyclical
+    "consumer cyclical": "CONSUMER",    # yfinance sub-label for discretionary
     "technology": "TECH", "information technology": "TECH",
     "communication services": "TELECOM", "telecommunications": "TELECOM",
     "telecom": "TELECOM",
     "health care": "HEALTHCARE", "healthcare": "HEALTHCARE",
     "pharmaceuticals": "HEALTHCARE", "biotechnology": "HEALTHCARE",
+    "drug manufacturers—general": "HEALTHCARE",
     "industrials": "INDUSTRIALS",
     "materials": "MATERIALS",
+    "basic materials": "MATERIALS",
     "pipelines": "PIPELINES",
 }
 _SECTOR_ENC_INF = {
@@ -139,7 +143,8 @@ ML_CONFIG = {
         "unified_regime_enc",
         "macro_regime_enc",
         "market_breadth_50ma",
-        "sector_encoded",
+        # sector_encoded removed: model was degenerate (importance 1.0000, flat 0.4495 output).
+        # Sector logic lives in the gate (SECTOR_ALLOW / SECTOR_BLOCK). Do NOT re-add.
     ],
     "xgb_params": {
         "n_estimators":     150,   # aligned with ml_retrainer.py
@@ -153,7 +158,7 @@ ML_CONFIG = {
         "random_state":     42,
         "eval_metric":      "auc",
         "verbosity":        0,
-        "enable_categorical": True,   # required: sector_encoded uses 'category' dtype
+        # enable_categorical removed with sector_encoded — no categorical features remain
         "monotone_constraints": {     # must match ml_retrainer.py exactly
             "roe":                  1,
             "profit_margin":        1,
@@ -437,9 +442,9 @@ class StockMLPredictor:
         except Exception as _e:
             print(f"   ⚠️ build_feature_matrix failed ({_e}) — using bootstrap")
 
-        # FALLBACK: bootstrap with all 23 features so constraints never reference
+        # FALLBACK: bootstrap with all 22 features so constraints never reference
         # a column that isn't in the training matrix.
-        print("   First run — bootstrapping model from factor research (23 features)...")
+        print("   First run — bootstrapping model from factor research (22 features)...")
         np.random.seed(42)
         n = 2000
         X_data = {
@@ -464,12 +469,10 @@ class StockMLPredictor:
             "unified_regime_enc":   np.random.choice([0.0, 1.0, 2.0, 3.0], n),
             "macro_regime_enc":     np.random.choice([0.0, 1.0, 2.0, 3.0], n),
             "market_breadth_50ma":  np.random.uniform(0.3, 0.7, n),
-            "sector_encoded":       np.random.randint(0, 11, n).astype(float),
         }
         X_data["vol_adj_momentum"] = np.clip(
             X_data["momentum_6m"] / np.maximum(X_data["volatility_90d"], 0.01), -5.0, 5.0)
         X = pd.DataFrame(X_data)[ML_CONFIG["features"]]
-        X["sector_encoded"] = X["sector_encoded"].astype("category")
         score = (
             X["momentum_6m"]    * 0.20 + X["momentum_12m"]   * 0.15 +
             X["vol_adj_momentum"] * 0.10 + X["roe"]           * 0.15 +
@@ -503,7 +506,6 @@ class StockMLPredictor:
                 # Validate model with a dummy DataFrame prediction (no scaler needed)
                 _test = {f: 0.0 for f in ML_CONFIG["features"]}
                 _test_df = pd.DataFrame([_test])
-                _test_df["sector_encoded"] = _test_df["sector_encoded"].astype("category")
                 self.model.predict_proba(_test_df)
                 self.trained = True
                 if verbose:
@@ -611,7 +613,6 @@ class StockMLPredictor:
         feat_order = ML_CONFIG["features"]
         row = {f: features_dict.get(f, 0) for f in feat_order}
         df  = pd.DataFrame([row])
-        df["sector_encoded"] = df["sector_encoded"].astype("category")
         return df
 
     def predict(self, features_dict, market_regime=1):
@@ -825,6 +826,8 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2, excluded_tickers=
         "utilities":          "Utilities",
         "consumer discretionary": "Consumer",
         "consumer staples":   "Consumer",
+        "consumer defensive": "Consumer",
+        "consumer cyclical":  "Consumer",
         "technology":         "Technology",
         "information technology": "Technology",
         "communication services": "Communication",
@@ -1263,12 +1266,6 @@ def render_allocations(target_weights, account, market_regime,
 
     deployable = capital * regime_equity_pct * dd_multiplier
 
-    if verbose:
-        print(f"\n   💰 {acct_name} (${capital:,.0f}"
-              + (f" | max_equity: {max_equity*100:.0f}%" if max_equity < 1.0 else "")
-              + f" | Equity: {round(regime_equity_pct*100)}%"
-              + f"): deploying ${deployable:,.0f}")
-
     # Weight scaling: re-normalize only when universe filter removed some picks.
     # When universe=ALL, use raw fractions so the cash from CONC_CAP is preserved.
     if len(eligible) < len(target_weights):
@@ -1276,6 +1273,18 @@ def render_allocations(target_weights, account, market_regime,
         wt_scale = 1.0 / total_wt
     else:
         wt_scale = 1.0
+
+    # Effective deployment = deployable × sum-of-weights (may be <1.0 when Kelly floor active)
+    _eff_wt = sum(w["weight"] * wt_scale for w in eligible)
+    _eff_deployed = deployable * min(1.0, _eff_wt)
+    if verbose:
+        _header = (f"\n   💰 {acct_name} (${capital:,.0f}"
+                   + (f" | max_equity: {max_equity*100:.0f}%" if max_equity < 1.0 else "")
+                   + f" | Equity: {round(regime_equity_pct*100)}%"
+                   + f"): deploying ${_eff_deployed:,.0f}")
+        if _eff_wt < 0.98:
+            _header += f" of ${deployable:,.0f} available (Kelly floor — {_eff_wt*100:.0f}% deployed)"
+        print(_header)
 
     allocations = []
     for w in eligible:
@@ -1518,7 +1527,8 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     _pre_filter_tickers = {p.get("ticker") for p in tfsa_picks}   # snapshot before any removal
     _pre_gate_filtered = []
     for _p in tfsa_picks:
-        _sec   = (_p.get("sector") or (_p.get("data") or {}).get("sector", "") or "").strip().upper()
+        _sec_raw = (_p.get("sector") or (_p.get("data") or {}).get("sector", "") or "").strip()
+        _sec     = _SECTOR_NORM_INF.get(_sec_raw.lower(), _sec_raw.upper())
         _score = _p.get("score", 0) or 0
         if _sec in _BLOCK_75 and _score >= 75:
             if verbose:
@@ -1551,7 +1561,10 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     #   BLOCK:  MATERIALS N=114 PF=0.17 | TELECOM N=65 PF=0.20 | HEALTHCARE N=48 PF=0.39
     #           REIT N=57 PF=0.46 | CONSUMER N=65 PF=0.89
     #   OTHER:  Fall through to ML gate (gate_engine.MLGate — compression-aware)
-    SECTOR_ALLOW      = {'ENERGY', 'BANKS', 'FINANCIALS'}
+    # FIX 3: BANKS and FINANCIAL SERVICES both normalize to FINANCIALS via _SECTOR_NORM_INF.
+    # One canonical label, one cap bucket. BANKS as a separate ALLOW key is dead code
+    # after normalization — "banks" → "FINANCIALS" before this check is ever reached.
+    SECTOR_ALLOW      = {'ENERGY', 'FINANCIALS'}
     SECTOR_BLOCK      = {'MATERIALS', 'TELECOM', 'HEALTHCARE', 'REIT', 'CONSUMER'}
     ML_GATE_SCORE_MIN = 90
     basket_tickers    = {p.get("ticker") for p in tfsa_picks}
@@ -1566,7 +1579,8 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         _raw_sec = (pick.get("sector") or "").strip()
         if not _raw_sec:
             _raw_sec = _TICKER_SECTOR_OVERRIDE.get(ticker, "")
-        sector  = _raw_sec.upper()
+        # Canonical normalization: "Consumer Defensive" → CONSUMER, "Banks" → FINANCIALS, etc.
+        sector = _SECTOR_NORM_INF.get(_raw_sec.lower(), _raw_sec.upper())
 
         if score < ML_GATE_SCORE_MIN:
             passed.append(pick)
@@ -1607,10 +1621,13 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         # have no negative news adjustment, and pass the sector-first gate.
         _cd_set, _ = get_cooldown_set(verbose=False)
         reserve = []
+        _reserve_seen = set()   # FIX 2: dedup — same ticker in multiple screener buckets
+        _reserve_raw_count = 0
         for grp in ["TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3"]:
             for p in screener_picks.get(grp, []):
                 _tkr = p.get("ticker")
-                if _tkr in basket_tickers:
+                _reserve_raw_count += 1
+                if not _tkr or _tkr in basket_tickers or _tkr in _reserve_seen:
                     continue
                 if _tkr in _pre_gate_excluded:          # blocked by sector≥75 or sector-cap
                     continue
@@ -1618,7 +1635,11 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
                     continue
                 if (p.get("news_adjustment", 0) or 0) < 0:
                     continue
-                _sec_r = (p.get("sector") or "").strip().upper()
+                # Canonical normalization so "Consumer Defensive" → CONSUMER, "Banks" → FINANCIALS
+                _sec_r_raw = (p.get("sector") or "").strip()
+                if not _sec_r_raw:
+                    _sec_r_raw = _TICKER_SECTOR_OVERRIDE.get(_tkr, "")
+                _sec_r = _SECTOR_NORM_INF.get(_sec_r_raw.lower(), _sec_r_raw.upper())
                 _scr   = p.get("score", 0) or 0
                 _mp_r  = p.get("ml_prob", 0.5) or 0.5
                 if _sec_r == "MATERIALS" and _scr >= 75:
@@ -1628,10 +1649,11 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
                         continue                          # sector-blocked in reserve too
                     if _sec_r not in SECTOR_ALLOW and not gate.decide(_tkr, _mp_r, score=_scr):
                         continue                          # ML-gated in reserve too
+                _reserve_seen.add(_tkr)
                 reserve.append(p)
                 basket_tickers.add(_tkr)
+        print(f"  📋 Reserve pool: {len(reserve)} candidates (from {_reserve_raw_count} raw, post-dedup/cooldown/sector-gate)")
         reserve.sort(key=lambda x: x.get("score", 0), reverse=True)
-        print(f"  📋 Reserve pool: {len(reserve)} candidates (post-cap, post-cooldown)")
         replacements = reserve[:len(gated_out)]
         tfsa_picks   = passed + replacements
 
@@ -1640,6 +1662,20 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         _substitution_tickers = repl_tickers
         print(f"  🔄 Gate removed {gated_tickers}"
               + (f", added {repl_tickers}" if repl_tickers else " (no replacements)"))
+
+    # ── FINAL BASKET SECTOR COUNTS (canonical — FIX 3 / FIX 1 audit) ────────────
+    if verbose:
+        from collections import Counter as _C
+        def _canon_sec(p):
+            _sr = (p.get("sector") or "").strip()
+            if not _sr:
+                _sr = _TICKER_SECTOR_OVERRIDE.get(p.get("ticker", ""), "")
+            return _SECTOR_NORM_INF.get(_sr.lower(), _sr.upper() or "UNKNOWN")
+        _basket_sectors = Counter(_canon_sec(p) for p in tfsa_picks)
+        print(f"  📊 Final basket sector counts (canonical, max-2 cap): {dict(_basket_sectors)}")
+        for p in tfsa_picks:
+            _cs = _canon_sec(p)
+            print(f"     {p.get('ticker','?'):<12} → {_cs}")
 
     # ── TARGET WEIGHTS (capital-agnostic) ────────────────────────────────────
     target_weights = compute_target_weights(

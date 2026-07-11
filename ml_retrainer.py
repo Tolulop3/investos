@@ -5,9 +5,8 @@ Reads outcomes_log.json (1,480+ resolved picks) and retrains XGBoost
 using actual 5-day forward returns as the label.
 
 v2 changes:
-  - FEATURES matches ml_engine.py ML_CONFIG exactly (18 features)
-    Original had 18 features too but was written before ml_engine.py was confirmed
-    This version is the source of truth — feature list kept in sync with ML_CONFIG
+  - FEATURES matches ml_engine.py ML_CONFIG exactly (22 features)
+    This file is the source of truth — feature list kept in sync with ML_CONFIG
   - retrain_if_due() call in run_daily.py: weekly auto-retrain
 
 HOW TO RUN
@@ -81,6 +80,8 @@ SECTOR_NORM = {
     "utilities":                 "UTILITIES",
     "consumer discretionary":    "CONSUMER",
     "consumer staples":          "CONSUMER",
+    "consumer defensive":        "CONSUMER",   # yfinance sub-label for staples/non-cyclical
+    "consumer cyclical":         "CONSUMER",   # yfinance sub-label for discretionary
     "technology":                "TECH",
     "information technology":    "TECH",
     "communication services":    "TELECOM",
@@ -146,7 +147,8 @@ FEATURES = [
     "unified_regime_enc",    # CAPITAL_PRESERVATION=0, DEFENSIVE=1, NEUTRAL=2, RISK_ON=3
     "macro_regime_enc",      # RISK_OFF/BEAR=0, CAUTIOUS=1, NORMAL=2, RISK_ON/BULL=3
     "market_breadth_50ma",   # pct of universe above 50MA, normalized to [0,1]
-    "sector_encoded",        # categorical: SECTOR_ENCODING (int codes, XGBoost categorical)
+    # sector_encoded removed: model was degenerate (importance 1.0000). Sector logic
+    # lives in the gate (SECTOR_ALLOW / SECTOR_BLOCK). Do NOT re-add.
 ]
 
 XGB_PARAMS = {
@@ -161,12 +163,11 @@ XGB_PARAMS = {
     "random_state":     42,
     "eval_metric":      "auc",
     "verbosity":        0,
-    "enable_categorical": True,      # required for sector_encoded 'category' dtype column
+    # enable_categorical removed with sector_encoded — no categorical features remain
     # Monotonic constraints — DICT-FORM (works because training uses pandas DataFrame,
     # so XGBoost sees column names, not numpy auto-names f0,f1,...).
-    # Unmentioned features default to 0 (unconstrained) — sector_encoded is nominal,
-    # no monotonic assumption. Regime features are ordinal (higher = more bullish) but
-    # the model is free to learn non-monotonic interactions, so also left at 0.
+    # Unmentioned features default to 0 (unconstrained). Regime features are ordinal
+    # (higher = more bullish) but left unconstrained to allow non-monotonic interactions.
     "monotone_constraints": {
         "roe":                  1,   # higher ROE → better stock
         "profit_margin":        1,   # higher margin → better
@@ -301,9 +302,6 @@ def build_feature_matrix(resolved):
         dates_list.append(sig_date)
 
     X = pd.DataFrame(rows_X)[FEATURES]
-    # Set sector_encoded to 'category' dtype so XGBoost treats it as nominal
-    # (avoids false ordinal ordering implied by raw integer codes)
-    X["sector_encoded"] = X["sector_encoded"].astype("category")
     y = pd.Series(rows_y, dtype=int)
     w = np.array(weights, dtype=float)
 
@@ -318,10 +316,7 @@ def build_feature_matrix(resolved):
     print(f"     SECTOR_ENCODING : {SECTOR_ENCODING}")
     for feat in FEATURES:
         col = X[feat]
-        if feat == "sector_encoded":
-            n_known = int((col.cat.codes >= 0).sum())
-            print(f"     {feat:<25} {n_known:>5}/{len(X)} ({100*n_known/len(X):>4.0f}%) known sector")
-        elif feat == "market_breadth_50ma":
+        if feat == "market_breadth_50ma":
             n_non = int((col != 0.5).sum())
             print(f"     {feat:<25} {n_non:>5}/{len(X)} ({100*n_non/len(X):>4.0f}%) non-default(0.5)")
         else:
@@ -396,10 +391,9 @@ def train_and_save(X, y, w, dates=None):
             print(f"  ⚠️  Purge buffer skipped ({_pe})")
     # ──────────────────────────────────────────────────────────────────────
 
-    # No StandardScaler — XGBoost (tree-based) needs no feature scaling,
-    # and categorical dtype (sector_encoded) would be destroyed by numpy conversion.
+    # No StandardScaler — XGBoost (tree-based) needs no feature scaling.
     # Training directly on the pandas DataFrame lets XGBoost see column names,
-    # which is required for dict-form monotone_constraints and categorical support.
+    # which is required for dict-form monotone_constraints.
 
     n_splits  = min(5, max(3, n // 50))
     tscv      = TimeSeriesSplit(n_splits=n_splits)
@@ -462,13 +456,6 @@ def train_and_save(X, y, w, dates=None):
     for fname, fimp in list(feat_imp.items())[:10]:
         bar = "█" * int(fimp * 200)
         print(f"     {fname:<25} {fimp:.4f}  {bar}")
-    if "sector_encoded" in feat_imp:
-        s_imp = feat_imp["sector_encoded"]
-        if s_imp < 0.005:
-            print(f"  ⚠️  sector_encoded importance {s_imp:.4f} near zero — check sector wiring")
-        else:
-            print(f"  ✅ sector_encoded importance {s_imp:.4f} — sector signal confirmed")
-
     # ── Degenerate model check ────────────────────────────────────────────────
     # A single feature dominating at >0.90 means the training set is too small
     # or the constraints are misaligned — the model becomes a lookup table for

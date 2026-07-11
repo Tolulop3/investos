@@ -198,13 +198,6 @@ def get_stock_options_signal(ticker, current_price=None, verbose=False):
                 calls = chain.calls
                 puts  = chain.puts
 
-                # Diagnostic: print raw chain shape on first call per engine run
-                if not hasattr(get_stock_options_signal, "_diag_done"):
-                    get_stock_options_signal._diag_done = True
-                    print(f"  🔍 Options chain type={type(chain).__name__} "
-                          f"calls={type(calls).__name__} "
-                          f"head={repr(calls)[:200]}")
-
                 try:
                     total_call_vol += calls["volume"].fillna(0).sum()
                     total_put_vol  += puts["volume"].fillna(0).sum()
