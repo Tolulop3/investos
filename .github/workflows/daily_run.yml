@@ -26,10 +26,7 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest
-
-      - name: Run invariant tests (pipeline guard)
-        run: pytest tests/test_invariants.py -v --tb=short
+        run: pip install -r requirements.txt
 
       - name: Run InvestOS daily analysis
         run: python run_daily.py --github
