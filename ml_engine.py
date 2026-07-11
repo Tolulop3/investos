@@ -370,8 +370,10 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
         beta          = min(vol_90d / 0.15, 3.0)
         rs_norm       = rs_rating / 100
 
-        raw_sector = stock_data.get("sector", "") or ""
-        sector_enc = _encode_sector(raw_sector)
+        raw_sector = (stock_data.get("sector", "") or "").strip()
+        sector_enc = _encode_sector(raw_sector, ticker=ticker)
+        _sec_norm  = _SECTOR_NORM_INF.get(raw_sector.lower(), "UNKNOWN")
+        print(f"   [sector] {ticker:<12} raw={repr(raw_sector):<28} norm={_sec_norm:<15} enc={sector_enc}")
 
         return {
             "ticker": ticker,
@@ -576,6 +578,14 @@ class StockMLPredictor:
                 key=lambda x: x[1], reverse=True))
 
         self.trained = True
+
+        # Degenerate model check — mirrors ml_retrainer.py so daily training also warns.
+        if self.feature_importance:
+            _top_feat, _top_imp = next(iter(self.feature_importance.items()))
+            if _top_imp > 0.90:
+                print(f"\n  ⚠️  DEGENERATE MODEL: {_top_feat} dominates "
+                      f"(importance={_top_imp:.4f}) — check training set size and purge window.")
+
         if verbose:
             cv_mean = float(np.mean(cv_aucs)) if cv_aucs else 0.5
             print(f"   ✅ Model trained | CV AUC: {cv_mean:.3f} | Holdout AUC: {holdout_auc:.3f}")
@@ -1139,6 +1149,20 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
         final_wts = [min(MAX_HARD, w + _boost) if 0 < w < MAX_HARD else w
                      for w in final_wts]
 
+    # Kelly floor: when ALL non-blocked picks show zero edge, cap deployment at 50%.
+    # The renorm loop above normalises zero-kelly weights back to 1.0 — undo that here.
+    # The 0.50 floor means the remaining 50% stays as cash until edge is detected.
+    _nonblocked_have_kelly = any(
+        kelly_wts[i] > 0
+        for i in range(n_picks)
+        if picks[i]["ticker"] not in sector_blocked
+    )
+    if not _nonblocked_have_kelly:
+        final_wts = [w * 0.50 for w in final_wts]
+        if verbose:
+            print(f"   ⚠️  Kelly floor: no edge detected across all {n_picks} picks"
+                  f" — deploying 50% equity only (remaining 50% reserved as cash)")
+
     # Hard concentration cap for thin baskets — surplus stays as cash (no re-norm)
     CONC_CAP = 0.25
     if n_picks < 6:
@@ -1383,12 +1407,22 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     predictor.train(verbose=verbose)
 
     regime_num = 1 if regime["regime"] in ("BULL", "RECOVERY") else 0
-    all_picks  = (
+    _raw_picks = (
         screener_picks.get("FHSA_top5", []) +
         screener_picks.get("TFSA_growth_top5", []) +
         screener_picks.get("TFSA_income_top5", []) +
         screener_picks.get("TFSA_swing_top3", [])
     )
+    # Dedupe by ticker — same ticker can appear in multiple buckets;
+    # keep the instance with the highest composite score.
+    _seen_tickers: dict = {}
+    for _p in _raw_picks:
+        _t = _p.get("ticker")
+        if _t and (_t not in _seen_tickers or _p.get("score", 0) > _seen_tickers[_t].get("score", 0)):
+            _seen_tickers[_t] = _p
+    all_picks = list(_seen_tickers.values())
+    if len(all_picks) < len(_raw_picks) and verbose:
+        print(f"   ℹ️  Scoring dedup: {len(_raw_picks)} → {len(all_picks)} picks (removed {len(_raw_picks)-len(all_picks)} duplicates)")
 
     if verbose: print(f"\n🤖 Scoring {len(all_picks)} picks with ML...")
 

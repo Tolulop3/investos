@@ -627,6 +627,21 @@ def run_daily(test_mode=False, dry_run=False):
                     "TFSA_swing_top3":[], "FHSA_all":[], "TFSA_core_all":[],
                     "TFSA_income_all":[], "TFSA_swing_all":[], "breadth":None, "stats":{}}
 
+    # ── Fetch-failure tracking — swap out after 3 consecutive failures ─────────
+    try:
+        from scout_agent import update_failure_log as _ufl, get_inactive_tickers as _git
+        _all_screened = set()
+        for _bkt in ["FHSA_all", "TFSA_core_all", "TFSA_income_all", "TFSA_swing_all"]:
+            for _p in screener.get(_bkt, []):
+                if isinstance(_p, dict) and _p.get("ticker"):
+                    _all_screened.add(_p["ticker"])
+        _failed_tickers = [t for t in screener.get("failed_tickers", []) if isinstance(t, str)]
+        _inactive = _ufl(list(_all_screened), _failed_tickers)
+        if _inactive:
+            print(f"  🚫 Fetch-failure watch: {_inactive} → marked inactive (3 consecutive failures)")
+    except Exception as _ffe:
+        print(f"  ⚠️  Fetch-failure log update failed: {_ffe}")
+
     # ── all_scores.json — full scored universe snapshot ─────────────────────
     # Union of all ranked bucket lists before news/insider/regime filters.
     # Deduplicated by ticker; highest score wins when a ticker appears in
@@ -677,7 +692,8 @@ def run_daily(test_mode=False, dry_run=False):
     options_signals = {}
     market_pcr_data = {"pcr": None, "signal": "NEUTRAL", "macro_adj": 0.0}
     try:
-        us_picks_for_opts = [p for p in all_picks if not p["ticker"].endswith(".TO")]
+        us_picks_for_opts = [p for p in all_picks
+                             if isinstance(p, dict) and not p.get("ticker", "").endswith(".TO")]
         _, options_signals, market_pcr_data = run_options_engine(
             us_picks_for_opts, verbose=True
         )
