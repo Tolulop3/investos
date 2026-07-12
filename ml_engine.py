@@ -24,7 +24,7 @@ import urllib.request
 import urllib.parse
 import joblib
 from datetime import datetime, timedelta
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from gate_engine import MLGate, load_outcomes_ticker_counts, PROBATION_CAP
 
@@ -848,8 +848,7 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2, excluded_tickers=
         s = (s or "Unknown").strip()
         return _SECTOR_NORM.get(s.lower(), s)
 
-    # Count sectors in current basket
-    from collections import Counter
+    # Count sectors in current basket (Counter is module-level import)
     sector_counts = Counter(_get_sector(p) for p in picks)
 
     # Sort by score desc, ticker asc as tiebreaker — fully deterministic even
@@ -1442,6 +1441,14 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         stock_data = pick.get("data", {})
         rs         = rs_ratings.get(ticker, {}).get("rs_rating", 50) if rs_ratings else 50
 
+        # Write canonical sector now so gate reads the SAME normalized value that
+        # the sector trace prints. pick["sector"] is absent (sector lives in data dict);
+        # without this write-back the gate reads "" → falls through to UNKNOWN.
+        _sc_raw = (stock_data.get("sector", "") or "").strip()
+        if not _sc_raw:
+            _sc_raw = _TICKER_SECTOR_OVERRIDE.get(ticker, "")
+        pick["sector_canonical"] = _SECTOR_NORM_INF.get(_sc_raw.lower(), _sc_raw.upper() or "UNKNOWN")
+
         features = build_features_for_stock(ticker, stock_data, rs)
 
         if features:
@@ -1527,8 +1534,11 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     _pre_filter_tickers = {p.get("ticker") for p in tfsa_picks}   # snapshot before any removal
     _pre_gate_filtered = []
     for _p in tfsa_picks:
-        _sec_raw = (_p.get("sector") or (_p.get("data") or {}).get("sector", "") or "").strip()
-        _sec     = _SECTOR_NORM_INF.get(_sec_raw.lower(), _sec_raw.upper())
+        if _p.get("sector_canonical"):
+            _sec = _p["sector_canonical"]
+        else:
+            _sec_raw = ((_p.get("data") or {}).get("sector", "") or _p.get("sector", "") or "").strip()
+            _sec     = _SECTOR_NORM_INF.get(_sec_raw.lower(), _sec_raw.upper())
         _score = _p.get("score", 0) or 0
         if _sec in _BLOCK_75 and _score >= 75:
             if verbose:
@@ -1576,11 +1586,16 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         score   = pick.get("score", 0) or 0
         ml_prob = pick.get("ml_prob", 0.5) or 0.5
         ticker  = pick.get("ticker", "")
-        _raw_sec = (pick.get("sector") or "").strip()
-        if not _raw_sec:
-            _raw_sec = _TICKER_SECTOR_OVERRIDE.get(ticker, "")
-        # Canonical normalization: "Consumer Defensive" → CONSUMER, "Banks" → FINANCIALS, etc.
-        sector = _SECTOR_NORM_INF.get(_raw_sec.lower(), _raw_sec.upper())
+        # sector_canonical is written during the scoring loop above from pick["data"]["sector"].
+        # pick.get("sector") is the TOP-LEVEL field which is absent on screener picks (sector
+        # lives nested under pick["data"]) — reading it returns "" → UNKNOWN (the prior bug).
+        sector = pick.get("sector_canonical") or ""
+        if not sector:
+            # Fallback: compute canonically from data dict (should not happen after scoring loop)
+            _raw_sec = ((pick.get("data") or {}).get("sector", "") or "").strip()
+            if not _raw_sec:
+                _raw_sec = _TICKER_SECTOR_OVERRIDE.get(ticker, "")
+            sector = _SECTOR_NORM_INF.get(_raw_sec.lower(), _raw_sec.upper() or "UNKNOWN")
 
         if score < ML_GATE_SCORE_MIN:
             passed.append(pick)
@@ -1636,7 +1651,11 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
                 if (p.get("news_adjustment", 0) or 0) < 0:
                     continue
                 # Canonical normalization so "Consumer Defensive" → CONSUMER, "Banks" → FINANCIALS
-                _sec_r_raw = (p.get("sector") or "").strip()
+                # Reserve picks are from screener_picks (not all_picks), so sector_canonical
+                # may not be set; fall back to data dict where the real sector string lives.
+                _sec_r_raw = (p.get("sector_canonical") or
+                              (p.get("data") or {}).get("sector", "") or
+                              p.get("sector", "") or "").strip()
                 if not _sec_r_raw:
                     _sec_r_raw = _TICKER_SECTOR_OVERRIDE.get(_tkr, "")
                 _sec_r = _SECTOR_NORM_INF.get(_sec_r_raw.lower(), _sec_r_raw.upper())
@@ -1665,9 +1684,11 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
 
     # ── FINAL BASKET SECTOR COUNTS (canonical — FIX 3 / FIX 1 audit) ────────────
     if verbose:
-        from collections import Counter as _C
         def _canon_sec(p):
-            _sr = (p.get("sector") or "").strip()
+            # prefer pre-computed canonical; fallback to data dict
+            if p.get("sector_canonical"):
+                return p["sector_canonical"]
+            _sr = ((p.get("data") or {}).get("sector", "") or p.get("sector", "") or "").strip()
             if not _sr:
                 _sr = _TICKER_SECTOR_OVERRIDE.get(p.get("ticker", ""), "")
             return _SECTOR_NORM_INF.get(_sr.lower(), _sr.upper() or "UNKNOWN")

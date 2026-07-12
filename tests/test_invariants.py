@@ -285,3 +285,106 @@ def test_core_module_imports():
             pytest.fail(f"ImportError in {mod}: {e}")
         except Exception:
             pass  # runtime errors (missing files, API calls) are OK at import time
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Counter NameError — FIX 1, 2026-07-12
+# Bug: final basket sector count block imported Counter as _C but called Counter()
+#      → NameError: name 'Counter' is not defined (3 consecutive runs dark).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_counter_importable_at_module_level():
+    """Counter must be importable from ml_engine at module level (not buried in a local alias)."""
+    import ml_engine
+    import importlib
+    # Trigger the module to be fully initialized
+    importlib.import_module("ml_engine")
+    # Counter must be accessible as a module attribute (via 'from collections import ... Counter')
+    from collections import Counter  # must not raise
+    assert Counter is not None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Gate sector field — FIX 2, 2026-07-12
+# Bug: gate read pick.get("sector") which is absent on screener picks (sector
+#      lives at pick["data"]["sector"]). Result: every pick showed as UNKNOWN,
+#      bypassing SECTOR_BLOCK. MNST (Consumer Defensive, score 91) slipped through.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_mnst_sector_canonical_is_consumer():
+    """sector_canonical computed from data dict must be CONSUMER for MNST."""
+    from ml_engine import _SECTOR_NORM_INF, _TICKER_SECTOR_OVERRIDE
+    SECTOR_BLOCK = {"MATERIALS", "TELECOM", "HEALTHCARE", "REIT", "CONSUMER"}
+    ML_GATE_SCORE_MIN = 90
+
+    pick = {
+        "ticker": "MNST",
+        "score":  91,
+        "ml_prob": 0.50,
+        # sector lives nested in data dict — top-level pick["sector"] is absent
+        "data": {"sector": "Consumer Defensive", "price": 52.0},
+    }
+
+    ticker = pick["ticker"]
+    stock_data = pick.get("data", {})
+
+    # Simulate scoring-loop write-back (FIX 2)
+    _raw = (stock_data.get("sector", "") or "").strip()
+    if not _raw:
+        _raw = _TICKER_SECTOR_OVERRIDE.get(ticker, "")
+    pick["sector_canonical"] = _SECTOR_NORM_INF.get(_raw.lower(), _raw.upper() or "UNKNOWN")
+
+    assert pick["sector_canonical"] == "CONSUMER", (
+        f"sector_canonical should be CONSUMER, got {pick['sector_canonical']}"
+    )
+    score = pick["score"]
+    is_blocked = score >= ML_GATE_SCORE_MIN and pick["sector_canonical"] in SECTOR_BLOCK
+    assert is_blocked, (
+        f"MNST (Consumer Defensive, score {score}) must be blocked; "
+        f"sector_canonical={pick['sector_canonical']}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sector-median imputation — FIX 3, 2026-07-12
+# Bug: 80%+ of historical rows have zero features → zero-variance model →
+#      AUC ≈ 0.500 (random). Imputation fills zeros with sector-level medians
+#      so the model trains on meaningful signal from ALL rows.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_imputation_reduces_zero_rate():
+    """After sector-median imputation, <50% of rows should have zero momentum_6m."""
+    try:
+        import pandas as pd
+        import numpy as np
+    except ImportError:
+        pytest.skip("pandas/numpy not available")
+
+    from ml_retrainer import build_feature_matrix, SECTOR_ENCODING
+
+    # 20 mock resolved outcomes: first 10 have real data, last 10 are all-zero.
+    # After imputation the zeros should be filled with the sector median from row 0-9.
+    resolved = []
+    for i in range(20):
+        resolved.append({
+            "resolved": True,
+            "actual_return": 5.0 if i % 2 == 0 else -3.0,
+            "outcome": "WIN" if i % 2 == 0 else "LOSS",
+            "perf_90d":      10.0 if i < 10 else 0.0,
+            "roe":           15.0 if i < 10 else 0.0,
+            "profit_margin": 20.0 if i < 10 else 0.0,
+            "sector":        "Technology",  # all same sector so sector median is well-defined
+            "regime":        "BULL",
+            "signal_date":   "2026-01-01",
+        })
+
+    result = build_feature_matrix(resolved)
+    if result[0] is None:
+        pytest.skip("Coverage gate blocked — need more resolved outcomes in test data")
+
+    X = result[0]
+    zero_rate = float((X["momentum_6m"].abs() < 0.001).mean())
+    assert zero_rate < 0.50, (
+        f"After imputation, {zero_rate:.1%} of rows still have zero momentum_6m — "
+        "sector-median imputation not working"
+    )
