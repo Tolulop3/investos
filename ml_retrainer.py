@@ -301,7 +301,10 @@ def build_feature_matrix(resolved):
         weights.append(max(w, 0.05))
         dates_list.append(sig_date)
 
-    X = pd.DataFrame(rows_X)[FEATURES]
+    # Build full DataFrame including sector_encoded (used ONLY for imputation grouping).
+    # sector_encoded is NOT in FEATURES and is dropped before returning.
+    X_full = pd.DataFrame(rows_X)
+    X = X_full[FEATURES]   # 22 features — used for coverage gate below
     y = pd.Series(rows_y, dtype=int)
     w = np.array(weights, dtype=float)
 
@@ -325,14 +328,13 @@ def build_feature_matrix(resolved):
 
     # ── COVERAGE GATE ─────────────────────────────────────────────────────
     # Historical picks (pre feature-capture era) have perf_90d=0, roe=0 etc.
-    # Training on all-zero rows → zero-variance model → AUC=0.500 (random).
-    # Guard: require ≥10% of rows have real feature data before retraining.
-    # New picks (from June 20, 2026+) capture full feature snapshots.
+    # Guard: require ≥10% of rows have real feature data before retraining so
+    # there is enough seed data for sector-median imputation to be meaningful.
     key_features = ["momentum_6m", "roe", "profit_margin"]  # rs_rating excluded — default 50 inflates coverage
     has_real_data = X[key_features].abs().sum(axis=1) > 0.001
     coverage_pct  = float(has_real_data.mean()) * 100
     real_rows     = int(has_real_data.sum())
-    print(f"  📊 Feature coverage: {coverage_pct:.1f}% ({real_rows}/{len(y)} rows have real data)")
+    print(f"  📊 Raw feature coverage (pre-imputation): {coverage_pct:.1f}% ({real_rows}/{len(y)} rows have real data)")
 
     # Per-feature zero check — shows which features are missing
     for feat in key_features:
@@ -346,8 +348,41 @@ def build_feature_matrix(resolved):
         print(f"     ~{max(0, int(MIN_COVERAGE_PCT/100 * len(y)) - real_rows)} more feature-complete picks needed.")
         print(f"     New picks capturing features daily. Auto-retrain fires when threshold crossed.")
         return None, None, None, None   # signals train_and_save to abort
-    print(f"  ✅ Coverage {coverage_pct:.1f}% ≥ {MIN_COVERAGE_PCT}% — proceeding with retrain")
+    print(f"  ✅ Raw coverage {coverage_pct:.1f}% ≥ {MIN_COVERAGE_PCT}% — proceeding with imputation + retrain")
     # ──────────────────────────────────────────────────────────────────────
+
+    # ── Sector-median imputation ──────────────────────────────────────────
+    # Problem: 80%+ of historical rows have zero momentum/fundamentals (pre-capture era).
+    # Training on all-zero rows → zero-variance features → AUC ≈ 0.500 (random).
+    # Fix: replace zeros with the sector-level median computed from the real-data rows.
+    # Groups use sector_encoded (int code, -1 = UNKNOWN). If sector median is also 0,
+    # fall back to the global median across all non-zero rows.
+    # sector_encoded is dropped from X after this step — it is NOT a model feature.
+    IMPUTE_FEATURES = [
+        "momentum_6m", "momentum_12m", "vol_adj_momentum",
+        "roe", "profit_margin", "fcf_yield",
+        "rev_growth", "earn_growth", "div_yield", "rs_rating",
+    ]
+    _before_m6m = float((X_full["momentum_6m"].abs() > 0.001).mean()) * 100
+    _before_roe  = float((X_full["roe"].abs() > 0.001).mean()) * 100
+    for feat in IMPUTE_FEATURES:
+        zero_mask = X_full[feat].abs() < 0.001
+        if zero_mask.sum() == 0:
+            continue
+        non_zero = X_full.loc[~zero_mask]
+        global_med = float(non_zero[feat].median()) if len(non_zero) > 0 else 0.0
+        sector_meds = non_zero.groupby("sector_encoded")[feat].median()
+        fill_vals = X_full.loc[zero_mask, "sector_encoded"].map(sector_meds).fillna(global_med)
+        X_full.loc[zero_mask, feat] = fill_vals.values
+    _after_m6m = float((X_full["momentum_6m"].abs() > 0.001).mean()) * 100
+    _after_roe  = float((X_full["roe"].abs() > 0.001).mean()) * 100
+    print(f"  🔧 Sector-median imputation:")
+    print(f"     momentum_6m  {_before_m6m:.0f}% → {_after_m6m:.0f}% non-zero")
+    print(f"     roe          {_before_roe:.0f}% → {_after_roe:.0f}% non-zero")
+    # ──────────────────────────────────────────────────────────────────────
+
+    # Drop sector_encoded — it is NOT in FEATURES and must not enter the model
+    X = X_full[FEATURES].copy()
 
     dates_arr = np.array(dates_list)
     return X, y, w, dates_arr
