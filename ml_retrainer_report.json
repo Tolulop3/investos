@@ -1,27 +1,26 @@
 {
-  "retrained_at": "2026-07-09T19:52:19.419447",
-  "n_rows": 2103,
-  "n_train": 1682,
-  "n_val": 421,
-  "holdout_auc": 0.4536,
-  "cv_auc_mean": 0.613,
-  "cv_auc_std": 0.0891,
+  "retrained_at": "2026-07-13T13:29:13.199904",
+  "n_rows": 2151,
+  "n_train": 1720,
+  "n_val": 431,
+  "holdout_auc": 0.5573,
+  "cv_auc_mean": 0.622,
+  "cv_auc_std": 0.0905,
   "feature_importance": {
-    "sector_encoded": 1.0,
-    "momentum_6m": 0.0,
-    "momentum_12m": 0.0,
-    "vol_adj_momentum": 0.0,
-    "roe": 0.0,
-    "profit_margin": 0.0,
+    "vol_adj_momentum": 0.3587,
+    "rs_rating": 0.278,
+    "momentum_12m": 0.1243,
+    "momentum_6m": 0.0984,
+    "profit_margin": 0.0333,
+    "fcf_yield": 0.031,
+    "div_yield": 0.0296,
+    "roe": 0.0188,
+    "earn_growth": 0.0173,
+    "rev_growth": 0.0106,
     "earnings_yield": 0.0,
-    "fcf_yield": 0.0,
     "volatility_90d": 0.0,
     "beta": 0.0,
-    "rev_growth": 0.0,
-    "earn_growth": 0.0,
-    "div_yield": 0.0,
     "debt_equity": 0.0,
-    "rs_rating": 0.0,
     "sector_momentum": 0.0,
     "market_regime": 0.0,
     "spx_vs_ma200": 0.0,
@@ -33,29 +32,29 @@
   },
   "calibration_check": {
     "Q1": {
-      "mean_pred_prob": 0.186,
-      "actual_win_rate": 0.348,
-      "count": 437
+      "mean_pred_prob": 0.325,
+      "actual_win_rate": 0.33,
+      "count": 506
     },
     "Q2": {
-      "mean_pred_prob": 0.317,
-      "actual_win_rate": 0.658,
-      "count": 682
+      "mean_pred_prob": 0.52,
+      "actual_win_rate": 0.46,
+      "count": 730
     },
     "Q3": {
-      "mean_pred_prob": 0.361,
-      "actual_win_rate": 0.456,
-      "count": 226
+      "mean_pred_prob": 0.54,
+      "actual_win_rate": 0.459,
+      "count": 185
     },
     "Q4": {
-      "mean_pred_prob": 0.486,
-      "actual_win_rate": 0.443,
-      "count": 528
+      "mean_pred_prob": 0.644,
+      "actual_win_rate": 0.533,
+      "count": 300
     },
     "Q5": {
-      "mean_pred_prob": 0.627,
-      "actual_win_rate": 0.483,
-      "count": 230
+      "mean_pred_prob": 0.758,
+      "actual_win_rate": 0.756,
+      "count": 430
     }
   },
   "features_used": [
@@ -80,8 +79,7 @@
     "close_to_ema20_ratio",
     "unified_regime_enc",
     "macro_regime_enc",
-    "market_breadth_50ma",
-    "sector_encoded"
+    "market_breadth_50ma"
   ],
   "label_definition": "actual_return > median(actual_return)"
 }
