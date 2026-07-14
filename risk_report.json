@@ -1,5 +1,5 @@
 {
-  "date": "July 13, 2026",
+  "date": "July 14, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,15 +9,15 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-13T22:00:44.718432",
+    "run_at": "2026-07-14T12:20:40.316845",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 18,
-        "survived": 16,
-        "survival_pct": 88.9,
+        "survived": 17,
+        "survival_pct": 94.4,
         "verdict": "\u2705 ROBUST",
-        "note": "2 picks unviable after doubling costs"
+        "note": "1 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
@@ -38,17 +38,18 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 85.0,
-        "stressed_avg": 79.3,
-        "score_drop": 5.7,
+        "normal_avg": 84.7,
+        "stressed_avg": 78.4,
+        "score_drop": 6.3,
         "removed": [
-          "VOYA",
-          "BNS.TO",
+          "BMO.TO",
+          "BNY",
           "NXPI",
-          "TXN"
+          "C",
+          "VOYA"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 5.7 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 6.3 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -62,7 +63,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 85.0,
+      "normal_avg_score": 84.7,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -71,17 +72,17 @@
     "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
-    "date": "July 13, 2026",
+    "date": "July 14, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 0.329,
-      "avg_ret_pct": 0.29,
-      "std_ret_pct": 6.27,
-      "picks_used": 1713,
-      "date_from": "2026-04-14",
+      "sharpe": 0.308,
+      "avg_ret_pct": 0.27,
+      "std_ret_pct": 6.28,
+      "picks_used": 1702,
+      "date_from": "2026-04-15",
       "date_to": "2026-07-13",
       "source": "resolved_returns",
-      "note": "Sharpe from 1713 resolved picks (2026-04-14 \u2192 2026-07-13) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 1702 resolved picks (2026-04-15 \u2192 2026-07-13) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": 0.43,
@@ -92,7 +93,7 @@
       "sharpe": 1.79,
       "symbol": "^GSPC"
     },
-    "alpha": -1.461,
+    "alpha": -1.482,
     "neg_alpha_days": 21,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
