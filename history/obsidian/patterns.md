@@ -8,7 +8,7 @@ tags: [investos, patterns, weekly]
 ## Regime Drift
 - ✅ Regime stable — no drift signals
 - Breadth (200MA): 75.9%  (+0.23%/day)
-- Sharpe: 0.235  (-0.020/day)
+- Sharpe: 0.229  (-0.021/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **BMO.TO** — 3d streak, avg score 99.3
@@ -19,26 +19,23 @@ tags: [investos, patterns, weekly]
 - 📈 **META** +15.0 pts/day  (62.0 → 92.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📈 **BX** +12.5 pts/day  (66.0 → 91.0)
+- 📈 **VEEV** +9.8 pts/day  (75.1 → 94.7)
 - 📉 **NVDA** -9.5 pts/day  (100.0 → 81.0)
 - 📈 **ABX.TO** +9.5 pts/day  (70.0 → 89.0)
-- 📉 **PFE** -9.0 pts/day  (95.0 → 77.0)
-
-## ⚠️ Sector Concentration Risk
-- **BANKS**: 42.9% of recent picks (3 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | CAT | 🔴 AVOID | 0d | -22.3 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
-| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
+| VEEV | 🟡 WATCH | 0d | +9.8 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | BB.TO | 🔴 AVOID | 0d | -8.5 | — |
-| PLD | 🔴 AVOID | 0d | -8.4 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **✅ OK** (flag if 2 consecutive months < 45.0%)
