@@ -7,8 +7,8 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 76.3%  (+0.06%/day)
-- Sharpe: 0.205  (-0.020/day)
+- Breadth (200MA): 74.7%  (-0.17%/day)
+- Sharpe: 0.218  (-0.018/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **BMO.TO** — 5d streak, avg score 99.2
@@ -22,10 +22,6 @@ tags: [investos, patterns, weekly]
 - 📈 **ABX.TO** +9.5 pts/day  (70.0 → 89.0)
 - 📉 **PFE** -9.0 pts/day  (95.0 → 77.0)
 - 📉 **BB.TO** -8.5 pts/day  (100.0 → 83.0)
-
-## ⚠️ Sector Concentration Risk
-- **BANKS**: 42.9% of recent picks (3 picks) — HIGH_CONCENTRATION
-- **Financial Services**: 42.9% of recent picks (3 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
