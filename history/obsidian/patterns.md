@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 74.7%  (-0.17%/day)
+- Breadth (200MA): 73.1%  (-0.40%/day)
 - Sharpe: 0.218  (-0.018/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
