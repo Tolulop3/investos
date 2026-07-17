@@ -1276,12 +1276,30 @@ def render_allocations(target_weights, account, market_regime,
     # Effective deployment = deployable × sum-of-weights (may be <1.0 when Kelly floor active)
     _eff_wt = sum(w["weight"] * wt_scale for w in eligible)
     _eff_deployed = deployable * min(1.0, _eff_wt)
+
+    # Minimum deploy floor: never deploy less than $1,500 on accounts with sufficient capital.
+    # Guards against combined multiplier stack (regime × dd_reduction × Kelly_floor) producing
+    # sub-trade amounts. When both Sharpe guard and Kelly floor fire simultaneously the stack
+    # can reach 0.25 × 0.50 × 0.60 = 7.5% of $10k = $750 — which is not actionable.
+    _MIN_DEPLOY = 1500.0
+    _floor_applied = False
+    if 0 < _eff_deployed < _MIN_DEPLOY and deployable >= _MIN_DEPLOY:
+        _floor_scale  = _MIN_DEPLOY / _eff_deployed
+        wt_scale     *= _floor_scale          # scales all norm_weight * dollar_amt uniformly
+        _unconstrained = _eff_deployed
+        _eff_deployed  = _MIN_DEPLOY
+        _eff_wt        = sum(w["weight"] * wt_scale for w in eligible)   # recompute for header
+        _floor_applied = True
+
     if verbose:
         _header = (f"\n   💰 {acct_name} (${capital:,.0f}"
                    + (f" | max_equity: {max_equity*100:.0f}%" if max_equity < 1.0 else "")
                    + f" | Equity: {round(regime_equity_pct*100)}%"
                    + f"): deploying ${_eff_deployed:,.0f}")
-        if _eff_wt < 0.98:
+        if _floor_applied:
+            _header += (f" of ${deployable:,.0f} available "
+                        f"(min-deploy floor: calculated ${_unconstrained:,.0f} → floored at ${_MIN_DEPLOY:,.0f})")
+        elif _eff_wt < 0.98:
             _header += f" of ${deployable:,.0f} available (Kelly floor — {_eff_wt*100:.0f}% deployed)"
         print(_header)
 
