@@ -518,3 +518,58 @@ def test_gate_substitution_respects_sector_cap():
     assert "FINANCIALS" not in repl_sectors, (
         f"Gate substitution added FINANCIALS when cap was full: {repl_sectors}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX 3 (2026-07-17): _apply_sector_cap fallback re-admits capped sectors
+# Bug: when the reserve pool had fewer non-FINANCIALS than excess slots,
+# the fallback at the end of _apply_sector_cap unconditionally re-admitted
+# excess picks (including FINANCIALS) to maintain basket size — resulting in
+# JPM + BMO.TO being listed under both "removed" and "added".
+# Fix: pre-filter reserve to exclude capped sectors; fallback also respects cap.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_sector_cap_fallback_does_not_readmit_capped_sectors():
+    """_apply_sector_cap must never re-admit excess picks from a capped sector,
+    even when the reserve pool has fewer non-capped picks than slots to fill."""
+    from ml_engine import _apply_sector_cap
+
+    def _m(ticker, sector, score):
+        return {"ticker": ticker, "score": score, "data": {"sector": sector}, "pick": {}}
+
+    # 6-pick all-FINANCIALS basket — cap should keep 2, excess = 4
+    basket = [
+        _m("FBP",    "Financial Services", 94),
+        _m("BAC",    "Financial Services", 91),
+        _m("JPM",    "Financial Services", 88),
+        _m("BMO.TO", "Financial Services", 86),
+        _m("BNS.TO", "Financial Services", 84),
+        _m("BNY",    "Financial Services", 82),
+    ]
+    # Reserve has only 2 non-FINANCIALS — not enough to fill all 4 excess slots.
+    # Without the fix, fallback adds JPM + BMO.TO back → 4 FINANCIALS.
+    screener = {
+        "TFSA_growth_top5": [
+            _m("LLY",   "Health Care", 83),
+            _m("NTR.TO","Materials",   80),
+        ],
+    }
+
+    result = _apply_sector_cap(basket, screener, max_per_sector=2)
+
+    fin_picks = [p for p in result
+                 if any(kw in (p.get("data", {}).get("sector", "") or "").lower()
+                        for kw in ("financial", "bank", "insurance", "capital"))]
+    assert len(fin_picks) <= 2, (
+        f"Sector cap re-admitted FINANCIALS via fallback: {[p['ticker'] for p in fin_picks]}"
+    )
+    # Basket is smaller (4) rather than re-concentrated (6)
+    assert len(result) <= 4, (
+        f"Expected ≤4 picks (2 FIN + 2 non-FIN), got {len(result)}: "
+        f"{[p['ticker'] for p in result]}"
+    )
+    # FBP and BAC (highest scorers) must be the two FINANCIALS kept
+    fin_tickers = {p["ticker"] for p in fin_picks}
+    assert "FBP" in fin_tickers and "BAC" in fin_tickers, (
+        f"Expected FBP and BAC as the two kept FINANCIALS, got: {fin_tickers}"
+    )

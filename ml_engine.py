@@ -890,12 +890,20 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2, excluded_tickers=
     if _sec_cap_excluded:
         print(f"  🏛  Sector cap reserve: filtered {_sec_cap_excluded} excluded tickers")
 
+    # Pre-filter reserve: exclude any sector already at the cap limit.
+    # Without this, the fallback below would re-admit excess picks from capped
+    # sectors (e.g. JPM/BMO.TO removed as excess FINANCIALS then added back
+    # because only 2 non-FINANCIALS were available in the reserve pool).
+    eligible_replacements = [p for p in all_candidates
+                             if _get_sector(p) == "Unknown"
+                             or seen[_get_sector(p)] < max_per_sector]
+
     # Sort reserve pool by score descending
-    all_candidates.sort(key=lambda x: x.get("score", 0), reverse=True)
+    eligible_replacements.sort(key=lambda x: x.get("score", 0), reverse=True)
 
     # Fill excess slots with best candidates from under-represented sectors
     filled = list(kept)
-    for candidate in all_candidates:
+    for candidate in eligible_replacements:
         if len(filled) >= len(picks):
             break
         s = _get_sector(candidate)
@@ -905,16 +913,25 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2, excluded_tickers=
             basket_tickers.add(candidate.get("ticker"))
 
     if len(filled) < len(picks):
-        # Not enough diversified replacements — keep original excess to maintain basket size
-        filled.extend(excess[:len(picks) - len(filled)])
+        # Fall back to excess ONLY for sectors that are still under the cap limit.
+        # Never re-admit excess picks whose sector is already at max_per_sector —
+        # a smaller basket is preferable to a sector-concentrated one.
+        for _exc in excess:
+            if len(filled) >= len(picks):
+                break
+            _s = _get_sector(_exc)
+            if _s == "Unknown" or seen[_s] < max_per_sector:
+                filled.append(_exc)
+                seen[_s] += 1
 
     if len(excess) > 0:
-        removed  = [p.get("ticker") for p in excess[:len(excess)]]
+        removed  = [p.get("ticker") for p in excess]
         added    = [p.get("ticker") for p in filled[len(kept):]]
-        if removed or added:
-            import sys
-            print(f"  🏛  Sector cap: removed {removed}, added {added} (max {max_per_sector}/sector)",
-                  file=sys.stdout)
+        import sys
+        print(f"  🏛  Sector cap: removed {removed}, added {added} (max {max_per_sector}/sector)",
+              file=sys.stdout)
+        _final_fin = sum(1 for p in filled if _get_sector(p) == "Financials")
+        print(f"  🏛  Sector cap: Final FINANCIALS count: {_final_fin}", file=sys.stdout)
 
     return filled[:len(picks)]
 
