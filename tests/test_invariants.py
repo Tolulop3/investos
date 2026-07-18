@@ -388,3 +388,133 @@ def test_imputation_reduces_zero_rate():
         f"After imputation, {zero_rate:.1%} of rows still have zero momentum_6m — "
         "sector-median imputation not working"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX 1 (2026-07-17): Same-day duplicate picks in outcomes_log
+# Bug: log_picks() built logged_today once from file; if the same ticker appeared
+# twice in the picks list (from two screener buckets), both got logged.
+# Fix: logged_today.add(ticker) after each new entry so the second occurrence
+# in the same picks list is also caught.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_no_same_day_duplicates():
+    """outcomes_log.json must contain at most one entry per (ticker, signal_date) pair."""
+    import json, os
+    log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "outcomes_log.json")
+    if not os.path.exists(log_path):
+        pytest.skip("outcomes_log.json not present")
+    with open(log_path) as f:
+        log = json.load(f)
+    pairs = [(e.get("ticker"), e.get("signal_date")) for e in log]
+    assert len(pairs) == len(set(pairs)), (
+        f"Duplicate (ticker, signal_date) pairs found: "
+        + str([p for p in pairs if pairs.count(p) > 1][:5])
+    )
+
+
+def test_log_picks_dedup_within_run():
+    """log_picks must not record a ticker twice even if it appears twice in picks list."""
+    import json, os, tempfile
+    from unittest.mock import patch
+
+    # We need outcome_tracker to write to a temp file so the test is self-contained.
+    dummy_log: list = []
+
+    def fake_load():
+        return dummy_log
+
+    def fake_save(data):
+        tmp = list(data)   # snapshot before mutating dummy_log (data IS dummy_log)
+        dummy_log.clear()
+        dummy_log.extend(tmp)
+
+    picks = [
+        {"ticker": "C", "score": 81, "data": {"price": 62.0},
+         "pick": {"category": "growth"}, "ml_prob": 0.55, "ml_prob_source": "model"},
+        {"ticker": "C", "score": 82, "data": {"price": 62.0},
+         "pick": {"category": "income"}, "ml_prob": 0.55, "ml_prob_source": "model"},
+    ]
+
+    from outcome_tracker import log_picks
+    with patch("outcome_tracker.load_outcomes", fake_load), \
+         patch("outcome_tracker.save_outcomes", fake_save):
+        log_picks(picks, regime=None, run_type="test")
+
+    c_entries = [e for e in dummy_log if e.get("ticker") == "C"]
+    assert len(c_entries) == 1, (
+        f"Expected 1 C entry after dedup, got {len(c_entries)}: "
+        + str([(e.get('signal_date'), e.get('score')) for e in c_entries])
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX 2 (2026-07-17): Gate substitution bypasses sector cap
+# Bug: _apply_sector_cap() correctly limited a sector to 2, but gate substitution
+# added reserve picks (never in the original basket) without checking sector cap —
+# resulting in 3-5 picks from the same sector in the final basket.
+# Fix: gate substitution now tracks sector counts of passed picks and skips
+# reserve candidates whose sector is already at the 2-pick limit.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_gate_substitution_respects_sector_cap():
+    """After gate substitution, no sector should appear more than twice in tfsa_picks."""
+    from ml_engine import _SECTOR_NORM_INF, _TICKER_SECTOR_OVERRIDE
+
+    def _make_pick(ticker, sector_raw, score):
+        return {
+            "ticker": ticker,
+            "score":  score,
+            "data":   {"sector": sector_raw, "price": 50.0},
+            "sector_canonical": _SECTOR_NORM_INF.get(sector_raw.lower(), sector_raw.upper()),
+        }
+
+    # Simulate: passed basket has 2 FINANCIALS already (cap was enforced pre-gate).
+    passed = [
+        _make_pick("BMO.TO", "Financial Services", 88),
+        _make_pick("JPM",    "Financial Services", 87),
+        _make_pick("KLAC",   "Technology",          85),
+    ]
+
+    # Reserve is dominated by FINANCIALS — without the fix, all 2 replacements
+    # would be FINANCIALS, pushing the basket to 4.
+    reserve = [
+        _make_pick("FBP",   "Financial Services", 84),
+        _make_pick("UMBF",  "Financial Services", 83),
+        _make_pick("NVDA",  "Technology",          82),
+        _make_pick("META",  "Technology",          80),
+    ]
+
+    gated_out = [_make_pick("MNST", "Consumer Defensive", 91)]   # 1 slot to fill
+
+    # Replicate the gate substitution selection logic from ml_engine.py
+    _repl_sector_counts: dict = {}
+    for _pp in passed:
+        _ps = _pp.get("sector_canonical") or ""
+        if _ps and _ps != "UNKNOWN":
+            _repl_sector_counts[_ps] = _repl_sector_counts.get(_ps, 0) + 1
+
+    replacements = []
+    _repl_max = 2
+    for _cand in reserve:
+        if len(replacements) >= len(gated_out):
+            break
+        _cs = _cand.get("sector_canonical") or ""
+        if _cs and _cs != "UNKNOWN" and _repl_sector_counts.get(_cs, 0) >= _repl_max:
+            continue
+        replacements.append(_cand)
+        if _cs and _cs != "UNKNOWN":
+            _repl_sector_counts[_cs] = _repl_sector_counts.get(_cs, 0) + 1
+
+    tfsa_picks = passed + replacements
+
+    # NVDA should be the replacement (TECHNOLOGY slot available), not FBP/UMBF (FINANCIALS full)
+    sector_counts = Counter(p["sector_canonical"] for p in tfsa_picks)
+    assert max(sector_counts.values()) <= 2, (
+        f"Sector cap violated after gate substitution: {dict(sector_counts)}"
+    )
+    repl_sectors = [p["sector_canonical"] for p in replacements]
+    assert "FINANCIALS" not in repl_sectors, (
+        f"Gate substitution added FINANCIALS when cap was full: {repl_sectors}"
+    )

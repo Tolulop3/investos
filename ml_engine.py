@@ -1691,8 +1691,40 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
                 basket_tickers.add(_tkr)
         print(f"  📋 Reserve pool: {len(reserve)} candidates (from {_reserve_raw_count} raw, post-dedup/cooldown/sector-gate)")
         reserve.sort(key=lambda x: x.get("score", 0), reverse=True)
-        replacements = reserve[:len(gated_out)]
-        tfsa_picks   = passed + replacements
+
+        # Sector-cap-aware replacement: track how many of each canonical sector
+        # are already in `passed`, then skip reserve candidates that would push
+        # any sector above max 2.  Without this, gate substitution can re-add
+        # FINANCIALS (or any sector) that the pre-gate cap already trimmed.
+        _repl_sector_counts: dict = {}
+        for _pp in passed:
+            _ps = _pp.get("sector_canonical") or ""
+            if not _ps:
+                _ps_raw = ((_pp.get("data") or {}).get("sector", "") or "").strip()
+                if not _ps_raw:
+                    _ps_raw = _TICKER_SECTOR_OVERRIDE.get(_pp.get("ticker", ""), "")
+                _ps = _SECTOR_NORM_INF.get(_ps_raw.lower(), _ps_raw.upper() or "UNKNOWN")
+            if _ps and _ps != "UNKNOWN":
+                _repl_sector_counts[_ps] = _repl_sector_counts.get(_ps, 0) + 1
+
+        replacements = []
+        _repl_max_per_sector = 2
+        for _cand in reserve:
+            if len(replacements) >= len(gated_out):
+                break
+            _cs = _cand.get("sector_canonical") or ""
+            if not _cs:
+                _cs_raw = ((_cand.get("data") or {}).get("sector", "") or "").strip()
+                if not _cs_raw:
+                    _cs_raw = _TICKER_SECTOR_OVERRIDE.get(_cand.get("ticker", ""), "")
+                _cs = _SECTOR_NORM_INF.get(_cs_raw.lower(), _cs_raw.upper() or "UNKNOWN")
+            if _cs and _cs != "UNKNOWN" and _repl_sector_counts.get(_cs, 0) >= _repl_max_per_sector:
+                continue   # would exceed sector cap — skip
+            replacements.append(_cand)
+            if _cs and _cs != "UNKNOWN":
+                _repl_sector_counts[_cs] = _repl_sector_counts.get(_cs, 0) + 1
+
+        tfsa_picks = passed + replacements
 
         gated_tickers = [p.get("ticker") for p in gated_out]
         repl_tickers  = [p.get("ticker") for p in replacements]

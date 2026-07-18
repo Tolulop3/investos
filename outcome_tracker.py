@@ -186,6 +186,7 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None,
             "run_id":        run_id or "",
         }
         outcomes.append(entry)
+        logged_today.add(ticker)   # catch second occurrence of same ticker in picks list
         new_logged += 1
 
     save_outcomes(outcomes)
