@@ -240,12 +240,14 @@ Reference actual tickers and numbers from the data above."""
             "messages":   [{"role": "user", "content": user_prompt}],
         }).encode()
 
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
         req = urllib.request.Request(
             "https://api.anthropic.com/v1/messages",
             data=payload,
             headers={
                 "Content-Type":      "application/json",
                 "anthropic-version": "2023-06-01",
+                "x-api-key":         api_key,
             },
             method="POST",
         )
