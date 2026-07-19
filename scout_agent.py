@@ -50,6 +50,9 @@ CURRENT_FILE  = "universe_current.json"
 ROTATION_LOG  = "universe_rotation_log.json"
 FAILURE_LOG   = "universe_failure_log.json"
 MAX_CONSECUTIVE_FAILURES = 3   # drop from universe after this many consecutive scout failures
+HOLD_PERIOD_DAYS = 28   # minimum days a scouted ticker stays in the dynamic
+                         # universe even if it no longer passes the momentum
+                         # filter, to reduce weekly churn
 
 GLOBAL_WATCH_FILE = "global_watch.json"
 MAX_GLOBAL_WATCH  = 25         # cap: never exceed this many foreign-listed tickers
@@ -439,18 +442,55 @@ def run_scout(verbose=True):
     if inactive_set:
         print(f"  🚫 Inactive tickers (3+ consecutive failures): {sorted(inactive_set)}")
 
-    # Step 4: Build dynamic dict — exclude inactive tickers
-    dynamic = {}
+    # Load previous dynamic universe (for hold-period retention)
+    try:
+        old_dynamic = json.load(open(DYNAMIC_FILE))
+    except (FileNotFoundError, json.JSONDecodeError):
+        old_dynamic = {}
+
+    # Step 4: Build dynamic dict — exclude inactive tickers.
+    # Tickers that already existed keep their original scouted_at date
+    # (the hold-period clock starts at first addition, not at each
+    # re-qualification), only genuinely new tickers get today's date.
+    passing = {}
     for ticker, score, meta in us_top + ca_top:
         if ticker in inactive_set:
             print(f"    Skipping inactive ticker: {ticker}")
             continue
-        dynamic[ticker] = {
+        prior = old_dynamic.get(ticker)
+        scouted_at = prior["scouted_at"] if prior else today
+        passing[ticker] = {
             "scout_score": round(score, 2),
             "source":      source_map.get(ticker, "scout_unknown"),
-            "scouted_at":  today,
+            "scouted_at":  scouted_at,
             **meta,
         }
+
+    new_additions = [t for t in passing if t not in old_dynamic]
+
+    # Retain tickers still within the hold period even though they no
+    # longer pass today's momentum filter. Exception: tickers already
+    # flagged inactive (3+ consecutive fetch failures) drop immediately.
+    retained = {}
+    dropped  = []
+    for ticker, data in old_dynamic.items():
+        if ticker in passing or ticker in inactive_set:
+            continue
+        try:
+            scouted_date = datetime.date.fromisoformat(data.get("scouted_at", today))
+            age_days = (datetime.date.today() - scouted_date).days
+        except (ValueError, TypeError):
+            age_days = HOLD_PERIOD_DAYS + 1  # malformed date → treat as expired
+        if age_days < HOLD_PERIOD_DAYS:
+            retained[ticker] = data
+        else:
+            dropped.append(ticker)
+
+    dynamic = {**passing, **retained}
+
+    print(f"\n  Retained (hold period): {len(retained)} tickers")
+    print(f"  New additions: {len(new_additions)} tickers")
+    print(f"  Dropped (expired + no longer qualifying): {len(dropped)} tickers")
 
     # Save dynamic universe
     json.dump(dynamic, open(DYNAMIC_FILE, "w"), indent=2)
