@@ -1159,3 +1159,53 @@ def test_ngx_tier3_candidates_start_paper_only_day_zero(monkeypatch):
         phase, days = ns.get_validation_phase(ticker)
         assert phase == "PAPER_ONLY"
         assert days == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# weekly_scout.yml git-add completeness (FIX, 2026-07-20)
+# scout_agent.py writes 5 files; the workflow's "git add" line only staged 3
+# (universe_failure_log.json and global_watch.json were missing). Since
+# update_failure_log() unconditionally rewrites universe_failure_log.json
+# every run, the working tree was left dirty after the commit step, and the
+# next "git pull --rebase origin main" refused to run ("You have unstaged
+# changes"). That failure lost commit f9d0525b entirely -- GitHub Actions
+# runners are ephemeral, so a commit that's never pushed is gone once the
+# job ends, not recoverable.
+# This test derives, from scout_agent.py's own source (not a hand-copied
+# list), every file opened in write mode via its module-level FILE
+# constants, and asserts the workflow's git-add line stages all of them --
+# so a 6th file added later without updating the workflow fails CI
+# immediately instead of silently repeating this failure mode.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_weekly_scout_workflow_stages_every_file_scout_agent_writes():
+    import re
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    scout_src = open(os.path.join(root, "scout_agent.py")).read()
+
+    # Every module-level FILE = "....json" constant that's opened in write
+    # mode somewhere in the module -- this is scout_agent.py's actual
+    # write footprint, derived from the source, not hand-maintained here.
+    written_vars = set(re.findall(r'open\((\w+),\s*"w"\)', scout_src))
+    consts = dict(re.findall(r'^(\w+)\s*=\s*"([^"]+\.json)"', scout_src, re.MULTILINE))
+    written_files = {consts[v] for v in written_vars if v in consts}
+
+    assert written_files == {
+        "universe_dynamic.json", "universe_current.json",
+        "universe_rotation_log.json", "universe_failure_log.json",
+        "global_watch.json",
+    }, ("scout_agent.py's write footprint changed -- update this test's "
+        "expected set AND weekly_scout.yml's git-add line together")
+
+    workflow_path = os.path.join(root, ".github", "workflows", "weekly_scout.yml")
+    workflow_src = open(workflow_path).read()
+    add_line = next(l for l in workflow_src.splitlines() if l.strip().startswith("git add "))
+
+    missing = [f for f in written_files if f not in add_line]
+    assert not missing, (
+        f"weekly_scout.yml's git-add line is missing {missing} -- scout_agent.py "
+        f"writes these files but the workflow won't stage/commit them, which "
+        f"leaves the working tree dirty and breaks the subsequent "
+        f"'git pull --rebase' step (this is exactly how commit f9d0525b was lost)"
+    )
