@@ -675,3 +675,115 @@ def test_sharpe_guard_message_not_false_claim():
     assert "position sizes auto-reduced" not in src
     assert "SHARPE ADVISORY" in src
     assert "does not affect sizing" in src
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Kelly zero-weight diagnosis (FIX, 2026-07-20)
+# Finding: Kelly=0.000 across live picks is CORRECT MATH given its actual
+# inputs — CASE A, not a broken-input bug. p_source is the pick's own SCORE
+# TIER win rate (win_rate_data["by_score_tier"][tier]), b_source is that
+# tier's avg_win/avg_loss ratio — NEITHER is the portfolio-wide overall win
+# rate, and NEITHER is ml_prob. ml_prob only enters afterward as a separate
+# multiplicative _ml_edge_multiplier, so it can never lift an already-zero
+# Kelly weight above zero. Confirmed against real production data (2026-07-19
+# brief): 90-100 tier win_rate=46.1%, avg_win=3.55, avg_loss=4.1 (n=983,
+# comfortably past the live-data threshold) -> f_raw=-0.1615 for every 90-100
+# tier pick regardless of ml_prob. NOT FIXED here — changing p_source to use
+# ml_prob would be a sizing behavior change requiring separate sign-off (see
+# TODO comment in ml_engine.py score_to_kelly_wt).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _kelly_wr_data(tier, win_rate, avg_win, avg_loss, count=500):
+    return {"by_score_tier": {tier: {
+        "win_rate": win_rate, "avg_win": avg_win, "avg_loss": avg_loss, "count": count,
+    }}}
+
+
+def _kelly_pick(ticker, score, ml_prob, price=50.0):
+    return {"ticker": ticker, "score": score, "ml_prob": ml_prob,
+            "data": {"price": price, "volatility_90d": 0.2}}
+
+
+def test_kelly_inputs_stay_in_valid_range():
+    """Test 1+2: across realistic tier win-rate data (both live-tier and
+    static-fallback paths), Kelly's p must stay in [0,1] and b must be a
+    positive, finite number — never 0/NaN/negative/out-of-range."""
+    import io, contextlib
+    from ml_engine import compute_target_weights
+
+    # NOTE: score is capped at 80 in these cases (not 90-96) — a fresh test
+    # ticker with no score_history.json/outcomes.json entry gets downgraded
+    # by _trend_adjusted_score's "score>80 with no history -> 75.0" rule
+    # before it reaches score_to_kelly_wt, so score=80 (not >80) is what
+    # reliably lands in the "75-89" tier for a synthetic, hermetic test.
+    market_regime = {"regime": "BULL", "cash_pct": 0.0}
+    cases = [
+        # (score, wr_data) — spans 3 tiers, live-tier and thin-data fallback
+        (80, _kelly_wr_data("75-89", 46.1, 3.55, 4.1, count=983)),
+        (65, _kelly_wr_data("60-74", 55.0, 3.53, 2.93, count=456)),
+        (50, _kelly_wr_data("below-60", 44.0, 4.9, 4.37, count=184)),
+        (80, {"by_score_tier": {"75-89": {"win_rate": 46.1, "avg_win": 3.55,
+                                           "avg_loss": 4.1, "count": 5}}}),  # thin -> static fallback
+        (80, None),  # no wr_data at all -> static fallback
+    ]
+    for score, wr_data in cases:
+        picks = [_kelly_pick("TST", score, 0.5)]
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            compute_target_weights(picks, market_regime, win_rate_data=wr_data, verbose=True)
+        out = buf.getvalue()
+        for line in out.splitlines():
+            if line.strip().startswith("[kelly]"):
+                p_str = line.split("p=")[1].split()[0]
+                b_str = line.split("b=")[1].split()[0]
+                p, b = float(p_str), float(b_str)
+                assert 0.0 <= p <= 1.0, f"p out of [0,1]: {line}"
+                assert b > 0, f"b not positive: {line}"
+                assert b == b, f"b is NaN: {line}"   # NaN != NaN
+
+
+def test_kelly_debug_line_fires_only_when_floored():
+    """Test 3: [kelly] debug line appears when f_raw<=0, and does NOT appear
+    when the tier's live stats imply genuine positive edge."""
+    import io, contextlib
+    from ml_engine import compute_target_weights
+
+    market_regime = {"regime": "BULL", "cash_pct": 0.0}
+
+    # Negative-edge tier (real 90-100-tier-shaped stats, applied at score=80 —
+    # see note in test_kelly_inputs_stay_in_valid_range on the score cap) -> must fire
+    losing = _kelly_wr_data("75-89", 46.1, 3.55, 4.1, count=983)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        compute_target_weights([_kelly_pick("LOSER", 80, 0.5)], market_regime,
+                                win_rate_data=losing, verbose=True)
+    assert "[kelly] LOSER" in buf.getvalue()
+
+    # Strong positive-edge tier (high win rate, favorable payoff) -> must NOT fire
+    winning = _kelly_wr_data("60-74", 70.0, 5.0, 2.0, count=500)
+    buf2 = io.StringIO()
+    with contextlib.redirect_stdout(buf2):
+        compute_target_weights([_kelly_pick("WINNER", 65, 0.5)], market_regime,
+                                win_rate_data=winning, verbose=True)
+    assert "[kelly] WINNER" not in buf2.getvalue()
+
+
+def test_kelly_p_source_is_tier_win_rate_not_ml_prob():
+    """
+    Locks in the Case A finding: Kelly's weight for a given score/win-rate-data
+    combination is IDENTICAL regardless of ml_prob (p_source is tier win rate,
+    not ml_prob). If a future change blends ml_prob into Kelly's p (the Case A
+    fix), this test must be updated deliberately as part of that sign-off, not
+    broken by accident.
+    """
+    from ml_engine import compute_target_weights
+
+    market_regime = {"regime": "BULL", "cash_pct": 0.0}
+    # score=80, not >80 — see note in test_kelly_inputs_stay_in_valid_range
+    wr_data = _kelly_wr_data("75-89", 46.1, 3.55, 4.1, count=983)
+
+    weak_ml   = compute_target_weights([_kelly_pick("AAA", 80, 0.10)], market_regime,
+                                        win_rate_data=wr_data, verbose=False)
+    strong_ml = compute_target_weights([_kelly_pick("AAA", 80, 0.90)], market_regime,
+                                        win_rate_data=wr_data, verbose=False)
+    assert weak_ml[0]["kelly_wt"] == strong_ml[0]["kelly_wt"] == 0.0

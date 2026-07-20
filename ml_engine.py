@@ -1012,18 +1012,17 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
                     print(f"   🚫 Sector block: {p['ticker']} ({news_sector} net:{net})")
 
     # ── HALF-KELLY WEIGHTS ────────────────────────────────────────────────────
-    def score_to_kelly_wt(score, wr_data=None):
+    def score_to_kelly_wt(score, wr_data=None, ticker=None, verbose=True):
         # Static calibration — used when live data absent or too thin (n < 10)
-        if score >= 90:   p, aw, al = 0.492, 0.70, 1.0
-        elif score >= 75: p, aw, al = 0.595, 1.10, 1.0
-        elif score >= 60: p, aw, al = 0.658, 1.80, 1.0
-        else:             p, aw, al = 0.556, 1.10, 1.0
+        if score >= 90:   p, aw, al, tier = 0.492, 0.70, 1.0, "90-100"
+        elif score >= 75: p, aw, al, tier = 0.595, 1.10, 1.0, "75-89"
+        elif score >= 60: p, aw, al, tier = 0.658, 1.80, 1.0, "60-74"
+        else:             p, aw, al, tier = 0.556, 1.10, 1.0, "below-60"
+        p_source = "static_fallback"
+        b_source = "static_fallback"
         if wr_data and wr_data.get("by_score_tier"):
             t = wr_data["by_score_tier"]
-            if score >= 90:   d = t.get("90-100", {})
-            elif score >= 75: d = t.get("75-89",  {})
-            elif score >= 60: d = t.get("60-74",  {})
-            else:             d = t.get("below-60", {})
+            d = t.get(tier, {})
             _aw = d.get("avg_win")    # mean return on winning picks
             _al = d.get("avg_loss")   # mean abs-return on losing picks
             _n  = d.get("count", 0)
@@ -1033,11 +1032,33 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
                 p  = d.get("win_rate", 50) / 100
                 aw = _aw   # proper odds ratio numerator
                 al = _al   # proper odds ratio denominator
-            else:
+                # TODO (Fix 2 finding, 2026-07-20, Case A — correct math, flagged
+                # input choice, NOT implemented): p/b here are the win rate and
+                # avg-win/avg-loss ratio for this PICK'S OWN SCORE TIER (e.g.
+                # "90-100"), not the portfolio-wide overall win rate/payoff, and
+                # NOT ml_prob. ml_prob is never part of Kelly's p or b — it only
+                # enters later as a separate multiplicative _ml_edge_multiplier
+                # on top of this result (see below), so it can never lift an
+                # already-zero Kelly weight back above zero (0 x anything = 0).
+                # A pick with a strong ml_prob currently cannot get a positive
+                # Kelly weight if its score tier's live win rate implies negative
+                # edge (e.g. 90-100 tier: win_rate=46.1%, PF=0.86 as of this
+                # writing). Blending ml_prob into p (or using it in place of tier
+                # win rate) would be a SIZING BEHAVIOR CHANGE — do not implement
+                # without explicit sign-off. See tests/test_invariants.py
+                # test_kelly_p_source_is_tier_win_rate_not_ml_prob and the Fix 2
+                # commit message for the full finding.
+                p_source = f"tier_win_rate[{tier}]"
+                b_source = f"tier_avg_win_loss_ratio[{tier}]"
+            elif verbose:
                 print(f"    [Kelly] thin data (nw={_nw}, nl={_nl}) → static fallback")
         b = aw / al
-        kelly = (p * b - (1 - p)) / b
-        return max(0.0, kelly * 0.50)
+        f_raw = (p * b - (1 - p)) / b
+        if verbose and f_raw <= 0:
+            _tkr = ticker or "?"
+            print(f"    [kelly] {_tkr:<8} p={p:.4f}  b={b:.2f}  f_raw={f_raw:+.4f} → floored to 0")
+            print(f"            p_source={p_source}  b_source={b_source}")
+        return max(0.0, f_raw * 0.50)
 
     _score_hist = {}
     _outcomes_lookup = {}
@@ -1085,7 +1106,7 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
 
     raw_kelly_wts = [score_to_kelly_wt(
                          _trend_adjusted_score(p, _score_hist, _outcomes_lookup),
-                         win_rate_data)
+                         win_rate_data, ticker=p.get("ticker"), verbose=verbose)
                      for p in picks[:n_picks]]
 
     kelly_wts = [raw_kelly_wts[i] * _ml_edge_multiplier(picks[i].get("ml_prob", 0.5))
