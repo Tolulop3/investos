@@ -52,6 +52,13 @@ NGX_TIER2 = [
 
 NGX_ALL = NGX_TIER1 + NGX_TIER2
 
+# NGX_SECTOR_MAP feeds SECTOR_SENSITIVITY (below) — the live macro-scoring
+# engine for the current 29 tickers (score_ngx_macro()). Left UNCHANGED,
+# deliberately, when NGX_API_SECTOR_MAP was introduced: swapping these
+# values to the /v1/companies taxonomy would silently break scoring for
+# every current ticker (SECTOR_SENSITIVITY has no matching keys for the
+# new category strings, so every ticker would fall back to the "banking"
+# profile). Do not touch without a deliberate SECTOR_SENSITIVITY remap.
 NGX_SECTOR_MAP = {
     "GTCO.LG": "banking",      "ZENITHBANK.LG": "banking", "ACCESSCORP.LG": "banking",
     "UBA.LG": "banking",       "FIRSTHOLDCO.LG": "banking","MTNN.LG": "telecom",
@@ -65,6 +72,81 @@ NGX_SECTOR_MAP = {
     "UCAP.LG": "financial",    "NAHCO.LG": "transport",
     "DANGSUGAR.LG": "consumer","NASCON.LG": "consumer",
     "LIVESTOCK.LG": "agriculture","CWG.LG": "technology",
+}
+
+# ── NGX universe expansion (Session B, Part 2) ───────────────────────────────
+# 56 candidate tickers, filtered from the live /v1/companies universe (150
+# symbols) by market_cap >= NGN 25B and volume not-null & >= 1,000 (see
+# session analysis — thresholds chosen so 0 of the current 29 are excluded).
+# NOT yet part of NGX_ALL / main scoring rotation — see NGX_TIER3_CANDIDATES.
+#
+# NGX_API_SECTOR_MAP is the /v1/companies 13-category sector taxonomy,
+# covering all 85 tickers (current 29 + these 56). Reporting / future
+# sector-diversity purposes ONLY — NOT wired into SECTOR_SENSITIVITY or
+# score_ngx_macro(), unlike NGX_SECTOR_MAP above. This is the canonical
+# taxonomy going forward for any NEW sector-diversity logic once the 56
+# actually enter scoring.
+NGX_TIER3_CANDIDATES = [
+    "ABBEYBDS.LG", "AFRIPRUD.LG", "AIICO.LG", "ARADEL.LG", "BERGER.LG",
+    "BETAGLAS.LG", "BUAFOODS.LG", "CADBURY.LG", "CAP.LG", "CHAMPION.LG",
+    "CHAMS.LG", "CONHALLPLC.LG", "CONOIL.LG", "CORNERST.LG", "CUSTODIAN.LG",
+    "ELLAHLAKES.LG", "ETERNA.LG", "ETI.LG", "ETRANZACT.LG", "EUNISELL.LG",
+    "FIDSON.LG", "FTNCOCOA.LG", "GUINNESS.LG", "HONYFLOUR.LG", "IKEJAHOTEL.LG",
+    "INFINITY.LG", "INTBREW.LG", "JAIZBANK.LG", "JAPAULGOLD.LG", "JBERGER.LG",
+    "LINKASSURE.LG", "MANSARD.LG", "MAYBAKER.LG", "MBENEFIT.LG", "MECURE.LG",
+    "NEIMETH.LG", "NEM.LG", "NGXGROUP.LG", "NIDF.LG", "NPFMCRFBK.LG",
+    "NREIT.LG", "PZ.LG", "SKYAVN.LG", "SOVRENINS.LG", "STERLINGNG.LG",
+    "TIP.LG", "TRANSCOHOT.LG", "TRANSPOWER.LG", "UACN.LG", "UPDC.LG",
+    "UPDCREIT.LG", "VFDGROUP.LG", "VITAFOAM.LG", "WAPIC.LG", "WEMABANK.LG",
+    "ZICHIS.LG",
+]
+
+NGX_API_SECTOR_MAP = {
+    # Current 29 (unchanged tickers, new taxonomy for reporting only)
+    "GTCO.LG": "FINANCIAL SERVICES", "ZENITHBANK.LG": "FINANCIAL SERVICES",
+    "ACCESSCORP.LG": "FINANCIAL SERVICES", "UBA.LG": "FINANCIAL SERVICES",
+    "FIRSTHOLDCO.LG": "FINANCIAL SERVICES", "MTNN.LG": "ICT",
+    "AIRTELAFRI.LG": "ICT", "DANGCEM.LG": "INDUSTRIAL GOODS",
+    "SEPLAT.LG": "OIL AND GAS", "STANBIC.LG": "FINANCIAL SERVICES",
+    "NB.LG": "CONSUMER GOODS", "UNILEVER.LG": "CONSUMER GOODS",
+    "OANDO.LG": "OIL AND GAS", "TOTAL.LG": "OIL AND GAS",
+    "BUACEMENT.LG": "INDUSTRIAL GOODS", "HBMNG.LG": "INDUSTRIAL GOODS",
+    "PRESCO.LG": "AGRICULTURE", "OKOMUOIL.LG": "AGRICULTURE",
+    "TRANSCORP.LG": "CONGLOMERATES", "GEREGU.LG": "UTILITIES",
+    "NESTLE.LG": "CONSUMER GOODS", "FIDELITYBK.LG": "FINANCIAL SERVICES",
+    "FCMB.LG": "FINANCIAL SERVICES", "UCAP.LG": "FINANCIAL SERVICES",
+    "NAHCO.LG": "SERVICES", "DANGSUGAR.LG": "CONSUMER GOODS",
+    "NASCON.LG": "CONSUMER GOODS", "LIVESTOCK.LG": "AGRICULTURE",
+    "CWG.LG": "ICT",
+    # 56 new candidates (NGX_TIER3_CANDIDATES)
+    "ABBEYBDS.LG": "FINANCIAL SERVICES", "AFRIPRUD.LG": "FINANCIAL SERVICES",
+    "AIICO.LG": "FINANCIAL SERVICES", "ARADEL.LG": "OIL AND GAS",
+    "BERGER.LG": "INDUSTRIAL GOODS", "BETAGLAS.LG": "INDUSTRIAL GOODS",
+    "BUAFOODS.LG": "CONSUMER GOODS", "CADBURY.LG": "CONSUMER GOODS",
+    "CAP.LG": "INDUSTRIAL GOODS", "CHAMPION.LG": "CONSUMER GOODS",
+    "CHAMS.LG": "ICT", "CONHALLPLC.LG": "FINANCIAL SERVICES",
+    "CONOIL.LG": "OIL AND GAS", "CORNERST.LG": "FINANCIAL SERVICES",
+    "CUSTODIAN.LG": "CONGLOMERATES", "ELLAHLAKES.LG": "AGRICULTURE",
+    "ETERNA.LG": "OIL AND GAS", "ETI.LG": "FINANCIAL SERVICES",
+    "ETRANZACT.LG": "ICT", "EUNISELL.LG": "SERVICES",
+    "FIDSON.LG": "HEALTHCARE", "FTNCOCOA.LG": "AGRICULTURE",
+    "GUINNESS.LG": "CONSUMER GOODS", "HONYFLOUR.LG": "CONSUMER GOODS",
+    "IKEJAHOTEL.LG": "SERVICES", "INFINITY.LG": "FINANCIAL SERVICES",
+    "INTBREW.LG": "CONSUMER GOODS", "JAIZBANK.LG": "FINANCIAL SERVICES",
+    "JAPAULGOLD.LG": "OIL AND GAS", "JBERGER.LG": "CONSTRUCTION/REAL ESTATE",
+    "LINKASSURE.LG": "FINANCIAL SERVICES", "MANSARD.LG": "FINANCIAL SERVICES",
+    "MAYBAKER.LG": "HEALTHCARE", "MBENEFIT.LG": "FINANCIAL SERVICES",
+    "MECURE.LG": "HEALTHCARE", "NEIMETH.LG": "HEALTHCARE",
+    "NEM.LG": "FINANCIAL SERVICES", "NGXGROUP.LG": "FINANCIAL SERVICES",
+    "NIDF.LG": "CONSTRUCTION/REAL ESTATE", "NPFMCRFBK.LG": "FINANCIAL SERVICES",
+    "NREIT.LG": "CONSTRUCTION/REAL ESTATE", "PZ.LG": "CONSUMER GOODS",
+    "SKYAVN.LG": "SERVICES", "SOVRENINS.LG": "FINANCIAL SERVICES",
+    "STERLINGNG.LG": "FINANCIAL SERVICES", "TIP.LG": "SERVICES",
+    "TRANSCOHOT.LG": "SERVICES", "TRANSPOWER.LG": "UTILITIES",
+    "UACN.LG": "CONGLOMERATES", "UPDC.LG": "CONSTRUCTION/REAL ESTATE",
+    "UPDCREIT.LG": "CONSTRUCTION/REAL ESTATE", "VFDGROUP.LG": "INVESTMENT",
+    "VITAFOAM.LG": "CONSUMER GOODS", "WAPIC.LG": "FINANCIAL SERVICES",
+    "WEMABANK.LG": "FINANCIAL SERVICES", "ZICHIS.LG": "AGRICULTURE",
 }
 
 # oil_b=oil beta, fx_b=FX sensitivity, risk_b=regime sensitivity, base=neutral score

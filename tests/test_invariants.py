@@ -1071,10 +1071,91 @@ def test_ngx_backfilled_tickers_match_old_global_clock():
     elif old_days < 60:   old_phase = "RESTRICTED"
     else:                 old_phase = "FULL"
 
+    # File now also holds the 56 Session-B-Part-2 candidate tickers
+    # (NGX_TIER3_CANDIDATES), seeded at today's date -- so it's a superset
+    # of NGX_ALL, not an exact match, as of Part 2.
     backfill = json.load(open("ngx_ticker_start_dates.json"))
-    assert sorted(backfill.keys()) == sorted(ns.NGX_ALL)
+    assert set(ns.NGX_ALL).issubset(backfill.keys())
 
     for ticker in ["GTCO.LG", "ZENITHBANK.LG", "CWG.LG"]:
         phase, days = ns.get_validation_phase(ticker)
         assert phase == old_phase
         assert days == old_days
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NGX universe expansion, Part 2 (FIX, 2026-07-20)
+# 56 new candidate tickers (NGX_TIER3_CANDIDATES) were selected via
+# market_cap >= NGN 25B and volume not-null & >= 1,000, filtered from the
+# live 150-symbol /v1/companies universe. They are explicitly NOT merged
+# into NGX_ALL / main scoring rotation this session -- staged separately
+# so they start PAPER_ONLY at Day 0 under the per-ticker validation clock.
+# NGX_API_SECTOR_MAP (the /v1/companies 13-category taxonomy) covers all
+# 85 tickers for reporting/future sector-diversity use, but is deliberately
+# NOT wired into SECTOR_SENSITIVITY -- NGX_SECTOR_MAP (old taxonomy, feeds
+# live scoring for the current 29) is unchanged.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_ngx_tier3_candidates_not_merged_into_main_rotation():
+    """The 56 new candidates must NOT be part of NGX_ALL (main scoring
+    rotation) yet -- that's a separate, future, explicitly-approved step."""
+    import ngx_screener as ns
+
+    assert len(ns.NGX_ALL) == 29
+    assert len(ns.NGX_TIER3_CANDIDATES) == 56
+    assert set(ns.NGX_ALL).isdisjoint(set(ns.NGX_TIER3_CANDIDATES))
+
+
+def test_ngx_api_sector_map_covers_all_85_no_more_no_less():
+    """NGX_API_SECTOR_MAP must cover exactly the union of NGX_ALL and
+    NGX_TIER3_CANDIDATES -- no missing entries, no stale/extra ones."""
+    import ngx_screener as ns
+
+    all85 = set(ns.NGX_ALL) | set(ns.NGX_TIER3_CANDIDATES)
+    assert set(ns.NGX_API_SECTOR_MAP.keys()) == all85
+    assert len(ns.NGX_API_SECTOR_MAP) == 85
+
+
+def test_ngx_sector_map_unchanged_and_still_resolves_to_sensitivity():
+    """NGX_SECTOR_MAP (the OLD taxonomy that actually feeds live scoring)
+    must be untouched by the Part 2 sector-map work: still exactly the
+    current 29 tickers, and every value must still be a real key in
+    SECTOR_SENSITIVITY -- proving score_ngx_macro() never silently falls
+    back to the "banking" default for any current ticker."""
+    import ngx_screener as ns
+
+    assert set(ns.NGX_SECTOR_MAP.keys()) == set(ns.NGX_ALL)
+    for ticker, sector in ns.NGX_SECTOR_MAP.items():
+        assert sector in ns.SECTOR_SENSITIVITY, (
+            f"{ticker} -> {sector!r} has no SECTOR_SENSITIVITY entry, "
+            f"would silently fall back to the 'banking' default"
+        )
+
+
+def test_ngx_ticker_start_dates_seeded_for_all_85():
+    """ngx_ticker_start_dates.json must have an entry for every one of the
+    85 tickers (29 current + 56 new candidates) after Part 2's seeding --
+    the new 56 must not be left to lazily initialize on first pipeline run."""
+    import json
+    import ngx_screener as ns
+
+    dates = json.load(open("ngx_ticker_start_dates.json"))
+    all85 = set(ns.NGX_ALL) | set(ns.NGX_TIER3_CANDIDATES)
+    assert set(dates.keys()) == all85
+    assert len(dates) == 85
+
+
+def test_ngx_tier3_candidates_start_paper_only_day_zero(monkeypatch):
+    """A representative sample of the 56 new candidates must resolve to
+    PAPER_ONLY, Day 0 the first time they're queried with no prior start
+    date -- proves the seeding used the same Day-0 code path Part 1 tests,
+    without depending on today's real date (would go stale after 30 days)."""
+    import ngx_screener as ns
+
+    monkeypatch.setattr(ns, "_load_ticker_start_dates", lambda: {})
+    monkeypatch.setattr(ns, "_save_ticker_start_dates", lambda d: None)
+
+    for ticker in ["ARADEL.LG", "STERLINGNG.LG", "VFDGROUP.LG"]:
+        phase, days = ns.get_validation_phase(ticker)
+        assert phase == "PAPER_ONLY"
+        assert days == 0
