@@ -185,8 +185,13 @@ def log_ngx_signals(ngx_result, run_time=None):
             "signal_time":      now,
             "score_at_signal":  sig.get("score", 0),
             "persistence":      sig.get("persistence", ""),
-            "phase":            ngx_result.get("phase", "PAPER_ONLY"),
-            "phase_days":       ngx_result.get("phase_days", 0),
+            # Per-ticker phase (ngx_screener.py's per-ticker validation clock,
+            # Session B) — read from the signal itself, NOT the ngx_result
+            # summary, since different tickers can now be in different
+            # phases simultaneously. Falls back to the old summary keys only
+            # if a signal somehow lacks its own phase (shouldn't happen).
+            "phase":            sig.get("phase", ngx_result.get("phase", "PAPER_ONLY")),
+            "phase_days":       sig.get("phase_days", ngx_result.get("phase_days", 0)),
             "macro_at_signal":  macro_at_signal,
             "entry_price":      prices.get(_bare_symbol(ticker)),  # None if unavailable
 

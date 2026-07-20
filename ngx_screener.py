@@ -302,17 +302,47 @@ def apply_persistence_gate(signals):
     return out
 
 
-def get_validation_phase():
+NGX_TICKER_START_FILE = "ngx_ticker_start_dates.json"
+
+
+def _load_ticker_start_dates():
     try:
-        start = datetime.strptime(open("ngx_validation_start.txt").read().strip(), "%Y-%m-%d")
-        days  = (datetime.now() - start).days
-        if days < 30:  return "PAPER_ONLY", days
-        elif days < 60: return "RESTRICTED", days
-        else:           return "FULL", days
+        return json.load(open(NGX_TICKER_START_FILE))
     except Exception:
-        try: open("ngx_validation_start.txt","w").write(datetime.now().strftime("%Y-%m-%d"))
-        except Exception: pass
+        return {}
+
+
+def _save_ticker_start_dates(dates):
+    try:
+        json.dump(dates, open(NGX_TICKER_START_FILE, "w"), indent=2, sort_keys=True)
+    except Exception:
+        pass
+
+
+def get_validation_phase(ticker):
+    """
+    Per-ticker validation clock — replaces the single global clock that
+    used to read one date from ngx_validation_start.txt (that file is no
+    longer read; left in place, unused, as a historical artifact).
+
+    Each ticker gets its own first-seen date in ngx_ticker_start_dates.json.
+    A ticker with no entry yet is brand new — it gets today's date written
+    and starts at PAPER_ONLY, Day 0. This is what makes new universe
+    additions always start fresh regardless of how long the existing
+    universe has been running (see ngx_persistence.json for the same
+    per-ticker-JSON-state precedent already used in this codebase).
+    """
+    dates = _load_ticker_start_dates()
+    if ticker not in dates:
+        dates[ticker] = datetime.now().strftime("%Y-%m-%d")
+        _save_ticker_start_dates(dates)
         return "PAPER_ONLY", 0
+
+    start = datetime.strptime(dates[ticker], "%Y-%m-%d")
+    days  = (datetime.now() - start).days
+    if days < 30:   return "PAPER_ONLY", days
+    elif days < 60: return "RESTRICTED", days
+    else:           return "FULL", days
 
 
 def run_ngx_screen(investos_macro="NORMAL", verbose=True):
@@ -425,16 +455,43 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
     # Apply persistence gate only to ENTER-eligible signals
     signals = apply_persistence_gate(signals)
 
-    phase, phase_days = get_validation_phase()
+    # Per-ticker validation phase — replaces the single global clock.
+    # Computed once for the whole universe (also ensures any brand-new
+    # ticker gets its Day-0 start date written immediately). Different
+    # tickers can be in different phases simultaneously now.
+    ticker_phases = {t: get_validation_phase(t) for t in NGX_ALL}
+    phase_counts = {"PAPER_ONLY": 0, "RESTRICTED": 0, "FULL": 0}
+    for _ph, _d in ticker_phases.values():
+        phase_counts[_ph] += 1
 
-    # Phase overrides
-    if phase == "PAPER_ONLY":
-        for s in signals + watch:
+    filtered_signals = []
+    for s in signals:
+        sig_phase, sig_phase_days = ticker_phases.get(s["ticker"]) or get_validation_phase(s["ticker"])
+        s["phase"], s["phase_days"] = sig_phase, sig_phase_days
+        if sig_phase == "PAPER_ONLY":
             s["action"] = "PAPER ONLY"
             s["size_label"] = "DO NOT TRADE — PAPER PHASE"
-    elif phase == "RESTRICTED":
-        # v2.1: threshold lowered from 80 → 65 (now achievable in NEUTRAL/RISK_ON)
-        signals = [s for s in signals if s["tier"] == 1 and s["score"] >= 65]
+            filtered_signals.append(s)
+        elif sig_phase == "RESTRICTED":
+            # v2.1: threshold lowered from 80 → 65 (now achievable in NEUTRAL/RISK_ON)
+            if s["tier"] == 1 and s["score"] >= 65:
+                filtered_signals.append(s)
+        else:  # FULL
+            filtered_signals.append(s)
+    signals = filtered_signals
+
+    for s in watch:
+        w_phase, w_phase_days = ticker_phases.get(s["ticker"]) or get_validation_phase(s["ticker"])
+        s["phase"], s["phase_days"] = w_phase, w_phase_days
+        if w_phase == "PAPER_ONLY":
+            s["action"] = "PAPER ONLY"
+            s["size_label"] = "DO NOT TRADE — PAPER PHASE"
+
+    # Dominant phase/day — a single summary value for display/backward-compat
+    # (e.g. the brief's "note" field). The authoritative per-ticker values
+    # live on each signal/watch dict and in ngx_ticker_start_dates.json.
+    phase = max(phase_counts, key=phase_counts.get)
+    phase_days = next((d for t, (p, d) in ticker_phases.items() if p == phase), 0)
 
     eligible_signals = [s for s in signals if s.get("eligible", True)]
 
@@ -444,7 +501,8 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
     if _prices:
         ok = sum(1 for t in NGX_ALL if t in _prices)
         print(f"  💰 Price data: {ok}/{len(NGX_ALL)} tickers fetched from NGN Markets")
-        print(f"  Phase: {phase} (Day {phase_days})")
+        print(f"  Phases (per-ticker): {phase_counts['FULL']} FULL | "
+              f"{phase_counts['RESTRICTED']} RESTRICTED | {phase_counts['PAPER_ONLY']} PAPER_ONLY")
         print(f"  Signals: {len(eligible_signals)} | Watch: {len(watch)}")
         if watch:
             print(f"  WATCH picks (tracking, not actionable):")

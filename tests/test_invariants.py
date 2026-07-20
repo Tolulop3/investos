@@ -979,3 +979,102 @@ def test_ngx_log_signals_captures_entry_price(monkeypatch):
     n = nt.log_ngx_signals(ngx_result)
     assert n == 1
     assert saved["outcomes"][0]["entry_price"] == 42.5
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NGX per-ticker validation clock (FIX, 2026-07-20)
+# Replaces the single global clock (one date in ngx_validation_start.txt,
+# shared by every ticker) with per-ticker start dates in
+# ngx_ticker_start_dates.json, so a newly-added ticker always starts at
+# PAPER_ONLY Day 0 regardless of how long the existing universe has been
+# running. The 29 pre-existing tickers were backfilled with the old global
+# start date (2026-05-10) so their phase/day output is unchanged.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_ngx_validation_phase_full_after_60_days(monkeypatch):
+    """Ticker with a start date >60 days ago -> FULL."""
+    import ngx_screener as ns
+    from datetime import date, timedelta
+
+    old_date = (date.today() - timedelta(days=65)).strftime("%Y-%m-%d")
+    monkeypatch.setattr(ns, "_load_ticker_start_dates", lambda: {"OLD.LG": old_date})
+    monkeypatch.setattr(ns, "_save_ticker_start_dates", lambda d: None)
+
+    phase, days = ns.get_validation_phase("OLD.LG")
+    assert phase == "FULL"
+    assert days >= 60
+
+
+def test_ngx_validation_phase_paper_only_under_30_days(monkeypatch):
+    """Ticker with a start date <30 days ago -> PAPER_ONLY."""
+    import ngx_screener as ns
+    from datetime import date, timedelta
+
+    recent_date = (date.today() - timedelta(days=10)).strftime("%Y-%m-%d")
+    monkeypatch.setattr(ns, "_load_ticker_start_dates", lambda: {"NEWISH.LG": recent_date})
+    monkeypatch.setattr(ns, "_save_ticker_start_dates", lambda d: None)
+
+    phase, days = ns.get_validation_phase("NEWISH.LG")
+    assert phase == "PAPER_ONLY"
+    assert days < 30
+
+
+def test_ngx_validation_phase_brand_new_ticker_gets_day_zero(monkeypatch):
+    """A ticker with no entry in ngx_ticker_start_dates.json gets one
+    created with today's date -> PAPER_ONLY, Day 0 -- and it's written
+    back for persistence (proven via the captured save call)."""
+    import ngx_screener as ns
+
+    saved = {}
+    monkeypatch.setattr(ns, "_load_ticker_start_dates", lambda: {})
+    monkeypatch.setattr(ns, "_save_ticker_start_dates", lambda d: saved.update(d))
+
+    phase, days = ns.get_validation_phase("BRANDNEW.LG")
+    assert phase == "PAPER_ONLY"
+    assert days == 0
+    assert "BRANDNEW.LG" in saved
+
+
+def test_ngx_validation_phase_independent_per_ticker(monkeypatch):
+    """Two tickers with different start dates return different phases in
+    the same run -- proves independence from a single global clock."""
+    import ngx_screener as ns
+    from datetime import date, timedelta
+
+    dates = {
+        "VERYOLD.LG":   (date.today() - timedelta(days=90)).strftime("%Y-%m-%d"),  # -> FULL
+        "BRANDNEW2.LG": (date.today() - timedelta(days=1)).strftime("%Y-%m-%d"),   # -> PAPER_ONLY
+    }
+    monkeypatch.setattr(ns, "_load_ticker_start_dates", lambda: dict(dates))
+    monkeypatch.setattr(ns, "_save_ticker_start_dates", lambda d: None)
+
+    p1, _ = ns.get_validation_phase("VERYOLD.LG")
+    p2, _ = ns.get_validation_phase("BRANDNEW2.LG")
+    assert p1 == "FULL"
+    assert p2 == "PAPER_ONLY"
+    assert p1 != p2
+
+
+def test_ngx_backfilled_tickers_match_old_global_clock():
+    """The 29 existing tickers, after backfill, must reproduce EXACTLY the
+    same phase/day math the old single global clock would have given them.
+    Compares the two real files directly (not a hardcoded day count, which
+    would go stale) -- a pure regression check, no monkeypatching, since
+    it's verifying the actual committed backfill state."""
+    import json
+    from datetime import datetime
+    import ngx_screener as ns
+
+    old_start = datetime.strptime(open("ngx_validation_start.txt").read().strip(), "%Y-%m-%d")
+    old_days  = (datetime.now() - old_start).days
+    if old_days < 30:     old_phase = "PAPER_ONLY"
+    elif old_days < 60:   old_phase = "RESTRICTED"
+    else:                 old_phase = "FULL"
+
+    backfill = json.load(open("ngx_ticker_start_dates.json"))
+    assert sorted(backfill.keys()) == sorted(ns.NGX_ALL)
+
+    for ticker in ["GTCO.LG", "ZENITHBANK.LG", "CWG.LG"]:
+        phase, days = ns.get_validation_phase(ticker)
+        assert phase == old_phase
+        assert days == old_days
