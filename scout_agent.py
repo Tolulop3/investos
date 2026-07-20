@@ -22,6 +22,7 @@ Demotion rule:
   → flagged for human review / removal
 """
 
+import ast
 import json
 import os
 import re
@@ -114,17 +115,54 @@ ETF_SOURCES = [
 ]
 
 
+def _ticker_strings_from_dict_values(dict_node):
+    """UNIVERSE-shaped: {"group_name": ["TICK1", "TICK2", ...], ...}.
+    Only pulls strings from the VALUE lists, not the group-name keys."""
+    found = set()
+    for value in dict_node.values:
+        for n in ast.walk(value):
+            if isinstance(n, ast.Constant) and isinstance(n.value, str):
+                found.add(n.value)
+    return found
+
+
+def _ticker_strings_from_flat_container(node):
+    """EXCLUDED_TICKERS-shaped: a flat set/list/tuple of ticker strings."""
+    found = set()
+    for n in ast.walk(node):
+        if isinstance(n, ast.Constant) and isinstance(n.value, str):
+            found.add(n.value)
+    return found
+
+
 def get_static_universe():
-    """Extract the hardcoded UNIVERSE tickers from stock_screener.py."""
+    """
+    Extract the hardcoded UNIVERSE tickers from stock_screener.py, minus
+    EXCLUDED_TICKERS (matching ALL_TICKERS' own definition there: static
+    universe minus explicit exclusions).
+
+    Parses the real UNIVERSE/EXCLUDED_TICKERS assignments via `ast`, not a
+    hardcoded line range — a hardcoded range silently goes stale as
+    stock_screener.py grows (found: the old [29:135] slice stopped 9 lines
+    before UNIVERSE's own closing brace, and NGE — in EXCLUDED_TICKERS at
+    line 156 — sat well outside it either way).
+    """
     tickers = set()
+    _TICKER_RE = re.compile(r'^[A-Z][A-Z0-9.\-]{1,8}$')
     try:
-        content = open("stock_screener.py").read()
-        # Find all quoted ticker-like strings inside UNIVERSE block (lines 30-135)
-        block = "\n".join(content.split("\n")[29:135])
-        matches = re.findall(r'"([A-Z][A-Z0-9.\-]{1,8})"', block)
-        for m in matches:
-            if len(m) >= 2:
-                tickers.add(m)
+        tree = ast.parse(open("stock_screener.py").read())
+        universe_tickers, excluded_tickers = set(), set()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Assign):
+                continue
+            for target in node.targets:
+                if not isinstance(target, ast.Name):
+                    continue
+                if target.id == "UNIVERSE" and isinstance(node.value, ast.Dict):
+                    universe_tickers |= _ticker_strings_from_dict_values(node.value)
+                elif target.id == "EXCLUDED_TICKERS":
+                    excluded_tickers |= _ticker_strings_from_flat_container(node.value)
+        tickers = {t for t in (universe_tickers - excluded_tickers) if _TICKER_RE.match(t)}
     except Exception as e:
         print(f"  ⚠️  Could not read static universe: {e}")
     return tickers

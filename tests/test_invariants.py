@@ -1239,3 +1239,38 @@ def test_weekly_scout_workflow_stages_every_file_scout_agent_writes():
         f"fails (exit 1) without -f, which aborts the whole step under "
         f"GitHub Actions' default bash -e before commit/pull/push ever run"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# get_static_universe() -- AST parse, not a hardcoded line range (FIX, 2026-07-20)
+# The old [29:135] line-slice on stock_screener.py stopped 9 lines before
+# UNIVERSE's own closing brace (144), silently dropping the tail of the
+# static universe (a run of Canadian ETFs) as the file grew -- and had no
+# relationship at all to EXCLUDED_TICKERS (line 154+), so NGE (excluded
+# there) and NVEI.TO (also excluded there) were handled inconsistently by
+# line-range accident rather than by principle. Fixed via ast parsing of
+# the real UNIVERSE/EXCLUDED_TICKERS assignments, which can't go stale as
+# the file grows since it reads the actual Python structure, not text
+# position.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_get_static_universe_excludes_excluded_tickers():
+    """NGE and NVEI.TO are both in stock_screener.py's EXCLUDED_TICKERS and
+    must never appear in get_static_universe()'s output -- by principle
+    (mirrors ALL_TICKERS' own definition there), not by line-range luck."""
+    import scout_agent as sa
+
+    tickers = sa.get_static_universe()
+    assert "NGE" not in tickers
+    assert "NVEI.TO" not in tickers
+
+
+def test_get_static_universe_includes_tail_past_old_line_boundary():
+    """Tickers that sat past the old hardcoded line-135 cutoff (the tail of
+    the UNIVERSE dict's Canadian ETF group) must be included now -- proves
+    the fix, not just that get_static_universe() runs without error."""
+    import scout_agent as sa
+
+    tickers = sa.get_static_universe()
+    for ticker in ["ZEB.TO", "ZRE.TO", "XRE.TO", "HXT.TO", "HXS.TO"]:
+        assert ticker in tickers, f"{ticker} missing -- past the old [29:135] boundary"
