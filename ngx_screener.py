@@ -38,13 +38,13 @@ except ImportError:
 
 # ── UNIVERSE ──────────────────────────────────────────────────────────────────
 NGX_TIER1 = [
-    "GTCO.LG", "ZENITHBANK.LG", "ACCESS.LG", "UBA.LG", "FBNH.LG",
+    "GTCO.LG", "ZENITHBANK.LG", "ACCESSCORP.LG", "UBA.LG", "FIRSTHOLDCO.LG",
     "MTNN.LG", "AIRTELAFRI.LG", "DANGCEM.LG", "SEPLAT.LG",
 ]
 
 NGX_TIER2 = [
     "STANBIC.LG", "NB.LG", "FLOURMILL.LG", "UNILEVER.LG", "OANDO.LG",
-    "TOTAL.LG", "BUACEMENT.LG", "WAPCO.LG", "PRESCO.LG", "OKOMUOIL.LG",
+    "TOTAL.LG", "BUACEMENT.LG", "HBMNG.LG", "PRESCO.LG", "OKOMUOIL.LG",
     "TRANSCORP.LG", "GEREGU.LG", "NESTLE.LG", "FIDELITYBK.LG", "FCMB.LG",
     "UCAP.LG", "NAHCO.LG", "DANGSUGAR.LG", "NASCON.LG", "LIVESTOCK.LG",
     "CWG.LG",
@@ -53,12 +53,12 @@ NGX_TIER2 = [
 NGX_ALL = NGX_TIER1 + NGX_TIER2
 
 NGX_SECTOR_MAP = {
-    "GTCO.LG": "banking",      "ZENITHBANK.LG": "banking", "ACCESS.LG": "banking",
-    "UBA.LG": "banking",       "FBNH.LG": "banking",       "MTNN.LG": "telecom",
+    "GTCO.LG": "banking",      "ZENITHBANK.LG": "banking", "ACCESSCORP.LG": "banking",
+    "UBA.LG": "banking",       "FIRSTHOLDCO.LG": "banking","MTNN.LG": "telecom",
     "AIRTELAFRI.LG": "telecom","DANGCEM.LG": "industrial",  "SEPLAT.LG": "oil",
     "STANBIC.LG": "banking",   "NB.LG": "consumer",        "FLOURMILL.LG": "consumer",
     "UNILEVER.LG": "consumer", "OANDO.LG": "oil",          "TOTAL.LG": "oil",
-    "BUACEMENT.LG": "industrial","WAPCO.LG": "industrial",
+    "BUACEMENT.LG": "industrial","HBMNG.LG": "industrial",
     "PRESCO.LG": "agriculture","OKOMUOIL.LG": "agriculture",
     "TRANSCORP.LG": "conglomerate","GEREGU.LG": "power",
     "NESTLE.LG": "consumer",   "FIDELITYBK.LG": "banking", "FCMB.LG": "banking",
@@ -499,7 +499,7 @@ def test_lg_suffix():
     If 4+/5 work, flag for full NGX yfinance rewrite.
     """
     TEST_TICKERS = [
-        "DANGCEM.LG", "MTNN.LG", "GTCO.LG", "ZENITHBANK.LG", "ACCESS.LG"
+        "DANGCEM.LG", "MTNN.LG", "GTCO.LG", "ZENITHBANK.LG", "ACCESSCORP.LG"
     ]
     print("\n" + "="*55)
     print("  .LG SUFFIX TEST — yfinance NGX ticker probe")
