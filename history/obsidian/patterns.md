@@ -7,11 +7,11 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 73.1%  (-0.11%/day)
-- Sharpe: 0.186  (-0.015/day)
+- Breadth (200MA): 72.2%  (-0.24%/day)
+- Sharpe: 0.179  (-0.016/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **BMO.TO** — 7d streak, avg score 99.1
+- **BMO.TO** — 7d streak, avg score 98.6
 - **FBP** — 4d streak, avg score 100.0
 - **BNY** — 3d streak, avg score 100.0
 
@@ -32,12 +32,12 @@ tags: [investos, patterns, weekly]
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | BMO.TO | 🟡 WATCH | 7d | — | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
-| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
+| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | BB.TO | 🔴 AVOID | 0d | -8.5 | — |
 | PLD | 🔴 AVOID | 0d | -8.4 | — |
