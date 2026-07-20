@@ -1163,23 +1163,35 @@ def test_ngx_tier3_candidates_start_paper_only_day_zero(monkeypatch):
 
 # ─────────────────────────────────────────────────────────────────────────────
 # weekly_scout.yml git-add completeness (FIX, 2026-07-20)
-# scout_agent.py writes 5 files; the workflow's "git add" line only staged 3
-# (universe_failure_log.json and global_watch.json were missing). Since
-# update_failure_log() unconditionally rewrites universe_failure_log.json
-# every run, the working tree was left dirty after the commit step, and the
-# next "git pull --rebase origin main" refused to run ("You have unstaged
-# changes"). That failure lost commit f9d0525b entirely -- GitHub Actions
-# runners are ephemeral, so a commit that's never pushed is gone once the
-# job ends, not recoverable.
-# This test derives, from scout_agent.py's own source (not a hand-copied
-# list), every file opened in write mode via its module-level FILE
-# constants, and asserts the workflow's git-add line stages all of them --
-# so a 6th file added later without updating the workflow fails CI
-# immediately instead of silently repeating this failure mode.
+# scout_agent.py writes 5 files. The workflow's "git add" line originally
+# staged only 3 (missing global_watch.json, a tracked file, which is the
+# real cause: modifying it without staging left the tree dirty and broke
+# the next "git pull --rebase origin main" with "You have unstaged
+# changes" -- that failure lost commit f9d0525b entirely, unrecoverable
+# since GitHub Actions runners are ephemeral and the push never ran).
+#
+# A first fix attempt also added universe_failure_log.json to git-add --
+# WRONG: that file is deliberately gitignored (.gitignore's "Private
+# trading data" section, exact-name rule, not a wildcard catching it by
+# accident) and `git add` on a gitignored path fails (exit 1) without -f,
+# which would abort the whole step (GitHub Actions run: steps default to
+# bash -e) before commit/pull/push ever ran -- a worse, deterministic
+# failure on every future run. Verified empirically in a scratch repo:
+# a gitignored+untracked file's modifications never trigger "unstaged
+# changes" for git pull --rebase (git doesn't track it at all); only
+# tracked files with uncommitted changes do.
+#
+# This test derives scout_agent.py's write footprint from its own source
+# (not hand-copied), splits it into trackable vs. gitignored via the
+# repo's REAL .gitignore (git check-ignore, not a re-implementation of
+# gitignore semantics), and asserts: every trackable file is staged, and
+# no gitignored file is staged -- so this exact regression (staging an
+# ignored file) can't silently return either.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_weekly_scout_workflow_stages_every_file_scout_agent_writes():
     import re
+    import subprocess
 
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     scout_src = open(os.path.join(root, "scout_agent.py")).read()
@@ -1195,17 +1207,35 @@ def test_weekly_scout_workflow_stages_every_file_scout_agent_writes():
         "universe_dynamic.json", "universe_current.json",
         "universe_rotation_log.json", "universe_failure_log.json",
         "global_watch.json",
-    }, ("scout_agent.py's write footprint changed -- update this test's "
-        "expected set AND weekly_scout.yml's git-add line together")
+    }, ("scout_agent.py's write footprint changed -- re-derive the "
+        "trackable/ignored split below against the new file list")
+
+    def _is_gitignored(fname):
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", fname], cwd=root
+        )
+        return result.returncode == 0
+
+    trackable = {f for f in written_files if not _is_gitignored(f)}
+    ignored   = written_files - trackable
+    assert ignored, "expected at least one deliberately-gitignored file in the mix"
 
     workflow_path = os.path.join(root, ".github", "workflows", "weekly_scout.yml")
     workflow_src = open(workflow_path).read()
     add_line = next(l for l in workflow_src.splitlines() if l.strip().startswith("git add "))
 
-    missing = [f for f in written_files if f not in add_line]
+    missing = [f for f in trackable if f not in add_line]
     assert not missing, (
         f"weekly_scout.yml's git-add line is missing {missing} -- scout_agent.py "
-        f"writes these files but the workflow won't stage/commit them, which "
-        f"leaves the working tree dirty and breaks the subsequent "
+        f"writes these TRACKABLE files but the workflow won't stage/commit them, "
+        f"which leaves the working tree dirty and breaks the subsequent "
         f"'git pull --rebase' step (this is exactly how commit f9d0525b was lost)"
+    )
+
+    wrongly_staged = [f for f in ignored if f in add_line]
+    assert not wrongly_staged, (
+        f"weekly_scout.yml's git-add line stages {wrongly_staged}, which "
+        f".gitignore deliberately excludes -- `git add` on a gitignored path "
+        f"fails (exit 1) without -f, which aborts the whole step under "
+        f"GitHub Actions' default bash -e before commit/pull/push ever run"
     )

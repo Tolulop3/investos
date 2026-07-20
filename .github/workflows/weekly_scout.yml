@@ -35,7 +35,7 @@ jobs:
         run: |
           git config --global user.name "InvestOS Scout"
           git config --global user.email "investos@bot.local"
-          git add universe_current.json universe_dynamic.json universe_rotation_log.json universe_failure_log.json global_watch.json
+          git add universe_current.json universe_dynamic.json universe_rotation_log.json global_watch.json
           git diff --cached --quiet || git commit -m "Scout $(date -u '+%Y-%m-%d'): universe updated"
           git pull --rebase origin main
           git push origin main
