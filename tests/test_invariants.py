@@ -787,3 +787,70 @@ def test_kelly_p_source_is_tier_win_rate_not_ml_prob():
     strong_ml = compute_target_weights([_kelly_pick("AAA", 80, 0.90)], market_regime,
                                         win_rate_data=wr_data, verbose=False)
     assert weak_ml[0]["kelly_wt"] == strong_ml[0]["kelly_wt"] == 0.0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 60-74 tier PF drift drill-down (FIX, 2026-07-20)
+# Attribution-only feature: when a tier's PF drift crosses the alert threshold
+# in the degrading direction, distinguish PENALTY_ROUTING (capped/excluded
+# names dragging the aggregate while organic names still meet baseline —
+# expected, already-handled) from GENUINE_DECAY (organic names themselves
+# below baseline — needs real investigation). Verified against real
+# 2026-07-19 production data: 60-74 tier cur=1.68 vs base=1.92 (drift=-0.24,
+# matching the original problem statement exactly) -> organic PF=1.97 >=
+# baseline 1.92 -> PENALTY_ROUTING.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _drift_pick(ticker, outcome, ret, signal_date="2026-07-01"):
+    return {"ticker": ticker, "outcome": outcome, "actual_return": ret, "signal_date": signal_date}
+
+
+def test_drift_drilldown_penalty_routing():
+    """Synthetic: capped subset PF=0.5 (drags tier), organic subset PF=2.1
+    (at/above a synthetic baseline of 2.0) -> PENALTY_ROUTING."""
+    from run_daily import drift_drilldown
+
+    picks = (
+        [_drift_pick("ORGA", "WIN", 7.0)] * 3      # organic wins: sum=21
+        + [_drift_pick("ORGB", "LOSS", -5.0)] * 2   # organic losses: sum=10 -> organic PF=2.1
+        + [_drift_pick("CAPX", "WIN", 1.0)] * 5     # capped wins: sum=5
+        + [_drift_pick("CAPY", "LOSS", -1.0)] * 10  # capped losses: sum=10 -> capped PF=0.5
+    )
+    penalized = {"CAPX", "CAPY"}
+    result = drift_drilldown(picks, "60-74", baseline_pf=2.0, penalized_tickers=penalized, verbose=False)
+
+    assert result["verdict"] == "PENALTY_ROUTING"
+    assert any("organic PF" in line for line in result["lines"])
+    assert result["capped_stats"]["pf"] < result["organic_stats"]["pf"]
+    assert result["capped_stats"]["pf"] == pytest.approx(0.5, abs=0.01)
+    assert result["organic_stats"]["pf"] == pytest.approx(2.1, abs=0.01)
+
+
+def test_drift_drilldown_genuine_decay():
+    """Synthetic: capped subset PF=0.5, organic subset ALSO below the
+    synthetic baseline (0.9 < 2.0) -> GENUINE_DECAY."""
+    from run_daily import drift_drilldown
+
+    picks = (
+        [_drift_pick("ORGA", "WIN", 3.0)] * 3       # organic wins: sum=9
+        + [_drift_pick("ORGB", "LOSS", -5.0)] * 2    # organic losses: sum=10 -> organic PF=0.9
+        + [_drift_pick("CAPX", "WIN", 1.0)] * 5      # capped wins: sum=5
+        + [_drift_pick("CAPY", "LOSS", -1.0)] * 10   # capped losses: sum=10 -> capped PF=0.5
+    )
+    penalized = {"CAPX", "CAPY"}
+    result = drift_drilldown(picks, "60-74", baseline_pf=2.0, penalized_tickers=penalized, verbose=False)
+
+    assert result["verdict"] == "GENUINE_DECAY"
+    assert result["organic_stats"]["pf"] == pytest.approx(0.9, abs=0.01)
+
+
+def test_drift_drilldown_no_alert_no_output():
+    """No tier's drift crosses the alert threshold -> compute_alerting_tiers
+    returns empty, so the orchestration in run_daily.py never calls
+    drift_drilldown() and no drill-down section is produced."""
+    from run_daily import compute_alerting_tiers
+
+    current_pf   = {"90-100": 0.90, "75-89": 1.05, "60-74": 1.85, "below-60": 1.10}
+    baseline_pf  = {"90-100": 0.91, "75-89": 1.07, "60-74": 1.92, "below-60": 1.09}
+    alerting = compute_alerting_tiers(current_pf, baseline_pf, alert_threshold=0.20)
+    assert alerting == []
