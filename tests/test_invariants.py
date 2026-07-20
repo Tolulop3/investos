@@ -854,3 +854,128 @@ def test_drift_drilldown_no_alert_no_output():
     baseline_pf  = {"90-100": 0.91, "75-89": 1.07, "60-74": 1.92, "below-60": 1.09}
     alerting = compute_alerting_tiers(current_pf, baseline_pf, alert_threshold=0.20)
     assert alerting == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NGX resolution — ticker price movement, not macro regime (FIX, 2026-07-20)
+# NGX outcomes were resolved using regime_at_resolve (RISK_OFF -> LOSS) because
+# /v1/companies was believed to have no price data. Confirmed false — it has
+# real price data on the Free tier. Fix: entry_price captured live in
+# log_ngx_signals() at signal time, exit_price fetched live in
+# resolve_ngx_outcomes() 14+ days later; WIN/LOSS/FLAT now come from
+# actual_return_pct vs a +-2.0% band. regime_at_resolve is still captured and
+# logged, but is no longer decisive. Missing price data (either side) leaves
+# the signal unresolved for retry — never silently defaults to LOSS.
+# Only affects resolutions from now on — the 159 already-resolved signals are
+# untouched (retroactive re-resolution is a separate, deferred decision).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _ngx_signal(ticker, entry_price, signal_date="2026-01-01"):
+    return {
+        "ticker": ticker, "name": ticker.replace(".LG", ""), "sector": "banking", "tier": 1,
+        "signal_date": signal_date, "signal_time": f"{signal_date}T00:00:00",
+        "score_at_signal": 80.0, "persistence": "3d streak", "phase": "FULL", "phase_days": 71,
+        "macro_at_signal": {"regime": "NEUTRAL"}, "entry_price": entry_price,
+        "resolved": False, "resolved_date": None, "score_at_resolve": None,
+        "regime_at_resolve": None, "exit_price": None, "actual_return_pct": None,
+        "outcome": None, "outcome_reason": None,
+    }
+
+
+def _ngx_run_result(scored_tickers, macro_regime="RISK_OFF"):
+    return {
+        "all_scored": [{"ticker": t, "score": 70.0} for t in scored_tickers],
+        "macro_regime": macro_regime,
+    }
+
+
+def test_ngx_resolve_win_ignores_regime(monkeypatch):
+    """WIN determined by price movement even when regime_at_resolve is
+    RISK_OFF — under the OLD logic RISK_OFF alone forced a LOSS regardless
+    of price. Also covers Test 4: regime_at_resolve still logged."""
+    import ngx_outcome_tracker as nt
+
+    saved = {}
+    monkeypatch.setattr(nt, "load_ngx_outcomes", lambda: [_ngx_signal("AAA.LG", 100.0)])
+    monkeypatch.setattr(nt, "save_ngx_outcomes", lambda o: saved.__setitem__("outcomes", o))
+    monkeypatch.setattr(nt, "fetch_companies_prices", lambda verbose=False: {"AAA": 110.0})  # +10%
+
+    n = nt.resolve_ngx_outcomes(_ngx_run_result(["AAA.LG"], macro_regime="RISK_OFF"))
+    assert n == 1
+    o = saved["outcomes"][0]
+    assert o["outcome"] == "WIN"
+    assert o["regime_at_resolve"] == "RISK_OFF"   # logged, but didn't decide the outcome
+
+
+def test_ngx_resolve_loss_on_negative_return(monkeypatch):
+    """LOSS determined by price movement even with a favorable regime."""
+    import ngx_outcome_tracker as nt
+
+    saved = {}
+    monkeypatch.setattr(nt, "load_ngx_outcomes", lambda: [_ngx_signal("BBB.LG", 100.0)])
+    monkeypatch.setattr(nt, "save_ngx_outcomes", lambda o: saved.__setitem__("outcomes", o))
+    monkeypatch.setattr(nt, "fetch_companies_prices", lambda verbose=False: {"BBB": 90.0})  # -10%
+
+    n = nt.resolve_ngx_outcomes(_ngx_run_result(["BBB.LG"], macro_regime="RISK_ON"))
+    assert n == 1
+    o = saved["outcomes"][0]
+    assert o["outcome"] == "LOSS"
+    assert o["regime_at_resolve"] == "RISK_ON"
+
+
+def test_ngx_resolve_price_fetch_failure_stays_unresolved(monkeypatch):
+    """Total price-fetch failure (empty dict, e.g. no key or API down) ->
+    signal stays unresolved, no crash, never silently defaults to LOSS."""
+    import ngx_outcome_tracker as nt
+
+    saved = {}
+    monkeypatch.setattr(nt, "load_ngx_outcomes", lambda: [_ngx_signal("CCC.LG", 100.0)])
+    monkeypatch.setattr(nt, "save_ngx_outcomes", lambda o: saved.__setitem__("outcomes", o))
+    monkeypatch.setattr(nt, "fetch_companies_prices", lambda verbose=False: {})
+
+    n = nt.resolve_ngx_outcomes(_ngx_run_result(["CCC.LG"], macro_regime="RISK_OFF"))
+    assert n == 0
+    o = saved["outcomes"][0]
+    assert o["resolved"] is False
+    assert o["outcome"] is None
+    assert "UNRESOLVED" in o["outcome_reason"]
+
+
+def test_ngx_resolve_missing_entry_price_stays_unresolved(monkeypatch):
+    """A signal logged before entry_price capture existed (entry_price=None)
+    can never be resolved by price — stays unresolved, does not crash,
+    does not silently default to LOSS."""
+    import ngx_outcome_tracker as nt
+
+    saved = {}
+    monkeypatch.setattr(nt, "load_ngx_outcomes", lambda: [_ngx_signal("DDD.LG", None)])
+    monkeypatch.setattr(nt, "save_ngx_outcomes", lambda o: saved.__setitem__("outcomes", o))
+    monkeypatch.setattr(nt, "fetch_companies_prices", lambda verbose=False: {"DDD": 105.0})
+
+    n = nt.resolve_ngx_outcomes(_ngx_run_result(["DDD.LG"], macro_regime="RISK_OFF"))
+    assert n == 0
+    o = saved["outcomes"][0]
+    assert o["resolved"] is False
+    assert o["outcome"] is None
+
+
+def test_ngx_log_signals_captures_entry_price(monkeypatch):
+    """log_ngx_signals must capture a live entry_price for each new signal —
+    the only chance to ever record it, since /v1/companies has no
+    historical/point-in-time lookup."""
+    import ngx_outcome_tracker as nt
+
+    saved = {}
+    monkeypatch.setattr(nt, "load_ngx_outcomes", lambda: [])
+    monkeypatch.setattr(nt, "save_ngx_outcomes", lambda o: saved.__setitem__("outcomes", o))
+    monkeypatch.setattr(nt, "fetch_companies_prices", lambda verbose=False: {"EEE": 42.5})
+
+    ngx_result = {
+        "signals": [{"ticker": "EEE.LG", "name": "EEE", "sector": "banking", "tier": 1, "score": 80}],
+        "phase": "FULL", "phase_days": 71,
+        "macro_regime": "NEUTRAL", "macro_score": 0, "fx_stress": 0,
+        "brent_trend": "FLAT", "basket_regime": "NEUTRAL",
+    }
+    n = nt.log_ngx_signals(ngx_result)
+    assert n == 1
+    assert saved["outcomes"][0]["entry_price"] == 42.5
