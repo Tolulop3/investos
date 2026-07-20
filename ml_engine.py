@@ -1295,9 +1295,11 @@ def render_allocations(target_weights, account, market_regime,
     _eff_deployed = deployable * min(1.0, _eff_wt)
 
     # Minimum deploy floor: never deploy less than $1,500 on accounts with sufficient capital.
-    # Guards against combined multiplier stack (regime × dd_reduction × Kelly_floor) producing
-    # sub-trade amounts. When both Sharpe guard and Kelly floor fire simultaneously the stack
-    # can reach 0.25 × 0.50 × 0.60 = 7.5% of $10k = $750 — which is not actionable.
+    # This is a real-world trade-viability guard (can't usefully split a few hundred
+    # dollars across several picks), NOT part of the % sizing stack below — it is
+    # inherently dollar-denominated and does not scale with portfolio size the way
+    # the rest of the stack does. A sub-$1,500-deployable account (small capital,
+    # or a low regime/Kelly combination) will hit this floor more often than a large one.
     _MIN_DEPLOY = 1500.0
     _floor_applied = False
     if 0 < _eff_deployed < _MIN_DEPLOY and deployable >= _MIN_DEPLOY:
@@ -1309,16 +1311,52 @@ def render_allocations(target_weights, account, market_regime,
         _floor_applied = True
 
     if verbose:
-        _header = (f"\n   💰 {acct_name} (${capital:,.0f}"
+        # ── SIZING STACK — percentage/ratio terms only. This is what generalizes
+        # to any portfolio size: a $500 account and a $5,000,000 account both get
+        # exactly this % stack applied to their own capital. Dollar figures appear
+        # only in the "Example render" line below, clearly marked as illustrative
+        # for THIS account's configured capital, not a default/assumed size.
+        _regime_pct_uncapped = 1.0 - market_regime.get("cash_pct", 0.0)
+        _regime_bound         = min(_regime_pct_uncapped, max_equity)
+        _binding              = "max_equity_cap" if max_equity < _regime_pct_uncapped else "regime_equity_pct"
+        _post_regime_dd_pct   = _regime_bound * dd_multiplier
+        _final_deployable_pct = _post_regime_dd_pct * min(1.0, _eff_wt)
+
+        print(f"\n   ━━━ SIZING STACK [{acct_name}] — % of capital, portfolio-size-agnostic ━━━")
+        print(f"   base_deployable_pct:        100.0%")
+        print(f"   regime_equity_pct:          {_regime_pct_uncapped*100:5.1f}%   "
+              f"({market_regime.get('regime','?')}, cash {market_regime.get('cash_pct',0)*100:.0f}%)")
+        print(f"   max_equity_cap:             {max_equity*100:5.1f}%   (early-regime cap)")
+        print(f"   ── bound = min(regime_equity_pct, max_equity_cap): {_regime_bound*100:5.1f}%  (binding: {_binding})")
+        if dd_multiplier < 1.0:
+            print(f"   × drawdown_multiplier:      {dd_multiplier*100:5.1f}%   (drawdown {current_drawdown*100:.1f}% > trigger)")
+        else:
+            print(f"   × drawdown_multiplier:      100.0%   (not triggered)")
+        print(f"   ── deployable_pct:           {_post_regime_dd_pct*100:5.1f}%   (bound × drawdown_multiplier)")
+        print(f"   × effective_weight_pct:     {min(1.0,_eff_wt)*100:5.1f}%   "
+              f"(Kelly floor + concentration cap + probation, combined — remainder held as cash)")
+        print(f"   = final_deployable_pct:     {_final_deployable_pct*100:5.1f}%   of total account capital"
+              + ("  (before min-deploy floor override)" if _floor_applied else ""))
+        print(f"   composition rule: min(regime_equity_pct, max_equity_cap) × drawdown_multiplier × effective_weight_pct"
+              + (" , then min-deploy floor override (dollar-denominated, see below)" if _floor_applied else ""))
+
+        _header = (f"\n   💰 Example render [{acct_name}] @ this account's capital (${capital:,.0f}"
                    + (f" | max_equity: {max_equity*100:.0f}%" if max_equity < 1.0 else "")
                    + f" | Equity: {round(regime_equity_pct*100)}%"
                    + f"): deploying ${_eff_deployed:,.0f}")
         if _floor_applied:
             _header += (f" of ${deployable:,.0f} available "
-                        f"(min-deploy floor: calculated ${_unconstrained:,.0f} → floored at ${_MIN_DEPLOY:,.0f})")
+                        f"(min-deploy floor: calculated ${_unconstrained:,.0f} → floored at ${_MIN_DEPLOY:,.0f}"
+                        f" — dollar-denominated override, does not scale with capital)")
         elif _eff_wt < 0.98:
             _header += f" of ${deployable:,.0f} available (Kelly floor — {_eff_wt*100:.0f}% deployed)"
         print(_header)
+        print(f"   (Dollar figures above are illustrative for this account's ${capital:,.0f} capital only — "
+              f"the SIZING STACK % above is the source of truth and applies identically at any capital size,"
+              f" except the min-deploy floor note.)")
+        print(f"   ⚠️  NOTE: A further Step 11 RISK MULTIPLIER (unified regime / convergence / "
+              f"PCR conflict — also percentage-based) is computed later in the pipeline and additionally "
+              f"scales this into the final trade size. See 'RISK MULTIPLIER' in the Risk Audit log.")
 
     allocations = []
     for w in eligible:
@@ -1350,6 +1388,24 @@ def render_allocations(target_weights, account, market_regime,
             a["weight_pct"] = round(nw * 100, 2)
             a["dollar_amt"]  = round(deployable * nw, 2)
         allocations = kept
+
+    if verbose:
+        _sum_dollar = sum(a["dollar_amt"] for a in allocations)
+        # When min-position floor drops a pick, kept picks are renormalized to 100%
+        # of `deployable` (not `_eff_deployed`) — this redeploys the Kelly-floor cash
+        # reserve rather than preserving it. Documented, not changed, in Phase 1.
+        _expected = deployable if dropped else _eff_deployed
+        _basis    = ("deployable — full (min-floor drop renormalized kept picks to 100%)"
+                     if dropped else "_eff_deployed (Kelly-floor-adjusted)")
+        _delta    = _sum_dollar - _expected
+        _mark     = "✅" if abs(_delta) < 1.0 else "❌"
+        print(f"   ── Per-pick check: Σ(dollar_amt)=${_sum_dollar:,.2f} vs expected ${_expected:,.2f} "
+              f"basis=[{_basis}] → {_mark}" + (f"  Δ=${_delta:,.2f}" if _mark == "❌" else ""))
+        if dropped:
+            print(f"   ℹ️  NOTE: the Kelly-floor cash reserve "
+                  f"({(1 - min(1.0, _eff_wt)) * 100:.0f}% held as cash per the SIZING STACK above) is "
+                  f"NOT preserved when the min-position floor drops a pick — it is redeployed among "
+                  f"the remaining kept picks instead of staying as cash.")
 
     if verbose:
         for pos in allocations:

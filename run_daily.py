@@ -1085,17 +1085,34 @@ def run_daily(test_mode=False, dry_run=False):
     if high_risk_count >= 3:
         system_exposure = min(system_exposure, 0.50)
 
+    # NOTE: `system_exposure` computed below is informational only (stored in the
+    # brief for display and does not gate `allowed_styles`/`blocked_styles`, which
+    # were already fixed above). It is NOT passed into ml_engine.py and never
+    # scales any dollar or percentage sizing figure — position sizing already
+    # finished in Step 5, several steps before this block runs. See the "SIZING
+    # STACK" log printed during Step 5 (ML ENGINE) for what was actually applied;
+    # see Phase 2 analysis for a proposal to wire this into real sizing.
     sharpe_guard_active = False
     if rolling_sharpe < 0.3 and rolling_sharpe >= 0.0:
         system_exposure = min(system_exposure, system_exposure * 0.6)
         sharpe_guard_active = True
-        print(f"  ⚠️ SHARPE GUARD: Sharpe {rolling_sharpe:.2f} < 0.3 → "
-              f"position sizes auto-reduced to {system_exposure*100:.0f}% of normal")
+        print(f"  📊 SHARPE ADVISORY (informational only — does not affect sizing):")
+        print(f"     Rolling Sharpe {rolling_sharpe:.2f} is below the 0.3 caution threshold.")
+        print(f"     This advisory is not currently wired into position sizing — actual sizing "
+              f"was already finalized in Step 5 (ML Engine). See the SIZING STACK log there for "
+              f"the % of capital actually deployed (regime_equity_pct × max_equity_cap × "
+              f"drawdown_multiplier × effective_weight_pct). See Phase 2 analysis for a proposal "
+              f"to wire this advisory into real sizing.")
     elif rolling_sharpe < 0.0:
         system_exposure = min(system_exposure, system_exposure * 0.4)
         sharpe_guard_active = True
-        print(f"  🔴 SHARPE GUARD: Sharpe {rolling_sharpe:.2f} negative → "
-              f"position sizes auto-reduced to {system_exposure*100:.0f}% of normal")
+        print(f"  📊 SHARPE ADVISORY (informational only — does not affect sizing):")
+        print(f"     Rolling Sharpe {rolling_sharpe:.2f} is negative.")
+        print(f"     This advisory is not currently wired into position sizing — actual sizing "
+              f"was already finalized in Step 5 (ML Engine). See the SIZING STACK log there for "
+              f"the % of capital actually deployed (regime_equity_pct × max_equity_cap × "
+              f"drawdown_multiplier × effective_weight_pct). See Phase 2 analysis for a proposal "
+              f"to wire this advisory into real sizing.")
 
     breadth_pct = screener.get("breadth", {}).get("pct_above_200ma", 60)
     if rolling_sharpe < 0.0 and neg_alpha_days >= 30 and breadth_pct < 50:

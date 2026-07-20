@@ -573,3 +573,105 @@ def test_sector_cap_fallback_does_not_readmit_capped_sectors():
     assert "FBP" in fin_tickers and "BAC" in fin_tickers, (
         f"Expected FBP and BAC as the two kept FINANCIALS, got: {fin_tickers}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sizing stack — Sharpe Guard false claim + portfolio-size independence
+# (FIX, 2026-07-19)
+# Bug: Step 11 (Risk Audit) printed "⚠️ SHARPE GUARD: ... position sizes
+# auto-reduced to X% of normal" — but Step 5 (ML Engine) position sizing
+# already finished several steps earlier and never receives Sharpe Guard's
+# `system_exposure` value. The message claimed an effect that never happened.
+# Fixed by relabeling as an informational advisory and adding an explicit
+# SIZING STACK log (percentage-first, portfolio-size-agnostic) in Step 5
+# showing what actually determines position sizes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _sizing_stack_test_weights():
+    return [
+        {"ticker": "AAA", "weight": 0.1667, "ml_prob": 0.6, "vol_adj": 0.2,
+         "kelly_wt": 0.05, "score": 80, "price": 50.0, "probation": False},
+        {"ticker": "BBB", "weight": 0.1667, "ml_prob": 0.6, "vol_adj": 0.2,
+         "kelly_wt": 0.05, "score": 80, "price": 50.0, "probation": False},
+        {"ticker": "CCC", "weight": 0.1667, "ml_prob": 0.6, "vol_adj": 0.2,
+         "kelly_wt": 0.05, "score": 80, "price": 50.0, "probation": False},
+    ]
+
+
+def test_sizing_stack_portfolio_size_agnostic():
+    """
+    render_allocations must produce identical weight_pct and linearly-scaled
+    dollar_amt at any capital level. Tested at $10,000 and $1,000,000 — both
+    comfortably clear of the dollar-denominated trade-viability floors
+    (min_position=$250, min-deploy=$1,500), which are intentionally NOT
+    part of this invariant (they exist precisely because very small accounts
+    behave differently — see comment in ml_engine.py render_allocations).
+    """
+    from ml_engine import render_allocations
+
+    weights = _sizing_stack_test_weights()
+    market_regime = {"regime": "RECOVERY", "cash_pct": 0.20}   # 80% regime equity
+
+    small = render_allocations(weights, {"name": "TEST", "capital": 10_000, "max_equity": 1.0},
+                                market_regime, verbose=False)
+    large = render_allocations(weights, {"name": "TEST", "capital": 1_000_000, "max_equity": 1.0},
+                                market_regime, verbose=False)
+
+    assert len(small) == len(large) == 3
+    small_by_t = {a["ticker"]: a for a in small}
+    large_by_t = {a["ticker"]: a for a in large}
+    for t in small_by_t:
+        assert small_by_t[t]["weight_pct"] == pytest.approx(large_by_t[t]["weight_pct"], abs=0.01), (
+            f"{t}: weight_pct differs by capital size — hidden dollar dependency"
+        )
+        ratio = large_by_t[t]["dollar_amt"] / small_by_t[t]["dollar_amt"]
+        assert ratio == pytest.approx(100.0, rel=0.001), (
+            f"{t}: dollar_amt did not scale linearly with capital (ratio={ratio})"
+        )
+
+
+def test_sizing_stack_log_present():
+    """SIZING STACK block must be present, percentage-first, in Step 5 verbose output."""
+    import io, contextlib
+    from ml_engine import render_allocations
+
+    weights = [{"ticker": "AAA", "weight": 1.0, "ml_prob": 0.6, "vol_adj": 0.2,
+                "kelly_wt": 0.05, "score": 80, "price": 50.0, "probation": False}]
+    market_regime = {"regime": "BULL", "cash_pct": 0.0}
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        render_allocations(weights, {"name": "TEST", "capital": 100_000, "max_equity": 1.0},
+                            market_regime, verbose=True)
+    out = buf.getvalue()
+    assert "SIZING STACK" in out
+    assert "final_deployable_pct" in out
+    assert "Example render" in out
+    assert "portfolio-size-agnostic" in out
+
+
+def test_sharpe_guard_no_sizing_parameter():
+    """
+    Locks the architectural fact behind the Sharpe Guard fix: render_allocations
+    (Step 5 sizing) accepts no Sharpe-related input, so Sharpe Guard (computed
+    later, in Step 11) cannot affect it. If Phase 2 wires Sharpe Guard into real
+    sizing, this test must be updated deliberately, not broken by accident.
+    """
+    import inspect
+    from ml_engine import render_allocations
+    params = " ".join(inspect.signature(render_allocations).parameters.keys()).lower()
+    assert "sharpe" not in params
+
+
+def test_sharpe_guard_message_not_false_claim():
+    """
+    run_daily.py's Sharpe Guard message must not claim to have changed position
+    sizes (it can't — Step 11 runs after Step 5 sizing is already finalized).
+    Guards against reintroducing the "auto-reduced to X% of normal" false claim.
+    """
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "run_daily.py")) as f:
+        src = f.read()
+    assert "position sizes auto-reduced" not in src
+    assert "SHARPE ADVISORY" in src
+    assert "does not affect sizing" in src
