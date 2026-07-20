@@ -43,7 +43,7 @@ NGX_TIER1 = [
 ]
 
 NGX_TIER2 = [
-    "STANBIC.LG", "NB.LG", "FLOURMILL.LG", "UNILEVER.LG", "OANDO.LG",
+    "STANBIC.LG", "NB.LG", "UNILEVER.LG", "OANDO.LG",
     "TOTAL.LG", "BUACEMENT.LG", "HBMNG.LG", "PRESCO.LG", "OKOMUOIL.LG",
     "TRANSCORP.LG", "GEREGU.LG", "NESTLE.LG", "FIDELITYBK.LG", "FCMB.LG",
     "UCAP.LG", "NAHCO.LG", "DANGSUGAR.LG", "NASCON.LG", "LIVESTOCK.LG",
@@ -56,7 +56,7 @@ NGX_SECTOR_MAP = {
     "GTCO.LG": "banking",      "ZENITHBANK.LG": "banking", "ACCESSCORP.LG": "banking",
     "UBA.LG": "banking",       "FIRSTHOLDCO.LG": "banking","MTNN.LG": "telecom",
     "AIRTELAFRI.LG": "telecom","DANGCEM.LG": "industrial",  "SEPLAT.LG": "oil",
-    "STANBIC.LG": "banking",   "NB.LG": "consumer",        "FLOURMILL.LG": "consumer",
+    "STANBIC.LG": "banking",   "NB.LG": "consumer",
     "UNILEVER.LG": "consumer", "OANDO.LG": "oil",          "TOTAL.LG": "oil",
     "BUACEMENT.LG": "industrial","HBMNG.LG": "industrial",
     "PRESCO.LG": "agriculture","OKOMUOIL.LG": "agriculture",
