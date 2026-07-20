@@ -394,6 +394,47 @@ def quarantine_to_global_watch(ticker, source="unknown"):
     print(f"  Scout: quarantined {ticker} → GLOBAL_WATCH")
 
 
+def apply_hold_period_retention(old_dynamic, passing, inactive_set, today):
+    """
+    Decide which old_dynamic tickers (not already re-qualifying in `passing`)
+    get retained (still within HOLD_PERIOD_DAYS) vs. dropped, for tickers not
+    already flagged inactive.
+
+    Exceptions that drop a ticker immediately, even mid-hold-period:
+      - already in inactive_set (3+ consecutive fetch failures) -- checked
+        by the caller before this runs, not duplicated here
+      - foreign exchange listing (fails _is_valid_exchange) -- catches
+        tickers that predate the exchange-validity filter (commit
+        716b8149). Exchange listing is a static property of the symbol,
+        not something that fluctuates, so re-checking it here carries no
+        flapping risk to the hold period's actual purpose (protecting
+        against momentum-score oscillation around the ENTER threshold).
+        Routed through the same quarantine as newly-discovered foreign
+        tickers, for consistency.
+
+    Returns (retained_dict, dropped_list).
+    """
+    retained = {}
+    dropped  = []
+    for ticker, data in old_dynamic.items():
+        if ticker in passing or ticker in inactive_set:
+            continue
+        if not _is_valid_exchange(ticker):
+            quarantine_to_global_watch(ticker, data.get("source", "unknown"))
+            dropped.append(ticker)
+            continue
+        try:
+            scouted_date = datetime.date.fromisoformat(data.get("scouted_at", today))
+            age_days = (datetime.date.today() - scouted_date).days
+        except (ValueError, TypeError):
+            age_days = HOLD_PERIOD_DAYS + 1  # malformed date → treat as expired
+        if age_days < HOLD_PERIOD_DAYS:
+            retained[ticker] = data
+        else:
+            dropped.append(ticker)
+    return retained, dropped
+
+
 def run_scout(verbose=True):
     """
     Main weekly scout run.
@@ -505,24 +546,7 @@ def run_scout(verbose=True):
         }
 
     new_additions = [t for t in passing if t not in old_dynamic]
-
-    # Retain tickers still within the hold period even though they no
-    # longer pass today's momentum filter. Exception: tickers already
-    # flagged inactive (3+ consecutive fetch failures) drop immediately.
-    retained = {}
-    dropped  = []
-    for ticker, data in old_dynamic.items():
-        if ticker in passing or ticker in inactive_set:
-            continue
-        try:
-            scouted_date = datetime.date.fromisoformat(data.get("scouted_at", today))
-            age_days = (datetime.date.today() - scouted_date).days
-        except (ValueError, TypeError):
-            age_days = HOLD_PERIOD_DAYS + 1  # malformed date → treat as expired
-        if age_days < HOLD_PERIOD_DAYS:
-            retained[ticker] = data
-        else:
-            dropped.append(ticker)
+    retained, dropped = apply_hold_period_retention(old_dynamic, passing, inactive_set, today)
 
     dynamic = {**passing, **retained}
 

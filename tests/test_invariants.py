@@ -1274,3 +1274,47 @@ def test_get_static_universe_includes_tail_past_old_line_boundary():
     tickers = sa.get_static_universe()
     for ticker in ["ZEB.TO", "ZRE.TO", "XRE.TO", "HXT.TO", "HXS.TO"]:
         assert ticker in tickers, f"{ticker} missing -- past the old [29:135] boundary"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Hold-period retention re-validates exchange eligibility (FIX, 2026-07-20)
+# Hold-period retention (an earlier session's fix) carried old_dynamic
+# tickers forward without re-checking _is_valid_exchange() -- so 7 foreign
+# tickers that predate commit 716b8149 ("reject foreign exchange listings")
+# kept surviving indefinitely via retention, never re-validated. Fixed:
+# apply_hold_period_retention() now drops (and quarantines) any retained
+# ticker that fails _is_valid_exchange(), even mid-hold-period -- exchange
+# listing is static, not momentum-driven, so this can't cause the flapping
+# the hold period exists to prevent.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_hold_period_retention_drops_and_quarantines_foreign_ticker(monkeypatch):
+    """A foreign-exchange ticker still well within its hold period must be
+    dropped and routed to quarantine, not retained -- even though a
+    legitimate NA ticker with the same age is retained normally."""
+    import datetime
+    import scout_agent as sa
+
+    today = datetime.date.today().isoformat()
+    recent = (datetime.date.today() - datetime.timedelta(days=5)).isoformat()
+    old_dynamic = {
+        "FOREIGN.T": {"scout_score": 50, "source": "scout_botz", "scouted_at": recent},
+        "LEGIT.TO":  {"scout_score": 50, "source": "scout_xic",  "scouted_at": recent},
+    }
+
+    quarantined = {}
+    monkeypatch.setattr(sa, "_load_global_watch", lambda: {})
+    monkeypatch.setattr(sa, "_save_global_watch", lambda d: quarantined.update(d))
+
+    retained, dropped = sa.apply_hold_period_retention(
+        old_dynamic, passing={}, inactive_set=set(), today=today
+    )
+
+    assert "FOREIGN.T" not in retained
+    assert "FOREIGN.T" in dropped
+    assert "FOREIGN.T" in quarantined  # routed to quarantine, not a silent drop
+
+    # Legitimate NA ticker of the same age is retained normally -- proves
+    # the exchange check doesn't undermine the hold period for real tickers
+    assert "LEGIT.TO" in retained
+    assert "LEGIT.TO" not in dropped
