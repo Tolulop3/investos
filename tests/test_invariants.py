@@ -866,8 +866,9 @@ def test_drift_drilldown_no_alert_no_output():
 # actual_return_pct vs a +-2.0% band. regime_at_resolve is still captured and
 # logged, but is no longer decisive. Missing price data (either side) leaves
 # the signal unresolved for retry — never silently defaults to LOSS.
-# Only affects resolutions from now on — the 159 already-resolved signals are
-# untouched (retroactive re-resolution is a separate, deferred decision).
+# Only affects resolutions from now on — the 159 already-resolved signals'
+# resolved/outcome fields are untouched (retroactive re-resolution by price
+# is impossible, no entry_price was ever captured for them).
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _ngx_signal(ticker, entry_price, signal_date="2026-01-01"):
@@ -979,6 +980,130 @@ def test_ngx_log_signals_captures_entry_price(monkeypatch):
     n = nt.log_ngx_signals(ngx_result)
     assert n == 1
     assert saved["outcomes"][0]["entry_price"] == 42.5
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NGX legacy exclusion (FIX, 2026-07-21)
+# 159 signals (2026-05-16..2026-05-22) were resolved LOSS under the old
+# macro-regime logic; 33 more were logged before entry_price capture existed
+# and can never be resolved by price. Both are flagged excluded_legacy=True
+# so they stop counting toward WR/PF, stop inflating "pending", and are never
+# re-walked by resolve_ngx_outcomes() — permanently excluded, not silently
+# vanished (exclusion_reason preserved for audit).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _ngx_legacy_loss_signal(ticker, signal_date="2026-05-16"):
+    """A pre-fix signal resolved LOSS under old macro-regime logic, now
+    flagged excluded_legacy — mirrors the real 159 entries' shape (no
+    entry_price key at all, since that field didn't exist yet)."""
+    return {
+        "ticker": ticker, "name": ticker.replace(".LG", ""), "sector": "oil", "tier": 1,
+        "signal_date": signal_date, "signal_time": f"{signal_date}T00:00:00",
+        "score_at_signal": 87.7, "persistence": "7d streak", "phase": "PAPER_ONLY", "phase_days": 6,
+        "macro_at_signal": {"regime": "RISK_ON"},
+        "resolved": True, "resolved_date": "2026-05-25", "score_at_resolve": 55.1,
+        "regime_at_resolve": "RISK_OFF", "outcome": "LOSS",
+        "outcome_reason": "Macro flipped RISK_OFF (score now 55.1)",
+        "excluded_legacy": True,
+        "exclusion_reason": "Resolved under pre-fix macro-regime logic; no entry_price captured.",
+    }
+
+
+def _ngx_orphaned_pending_signal(ticker, signal_date="2026-07-16"):
+    """A pre-fix signal that was never resolved and never will be (no
+    entry_price ever captured) — mirrors the real 33 entries' shape."""
+    return {
+        "ticker": ticker, "name": ticker.replace(".LG", ""), "sector": "banking", "tier": 2,
+        "signal_date": signal_date, "signal_time": f"{signal_date}T00:00:00",
+        "score_at_signal": 70.0, "persistence": "3d streak", "phase": "FULL", "phase_days": 71,
+        "macro_at_signal": {"regime": "RISK_ON"},
+        "resolved": False, "resolved_date": None, "score_at_resolve": None,
+        "regime_at_resolve": None, "outcome": None, "outcome_reason": None,
+        "excluded_legacy": True,
+        "exclusion_reason": "Logged before entry_price capture existed; can never be resolved by price.",
+    }
+
+
+def test_ngx_excluded_legacy_dropped_from_wr_pf(monkeypatch):
+    """excluded_legacy entries (both the resolved-LOSS and orphaned-pending
+    flavors) must not count toward wins/losses/win_rate — only the clean,
+    price-resolved signal should show up in WR/PF."""
+    import ngx_outcome_tracker as nt
+
+    monkeypatch.setattr(nt, "load_ngx_outcomes", lambda: [
+        _ngx_legacy_loss_signal("SEPLAT.LG"),
+        _ngx_orphaned_pending_signal("GTCO.LG"),
+        {**_ngx_signal("AAA.LG", 100.0), "resolved": True, "outcome": "WIN",
+         "actual_return_pct": 5.0},
+    ])
+
+    s = nt.ngx_outcome_summary()
+    assert s["total_logged"] == 3
+    assert s["excluded_legacy_total"] == 2
+    assert s["excluded_legacy_resolved"] == 1
+    assert s["excluded_legacy_pending"] == 1
+    assert s["total_resolved"] == 1
+    assert s["pending"] == 0
+    assert s["wins"] == 1
+    assert s["losses"] == 0
+    assert s["win_rate"] == 100.0
+
+
+def test_ngx_excluded_legacy_not_retried(monkeypatch):
+    """resolve_ngx_outcomes() must skip excluded_legacy entries entirely —
+    no date parsing, no price lookup, no field mutation, no resolve count."""
+    import ngx_outcome_tracker as nt
+
+    saved = {}
+    legacy_resolved = _ngx_legacy_loss_signal("SEPLAT.LG")
+    legacy_pending  = _ngx_orphaned_pending_signal("GTCO.LG")
+    before = [dict(legacy_resolved), dict(legacy_pending)]
+
+    monkeypatch.setattr(nt, "load_ngx_outcomes", lambda: [legacy_resolved, legacy_pending])
+    monkeypatch.setattr(nt, "save_ngx_outcomes", lambda o: saved.__setitem__("outcomes", o))
+    # If the loop touched these, it would try to fetch prices for them —
+    # returning prices here would let a bug slip through as a false pass.
+    monkeypatch.setattr(nt, "fetch_companies_prices",
+                         lambda verbose=False: {"SEPLAT": 999.0, "GTCO": 999.0})
+
+    n = nt.resolve_ngx_outcomes(_ngx_run_result(["SEPLAT.LG", "GTCO.LG"]))
+    assert n == 0
+    assert saved["outcomes"] == before  # byte-for-byte untouched
+
+
+def test_ngx_oos_clock_not_yet_started_when_no_priced_signals(monkeypatch):
+    """With only excluded_legacy entries (no entry_price anywhere), the
+    clean OOS clock must report as not started, not crash or fabricate a date."""
+    import ngx_outcome_tracker as nt
+
+    monkeypatch.setattr(nt, "load_ngx_outcomes", lambda: [
+        _ngx_legacy_loss_signal("SEPLAT.LG"),
+        _ngx_orphaned_pending_signal("GTCO.LG"),
+    ])
+
+    s = nt.ngx_outcome_summary()
+    assert s["oos_start_date"] is None
+    assert s["oos_day"] is None
+
+
+def test_ngx_oos_clock_starts_at_first_priced_signal(monkeypatch):
+    """OOS Day N is computed from the earliest signal_date carrying a
+    non-null entry_price, ignoring excluded_legacy entries and later signals."""
+    import ngx_outcome_tracker as nt
+    from datetime import date, timedelta
+
+    ten_days_ago = (date.today() - timedelta(days=10)).strftime("%Y-%m-%d")
+    five_days_ago = (date.today() - timedelta(days=5)).strftime("%Y-%m-%d")
+
+    monkeypatch.setattr(nt, "load_ngx_outcomes", lambda: [
+        _ngx_legacy_loss_signal("SEPLAT.LG"),  # no entry_price -> ignored
+        _ngx_signal("AAA.LG", 100.0, signal_date=ten_days_ago),
+        _ngx_signal("BBB.LG", 50.0, signal_date=five_days_ago),
+    ])
+
+    s = nt.ngx_outcome_summary()
+    assert s["oos_start_date"] == ten_days_ago
+    assert s["oos_day"] == 11  # inclusive day count
 
 
 # ─────────────────────────────────────────────────────────────────────────────

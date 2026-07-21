@@ -230,6 +230,15 @@ def resolve_ngx_outcomes(ngx_result):
     fetch failed at signal time or resolution time) cannot be resolved by
     price and are left unresolved / retried — never silently defaulted
     to LOSS.
+
+    Entries flagged excluded_legacy=True (pre-fix signals: 159 wrongly
+    resolved under the old macro-regime logic, plus 33 orphaned pending
+    signals that predate entry_price capture entirely) are skipped
+    unconditionally — they can never gain a price and must not be
+    re-walked every run. resolved=True already keeps the 159 out of this
+    loop on its own; the explicit check here is belt-and-suspenders so a
+    future change to the `resolved` semantics can't accidentally resurrect
+    them, and is load-bearing for the 33 (resolved=False).
     """
     if not ngx_result:
         return 0
@@ -262,6 +271,11 @@ def resolve_ngx_outcomes(ngx_result):
             print(f"   [NGX resolve] debug error: {_de} | sample={sample}")
 
     for o in outcomes:
+        # Permanently excluded pre-fix signals (never re-checked, never
+        # re-queued — see docstring) — skip before anything else.
+        if o.get("excluded_legacy"):
+            continue
+
         # Explicit bool check — handles both Python False and JSON false
         if o.get("resolved") is True:
             continue
@@ -346,13 +360,29 @@ def ngx_outcome_summary():
     """
     Print NGX paper signal performance summary.
     Returns dict with key metrics.
+
+    excluded_legacy entries (pre-fix: 159 wrongly resolved under the old
+    macro-regime logic, plus 33 orphaned pending signals that predate
+    entry_price capture) are dropped from both `resolved` and `pending` —
+    they no longer count toward WR/PF, and don't inflate the pending
+    count either, since they can never mature. Their count is still
+    surfaced separately (excluded_legacy_total) for audit transparency —
+    see print_ngx_outcome_report().
+
+    The clean NGX OOS clock (oos_start_date / oos_day) is derived
+    dynamically from the first signal that actually has a non-null
+    entry_price — not a hardcoded date — since as of this fix landing,
+    no signal in the live file has captured one yet (see commit message).
     """
     outcomes  = load_ngx_outcomes()
     if not outcomes:
         return {}
 
-    resolved  = [o for o in outcomes if o.get("resolved")]
-    pending   = [o for o in outcomes if not o.get("resolved")]
+    active    = [o for o in outcomes if not o.get("excluded_legacy")]
+    excluded  = [o for o in outcomes if o.get("excluded_legacy")]
+
+    resolved  = [o for o in active if o.get("resolved")]
+    pending   = [o for o in active if not o.get("resolved")]
 
     wins    = sum(1 for o in resolved if o.get("outcome") == "WIN")
     losses  = sum(1 for o in resolved if o.get("outcome") == "LOSS")
@@ -375,17 +405,35 @@ def ngx_outcome_summary():
     t1_wins     = sum(1 for o in t1_resolved if o.get("outcome") == "WIN")
     t1_wr       = round(t1_wins / len(t1_resolved) * 100, 1) if t1_resolved else 0
 
+    # Clean NGX OOS clock — first signal_date with a captured entry_price.
+    priced_dates = sorted(
+        o["signal_date"] for o in outcomes
+        if o.get("entry_price") is not None and o.get("signal_date")
+    )
+    if priced_dates:
+        oos_start_date = priced_dates[0]
+        start = datetime.strptime(oos_start_date, "%Y-%m-%d").date()
+        oos_day = (date.today() - start).days + 1
+    else:
+        oos_start_date = None
+        oos_day = None
+
     summary = {
-        "total_logged":  len(outcomes),
-        "total_resolved":total_r,
-        "pending":       len(pending),
-        "wins":          wins,
-        "losses":        losses,
-        "flats":         flats,
-        "win_rate":      win_rate,
-        "t1_win_rate":   t1_wr,
-        "sector_wins":   sector_wins,
-        "sector_total":  sector_total,
+        "total_logged":        len(outcomes),
+        "excluded_legacy_total":len(excluded),
+        "excluded_legacy_resolved": sum(1 for o in excluded if o.get("resolved")),
+        "excluded_legacy_pending":  sum(1 for o in excluded if not o.get("resolved")),
+        "total_resolved":      total_r,
+        "pending":             len(pending),
+        "wins":                wins,
+        "losses":              losses,
+        "flats":               flats,
+        "win_rate":            win_rate,
+        "t1_win_rate":         t1_wr,
+        "sector_wins":         sector_wins,
+        "sector_total":        sector_total,
+        "oos_start_date":      oos_start_date,
+        "oos_day":             oos_day,
     }
 
     return summary
@@ -401,9 +449,21 @@ def print_ngx_outcome_report():
     print(f"\n{'='*50}")
     print(f"  NGX PAPER SIGNAL OUTCOMES")
     print(f"{'='*50}")
+
+    if s['oos_start_date']:
+        print(f"  NGX OOS Day {s['oos_day']} (clean, since {s['oos_start_date']})"
+              f" — {s['total_resolved']} resolved")
+    else:
+        print(f"  NGX OOS: not yet started (no entry_price-bearing signals logged yet)")
+
     print(f"  Total logged:    {s['total_logged']}")
     print(f"  Resolved:        {s['total_resolved']}")
-    print(f"  Pending (7d):    {s['pending']}")
+    print(f"  Pending:         {s['pending']}")
+    if s['excluded_legacy_total']:
+        print(f"  ⓘ  {s['excluded_legacy_total']} legacy signals excluded (pre-fix, "
+              f"non-actionable) — audit only, not counted above "
+              f"({s['excluded_legacy_resolved']} macro-regime-resolved, "
+              f"{s['excluded_legacy_pending']} orphaned/never-priced)")
 
     if s['total_resolved'] > 0:
         print(f"\n  WIN RATE:        {s['win_rate']}%  "
