@@ -11,7 +11,12 @@ Validates: strict walk-forward, no lookahead bias
 v2.1 changes:
   - Half-Kelly position sizing calibrated to actual 1,466+ pick win rates
   - Score smoothing: 3-day EMA on ML probability to dampen single-day spikes
-  - Kelly fractions: 60-74 tier is the real edge, 90-100 has negative Kelly
+  - Kelly's p/b come from each pick's own ml_prob bucket's measured win rate
+    and payoff ratio (2026-07-21 fix) — not a score-tier-wide average, which
+    guaranteed negative edge for every 90-100/75-89-tier pick regardless of
+    ml_prob. A pick with no ml_prob logged that day gets no Kelly weight
+    (floored to 0), not a tier-average substitute. See outcome_tracker.py
+    ML_PROB_BUCKETS and ml_engine.py score_to_kelly_wt.
 
 INSTALL: pip install xgboost scikit-learn pandas numpy yfinance --break-system-packages
 """
@@ -27,6 +32,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict, Counter
 
 from gate_engine import MLGate, load_outcomes_ticker_counts, PROBATION_CAP
+from outcome_tracker import ml_prob_bucket
 
 warnings.filterwarnings('ignore')
 
@@ -1012,19 +1018,34 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
                     print(f"   🚫 Sector block: {p['ticker']} ({news_sector} net:{net})")
 
     # ── HALF-KELLY WEIGHTS ────────────────────────────────────────────────────
-    def score_to_kelly_wt(score, wr_data=None, ticker=None, verbose=True):
-        # Static calibration — used when live data absent or too thin (n < 10)
-        if score >= 90:   p, aw, al, tier = 0.492, 0.70, 1.0, "90-100"
-        elif score >= 75: p, aw, al, tier = 0.595, 1.10, 1.0, "75-89"
-        elif score >= 60: p, aw, al, tier = 0.658, 1.80, 1.0, "60-74"
-        else:             p, aw, al, tier = 0.556, 1.10, 1.0, "below-60"
+    def score_to_kelly_wt(score, ml_prob, wr_data=None, ticker=None, verbose=True):
+        # No ml_prob logged for this pick today -> no per-pick signal to size
+        # Kelly on. Floor to zero rather than substituting a tier-wide average
+        # or a smoothed proxy (2026-07-21 decision — see MAIN, which had no
+        # ml_prob logged that day; separately flagged as a follow-up: ml_prob
+        # should log for every pick daily without exception).
+        if ml_prob is None:
+            if verbose:
+                _tkr = ticker or "?"
+                print(f"    [kelly] {_tkr:<8} no ml_prob logged today → no signal, floored to 0")
+            return 0.0
+
+        # Static calibration — used when live ml_prob-bucket data is absent or
+        # too thin (n < 10 either side). Keyed by score, not ml_prob: this is
+        # the cold-start/bootstrap path (no outcomes.json history yet at all),
+        # not the live per-pick signal this fix targets.
+        if score >= 90:   p, aw, al = 0.492, 0.70, 1.0
+        elif score >= 75: p, aw, al = 0.595, 1.10, 1.0
+        elif score >= 60: p, aw, al = 0.658, 1.80, 1.0
+        else:             p, aw, al = 0.556, 1.10, 1.0
         p_source = "static_fallback"
         b_source = "static_fallback"
-        if wr_data and wr_data.get("by_score_tier"):
-            t = wr_data["by_score_tier"]
-            d = t.get(tier, {})
-            _aw = d.get("avg_win")    # mean return on winning picks
-            _al = d.get("avg_loss")   # mean abs-return on losing picks
+
+        bucket = ml_prob_bucket(ml_prob)
+        if wr_data and wr_data.get("by_ml_prob_bucket"):
+            d = wr_data["by_ml_prob_bucket"].get(bucket, {})
+            _aw = d.get("avg_win")    # mean return on winning picks in this ml_prob bucket
+            _al = d.get("avg_loss")   # mean abs-return on losing picks in this ml_prob bucket
             _n  = d.get("count", 0)
             _nw = round(_n * d.get("win_rate", 0) / 100)
             _nl = _n - _nw
@@ -1032,26 +1053,24 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
                 p  = d.get("win_rate", 50) / 100
                 aw = _aw   # proper odds ratio numerator
                 al = _al   # proper odds ratio denominator
-                # TODO (Fix 2 finding, 2026-07-20, Case A — correct math, flagged
-                # input choice, NOT implemented): p/b here are the win rate and
-                # avg-win/avg-loss ratio for this PICK'S OWN SCORE TIER (e.g.
-                # "90-100"), not the portfolio-wide overall win rate/payoff, and
-                # NOT ml_prob. ml_prob is never part of Kelly's p or b — it only
-                # enters later as a separate multiplicative _ml_edge_multiplier
-                # on top of this result (see below), so it can never lift an
-                # already-zero Kelly weight back above zero (0 x anything = 0).
-                # A pick with a strong ml_prob currently cannot get a positive
-                # Kelly weight if its score tier's live win rate implies negative
-                # edge (e.g. 90-100 tier: win_rate=46.1%, PF=0.86 as of this
-                # writing). Blending ml_prob into p (or using it in place of tier
-                # win rate) would be a SIZING BEHAVIOR CHANGE — do not implement
-                # without explicit sign-off. See tests/test_invariants.py
-                # test_kelly_p_source_is_tier_win_rate_not_ml_prob and the Fix 2
-                # commit message for the full finding.
-                p_source = f"tier_win_rate[{tier}]"
-                b_source = f"tier_avg_win_loss_ratio[{tier}]"
+                # FIX (Option B, ml_prob-bucket variant, 2026-07-21): p/b now
+                # come from this PICK'S OWN ml_prob bucket's measured win rate
+                # and payoff ratio — not the score tier's portfolio-wide
+                # average, which mathematically guaranteed f_raw < 0 for every
+                # pick in the 90-100 and 75-89 score tiers regardless of
+                # ml_prob. Raw ml_prob itself is not a calibrated probability
+                # (checked empirically against outcomes_log.json before this
+                # change: the 0.8-1.0 band wins only 50.2% of the time, worse
+                # than the 0.6-0.8 band's 61.7% — non-monotonic, so ml_prob is
+                # used here only to pick a bucket whose historical win rate/
+                # payoff is independently measured, never taken at face value
+                # as p itself). See tests/test_invariants.py
+                # test_kelly_p_source_is_ml_prob_bucket_not_score_tier and
+                # test_ml_prob_bucket_table_matches_recomputation.
+                p_source = f"ml_prob_bucket_win_rate[{bucket}]"
+                b_source = f"ml_prob_bucket_avg_win_loss_ratio[{bucket}]"
             elif verbose:
-                print(f"    [Kelly] thin data (nw={_nw}, nl={_nl}) → static fallback")
+                print(f"    [Kelly] thin data (nw={_nw}, nl={_nl}) for ml_prob bucket {bucket} → static fallback")
         b = aw / al
         f_raw = (p * b - (1 - p)) / b
         if verbose and f_raw <= 0:
@@ -1096,29 +1115,19 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
             return 75.0
         return base
 
-    def _ml_edge_multiplier(ml_prob):
-        p = float(ml_prob or 0)
-        if p > 0.85:  return 0.30
-        if p >= 0.60: return 1.50
-        if p >= 0.40: return 1.00
-        if p >= 0.20: return 0.60
-        return 0.30
-
+    # ml_prob now feeds Kelly's p/b directly inside score_to_kelly_wt (via the
+    # ml_prob bucket lookup) — the old post-hoc _ml_edge_multiplier was removed
+    # 2026-07-21. It existed only to give ml_prob *some* influence on sizing
+    # since it couldn't touch p/b directly; keeping it after this fix would
+    # apply the same ml_prob signal twice (once in p/b, once as a multiplier),
+    # double-counting and compounding picks that land in a high-edge bucket.
     raw_kelly_wts = [score_to_kelly_wt(
                          _trend_adjusted_score(p, _score_hist, _outcomes_lookup),
-                         win_rate_data, ticker=p.get("ticker"), verbose=verbose)
+                         p.get("ml_prob"), win_rate_data,
+                         ticker=p.get("ticker"), verbose=verbose)
                      for p in picks[:n_picks]]
 
-    kelly_wts = [raw_kelly_wts[i] * _ml_edge_multiplier(picks[i].get("ml_prob", 0.5))
-                 for i in range(n_picks)]
-
-    if verbose:
-        for i, p in enumerate(picks[:n_picks]):
-            _mult = _ml_edge_multiplier(p.get("ml_prob", 0.5))
-            if abs(_mult - 1.0) > 0.05:
-                _tag = "✅" if _mult > 1.0 else "⚠️ "
-                print(f"   {p['ticker']:<10} ml_edge_mult={_mult:.2f}× {_tag}  "
-                      f"(ml_prob={p.get('ml_prob', 0):.2f})")
+    kelly_wts = raw_kelly_wts
 
     total_kelly      = sum(kelly_wts)
     n_positive_kelly = sum(1 for w in kelly_wts if w > 0)

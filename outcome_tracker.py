@@ -24,6 +24,32 @@ from datetime import datetime, timedelta
 OUTCOMES_FILE = "outcomes_log.json"
 WIN_RATE_FILE = "win_rate.json"
 
+# ml_prob buckets — shared with ml_engine.py's score_to_kelly_wt(), which
+# imports ml_prob_bucket() below to look up this same table's win_rate/
+# avg_win/avg_loss as Kelly's live p/b (FIX, 2026-07-21: replaces score-tier
+# win rate, which mathematically guaranteed negative edge for every pick in
+# the 90-100 and 75-89 score tiers regardless of ml_prob — see
+# tests/test_invariants.py test_kelly_p_source_is_ml_prob_bucket_not_score_tier).
+# Keep the two in sync; test_ml_prob_bucket_table_matches_recomputation
+# guards against this table silently drifting from outcomes_log.json.
+ML_PROB_BUCKETS = [
+    (0.0, 0.2, "0.0-0.2"),
+    (0.2, 0.4, "0.2-0.4"),
+    (0.4, 0.5, "0.4-0.5"),
+    (0.5, 0.6, "0.5-0.6"),
+    (0.6, 0.8, "0.6-0.8"),
+    (0.8, 1.01, "0.8-1.0"),
+]
+
+
+def ml_prob_bucket(ml_prob):
+    """Map a raw ml_prob value to its bucket label (see ML_PROB_BUCKETS)."""
+    p = float(ml_prob)
+    for lo, hi, label in ML_PROB_BUCKETS:
+        if lo <= p < hi:
+            return label
+    return ML_PROB_BUCKETS[-1][2]
+
 
 def load_outcomes():
     if os.path.exists(OUTCOMES_FILE):
@@ -442,7 +468,7 @@ def compute_win_rate():
             "total_resolved": len(resolved), "wins": 0, "win_rate": None,
             "avg_return": None, "best_return": None, "worst_return": None,
             "message": f"Building... ({len(resolved)} outcomes tracked so far)",
-            "by_score_tier": {}, "by_category": {}, "recent_10": [],
+            "by_score_tier": {}, "by_ml_prob_bucket": {}, "by_category": {}, "recent_10": [],
             "streak": 0, "streak_type": None, "time_weighted": None,
         }
 
@@ -510,6 +536,41 @@ def compute_win_rate():
                 "profit_factor": pf,
                 "avg_win":       avg_win,
                 "avg_loss":      avg_loss,
+            }
+
+    # By ml_prob bucket — feeds Kelly's live p/b directly (see ml_engine.py
+    # score_to_kelly_wt). Same computation shape as by_score above, bucketed
+    # on ml_prob instead of score.
+    #
+    # NOTE: deliberately named _b_avg_win/_b_avg_loss here, NOT avg_win/
+    # avg_loss — the by_score loop above reuses the outer-scope avg_win/
+    # avg_loss names, which silently shadows the portfolio-wide values
+    # computed earlier and corrupts result["avg_win"]/["avg_loss"] to
+    # whatever the LAST-iterated score tier happened to be (confirmed
+    # pre-existing in production win_rate.json: top-level avg_win/avg_loss
+    # exactly matched by_score_tier["below-60"], not the true portfolio
+    # average). That bug predates this change and is out of scope here
+    # (flagged separately) — this loop just avoids adding to it.
+    by_ml_prob = {}
+    for lo, hi, label in ML_PROB_BUCKETS:
+        bp = [o for o in resolved
+              if o.get("ml_prob") is not None and lo <= o["ml_prob"] < hi]
+        if bp:
+            bw         = len([o for o in bp if o["outcome"]=="WIN"])
+            rets       = [o["actual_return"] for o in bp]
+            wins_abs   = [r for r in rets if r > 0]
+            loss_abs   = [abs(r) for r in rets if r < 0]
+            pf         = round(sum(wins_abs)/sum(loss_abs), 2) if loss_abs else 0
+            _b_avg_win = round(sum(wins_abs)/len(wins_abs), 2) if wins_abs else 0
+            _b_avg_loss= round(sum(loss_abs)/len(loss_abs), 2) if loss_abs else 0
+            by_ml_prob[label] = {
+                "win_rate":      round(bw/len(bp)*100, 1),
+                "count":         len(bp),
+                "avg_ret":       round(sum(rets)/len(rets), 2),
+                "avg_return":    round(sum(rets)/len(rets), 2),
+                "profit_factor": pf,
+                "avg_win":       _b_avg_win,
+                "avg_loss":      _b_avg_loss,
             }
 
     # By category
@@ -638,6 +699,7 @@ def compute_win_rate():
         "best_return":    round(max(o["actual_return"] for o in resolved), 2),
         "worst_return":   round(min(o["actual_return"] for o in resolved), 2),
         "by_score_tier":  by_score,
+        "by_ml_prob_bucket": by_ml_prob,
         "by_category":    by_cat,
         "recent_10":      recent_10,
         "streak":         streak,

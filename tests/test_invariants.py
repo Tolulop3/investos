@@ -678,23 +678,33 @@ def test_sharpe_guard_message_not_false_claim():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Kelly zero-weight diagnosis (FIX, 2026-07-20)
-# Finding: Kelly=0.000 across live picks is CORRECT MATH given its actual
-# inputs — CASE A, not a broken-input bug. p_source is the pick's own SCORE
-# TIER win rate (win_rate_data["by_score_tier"][tier]), b_source is that
-# tier's avg_win/avg_loss ratio — NEITHER is the portfolio-wide overall win
-# rate, and NEITHER is ml_prob. ml_prob only enters afterward as a separate
-# multiplicative _ml_edge_multiplier, so it can never lift an already-zero
-# Kelly weight above zero. Confirmed against real production data (2026-07-19
-# brief): 90-100 tier win_rate=46.1%, avg_win=3.55, avg_loss=4.1 (n=983,
-# comfortably past the live-data threshold) -> f_raw=-0.1615 for every 90-100
-# tier pick regardless of ml_prob. NOT FIXED here — changing p_source to use
-# ml_prob would be a sizing behavior change requiring separate sign-off (see
-# TODO comment in ml_engine.py score_to_kelly_wt).
+# Kelly zero-weight diagnosis (FIX, 2026-07-20) + ml_prob-bucket fix (2026-07-21)
+# Finding (2026-07-20): Kelly=0.000 across live picks was CORRECT MATH given
+# its actual inputs — CASE A, not a broken-input bug. p_source was the pick's
+# own SCORE TIER win rate (win_rate_data["by_score_tier"][tier]), b_source was
+# that tier's avg_win/avg_loss ratio — NEITHER was the portfolio-wide overall
+# win rate, and NEITHER was ml_prob. ml_prob entered afterward only as a
+# separate multiplicative _ml_edge_multiplier, so it could never lift an
+# already-zero Kelly weight above zero. Confirmed against real production data
+# (2026-07-19 brief): 90-100 tier win_rate=46.1%, avg_win=3.55, avg_loss=4.1
+# (n=983) -> f_raw=-0.1615 for every 90-100 tier pick regardless of ml_prob.
+#
+# FIX (2026-07-21, Option B ml_prob-bucket variant): p/b now come from the
+# pick's OWN ml_prob bucket's measured win rate and payoff ratio
+# (win_rate_data["by_ml_prob_bucket"][bucket], computed the same way
+# by_score_tier already was — see outcome_tracker.py compute_win_rate). Raw
+# ml_prob is not itself a calibrated probability (checked empirically: the
+# 0.8-1.0 band's real win rate, 50.2%, is worse than the 0.6-0.8 band's
+# 61.7%) — only used to select a bucket whose track record is independently
+# measured. A pick with no ml_prob logged that day gets no substitute
+# (tier average or otherwise) — Kelly floors it to zero. The old post-hoc
+# _ml_edge_multiplier was removed (it existed only to give ml_prob influence
+# it couldn't otherwise have; keeping it now would double-count the same
+# signal already inside p/b).
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _kelly_wr_data(tier, win_rate, avg_win, avg_loss, count=500):
-    return {"by_score_tier": {tier: {
+def _kelly_wr_data_mlprob(bucket, win_rate, avg_win, avg_loss, count=500):
+    return {"by_ml_prob_bucket": {bucket: {
         "win_rate": win_rate, "avg_win": avg_win, "avg_loss": avg_loss, "count": count,
     }}}
 
@@ -705,35 +715,31 @@ def _kelly_pick(ticker, score, ml_prob, price=50.0):
 
 
 def test_kelly_inputs_stay_in_valid_range():
-    """Test 1+2: across realistic tier win-rate data (both live-tier and
+    """Across realistic ml_prob-bucket win-rate data (both live-bucket and
     static-fallback paths), Kelly's p must stay in [0,1] and b must be a
     positive, finite number — never 0/NaN/negative/out-of-range."""
     import io, contextlib
     from ml_engine import compute_target_weights
 
-    # NOTE: score is capped at 80 in these cases (not 90-96) — a fresh test
-    # ticker with no score_history.json/outcomes.json entry gets downgraded
-    # by _trend_adjusted_score's "score>80 with no history -> 75.0" rule
-    # before it reaches score_to_kelly_wt, so score=80 (not >80) is what
-    # reliably lands in the "75-89" tier for a synthetic, hermetic test.
     market_regime = {"regime": "BULL", "cash_pct": 0.0}
     cases = [
-        # (score, wr_data) — spans 3 tiers, live-tier and thin-data fallback
-        (80, _kelly_wr_data("75-89", 46.1, 3.55, 4.1, count=983)),
-        (65, _kelly_wr_data("60-74", 55.0, 3.53, 2.93, count=456)),
-        (50, _kelly_wr_data("below-60", 44.0, 4.9, 4.37, count=184)),
-        (80, {"by_score_tier": {"75-89": {"win_rate": 46.1, "avg_win": 3.55,
-                                           "avg_loss": 4.1, "count": 5}}}),  # thin -> static fallback
-        (80, None),  # no wr_data at all -> static fallback
+        # (score, ml_prob, wr_data) — spans live-bucket data (real 2026-07-21
+        # measured values) and thin/absent-data fallback
+        (80, 0.65, _kelly_wr_data_mlprob("0.6-0.8", 61.7, 5.41, 2.70, count=269)),
+        (65, 0.10, _kelly_wr_data_mlprob("0.0-0.2", 51.4, 3.61, 3.91, count=782)),
+        (50, 0.90, _kelly_wr_data_mlprob("0.8-1.0", 50.2, 3.52, 5.53, count=444)),
+        (80, 0.65, {"by_ml_prob_bucket": {"0.6-0.8": {"win_rate": 61.7, "avg_win": 5.41,
+                                                        "avg_loss": 2.70, "count": 5}}}),  # thin -> static fallback
+        (80, 0.65, None),  # no wr_data at all -> static fallback
     ]
-    for score, wr_data in cases:
-        picks = [_kelly_pick("TST", score, 0.5)]
+    for score, ml_prob, wr_data in cases:
+        picks = [_kelly_pick("TST", score, ml_prob)]
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             compute_target_weights(picks, market_regime, win_rate_data=wr_data, verbose=True)
         out = buf.getvalue()
         for line in out.splitlines():
-            if line.strip().startswith("[kelly]"):
+            if line.strip().startswith("[kelly]") and "p=" in line:
                 p_str = line.split("p=")[1].split()[0]
                 b_str = line.split("b=")[1].split()[0]
                 p, b = float(p_str), float(b_str)
@@ -743,50 +749,121 @@ def test_kelly_inputs_stay_in_valid_range():
 
 
 def test_kelly_debug_line_fires_only_when_floored():
-    """Test 3: [kelly] debug line appears when f_raw<=0, and does NOT appear
-    when the tier's live stats imply genuine positive edge."""
+    """[kelly] debug line appears when f_raw<=0, and does NOT appear when the
+    ml_prob bucket's live stats imply genuine positive edge."""
     import io, contextlib
     from ml_engine import compute_target_weights
 
     market_regime = {"regime": "BULL", "cash_pct": 0.0}
 
-    # Negative-edge tier (real 90-100-tier-shaped stats, applied at score=80 —
-    # see note in test_kelly_inputs_stay_in_valid_range on the score cap) -> must fire
-    losing = _kelly_wr_data("75-89", 46.1, 3.55, 4.1, count=983)
+    # Negative-edge bucket (real 0.8-1.0-bucket-shaped stats) -> must fire
+    losing = _kelly_wr_data_mlprob("0.8-1.0", 50.2, 3.52, 5.53, count=444)
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        compute_target_weights([_kelly_pick("LOSER", 80, 0.5)], market_regime,
+        compute_target_weights([_kelly_pick("LOSER", 80, 0.90)], market_regime,
                                 win_rate_data=losing, verbose=True)
     assert "[kelly] LOSER" in buf.getvalue()
 
-    # Strong positive-edge tier (high win rate, favorable payoff) -> must NOT fire
-    winning = _kelly_wr_data("60-74", 70.0, 5.0, 2.0, count=500)
+    # Strong positive-edge bucket (real 0.6-0.8-bucket-shaped stats) -> must NOT fire
+    winning = _kelly_wr_data_mlprob("0.6-0.8", 61.7, 5.41, 2.70, count=269)
     buf2 = io.StringIO()
     with contextlib.redirect_stdout(buf2):
-        compute_target_weights([_kelly_pick("WINNER", 65, 0.5)], market_regime,
+        compute_target_weights([_kelly_pick("WINNER", 65, 0.65)], market_regime,
                                 win_rate_data=winning, verbose=True)
     assert "[kelly] WINNER" not in buf2.getvalue()
 
 
-def test_kelly_p_source_is_tier_win_rate_not_ml_prob():
+def test_kelly_p_source_is_ml_prob_bucket_not_score_tier():
     """
-    Locks in the Case A finding: Kelly's weight for a given score/win-rate-data
-    combination is IDENTICAL regardless of ml_prob (p_source is tier win rate,
-    not ml_prob). If a future change blends ml_prob into Kelly's p (the Case A
-    fix), this test must be updated deliberately as part of that sign-off, not
-    broken by accident.
+    Locks in the 2026-07-21 fix: Kelly's p/b now come from the pick's own
+    ml_prob bucket, not its score tier — mirror image of the retired
+    test_kelly_p_source_is_tier_win_rate_not_ml_prob, which asserted the
+    opposite and required this deliberate update, not silent breakage.
     """
     from ml_engine import compute_target_weights
 
     market_regime = {"regime": "BULL", "cash_pct": 0.0}
-    # score=80, not >80 — see note in test_kelly_inputs_stay_in_valid_range
-    wr_data = _kelly_wr_data("75-89", 46.1, 3.55, 4.1, count=983)
+    wr_data = _kelly_wr_data_mlprob("0.6-0.8", 61.7, 5.41, 2.70, count=269)
 
-    weak_ml   = compute_target_weights([_kelly_pick("AAA", 80, 0.10)], market_regime,
-                                        win_rate_data=wr_data, verbose=False)
-    strong_ml = compute_target_weights([_kelly_pick("AAA", 80, 0.90)], market_regime,
-                                        win_rate_data=wr_data, verbose=False)
-    assert weak_ml[0]["kelly_wt"] == strong_ml[0]["kelly_wt"] == 0.0
+    # Same ml_prob (same bucket), different score -> identical weight now
+    # (score tier no longer drives p/b at all).
+    low_score  = compute_target_weights([_kelly_pick("AAA", 65, 0.65)], market_regime,
+                                         win_rate_data=wr_data, verbose=False)
+    high_score = compute_target_weights([_kelly_pick("AAA", 95, 0.65)], market_regime,
+                                         win_rate_data=wr_data, verbose=False)
+    assert low_score[0]["kelly_wt"] == high_score[0]["kelly_wt"]
+    assert low_score[0]["kelly_wt"] > 0.0   # 0.6-0.8 bucket has real measured edge
+
+    # Different ml_prob bucket (positive-edge 0.6-0.8 vs negative-edge
+    # 0.8-1.0), same score -> different weight now (ml_prob drives p/b).
+    wr_data_both = {"by_ml_prob_bucket": {
+        "0.6-0.8": {"win_rate": 61.7, "avg_win": 5.41, "avg_loss": 2.70, "count": 269},
+        "0.8-1.0": {"win_rate": 50.2, "avg_win": 3.52, "avg_loss": 5.53, "count": 444},
+    }}
+    strong_bucket = compute_target_weights([_kelly_pick("BBB", 80, 0.70)], market_regime,
+                                            win_rate_data=wr_data_both, verbose=False)
+    weak_bucket   = compute_target_weights([_kelly_pick("BBB", 80, 0.90)], market_regime,
+                                            win_rate_data=wr_data_both, verbose=False)
+    assert strong_bucket[0]["kelly_wt"] > weak_bucket[0]["kelly_wt"]
+    assert weak_bucket[0]["kelly_wt"] == 0.0
+
+
+def test_kelly_no_ml_prob_floors_to_zero():
+    """A pick with no ml_prob logged today (key absent, e.g. MAIN on
+    2026-07-21) gets no Kelly weight — floored to zero, never substituted
+    with a tier average or a smoothed proxy, even when rich live win-rate
+    data is available for other picks' buckets."""
+    from ml_engine import compute_target_weights
+
+    market_regime = {"regime": "BULL", "cash_pct": 0.0}
+    wr_data = _kelly_wr_data_mlprob("0.6-0.8", 61.7, 5.41, 2.70, count=269)
+
+    pick_no_prob = {"ticker": "MAIN", "score": 87.5,
+                     "data": {"price": 50.0, "volatility_90d": 0.2}}  # no ml_prob key at all
+    result = compute_target_weights([pick_no_prob], market_regime,
+                                     win_rate_data=wr_data, verbose=False)
+    assert result[0]["kelly_wt"] == 0.0
+
+
+def test_ml_prob_bucket_table_matches_recomputation():
+    """win_rate.json's by_ml_prob_bucket table — what score_to_kelly_wt reads
+    at runtime as Kelly's live p/b — must match an independent recomputation
+    from outcomes_log.json-shaped data, so it can't silently drift the way a
+    hand-calibrated static baseline could (never auto-refreshed once set)."""
+    import tempfile
+    from unittest.mock import patch
+    from outcome_tracker import compute_win_rate
+
+    def _o(ticker, ml_prob, outcome, actual_return):
+        return {"ticker": ticker, "signal_date": "2026-01-01", "score": 80,
+                "ml_prob": ml_prob, "resolved": True, "outcome": outcome,
+                "actual_return": actual_return}
+
+    synthetic = (
+        [_o("A1", 0.65, "WIN",  6.0)] * 3
+        + [_o("A2", 0.72, "LOSS", -2.0)] * 2
+        + [_o("B1", 0.15, "WIN",  1.0)] * 1
+        + [_o("B2", 0.10, "LOSS", -3.0)] * 4
+    )
+    scratch_win_rate = tempfile.mktemp(suffix=".json")
+
+    with patch("outcome_tracker.load_outcomes", lambda: synthetic), \
+         patch("outcome_tracker.WIN_RATE_FILE", scratch_win_rate):
+        wr = compute_win_rate()
+
+    table = wr["by_ml_prob_bucket"]
+
+    # Independent hand-recomputation — bucket "0.6-0.8" (5 outcomes: 3 WIN, 2 LOSS)
+    assert table["0.6-0.8"]["count"] == 5
+    assert table["0.6-0.8"]["win_rate"] == round(3 / 5 * 100, 1)
+    assert table["0.6-0.8"]["avg_win"] == round((6.0 * 3) / 3, 2)
+    assert table["0.6-0.8"]["avg_loss"] == round((2.0 * 2) / 2, 2)
+
+    # Bucket "0.0-0.2" (5 outcomes: 1 WIN, 4 LOSS)
+    assert table["0.0-0.2"]["count"] == 5
+    assert table["0.0-0.2"]["win_rate"] == round(1 / 5 * 100, 1)
+    assert table["0.0-0.2"]["avg_win"] == 1.0
+    assert table["0.0-0.2"]["avg_loss"] == 3.0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
