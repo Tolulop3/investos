@@ -1,11 +1,11 @@
 ---
 ticker: FBP
-updated: 2026-07-20
+updated: 2026-07-21
 streak_days: 4
 score_now: 100.0
 velocity: 0
 pf_30d: None
-picks_30d: 5
+picks_30d: 6
 tags: [investos, ticker, pattern]
 ---
 
