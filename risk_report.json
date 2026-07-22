@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-22T12:45:53.424606",
+    "run_at": "2026-07-22T17:06:25.742842",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,25 +30,25 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
-        "avg_score_change": 4.3,
+        "survived": 16,
+        "survival_pct": 88.9,
+        "avg_score_change": 4.2,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.3 pts with 10% noise"
+        "note": "Avg score change: \u00b14.2 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 80.5,
-        "stressed_avg": 73.9,
-        "score_drop": 6.6,
+        "normal_avg": 79.6,
+        "stressed_avg": 73.6,
+        "score_drop": 6.0,
         "removed": [
-          "AUB",
-          "BMO.TO",
           "BNY",
-          "VLO"
+          "AUB",
+          "VLO",
+          "LLY"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 6.6 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 6.0 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -62,7 +62,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 80.5,
+      "normal_avg_score": 79.6,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -74,26 +74,26 @@
     "date": "July 22, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 0.157,
+      "sharpe": 0.159,
       "avg_ret_pct": 0.14,
-      "std_ret_pct": 6.2,
-      "picks_used": 1713,
+      "std_ret_pct": 6.18,
+      "picks_used": 1727,
       "date_from": "2026-04-23",
-      "date_to": "2026-07-21",
+      "date_to": "2026-07-22",
       "source": "resolved_returns",
-      "note": "Sharpe from 1713 resolved picks (2026-04-23 \u2192 2026-07-21) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 1727 resolved picks (2026-04-23 \u2192 2026-07-22) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": -0.08,
-      "ret_30d": 1.4,
-      "ret_90d": 12.54,
-      "ann_ret": 35.1,
-      "ann_vol": 14.6,
-      "sharpe": 2.41,
+      "ret_7d": -0.3,
+      "ret_30d": 1.82,
+      "ret_90d": 13.4,
+      "ann_ret": 37.5,
+      "ann_vol": 14.3,
+      "sharpe": 2.62,
       "symbol": "^GSPC"
     },
-    "alpha": -2.253,
-    "neg_alpha_days": 29,
+    "alpha": -2.461,
+    "neg_alpha_days": 30,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
