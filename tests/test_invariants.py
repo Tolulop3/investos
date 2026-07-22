@@ -1682,3 +1682,94 @@ def test_resolve_ledger_no_price_fetch_in_source():
     src = inspect.getsource(sl.resolve_ledger)
     for banned in ("yfinance", "yf.", "download", "current_prices", "_fetch_stale_prices"):
         assert banned not in src, f"resolve_ledger() source contains '{banned}' — should be pure read-through"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Outcome threshold widened ±0.3% -> ±0.5% (FIX, 2026-07-22)
+# Derived from this dataset's |actual_return| distribution (median 2.45%,
+# p10 0.43%) and a realistic round-trip cost estimate for a mixed US/TSX
+# large-cap book -- not defaulted from NGX's ±2.0%. All 2,267 historical
+# resolved rows were reclassified from stored actual_return (no price
+# refetching); each row's prior classification is preserved in
+# outcome_legacy_030, never deleted. Net-of-cost analysis (separate,
+# reporting-only) found full-history PF crosses below 1.0 at just 8bps
+# round-trip cost -- the edge is thin. OOS PF was already <1.0 before any
+# cost. See outcome_tracker.py OUTCOME_THRESHOLD_PCT / _classify_outcome.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_outcome_threshold_single_source_of_truth():
+    """The WIN/LOSS/FLAT threshold must be read from exactly one constant,
+    used by exactly one classification function -- no hardcoded ±0.3 or
+    ±0.5 duplicated anywhere else in the resolution path."""
+    import inspect
+    import outcome_tracker as ot
+
+    assert ot.OUTCOME_THRESHOLD_PCT == 0.5
+
+    resolve_src = inspect.getsource(ot.resolve_outcomes)
+    assert "0.3" not in resolve_src
+    assert "0.5" not in resolve_src   # must call _classify_outcome(), not hardcode
+    assert "_classify_outcome(" in resolve_src
+
+    recompute_src = inspect.getsource(ot.recompute_outcomes_at_current_threshold)
+    assert "_classify_outcome(" in recompute_src
+
+
+def test_outcome_recompute_preserves_legacy_classification():
+    """Every recomputed row must retain its original classification in
+    outcome_legacy_030 -- never overwritten on a repeat call."""
+    import outcome_tracker as ot
+
+    rows = [
+        {"resolved": True, "actual_return": 0.4, "outcome": "WIN"},   # WIN@0.3 -> FLAT@0.5
+        {"resolved": True, "actual_return": -0.4, "outcome": "LOSS"}, # LOSS@0.3 -> FLAT@0.5
+        {"resolved": True, "actual_return": 5.0, "outcome": "WIN"},   # WIN either way
+    ]
+    rows, n_changed = ot.recompute_outcomes_at_current_threshold(rows)
+    assert n_changed == 2
+    assert rows[0]["outcome"] == "FLAT" and rows[0]["outcome_legacy_030"] == "WIN"
+    assert rows[1]["outcome"] == "FLAT" and rows[1]["outcome_legacy_030"] == "LOSS"
+    assert rows[2]["outcome"] == "WIN"  and rows[2]["outcome_legacy_030"] == "WIN"
+
+    # Re-run: idempotent, legacy field NOT clobbered, no further changes
+    rows, n_changed_2 = ot.recompute_outcomes_at_current_threshold(rows)
+    assert n_changed_2 == 0
+    assert rows[0]["outcome_legacy_030"] == "WIN"   # still the ORIGINAL value
+
+
+def test_outcome_recompute_deterministic():
+    """Same input must always produce the same output."""
+    import outcome_tracker as ot
+
+    def fresh_rows():
+        return [
+            {"resolved": True, "actual_return": 0.4, "outcome": "WIN"},
+            {"resolved": True, "actual_return": -0.6, "outcome": "LOSS"},
+            {"resolved": True, "actual_return": 0.0, "outcome": "FLAT"},
+            {"resolved": False, "actual_return": None, "outcome": None},
+        ]
+
+    r1, c1 = ot.recompute_outcomes_at_current_threshold(fresh_rows())
+    r2, c2 = ot.recompute_outcomes_at_current_threshold(fresh_rows())
+    assert r1 == r2
+    assert c1 == c2
+
+
+def test_outcome_recompute_only_touches_classification():
+    """actual_return, exit_price, entry_price, resolved_date must never be
+    modified by the recompute -- only `outcome` (and the legacy field)."""
+    import outcome_tracker as ot
+
+    row = {
+        "resolved": True, "actual_return": 0.4, "outcome": "WIN",
+        "exit_price": 101.5, "entry_price": 100.0, "resolved_date": "2026-01-08",
+        "ticker": "ZZZ", "signal_date": "2026-01-01",
+    }
+    before = dict(row)
+    rows, _ = ot.recompute_outcomes_at_current_threshold([row])
+    after = rows[0]
+
+    for field in ("actual_return", "exit_price", "entry_price", "resolved_date",
+                  "ticker", "signal_date"):
+        assert after[field] == before[field], f"{field} was modified"
+    assert after["outcome"] != before["outcome"]  # only this changed

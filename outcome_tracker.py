@@ -24,6 +24,71 @@ from datetime import datetime, timedelta
 OUTCOMES_FILE = "outcomes_log.json"
 WIN_RATE_FILE = "win_rate.json"
 
+# WIN/LOSS/FLAT classification band (FIX, 2026-07-22: widened from ±0.3% to
+# ±0.5% — derived from this dataset's own |actual_return| distribution
+# (median 2.45%, p10 0.43%) and a realistic round-trip cost estimate for a
+# mixed US/TSX large-cap book, not defaulted from NGX's ±2.0% (different
+# market/volatility/liquidity). Every classification decision in this
+# codebase reads this ONE constant via _classify_outcome() below — do not
+# hardcode ±0.3% or ±0.5% anywhere else. See tests/test_invariants.py
+# test_outcome_threshold_single_source_of_truth.
+OUTCOME_THRESHOLD_PCT   = 0.5
+OUTCOME_LEGACY_030_FIELD = "outcome_legacy_030"
+
+
+def _classify_outcome(actual_return, threshold_pct=OUTCOME_THRESHOLD_PCT):
+    """The one place WIN/LOSS/FLAT classification happens. Used by both the
+    live resolver (resolve_outcomes) and the historical recompute
+    (recompute_outcomes_at_current_threshold) — never duplicate this."""
+    if actual_return > threshold_pct:
+        return "WIN"
+    elif actual_return < -threshold_pct:
+        return "LOSS"
+    else:
+        return "FLAT"
+
+
+def recompute_outcomes_at_current_threshold(outcomes, legacy_field=OUTCOME_LEGACY_030_FIELD):
+    """
+    Pure function: recompute every resolved entry's `outcome` from its
+    already-stored `actual_return` using the CURRENT OUTCOME_THRESHOLD_PCT.
+    No price refetching, no other field touched (actual_return, exit_price,
+    entry_price, resolved_date all untouched) — only `outcome` changes.
+
+    The entry's classification at the time this first runs on it is
+    preserved in `legacy_field`, once, and never overwritten on a repeat
+    call (idempotent — running this twice in a row changes nothing the
+    second time). Deterministic: same input list always produces the same
+    output list.
+
+    Returns (outcomes, n_changed) — outcomes is mutated in place and
+    returned for convenience; n_changed is how many rows' outcome actually
+    flipped (not counting rows where recompute produced the same label).
+    """
+    n_changed = 0
+    for o in outcomes:
+        if not o.get("resolved") or o.get("actual_return") is None:
+            continue
+        if legacy_field not in o:
+            o[legacy_field] = o.get("outcome")
+        new_outcome = _classify_outcome(o["actual_return"])
+        if o.get("outcome") != new_outcome:
+            n_changed += 1
+        o["outcome"] = new_outcome
+    return outcomes, n_changed
+
+
+def apply_outcome_threshold_migration():
+    """One-time (per threshold change) migration entry point: load, recompute
+    every historical resolved entry's outcome at OUTCOME_THRESHOLD_PCT,
+    save. Not part of the daily pipeline — run manually when the threshold
+    constant changes."""
+    outcomes = load_outcomes()
+    outcomes, n_changed = recompute_outcomes_at_current_threshold(outcomes)
+    save_outcomes(outcomes)
+    return n_changed
+
+
 # ml_prob buckets — shared with ml_engine.py's score_to_kelly_wt(), which
 # imports ml_prob_bucket() below to look up this same table's win_rate/
 # avg_win/avg_loss as Kelly's live p/b (FIX, 2026-07-21: replaces score-tier
@@ -306,12 +371,7 @@ def resolve_outcomes(current_prices):
                 o["resolved"]      = True
                 o["resolved_date"] = today.isoformat()
 
-                if ret > 0.3:
-                    o["outcome"] = "WIN"
-                elif ret < -0.3:
-                    o["outcome"] = "LOSS"
-                else:
-                    o["outcome"] = "FLAT"
+                o["outcome"] = _classify_outcome(ret)
 
                 resolved += 1
 
