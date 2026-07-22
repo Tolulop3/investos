@@ -1669,7 +1669,7 @@ def run_daily(test_mode=False, dry_run=False):
             from signal_ledger import append_signals, resolve_ledger
             news_sigs = news.get("signals", []) if news else []
             append_signals(all_picks_to_log, regime=regime, news_signals=news_sigs)
-            resolve_ledger(current_prices)
+            resolve_ledger()   # read-through from outcomes_log.json — see signal_ledger.py docstring
         except Exception as _sle:
             print(f"   ⚠️  Signal ledger: {_sle}")
         win_rate = compute_win_rate()

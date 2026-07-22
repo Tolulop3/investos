@@ -16,11 +16,30 @@ signal_ledger.py adds:
   - pitch_deck_stats.json — VC due diligence reads this directly
   - Attribution stats: do ML-attributed picks outperform non-ML picks?
 
+RESOLUTION (2026-07-22 reconciliation — read outcome_tracker.py first)
+------------------------------------------------------------------------
+resolve_ledger() no longer fetches prices or decides WIN/LOSS/FLAT itself.
+Prior to this date it independently resolved against whatever ticker
+happened to reappear in a future day's top-N screener list — which meant
+losers (that don't recover into top-N) sat unresolved indefinitely while
+winners got swept up, late but resolved. Traced against outcomes_log.json:
+of 685 overlapping (ticker, signal_date) pairs, 258 were unresolved in the
+ledger but already resolved in outcomes_log — and that 258's WR was 31.4%
+(PF 0.31), far below the ledger's self-reported 63.7%. Not a timing bug —
+a survivorship-selected headline number.
+
+outcome_tracker.py / outcomes_log.json is now canonical: it actively
+fetches stale prices every run (_fetch_stale_prices) and resolves on the
+stated 7-day schedule regardless of outcome. resolve_ledger() now purely
+reads outcome_tracker's resolution, keyed on (ticker, signal_date) — see
+its docstring below. The hash chain is unaffected: resolution fields were
+already outside _entry_hash()'s scope by design.
+
 INTEGRATION (run_daily.py — already wired in)
 ----------------------------------------------
     from signal_ledger import append_signals, resolve_ledger, bake_audit_page
     append_signals(all_picks, regime=regime, news_signals=news_sigs)
-    resolve_ledger(current_prices)     # after resolve_outcomes
+    resolve_ledger()                   # after resolve_outcomes — reads outcomes_log.json
     bake_audit_page()                  # in bake step
 """
 
@@ -30,10 +49,14 @@ import hashlib
 import math
 from datetime import datetime, date
 
+import outcome_tracker
+
 LEDGER_FILE        = "signal_ledger.json"
 AUDIT_HTML         = "signal_ledger.html"
 PITCH_JSON         = "pitch_deck_stats.json"
-HOLD_DAYS_CALENDAR = 7   # matches outcome_tracker
+HOLD_DAYS_CALENDAR = 7   # matches outcome_tracker — historical constant, no longer
+                         # used to gate resolve_ledger() itself (see below), kept for
+                         # any other code that still reads it as a reference value.
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
@@ -187,48 +210,81 @@ def append_signals(picks, regime=None, news_signals=None, run_time=None):
 # STEP 2 — Resolve outcomes
 # ════════════════════════════════════════════════════════════════════════════
 
-def resolve_ledger(current_prices):
+def _hold_days(signal_date_str, resolved_date_str):
+    try:
+        sd = datetime.strptime(signal_date_str, "%Y-%m-%d").date()
+        rd = datetime.strptime(resolved_date_str, "%Y-%m-%d").date()
+        return (rd - sd).days
+    except Exception:
+        return None
+
+
+def resolve_ledger():
     """
-    Fill exit_price, actual_return, outcome for entries older than HOLD_DAYS_CALENDAR.
-    Resolution fields are outside the hash scope — doesn't break the chain.
+    Read-through resolution — reads outcome_tracker.py's outcomes_log.json
+    (the canonical resolver, see module docstring) keyed on
+    (ticker, signal_date). Does NOT fetch prices or decide WIN/LOSS/FLAT
+    itself — that would reintroduce the independent-resolver drift this
+    replaced. Call after resolve_outcomes() in the same run so
+    outcomes_log.json is current.
+
+    Resolution fields are outside _entry_hash()'s scope, so overwriting
+    them here cannot break the chain (verified before/after in the
+    2026-07-22 reconciliation — see commit message).
+
+    Any entry that already carried a resolution from the OLD independent
+    mechanism gets that original value preserved in *_ledger_legacy
+    fields before being overwritten — never deleted, only superseded.
     """
-    entries = _load_ledger()
-    today   = date.today()
+    entries  = _load_ledger()
+    outcomes = outcome_tracker.load_outcomes()
+    if not outcomes:
+        return 0
+
+    outc_by_pair = {}
+    for o in outcomes:
+        if o.get("resolved") and o.get("outcome") in ("WIN", "LOSS", "FLAT"):
+            outc_by_pair[(o.get("ticker"), o.get("signal_date"))] = o
+
     resolved_count = 0
-
     for entry in entries:
-        if entry.get("resolved"):
-            continue
-        sig_str = entry.get("signal_date", "")
-        if not sig_str:
-            continue
-        try:
-            sig_date = datetime.strptime(sig_str, "%Y-%m-%d").date()
-        except Exception:
+        key = (entry.get("ticker"), entry.get("signal_date"))
+        oe  = outc_by_pair.get(key)
+        if not oe:
+            continue   # outcomes_log hasn't resolved this pick (yet) either
+
+        already_synced = (
+            entry.get("resolved")
+            and entry.get("outcome")       == oe.get("outcome")
+            and entry.get("exit_price")    == oe.get("exit_price")
+            and entry.get("resolved_date") == oe.get("resolved_date")
+        )
+        if already_synced:
             continue
 
-        if (today - sig_date).days < HOLD_DAYS_CALENDAR:
-            continue
+        # Preserve the OLD independent-mechanism resolution, once, before
+        # overwriting — never on an entry that's already synced (that
+        # would re-stamp the same legacy value pointlessly) and never if
+        # legacy fields already exist (don't clobber the original on a
+        # later re-run).
+        if entry.get("resolved") and "outcome_ledger_legacy" not in entry:
+            entry["outcome_ledger_legacy"]       = entry.get("outcome")
+            entry["exit_price_ledger_legacy"]    = entry.get("exit_price")
+            entry["resolved_date_ledger_legacy"] = entry.get("resolved_date")
+            entry["actual_return_ledger_legacy"] = entry.get("actual_return")
 
-        ticker      = entry.get("ticker")
-        entry_price = entry.get("entry_price", 0)
-        exit_price  = current_prices.get(ticker)
-
-        if not exit_price or not entry_price or entry_price <= 0:
-            continue
-
-        ret = (exit_price - entry_price) / entry_price * 100
-        entry["exit_price"]    = round(float(exit_price), 4)
-        entry["actual_return"] = round(float(ret), 2)
-        entry["resolved_date"] = today.isoformat()
-        entry["hold_days"]     = (today - sig_date).days
-        entry["resolved"]      = True
-        entry["outcome"]       = "WIN" if ret > 0.3 else "LOSS" if ret < -0.3 else "FLAT"
+        entry["exit_price"]        = oe.get("exit_price")
+        entry["actual_return"]     = oe.get("actual_return")
+        entry["resolved_date"]     = oe.get("resolved_date")
+        entry["hold_days"]         = _hold_days(entry.get("signal_date"), oe.get("resolved_date"))
+        entry["resolved"]          = True
+        entry["outcome"]           = oe.get("outcome")
+        entry["resolution_source"] = "outcomes_log"
         resolved_count += 1
 
     if resolved_count:
         _save_ledger(entries)
-        print(f"  📒 Signal ledger: resolved {resolved_count} entries")
+        print(f"  📒 Signal ledger: {resolved_count} entries synced from outcomes_log (canonical resolver)")
 
     return resolved_count
 

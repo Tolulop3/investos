@@ -1520,3 +1520,165 @@ def test_hold_period_retention_drops_and_quarantines_foreign_ticker(monkeypatch)
     # the exchange check doesn't undermine the hold period for real tickers
     assert "LEGIT.TO" in retained
     assert "LEGIT.TO" not in dropped
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Resolver reconciliation (FIX, 2026-07-22)
+# outcome_tracker.py and signal_ledger.py used to resolve WIN/LOSS/FLAT
+# independently. Of 685 overlapping (ticker, signal_date) pairs, 37 (11.1%)
+# disagreed -- root cause: resolve_ledger() had no active stale-price fetch
+# and passively waited for a ticker to reappear in a future day's top-N
+# list, which is winner-biased (losers don't recover into top-N, so they
+# sat unresolved indefinitely: 258 ledger-unresolved pairs that outcomes_log
+# HAD resolved carried a 31.4% WR, far below the ledger's self-reported
+# 63.7%). outcome_tracker.py is now canonical (active _fetch_stale_prices()
+# fallback, resolves on the stated 7-day schedule regardless of outcome).
+# resolve_ledger() now purely reads outcome_tracker's resolution, keyed on
+# (ticker, signal_date) -- no price fetch, no independent WIN/LOSS decision.
+# Resolution fields are outside _entry_hash()'s scope, so this cannot break
+# the hash chain (verified live: 686/686 intact before AND after backfill).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _ledger_entry(ticker, signal_date, entry_price=100.0, resolved=False,
+                   outcome=None, exit_price=None, resolved_date=None):
+    return {
+        "ticker": ticker, "signal_date": signal_date,
+        "signal_time": f"{signal_date}T00:00:00", "entry_price": entry_price,
+        "score": 80.0, "ml_prob": 0.5, "category": "GROWTH CORE",
+        "regime_at_signal": "BULL", "news_active": [], "attribution": [],
+        "rs_rating": 70, "sector": "banking", "market": "US",
+        "resolved": resolved, "exit_price": exit_price, "actual_return": None,
+        "outcome": outcome, "resolved_date": resolved_date, "hold_days": None,
+        "prev_hash": "GENESIS", "entry_hash": "placeholder",
+    }
+
+
+def _outcomes_entry(ticker, signal_date, resolved=True, outcome="WIN",
+                     exit_price=110.0, resolved_date="2026-01-08",
+                     actual_return=10.0):
+    return {
+        "ticker": ticker, "signal_date": signal_date, "resolved": resolved,
+        "outcome": outcome, "exit_price": exit_price,
+        "resolved_date": resolved_date, "actual_return": actual_return,
+    }
+
+
+def test_resolve_ledger_reads_through_no_disagreement(monkeypatch):
+    """After resolve_ledger(), a ledger entry's outcome/exit_price/
+    resolved_date must exactly match outcomes_log's -- by construction,
+    since it's copied, not independently computed. Covers both a
+    previously-unresolved ledger entry (the 258 case) and a
+    previously-resolved-but-wrong one (the 37-mismatch case)."""
+    import signal_ledger as sl
+    import outcome_tracker as ot
+
+    never_resolved = _ledger_entry("AAA", "2026-01-01")  # the 258 case
+    wrongly_resolved = _ledger_entry(                     # the 37 case
+        "BBB", "2026-01-01", resolved=True, outcome="WIN",
+        exit_price=999.0, resolved_date="2026-01-20",     # stale, wrong
+    )
+    ledger = [never_resolved, wrongly_resolved]
+
+    canonical = [
+        _outcomes_entry("AAA", "2026-01-01", outcome="LOSS",
+                         exit_price=90.0, resolved_date="2026-01-08", actual_return=-10.0),
+        _outcomes_entry("BBB", "2026-01-01", outcome="LOSS",
+                         exit_price=95.0, resolved_date="2026-01-08", actual_return=-5.0),
+    ]
+
+    saved = {}
+    monkeypatch.setattr(sl, "_load_ledger", lambda: ledger)
+    monkeypatch.setattr(sl, "_save_ledger", lambda e: saved.__setitem__("ledger", e))
+    monkeypatch.setattr(ot, "load_outcomes", lambda: canonical)
+
+    n = sl.resolve_ledger()
+    assert n == 2
+    result = {e["ticker"]: e for e in saved["ledger"]}
+    expected_exit = {"AAA": 90.0, "BBB": 95.0}
+    for tkr in ("AAA", "BBB"):
+        assert result[tkr]["resolved"] is True
+        assert result[tkr]["outcome"] == "LOSS"
+        assert result[tkr]["exit_price"] == expected_exit[tkr]
+        assert result[tkr]["resolved_date"] == "2026-01-08"
+        assert result[tkr]["resolution_source"] == "outcomes_log"
+
+
+def test_resolve_ledger_preserves_legacy_fields(monkeypatch):
+    """A ledger entry with a prior (wrong, independently-computed) resolution
+    must have that original value preserved in *_ledger_legacy fields --
+    never deleted, only superseded."""
+    import signal_ledger as sl
+    import outcome_tracker as ot
+
+    old_wrong = _ledger_entry(
+        "CCC", "2026-01-01", resolved=True, outcome="WIN",
+        exit_price=999.0, resolved_date="2026-01-20",
+    )
+    old_wrong["actual_return"] = 899.0
+
+    saved = {}
+    monkeypatch.setattr(sl, "_load_ledger", lambda: [old_wrong])
+    monkeypatch.setattr(sl, "_save_ledger", lambda e: saved.__setitem__("ledger", e))
+    monkeypatch.setattr(ot, "load_outcomes", lambda: [
+        _outcomes_entry("CCC", "2026-01-01", outcome="LOSS",
+                         exit_price=95.0, resolved_date="2026-01-08", actual_return=-5.0),
+    ])
+
+    sl.resolve_ledger()
+    entry = saved["ledger"][0]
+
+    # New (canonical) values took over
+    assert entry["outcome"] == "LOSS"
+    assert entry["exit_price"] == 95.0
+
+    # Original values preserved, not deleted
+    assert entry["outcome_ledger_legacy"] == "WIN"
+    assert entry["exit_price_ledger_legacy"] == 999.0
+    assert entry["resolved_date_ledger_legacy"] == "2026-01-20"
+    assert entry["actual_return_ledger_legacy"] == 899.0
+    for legacy_field in ("outcome_ledger_legacy", "exit_price_ledger_legacy",
+                         "resolved_date_ledger_legacy", "actual_return_ledger_legacy"):
+        assert entry[legacy_field] is not None and entry[legacy_field] != ""
+
+
+def test_resolve_ledger_chain_survives_backfill(monkeypatch):
+    """Overwriting resolution fields via the read-through must never break
+    the hash chain -- resolution fields are outside _entry_hash()'s scope
+    by design. Build a real chained entry via append_signals(), then run
+    the backfill against a DIFFERENT outcome, then verify_chain()."""
+    import signal_ledger as sl
+    import outcome_tracker as ot
+
+    store: list = []
+    monkeypatch.setattr(sl, "_load_ledger", lambda: list(store))  # copy -- avoid aliasing store
+    monkeypatch.setattr(sl, "_save_ledger", lambda e: (store.clear(), store.extend(e)))
+
+    sl.append_signals(
+        [{"ticker": "DDD", "score": 80, "ml_prob": 0.6, "data": {"price": 100.0}}],
+        regime={"regime": "BULL"},
+    )
+    ok_before, _ = sl.verify_chain()
+    assert ok_before is True
+
+    monkeypatch.setattr(ot, "load_outcomes", lambda: [
+        _outcomes_entry("DDD", store[0]["signal_date"], outcome="LOSS",
+                         exit_price=90.0, resolved_date="2026-01-08", actual_return=-10.0),
+    ])
+    n = sl.resolve_ledger()
+    assert n == 1
+    assert store[0]["outcome"] == "LOSS"
+
+    ok_after, broken_idx = sl.verify_chain()
+    assert ok_after is True
+    assert broken_idx is None
+
+
+def test_resolve_ledger_no_price_fetch_in_source():
+    """resolve_ledger() must never call a price-fetch function -- that would
+    reintroduce the independent-resolver drift this replaced."""
+    import inspect
+    import signal_ledger as sl
+
+    src = inspect.getsource(sl.resolve_ledger)
+    for banned in ("yfinance", "yf.", "download", "current_prices", "_fetch_stale_prices"):
+        assert banned not in src, f"resolve_ledger() source contains '{banned}' — should be pure read-through"
