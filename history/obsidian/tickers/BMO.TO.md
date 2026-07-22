@@ -1,6 +1,6 @@
 ---
 ticker: BMO.TO
-updated: 2026-07-21
+updated: 2026-07-22
 streak_days: 7
 score_now: 98.0
 velocity: 0
