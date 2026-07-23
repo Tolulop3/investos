@@ -391,6 +391,147 @@ def test_imputation_reduces_zero_rate():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-07-23): Walk-forward split was positional, not date-based
+# Bug: train_and_save() sliced X.iloc[:int(n*0.8)] on a date-sorted, ever-growing
+# array. Every retrain, the newest ~20% of rows became "holdout" — a different
+# population each time — so AUC numbers were never comparable across retrains.
+# Fix: HOLDOUT_CUTOFF_DATE freezes the boundary by signal_date, not row position.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _synthetic_resolved_for_split_test():
+    """45 rows before HOLDOUT_CUTOFF_DATE, 5 after — deliberately NOT an 80/20
+    ratio (int(50*0.8)=40) so a positional split and a date-based split disagree."""
+    resolved = []
+    before_dates = [f"2026-05-{d:02d}" for d in range(1, 16)]   # 15 distinct days
+    after_dates  = ["2026-07-01", "2026-07-02", "2026-07-03"]
+
+    for i in range(45):
+        resolved.append({
+            "resolved": True,
+            "actual_return": 5.0 if i % 2 == 0 else -3.0,
+            "outcome": "WIN" if i % 2 == 0 else "LOSS",
+            "perf_90d": 10.0, "roe": 15.0, "profit_margin": 20.0,
+            "sector": "Technology", "regime": "BULL",
+            "signal_date": before_dates[i % len(before_dates)],
+        })
+    for i in range(5):
+        resolved.append({
+            "resolved": True,
+            "actual_return": 5.0 if i % 2 == 0 else -3.0,
+            "outcome": "WIN" if i % 2 == 0 else "LOSS",
+            "perf_90d": 10.0, "roe": 15.0, "profit_margin": 20.0,
+            "sector": "Technology", "regime": "BULL",
+            "signal_date": after_dates[i % len(after_dates)],
+        })
+    return resolved
+
+
+def test_no_signal_date_leak_across_train_holdout():
+    """No signal_date should straddle the train/holdout boundary, and every
+    date must land fully on the side its comparison to HOLDOUT_CUTOFF_DATE implies."""
+    try:
+        import numpy as np
+    except ImportError:
+        pytest.skip("numpy not available")
+
+    from ml_retrainer import build_feature_matrix, HOLDOUT_CUTOFF_DATE
+
+    resolved = _synthetic_resolved_for_split_test()
+    # Add a row dated exactly on the cutoff to exercise the boundary itself.
+    resolved.append({
+        "resolved": True, "actual_return": 5.0, "outcome": "WIN",
+        "perf_90d": 10.0, "roe": 15.0, "profit_margin": 20.0,
+        "sector": "Technology", "regime": "BULL",
+        "signal_date": HOLDOUT_CUTOFF_DATE,
+    })
+
+    X, y, w, dates = build_feature_matrix(resolved)
+    if X is None:
+        pytest.skip("Coverage gate blocked")
+
+    split = int((dates <= HOLDOUT_CUTOFF_DATE).sum())
+    train_dates, val_dates = set(dates[:split]), set(dates[split:])
+
+    assert train_dates.isdisjoint(val_dates), (
+        f"signal_date leaked across train/holdout: {train_dates & val_dates}"
+    )
+    assert all(d <= HOLDOUT_CUTOFF_DATE for d in train_dates)
+    assert all(d > HOLDOUT_CUTOFF_DATE for d in val_dates)
+    assert HOLDOUT_CUTOFF_DATE in train_dates, (
+        "a row dated exactly on the cutoff must be train, not holdout"
+    )
+
+
+def test_split_is_date_based_not_positional(monkeypatch, tmp_path):
+    """The frozen cutoff must decide train/holdout membership, not row position."""
+    try:
+        import numpy as np
+    except ImportError:
+        pytest.skip("numpy/xgboost not available")
+
+    import ml_retrainer as mr
+
+    resolved = _synthetic_resolved_for_split_test()
+    X, y, w, dates = mr.build_feature_matrix(resolved)
+    if X is None:
+        pytest.skip("Coverage gate blocked")
+
+    n = len(y)
+    n_before_cutoff = int((dates <= mr.HOLDOUT_CUTOFF_DATE).sum())
+    positional_split = int(n * 0.8)
+    assert n_before_cutoff != positional_split, (
+        "test fixture must use a ratio where date-based and positional splits "
+        "disagree, otherwise this test can't distinguish them"
+    )
+
+    monkeypatch.setattr(mr, "MODEL_CACHE", str(tmp_path / "model_cache.pkl"))
+    monkeypatch.setattr(mr, "REPORT_FILE", str(tmp_path / "report.json"))
+
+    report = mr.train_and_save(X, y, w, dates)
+    if report is None:
+        pytest.skip("Training libraries unavailable")
+
+    assert report["n_train"] == n_before_cutoff, (
+        f"split is not date-based: expected n_train={n_before_cutoff} "
+        f"(rows with signal_date <= {HOLDOUT_CUTOFF_DATE}), got {report['n_train']}"
+    )
+    assert report["n_train"] != positional_split, (
+        "split matches the OLD positional int(n*0.8) boundary — regression"
+    )
+
+
+def test_retrain_reproducible_on_unchanged_data(monkeypatch, tmp_path):
+    """Same data in, twice in a row, must yield bit-identical holdout AUC.
+    This is the actual bug: 'holdout' used to be a different row population
+    depending on when you ran it, so the AUC wasn't a stable measurement."""
+    try:
+        import numpy as np
+    except ImportError:
+        pytest.skip("numpy/xgboost not available")
+
+    import ml_retrainer as mr
+
+    resolved = _synthetic_resolved_for_split_test()
+    X, y, w, dates = mr.build_feature_matrix(resolved)
+    if X is None:
+        pytest.skip("Coverage gate blocked")
+
+    monkeypatch.setattr(mr, "MODEL_CACHE", str(tmp_path / "model_cache.pkl"))
+    monkeypatch.setattr(mr, "REPORT_FILE", str(tmp_path / "report.json"))
+
+    report1 = mr.train_and_save(X, y, w, dates)
+    report2 = mr.train_and_save(X, y, w, dates)
+    if report1 is None or report2 is None:
+        pytest.skip("Training libraries unavailable")
+
+    assert report1["n_val"] == report2["n_val"]
+    assert report1["holdout_auc"] == report2["holdout_auc"], (
+        f"holdout AUC not reproducible on unchanged data: "
+        f"{report1['holdout_auc']} != {report2['holdout_auc']}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # FIX 1 (2026-07-17): Same-day duplicate picks in outcomes_log
 # Bug: log_picks() built logged_today once from file; if the same ticker appeared
 # twice in the picks list (from two screener buckets), both got logged.

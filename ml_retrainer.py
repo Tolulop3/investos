@@ -117,6 +117,14 @@ MACRO_ENCODING = {
 }
 RETRAIN_LOCK   = "ml_last_retrain.txt"
 
+# Frozen walk-forward split boundary (Phase 1 fix, 2026-07-23): rows with
+# signal_date <= this are ALWAYS train, later dates are ALWAYS holdout. Previously
+# the split was positional (X.iloc[:int(n*0.8)]) on a growing date-sorted array, so
+# "holdout" was a different population every retrain and AUC numbers weren't
+# comparable across runs. This date must stay fixed until a deliberate re-freeze
+# (see the holdout/train ratio warning in train_and_save).
+HOLDOUT_CUTOFF_DATE = "2026-06-19"
+
 # CRITICAL: must match ML_CONFIG["features"] in ml_engine.py exactly
 # If you add features here, also add them there — and vice versa.
 FEATURES = [
@@ -393,11 +401,29 @@ def train_and_save(X, y, w, dates=None):
         print("  ⚠️  Missing libraries — cannot train.")
         return None
 
-    n     = len(y)
-    split = int(n * 0.8)
+    n = len(y)
+
+    # Frozen date-based split (not positional — see HOLDOUT_CUTOFF_DATE comment above).
+    # Rows are already sorted ascending by signal_date (build_feature_matrix), so
+    # counting dates <= cutoff gives the same prefix/suffix slicing the rest of this
+    # function expects, but the boundary no longer moves as n grows.
+    if dates is not None and len(dates) == n:
+        dates_arr = np.asarray(dates)
+        split = int((dates_arr <= HOLDOUT_CUTOFF_DATE).sum())
+    else:
+        print("  ⚠️  No signal dates available — falling back to positional 80/20 split "
+              "(NOT reproducible across runs)")
+        split = int(n * 0.8)
+
     X_train, X_val = X.iloc[:split], X.iloc[split:]
     y_train, y_val = y.iloc[:split], y.iloc[split:]
     w_train        = w[:split]
+
+    n_val = n - split
+    if split > 0 and n_val > 0.4 * split:
+        print(f"  ⚠️  Holdout ({n_val} rows) exceeds 40% of train ({split} rows) — "
+              f"consider a manual re-freeze of HOLDOUT_CUTOFF_DATE (currently "
+              f"{HOLDOUT_CUTOFF_DATE}).")
 
     # ── Purge buffer ──────────────────────────────────────────────────────
     # Labels resolve in 7 days. Purge = label horizon + 3d buffer = 10d.
@@ -558,6 +584,7 @@ def train_and_save(X, y, w, dates=None):
         "n_rows":             n,
         "n_train":            split,
         "n_val":              n - split,
+        "holdout_cutoff_date": HOLDOUT_CUTOFF_DATE,
         "holdout_auc":        round(holdout_auc, 4),
         "cv_auc_mean":        round(cv_mean, 4),
         "cv_auc_std":         round(cv_std, 4),
