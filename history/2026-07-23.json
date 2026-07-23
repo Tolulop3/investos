@@ -4,10 +4,10 @@
     "regime": "BULL",
     "signal": "FULL_EXPOSURE",
     "cash_pct": 0.0,
-    "spx_price": 7406.79,
+    "spx_price": 7408.3,
     "ma200": 7002.37,
-    "ma50": 7471.76,
-    "pct_above_ma": 5.78,
+    "ma50": 7471.79,
+    "pct_above_ma": 5.8,
     "full_exposure_pct": 100.0
   },
   "sharpe": {
@@ -24,92 +24,110 @@
   "win_rate_overall": null,
   "breadth": {
     "total_stocks": 288,
-    "above_ma50": 165,
+    "above_ma50": 167,
     "above_ma200": 215,
-    "pct_above_50": 57.3,
+    "pct_above_50": 58.0,
     "pct_above_200": 74.7,
     "signal": "BROAD_BULL",
     "note": "Rally is broad \u2014 most stocks above 200MA",
     "momentum_breadth": "NEUTRAL",
     "sector_breadth": {
-      "Technology": {
-        "pct_above_50": 37,
-        "pct_above_200": 75,
-        "count": 51
-      },
-      "Consumer Cyclical": {
-        "pct_above_50": 39,
-        "pct_above_200": 50,
-        "count": 18
-      },
       "Healthcare": {
         "pct_above_50": 77,
         "pct_above_200": 74,
         "count": 31
+      },
+      "Consumer Cyclical": {
+        "pct_above_50": 39,
+        "pct_above_200": 39,
+        "count": 18
+      },
+      "Energy": {
+        "pct_above_50": 93,
+        "pct_above_200": 93,
+        "count": 15
       },
       "Real Estate": {
         "pct_above_50": 70,
         "pct_above_200": 60,
         "count": 10
       },
+      "": {
+        "pct_above_50": 55,
+        "pct_above_200": 90,
+        "count": 49
+      },
       "Industrials": {
         "pct_above_50": 42,
         "pct_above_200": 77,
         "count": 26
       },
-      "": {
-        "pct_above_50": 53,
-        "pct_above_200": 90,
-        "count": 49
+      "Technology": {
+        "pct_above_50": 33,
+        "pct_above_200": 75,
+        "count": 51
       },
       "Financial Services": {
-        "pct_above_50": 80,
-        "pct_above_200": 78,
+        "pct_above_50": 84,
+        "pct_above_200": 80,
         "count": 49
-      },
-      "Consumer Defensive": {
-        "pct_above_50": 46,
-        "pct_above_200": 62,
-        "count": 13
       },
       "Utilities": {
         "pct_above_50": 100,
         "pct_above_200": 100,
         "count": 10
       },
-      "Basic Materials": {
-        "pct_above_50": 12,
-        "pct_above_200": 38,
-        "count": 8
-      },
       "Communication Services": {
         "pct_above_50": 12,
         "pct_above_200": 25,
         "count": 8
       },
-      "Energy": {
-        "pct_above_50": 93,
-        "pct_above_200": 93,
-        "count": 15
+      "Basic Materials": {
+        "pct_above_50": 12,
+        "pct_above_200": 38,
+        "count": 8
+      },
+      "Consumer Defensive": {
+        "pct_above_50": 54,
+        "pct_above_200": 69,
+        "count": 13
       }
     }
   },
   "sector_sentiment": {
-    "OIL": {
-      "bullish_score": 320,
-      "bearish_score": 0,
-      "net_score": 320,
-      "sentiment": "BULLISH",
+    "TSX_EXPORTERS": {
+      "bullish_score": 0,
+      "bearish_score": 350,
+      "net_score": -350,
+      "sentiment": "BEARISH",
       "signals": [
         {
-          "name": "middle_east_tension",
-          "direction": "bullish",
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
           "confidence": 100
         },
         {
-          "name": "war_escalation",
-          "direction": "bullish",
-          "confidence": 60
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "TRADE_SENSITIVE_US": {
+      "bullish_score": 0,
+      "bearish_score": 350,
+      "net_score": -350,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "trump_tariff_canada_specific",
+          "direction": "bearish",
+          "confidence": 50
         }
       ]
     },
@@ -120,10 +138,23 @@
       "sentiment": "NEUTRAL",
       "signals": [
         {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
           "name": "middle_east_tension",
           "direction": "bullish",
           "confidence": 100
-        },
+        }
+      ]
+    },
+    "CANADIAN_MATERIALS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
         {
           "name": "trump_tariff_negative",
           "direction": "bearish",
@@ -131,10 +162,36 @@
         }
       ]
     },
+    "AUTOS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "OIL": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
     "DEFENSE": {
-      "bullish_score": 437.0,
-      "bearish_score": 76.0,
-      "net_score": 360.0,
+      "bullish_score": 334.0,
+      "bearish_score": 75.0,
+      "net_score": 258.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -145,24 +202,19 @@
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 78
+          "confidence": 89
         },
         {
           "name": "peace_deal",
           "direction": "bearish",
-          "confidence": 51
-        },
-        {
-          "name": "war_escalation",
-          "direction": "bullish",
-          "confidence": 60
+          "confidence": 50
         }
       ]
     },
     "GOLD": {
-      "bullish_score": 437.0,
-      "bearish_score": 76.0,
-      "net_score": 360.0,
+      "bullish_score": 334.0,
+      "bearish_score": 75.0,
+      "net_score": 258.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -173,17 +225,12 @@
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 78
+          "confidence": 89
         },
         {
           "name": "peace_deal",
           "direction": "bearish",
-          "confidence": 51
-        },
-        {
-          "name": "war_escalation",
-          "direction": "bullish",
-          "confidence": 60
+          "confidence": 50
         }
       ]
     },
@@ -218,249 +265,177 @@
         }
       ]
     },
-    "TSX_EXPORTERS": {
-      "bullish_score": 0,
-      "bearish_score": 353,
-      "net_score": -353,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "trump_tariff_canada_specific",
-          "direction": "bearish",
-          "confidence": 51
-        }
-      ]
-    },
-    "TRADE_SENSITIVE_US": {
-      "bullish_score": 0,
-      "bearish_score": 353,
-      "net_score": -353,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "trump_tariff_canada_specific",
-          "direction": "bearish",
-          "confidence": 51
-        }
-      ]
-    },
-    "CANADIAN_MATERIALS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "AUTOS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
     "EUROPEAN_ENERGY": {
-      "bullish_score": 117.0,
+      "bullish_score": 134.0,
       "bearish_score": 0,
-      "net_score": 117.0,
+      "net_score": 134.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 78
+          "confidence": 89
         }
       ]
     },
     "AGRICULTURE": {
-      "bullish_score": 117.0,
+      "bullish_score": 134.0,
       "bearish_score": 0,
-      "net_score": 117.0,
+      "net_score": 134.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 78
+          "confidence": 89
         }
       ]
     },
     "EUROPEAN_STOCKS": {
       "bullish_score": 0,
-      "bearish_score": 117.0,
-      "net_score": -117.0,
+      "bearish_score": 134.0,
+      "net_score": -134.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bearish",
-          "confidence": 78
+          "confidence": 89
         }
       ]
     },
     "NATURAL_GAS": {
       "bullish_score": 0,
-      "bearish_score": 117.0,
-      "net_score": -117.0,
+      "bearish_score": 134.0,
+      "net_score": -134.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bearish",
-          "confidence": 78
+          "confidence": 89
         }
       ]
     },
     "TRAVEL": {
-      "bullish_score": 76.0,
-      "bearish_score": 320,
-      "net_score": -244.0,
+      "bullish_score": 75.0,
+      "bearish_score": 200,
+      "net_score": -125.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "peace_deal",
           "direction": "bullish",
-          "confidence": 51
+          "confidence": 50
         },
         {
           "name": "health_outbreak",
           "direction": "bearish",
           "confidence": 100
-        },
-        {
-          "name": "war_escalation",
-          "direction": "bearish",
-          "confidence": 60
         }
       ]
     },
     "CONSUMER": {
-      "bullish_score": 76.0,
+      "bullish_score": 75.0,
       "bearish_score": 0,
-      "net_score": 76.0,
+      "net_score": 75.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "peace_deal",
           "direction": "bullish",
-          "confidence": 51
+          "confidence": 50
         }
       ]
     },
     "EMERGING_MARKETS": {
-      "bullish_score": 76.0,
-      "bearish_score": 120,
-      "net_score": -44.0,
-      "sentiment": "NEUTRAL",
+      "bullish_score": 75.0,
+      "bearish_score": 0,
+      "net_score": 75.0,
+      "sentiment": "BULLISH",
       "signals": [
         {
           "name": "peace_deal",
           "direction": "bullish",
-          "confidence": 51
-        },
-        {
-          "name": "war_escalation",
-          "direction": "bearish",
-          "confidence": 60
+          "confidence": 50
         }
       ]
     },
     "INDUSTRIALS": {
-      "bullish_score": 76.0,
+      "bullish_score": 75.0,
       "bearish_score": 0,
-      "net_score": 76.0,
+      "net_score": 75.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "peace_deal",
           "direction": "bullish",
-          "confidence": 51
+          "confidence": 50
         }
       ]
     },
     "US_DEFENSE": {
-      "bullish_score": 153,
+      "bullish_score": 150,
       "bearish_score": 0,
-      "net_score": 153,
+      "net_score": 150,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "trump_tariff_canada_specific",
           "direction": "bullish",
-          "confidence": 51
+          "confidence": 50
         }
       ]
     },
     "US_DOMESTIC": {
-      "bullish_score": 153,
+      "bullish_score": 150,
       "bearish_score": 0,
-      "net_score": 153,
+      "net_score": 150,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "trump_tariff_canada_specific",
           "direction": "bullish",
-          "confidence": 51
+          "confidence": 50
         }
       ]
     },
     "TSX_MATERIALS": {
       "bullish_score": 0,
-      "bearish_score": 153,
-      "net_score": -153,
+      "bearish_score": 150,
+      "net_score": -150,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "trump_tariff_canada_specific",
           "direction": "bearish",
-          "confidence": 51
+          "confidence": 50
         }
       ]
     },
     "TSX_ENERGY": {
       "bullish_score": 0,
-      "bearish_score": 153,
-      "net_score": -153,
+      "bearish_score": 150,
+      "net_score": -150,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "trump_tariff_canada_specific",
           "direction": "bearish",
-          "confidence": 51
+          "confidence": 50
         }
       ]
     },
     "TSX_AUTOS": {
       "bullish_score": 0,
-      "bearish_score": 153,
-      "net_score": -153,
+      "bearish_score": 150,
+      "net_score": -150,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "trump_tariff_canada_specific",
           "direction": "bearish",
-          "confidence": 51
+          "confidence": 50
         }
       ]
     },
@@ -567,32 +542,6 @@
           "confidence": 100
         }
       ]
-    },
-    "CYBERSECURITY": {
-      "bullish_score": 120,
-      "bearish_score": 0,
-      "net_score": 120,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "war_escalation",
-          "direction": "bullish",
-          "confidence": 60
-        }
-      ]
-    },
-    "CONSUMER_DISCRETIONARY": {
-      "bullish_score": 0,
-      "bearish_score": 120,
-      "net_score": -120,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "war_escalation",
-          "direction": "bearish",
-          "confidence": 60
-        }
-      ]
     }
   },
   "system_exposure": {
@@ -624,17 +573,17 @@
       "score": 100,
       "data": {
         "ticker": "BNY",
-        "price": 159.76,
-        "day_chg_pct": -0.39,
-        "perf_30d": 8.47,
-        "perf_90d": 16.3,
+        "price": 160.11,
+        "day_chg_pct": -0.17,
+        "perf_30d": 8.7,
+        "perf_90d": 16.55,
         "w52_high": 163.77,
         "w52_low": 98.4,
-        "drawdown_high": -2.45,
-        "recovery_pct": 62.36,
-        "avg_volume": 4520147,
+        "drawdown_high": -2.23,
+        "recovery_pct": 62.71,
+        "avg_volume": 4627168,
         "volatility": 1.11,
-        "rsi_approx": 70.1,
+        "rsi_approx": 70.8,
         "div_yield": 1.38,
         "div_rate": 2.22,
         "ex_div_date": "Jul 27, 2026",
@@ -648,13 +597,13 @@
         "roe": 14.1,
         "current_ratio": null,
         "target_price": 166.57,
-        "upside_target": 4.3,
+        "upside_target": 4.0,
         "analyst_rec": "buy",
         "sector": "Financial Services",
         "industry": "Banks - Diversified",
         "next_earnings": "N/A",
         "short_pct_float": 0.0,
-        "vol_accum_score": 3,
+        "vol_accum_score": 0,
         "earnings_surprise_pct": null,
         "status": "ok",
         "closes_30d": [
@@ -687,9 +636,9 @@
           156.93,
           158.89,
           160.39,
-          159.765
+          160.11
         ],
-        "pct_from_20d_high": -1.59,
+        "pct_from_20d_high": -1.38,
         "above_ma50": true,
         "above_ma200": true
       },
@@ -699,18 +648,18 @@
         "growth": 9.6,
         "value": 11.2,
         "safety": 23.4,
-        "volume_liquidity": 10.0
+        "volume_liquidity": 8.0
       },
       "reasons": [
-        "\ud83d\udcc8 Good 90d: +16.3%",
-        "\ud83d\udcc8 30d momentum: +8.47%",
-        "\ud83d\udcc9 Pullback entry: -1.6% from 20d high (trend intact)",
+        "\ud83d\udcc8 Good 90d: +16.55%",
+        "\ud83d\udcc8 30d momentum: +8.7%",
+        "\ud83d\udcc9 Pullback entry: -1.4% from 20d high (trend intact)",
         "\ud83d\udcb0 Dividend: 1.38%",
         "\ud83d\udcc5 Ex-div in 3 days \u2014 collect soon!",
         "\ud83d\udcca Earnings growth: +26.9%",
         "\ud83d\udcca Good liquidity",
         "\u2705 Analyst consensus: buy",
-        "\ud83d\udcaa RS Rating: 74 \u2014 \ud83d\udcca ABOVE AVERAGE"
+        "\ud83d\udcaa RS Rating: 73 \u2014 \ud83d\udcca ABOVE AVERAGE"
       ],
       "flags": [],
       "pick": {
@@ -721,9 +670,9 @@
         "risk_label": "LOW",
         "amount": 0.39,
         "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 23d old (earnings t\u00bd=30d) \u221210pts",
-        "exit_note": "FHSA stop: $134.2 (16% rule). Review if drawdown hits 12%.",
-        "exp_low": 13.0,
-        "exp_high": 48.9,
+        "exit_note": "FHSA stop: $134.49 (16% rule). Review if drawdown hits 12%.",
+        "exp_low": 13.2,
+        "exp_high": 49.7,
         "exp_prob": 68,
         "options_eligible": false,
         "suggested_play": "none",
@@ -733,12 +682,12 @@
       },
       "sector": "FINANCIALS",
       "sector_canonical": "FINANCIALS",
-      "ml_prob": 0.6991,
-      "ml_prob_raw": 0.6915,
-      "ml_prob_xgb": 0.6915,
+      "ml_prob": 0.696,
+      "ml_prob_raw": 0.6913,
+      "ml_prob_xgb": 0.6913,
       "ml_prob_source": "model",
       "ml_signal": "\u2705 BUY",
-      "rs_rating": 74,
+      "rs_rating": 73,
       "rs_signal": "\ud83d\udcca ABOVE AVERAGE",
       "rs_adj": 5,
       "score_velocity": 0.5703703703703705,
@@ -748,7 +697,7 @@
       "signal_age_note": "\u23f3 23d old (earnings t\u00bd=30d) \u221210pts",
       "stale_label": "STALE",
       "conviction_signals": [
-        "\ud83d\udcaa RS 74",
+        "\ud83d\udcaa RS 73",
         "\ud83e\udd16 ML Score 70%"
       ],
       "conviction_boost": 12,
@@ -774,27 +723,27 @@
     {
       "ticker": "ARKG",
       "score": 74.8,
-      "ret_90": 46.4
-    },
-    {
-      "ticker": "CIBR",
-      "score": 70.1,
-      "ret_90": 36.7
+      "ret_90": 46.2
     },
     {
       "ticker": "ITA",
       "score": 65.7,
-      "ret_90": 2.4
+      "ret_90": 2.5
     },
     {
       "ticker": "PPA",
       "score": 65.2,
-      "ret_90": -0.7
+      "ret_90": -0.5
     },
     {
       "ticker": "XEG.TO",
-      "score": 63.3,
-      "ret_90": 9.0
+      "score": 58.3,
+      "ret_90": 9.1
+    },
+    {
+      "ticker": "QQQ",
+      "score": 56.0,
+      "ret_90": 15.5
     }
   ],
   "macro_signals": []
