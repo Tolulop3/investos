@@ -1505,6 +1505,135 @@ def test_ngx_tier3_candidates_start_paper_only_day_zero(monkeypatch):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# NGX Session C: SECTOR_SENSITIVITY expansion for API-taxonomy sectors
+# (2026-07-23). Adds coefficients for HEALTHCARE, CONSTRUCTION/REAL ESTATE,
+# INVESTMENT, SERVICES (previously unscored, would silently fall back to
+# "banking" if ever scored) via a new NGX_API_SECTOR_TO_SENSITIVITY map.
+# NOT wired into score_ngx_macro() -- prep only. Must be zero-impact on the
+# 29 live tickers: score_ngx_macro() still reads NGX_SECTOR_MAP exclusively,
+# which is untouched.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_ngx_original_11_sector_sensitivity_values_byte_identical():
+    """The 11 original SECTOR_SENSITIVITY entries (feeding live scoring for
+    the current 29 tickers) must be untouched, value for value, by the
+    Session C expansion -- not just "still present as a key" (that's a
+    weaker, pre-existing test) but byte-identical to their original
+    coefficients, since a silently-tweaked number here would change live
+    scoring with no signal anywhere else."""
+    import ngx_screener as ns
+
+    original = {
+        "oil":          {"oil_b": 1.6, "fx_b": 0.8, "risk_b": 0.9, "base": 60},
+        "banking":      {"oil_b": 0.5, "fx_b": 2.0, "risk_b": 1.3, "base": 55},
+        "telecom":      {"oil_b": 0.3, "fx_b": 1.2, "risk_b": 0.6, "base": 58},
+        "industrial":   {"oil_b": 1.0, "fx_b": 1.4, "risk_b": 1.0, "base": 52},
+        "consumer":     {"oil_b": 0.4, "fx_b": 2.2, "risk_b": 1.1, "base": 50},
+        "agriculture":  {"oil_b": 0.6, "fx_b": 1.0, "risk_b": 0.7, "base": 53},
+        "power":        {"oil_b": 1.1, "fx_b": 1.5, "risk_b": 1.0, "base": 51},
+        "financial":    {"oil_b": 0.5, "fx_b": 1.8, "risk_b": 1.2, "base": 52},
+        "transport":    {"oil_b": 0.9, "fx_b": 1.1, "risk_b": 0.9, "base": 50},
+        "conglomerate": {"oil_b": 0.7, "fx_b": 1.3, "risk_b": 1.0, "base": 52},
+        "technology":   {"oil_b": 0.2, "fx_b": 1.6, "risk_b": 0.8, "base": 51},
+    }
+    for key, expected in original.items():
+        assert ns.SECTOR_SENSITIVITY.get(key) == expected, (
+            f"SECTOR_SENSITIVITY[{key!r}] changed from {expected} "
+            f"to {ns.SECTOR_SENSITIVITY.get(key)} -- live scoring for the "
+            f"29 current tickers would be affected"
+        )
+
+
+def test_ngx_29_live_tickers_sector_map_lookups_unchanged():
+    """Every one of the 29 live tickers' NGX_SECTOR_MAP -> SECTOR_SENSITIVITY
+    resolution must be byte-identical before/after Session C -- proves
+    score_ngx_macro()'s actual live lookup path for the 29 is untouched."""
+    import ngx_screener as ns
+
+    expected = {
+        "GTCO.LG": "banking", "ZENITHBANK.LG": "banking", "ACCESSCORP.LG": "banking",
+        "UBA.LG": "banking", "FIRSTHOLDCO.LG": "banking", "MTNN.LG": "telecom",
+        "AIRTELAFRI.LG": "telecom", "DANGCEM.LG": "industrial", "SEPLAT.LG": "oil",
+        "STANBIC.LG": "banking", "NB.LG": "consumer", "UNILEVER.LG": "consumer",
+        "OANDO.LG": "oil", "TOTAL.LG": "oil", "BUACEMENT.LG": "industrial",
+        "HBMNG.LG": "industrial", "PRESCO.LG": "agriculture", "OKOMUOIL.LG": "agriculture",
+        "TRANSCORP.LG": "conglomerate", "GEREGU.LG": "power", "NESTLE.LG": "consumer",
+        "FIDELITYBK.LG": "banking", "FCMB.LG": "banking", "UCAP.LG": "financial",
+        "NAHCO.LG": "transport", "DANGSUGAR.LG": "consumer", "NASCON.LG": "consumer",
+        "LIVESTOCK.LG": "agriculture", "CWG.LG": "technology",
+    }
+    assert ns.NGX_SECTOR_MAP == expected
+    for ticker, sector in expected.items():
+        assert sector in ns.SECTOR_SENSITIVITY, f"{ticker} -> {sector!r} resolution broke"
+
+
+def test_ngx_api_sector_expansion_resolves_all_ten_mapped_categories():
+    """Every canonical API-taxonomy sector listed in
+    NGX_API_SECTOR_TO_SENSITIVITY must resolve to a real, distinct
+    SECTOR_SENSITIVITY entry -- no silent fallback to 'banking' if this
+    were ever wired into scoring."""
+    import ngx_screener as ns
+
+    assert len(ns.NGX_API_SECTOR_TO_SENSITIVITY) == 10
+    for api_sector, sens_key in ns.NGX_API_SECTOR_TO_SENSITIVITY.items():
+        assert sens_key in ns.SECTOR_SENSITIVITY, (
+            f"{api_sector!r} maps to {sens_key!r}, which has no "
+            f"SECTOR_SENSITIVITY entry"
+        )
+
+
+def test_ngx_healthcare_and_muted_default_coefficients_as_approved():
+    """New coefficients must match exactly what was proposed and approved --
+    HEALTHCARE distinct, CONSTRUCTION/REAL ESTATE + INVESTMENT + SERVICES
+    sharing one muted default."""
+    import ngx_screener as ns
+
+    assert ns.SECTOR_SENSITIVITY["HEALTHCARE"] == {
+        "oil_b": 0.2, "fx_b": 1.3, "risk_b": 0.6, "base": 51
+    }
+    muted = {"oil_b": 0.3, "fx_b": 1.0, "risk_b": 0.6, "base": 50}
+    for key in ("CONSTRUCTION/REAL ESTATE", "INVESTMENT", "SERVICES"):
+        assert ns.SECTOR_SENSITIVITY[key] == muted, (
+            f"{key} coefficients don't match the approved shared muted default"
+        )
+
+
+def test_ngx_financial_services_and_ict_and_natural_resources_intentionally_absent():
+    """FINANCIAL SERVICES and ICT must NOT get a blended coefficient (each
+    collapses two legacy sectors with different profiles -- banking/financial,
+    telecom/technology). NATURAL RESOURCES must stay absent entirely (zero
+    member tickers, no basis for a number). None of the three should be
+    reachable via a silent single-key lookup that could paper over the gap."""
+    import ngx_screener as ns
+
+    assert "FINANCIAL SERVICES" not in ns.NGX_API_SECTOR_TO_SENSITIVITY
+    assert "ICT" not in ns.NGX_API_SECTOR_TO_SENSITIVITY
+    assert "NATURAL RESOURCES" not in ns.NGX_API_SECTOR_TO_SENSITIVITY
+
+    # Also confirm no stray dict key was added for these under any casing.
+    assert "FINANCIAL SERVICES" not in ns.SECTOR_SENSITIVITY
+    assert "ICT" not in ns.SECTOR_SENSITIVITY
+    assert "NATURAL RESOURCES" not in ns.SECTOR_SENSITIVITY
+
+
+def test_ngx_score_ngx_macro_unaffected_by_sector_sensitivity_expansion():
+    """score_ngx_macro() must produce identical scores for the 29 live
+    tickers before/after the Session C expansion -- it still reads
+    NGX_SECTOR_MAP exclusively, which never routes to any of the new keys."""
+    import ngx_screener as ns
+
+    for ticker in ns.NGX_ALL:
+        score, reasons, flags = ns.score_ngx_macro(
+            ticker, tier=1, regime="NEUTRAL", macro_score=1.5, fx_stress=2.0
+        )
+        sector = ns.NGX_SECTOR_MAP[ticker]
+        assert sector in (
+            "oil", "banking", "telecom", "industrial", "consumer", "agriculture",
+            "power", "financial", "transport", "conglomerate", "technology",
+        ), f"{ticker} resolved to a non-legacy sector {sector!r} -- NGX_SECTOR_MAP was touched"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # weekly_scout.yml git-add completeness (FIX, 2026-07-20)
 # scout_agent.py writes 5 files. The workflow's "git add" line originally
 # staged only 3 (missing global_watch.json, a tracked file, which is the

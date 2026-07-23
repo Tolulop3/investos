@@ -150,6 +150,10 @@ NGX_API_SECTOR_MAP = {
 }
 
 # oil_b=oil beta, fx_b=FX sensitivity, risk_b=regime sensitivity, base=neutral score
+#
+# The 11 entries below are the ORIGINAL live-scoring set for the current 29 tickers
+# (keyed by NGX_SECTOR_MAP's lowercase labels) — untouched by the NGX Session C
+# sector expansion below.
 SECTOR_SENSITIVITY = {
     "oil":         {"oil_b": 1.6,  "fx_b": 0.8,  "risk_b": 0.9,  "base": 60},
     "banking":     {"oil_b": 0.5,  "fx_b": 2.0,  "risk_b": 1.3,  "base": 55},
@@ -162,6 +166,82 @@ SECTOR_SENSITIVITY = {
     "transport":   {"oil_b": 0.9,  "fx_b": 1.1,  "risk_b": 0.9,  "base": 50},
     "conglomerate":{"oil_b": 0.7,  "fx_b": 1.3,  "risk_b": 1.0,  "base": 52},
     "technology":  {"oil_b": 0.2,  "fx_b": 1.6,  "risk_b": 0.8,  "base": 51},
+
+    # ── NGX Session C: coefficients for API-taxonomy sectors with no legacy
+    # equivalent, added for the 56-ticker universe expansion. NOT wired into
+    # score_ngx_macro() yet — that still reads NGX_SECTOR_MAP exclusively, so
+    # this addition changes zero live scoring for the current 29 tickers.
+    # These candidates are PAPER_ONLY under the per-ticker validation clock for
+    # 30-60+ days; no urgency to wire them in before they accumulate real
+    # resolved-outcome history of their own.
+    #
+    # HEALTHCARE: directionally-informed, not backtested. Nigerian pharma
+    # manufacturers (FIDSON, MAYBAKER, MECURE, NEIMETH) import most active
+    # pharmaceutical ingredients in USD, so fx_b sits above the muted floor —
+    # but demand is inelastic/defensive (people need medicine regardless of
+    # the macro cycle), so risk_b stays at the table's defensive floor, same
+    # as telecom. No direct oil-price channel, so oil_b matches technology's
+    # floor.
+    "HEALTHCARE": {"oil_b": 0.2, "fx_b": 1.3, "risk_b": 0.6, "base": 51},
+
+    # Shared muted default: CONSTRUCTION/REAL ESTATE, INVESTMENT, SERVICES.
+    # No sector-specific conviction for any of these three — each is either
+    # internally heterogeneous (CONSTRUCTION/REAL ESTATE mixes construction
+    # contractors like JBERGER with income-focused REITs like NIDF/NREIT/
+    # UPDCREIT; SERVICES mixes aviation handling, hotels, and logistics) or
+    # too thin to generalize from (INVESTMENT has exactly one ticker,
+    # VFDGROUP). Sits at or below the table's floor on every coefficient —
+    # damped macro-adjustment until each sector earns real coefficients from
+    # its own resolved-outcome history, same posture as PAPER_ONLY gating for
+    # new tickers.
+    "CONSTRUCTION/REAL ESTATE": {"oil_b": 0.3, "fx_b": 1.0, "risk_b": 0.6, "base": 50},
+    "INVESTMENT":               {"oil_b": 0.3, "fx_b": 1.0, "risk_b": 0.6, "base": 50},
+    "SERVICES":                 {"oil_b": 0.3, "fx_b": 1.0, "risk_b": 0.6, "base": 50},
+
+    # FINANCIAL SERVICES and ICT are DELIBERATELY absent. Each collapses two
+    # legacy sectors with genuinely different coefficients (banking vs.
+    # financial; telecom vs. technology) — inventing a single blended number
+    # would wash out a real distinction. When the ticker-level bridge is
+    # built (see NGX_API_SECTOR_TO_SENSITIVITY note below), each ticker in
+    # these two API categories should route to the more granular legacy key
+    # by the same kind of per-ticker judgment NGX_SECTOR_MAP already uses.
+    #
+    # NATURAL RESOURCES is DELIBERATELY absent. Zero of the 85 tracked
+    # tickers are tagged this way today (JAPAULGOLD, the one plausible
+    # candidate, is currently tagged OIL AND GAS in NGX_API_SECTOR_MAP —
+    # separate pre-existing data point, not fixed here, out of scope for
+    # this session). No basis for a coefficient with zero member tickers.
+    # If a ticker is ever tagged NATURAL RESOURCES before real coefficients
+    # exist, use the shared muted default above explicitly — do not let it
+    # fall through to score_ngx_macro()'s "banking" fallback, which was
+    # calibrated for a sector this has nothing to do with.
+}
+
+# Canonical API-sector (NGX_API_SECTOR_MAP value) → SECTOR_SENSITIVITY key.
+# Only categories that resolve to exactly ONE coefficient set are listed.
+# FINANCIAL SERVICES and ICT are intentionally excluded — they need
+# per-ticker resolution to the granular legacy key, not a single lookup here.
+# NATURAL RESOURCES is intentionally excluded — no member tickers, no
+# coefficients; see comment above.
+#
+# NOT wired into score_ngx_macro() or NGX_SECTOR_MAP. This is prep only —
+# the actual next NGX task is building a per-ticker map from each of the 56
+# NGX_TIER3_CANDIDATES to one of the existing granular SECTOR_SENSITIVITY
+# keys (an NGX_SECTOR_MAP-equivalent for the expansion tickers), the same
+# way NGX_SECTOR_MAP does today for the current 29. That bridge is NOT built
+# in this session — this mapping only proves coefficients exist to route to
+# once it is.
+NGX_API_SECTOR_TO_SENSITIVITY = {
+    "AGRICULTURE":              "agriculture",
+    "CONGLOMERATES":            "conglomerate",
+    "CONSUMER GOODS":           "consumer",
+    "INDUSTRIAL GOODS":         "industrial",
+    "OIL AND GAS":              "oil",
+    "UTILITIES":                "power",
+    "HEALTHCARE":               "HEALTHCARE",
+    "CONSTRUCTION/REAL ESTATE": "CONSTRUCTION/REAL ESTATE",
+    "INVESTMENT":               "INVESTMENT",
+    "SERVICES":                 "SERVICES",
 }
 
 
