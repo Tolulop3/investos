@@ -35,10 +35,10 @@ tags: [investos, patterns, weekly]
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
-| BNY | 🟡 WATCH | 5d | — | — |
 | BMO.TO | 🟡 WATCH | 5d | — | — |
-| NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| BNY | 🟡 WATCH | 5d | — | — |
 | ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
+| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | BB.TO | 🔴 AVOID | 0d | -8.5 | — |
 
