@@ -72,6 +72,56 @@ NGX_SECTOR_MAP = {
     "UCAP.LG": "financial",    "NAHCO.LG": "transport",
     "DANGSUGAR.LG": "consumer","NASCON.LG": "consumer",
     "LIVESTOCK.LG": "agriculture","CWG.LG": "technology",
+
+    # ── NGX Session D: ticker-to-sector bridge for the 56 PAPER_ONLY
+    # candidates (NGX_TIER3_CANDIDATES), added 2026-07-23. These tickers are
+    # NOT in NGX_ALL / main scoring rotation -- adding them here only means
+    # score_ngx_macro() resolves a real sector if ever called for one of
+    # them; it does not put them into live scoring (that's gated separately
+    # by NGX_ALL membership, untouched). The 29 entries above are unchanged.
+    #
+    # Mechanical (36): NGX_API_SECTOR_MAP category maps unambiguously to one
+    # existing legacy key -- no judgment call.
+    "ARADEL.LG": "oil", "CONOIL.LG": "oil", "ETERNA.LG": "oil", "JAPAULGOLD.LG": "oil",
+    "BERGER.LG": "industrial", "BETAGLAS.LG": "industrial", "CAP.LG": "industrial",
+    "BUAFOODS.LG": "consumer", "CADBURY.LG": "consumer", "CHAMPION.LG": "consumer",
+    "GUINNESS.LG": "consumer", "HONYFLOUR.LG": "consumer", "INTBREW.LG": "consumer",
+    "PZ.LG": "consumer", "VITAFOAM.LG": "consumer",
+    "CUSTODIAN.LG": "conglomerate", "UACN.LG": "conglomerate",
+    "ELLAHLAKES.LG": "agriculture", "FTNCOCOA.LG": "agriculture", "ZICHIS.LG": "agriculture",
+    "FIDSON.LG": "HEALTHCARE", "MAYBAKER.LG": "HEALTHCARE",
+    "MECURE.LG": "HEALTHCARE", "NEIMETH.LG": "HEALTHCARE",
+    "JBERGER.LG": "CONSTRUCTION/REAL ESTATE", "NIDF.LG": "CONSTRUCTION/REAL ESTATE",
+    "NREIT.LG": "CONSTRUCTION/REAL ESTATE", "UPDC.LG": "CONSTRUCTION/REAL ESTATE",
+    "UPDCREIT.LG": "CONSTRUCTION/REAL ESTATE",
+    "VFDGROUP.LG": "INVESTMENT",
+    "EUNISELL.LG": "SERVICES", "IKEJAHOTEL.LG": "SERVICES", "SKYAVN.LG": "SERVICES",
+    "TIP.LG": "SERVICES", "TRANSCOHOT.LG": "SERVICES",
+    "TRANSPOWER.LG": "power",
+
+    # Judgment (14): FINANCIAL SERVICES / ICT tickers assigned to the more
+    # granular legacy key by per-ticker evidence (see Session D proposal for
+    # full reasoning). Tier A = confirmed via ngx_api_debug.json's real
+    # sub_sector field. Tier B = ticker-symbol substring or brand evidence.
+    "ETI.LG": "banking", "WEMABANK.LG": "banking",                 # Tier A: sub_sector="Banking"
+    "STERLINGNG.LG": "banking", "JAIZBANK.LG": "banking",          # Tier A: sub_sector="Banking"
+    "NGXGROUP.LG": "financial",     # Tier A: sub_sector="Other Financial Institutions"
+    "AIICO.LG": "financial",        # Tier A: sub_sector="Insurance Carriers..."
+    "LINKASSURE.LG": "financial",   # Tier B: "ASSURE" in ticker
+    "SOVRENINS.LG": "financial",    # Tier B: "INS" suffix in ticker
+    "NEM.LG": "financial",          # Tier B: ticker is the insurer's own brand initials
+    "NPFMCRFBK.LG": "banking",      # Tier B: ticker spells out "microfinance bank"
+    "MANSARD.LG": "financial",      # Tier B: brand recognition (AXA Mansard Insurance)
+    "CORNERST.LG": "financial",     # Tier B: brand recognition (Cornerstone Insurance)
+    "WAPIC.LG": "financial",        # Tier B: brand recognition (Wapic Insurance)
+    "ETRANZACT.LG": "technology",   # Tier B: payments-switching fintech, not a telecom carrier
+
+    # Tier C (6): no local corroboration for any of these -- muted default
+    # (SERVICES) rather than a forced banking/financial or telecom/technology
+    # guess. CHAMS flagged as the one worth a real lookup in a future
+    # session if it's worth resolving properly; not done here.
+    "ABBEYBDS.LG": "SERVICES", "INFINITY.LG": "SERVICES", "AFRIPRUD.LG": "SERVICES",
+    "CONHALLPLC.LG": "SERVICES", "MBENEFIT.LG": "SERVICES", "CHAMS.LG": "SERVICES",
 }
 
 # ── NGX universe expansion (Session B, Part 2) ───────────────────────────────

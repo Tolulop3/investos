@@ -1460,14 +1460,15 @@ def test_ngx_api_sector_map_covers_all_85_no_more_no_less():
 
 
 def test_ngx_sector_map_unchanged_and_still_resolves_to_sensitivity():
-    """NGX_SECTOR_MAP (the OLD taxonomy that actually feeds live scoring)
-    must be untouched by the Part 2 sector-map work: still exactly the
-    current 29 tickers, and every value must still be a real key in
-    SECTOR_SENSITIVITY -- proving score_ngx_macro() never silently falls
-    back to the "banking" default for any current ticker."""
+    """NGX_SECTOR_MAP must still contain every one of the current 29 live
+    tickers (Session D legitimately extended it with the 56 candidates, so
+    it's no longer exactly 29 -- superset, not equality), and every value,
+    live or candidate, must still be a real key in SECTOR_SENSITIVITY --
+    proving score_ngx_macro() never silently falls back to the 'banking'
+    default for any ticker with a NGX_SECTOR_MAP entry."""
     import ngx_screener as ns
 
-    assert set(ns.NGX_SECTOR_MAP.keys()) == set(ns.NGX_ALL)
+    assert set(ns.NGX_ALL).issubset(set(ns.NGX_SECTOR_MAP.keys()))
     for ticker, sector in ns.NGX_SECTOR_MAP.items():
         assert sector in ns.SECTOR_SENSITIVITY, (
             f"{ticker} -> {sector!r} has no SECTOR_SENSITIVITY entry, "
@@ -1546,8 +1547,10 @@ def test_ngx_original_11_sector_sensitivity_values_byte_identical():
 
 def test_ngx_29_live_tickers_sector_map_lookups_unchanged():
     """Every one of the 29 live tickers' NGX_SECTOR_MAP -> SECTOR_SENSITIVITY
-    resolution must be byte-identical before/after Session C -- proves
-    score_ngx_macro()'s actual live lookup path for the 29 is untouched."""
+    resolution must be byte-identical before/after Session C and D -- proves
+    score_ngx_macro()'s actual live lookup path for the 29 is untouched.
+    NGX_SECTOR_MAP legitimately grew to 85 keys in Session D, so this checks
+    the 29 are present and unchanged (subset), not exact dict equality."""
     import ngx_screener as ns
 
     expected = {
@@ -1562,8 +1565,10 @@ def test_ngx_29_live_tickers_sector_map_lookups_unchanged():
         "NAHCO.LG": "transport", "DANGSUGAR.LG": "consumer", "NASCON.LG": "consumer",
         "LIVESTOCK.LG": "agriculture", "CWG.LG": "technology",
     }
-    assert ns.NGX_SECTOR_MAP == expected
     for ticker, sector in expected.items():
+        assert ns.NGX_SECTOR_MAP.get(ticker) == sector, (
+            f"{ticker}: expected {sector!r}, got {ns.NGX_SECTOR_MAP.get(ticker)!r}"
+        )
         assert sector in ns.SECTOR_SENSITIVITY, f"{ticker} -> {sector!r} resolution broke"
 
 
@@ -1631,6 +1636,133 @@ def test_ngx_score_ngx_macro_unaffected_by_sector_sensitivity_expansion():
             "oil", "banking", "telecom", "industrial", "consumer", "agriculture",
             "power", "financial", "transport", "conglomerate", "technology",
         ), f"{ticker} resolved to a non-legacy sector {sector!r} -- NGX_SECTOR_MAP was touched"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NGX Session D: ticker-to-sector bridge for the 56 PAPER_ONLY candidates
+# (2026-07-23). Extends NGX_SECTOR_MAP with the 56 NGX_TIER3_CANDIDATES
+# tickers, each assigned to a granular legacy SECTOR_SENSITIVITY key (36
+# mechanical from NGX_API_SECTOR_MAP, 14 judgment calls for FINANCIAL
+# SERVICES/ICT tickers, 6 muted-default where no local corroboration
+# existed). Does NOT add these tickers to NGX_ALL / live scoring rotation --
+# that's a separate, still-unmade decision.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_ngx_all_56_candidates_resolve_to_sector_map_entry():
+    """Every one of the 56 NGX_TIER3_CANDIDATES must have a real
+    NGX_SECTOR_MAP entry -- no more silent 'banking' default by ticker-
+    lookup miss if score_ngx_macro() is ever called for one of them."""
+    import ngx_screener as ns
+
+    assert len(ns.NGX_SECTOR_MAP) == 85
+    for ticker in ns.NGX_TIER3_CANDIDATES:
+        assert ticker in ns.NGX_SECTOR_MAP, f"{ticker} has no NGX_SECTOR_MAP entry"
+
+
+def test_ngx_all_56_candidate_sectors_are_real_sensitivity_keys():
+    """Every sector value assigned to the 56 candidates must be a real key
+    in SECTOR_SENSITIVITY -- not None, not a typo, not silently falling
+    through to score_ngx_macro()'s 'banking' fallback."""
+    import ngx_screener as ns
+
+    for ticker in ns.NGX_TIER3_CANDIDATES:
+        sector = ns.NGX_SECTOR_MAP.get(ticker)
+        assert sector in ns.SECTOR_SENSITIVITY, (
+            f"{ticker} -> {sector!r} is not a real SECTOR_SENSITIVITY key"
+        )
+
+
+def test_ngx_candidate_sector_assignments_as_approved():
+    """Spot-check the three confidence tiers from the Session D proposal
+    resolve to exactly what was approved -- catches a copy-paste slip in
+    any one of the 56 without hand-checking the whole block."""
+    import ngx_screener as ns
+
+    expected = {
+        # Tier A -- API sub_sector confirmed
+        "ETI.LG": "banking", "WEMABANK.LG": "banking",
+        "STERLINGNG.LG": "banking", "JAIZBANK.LG": "banking",
+        "NGXGROUP.LG": "financial", "AIICO.LG": "financial",
+        # Tier B -- ticker/brand evidence
+        "LINKASSURE.LG": "financial", "SOVRENINS.LG": "financial",
+        "NEM.LG": "financial", "NPFMCRFBK.LG": "banking",
+        "MANSARD.LG": "financial", "CORNERST.LG": "financial",
+        "WAPIC.LG": "financial", "ETRANZACT.LG": "technology",
+        # Tier C -- muted default, no local corroboration
+        "ABBEYBDS.LG": "SERVICES", "INFINITY.LG": "SERVICES",
+        "AFRIPRUD.LG": "SERVICES", "CONHALLPLC.LG": "SERVICES",
+        "MBENEFIT.LG": "SERVICES", "CHAMS.LG": "SERVICES",
+        # A few mechanical spot-checks
+        "ARADEL.LG": "oil", "FIDSON.LG": "HEALTHCARE",
+        "VFDGROUP.LG": "INVESTMENT", "TRANSPOWER.LG": "power",
+        "JBERGER.LG": "CONSTRUCTION/REAL ESTATE",
+    }
+    for ticker, sector in expected.items():
+        assert ns.NGX_SECTOR_MAP.get(ticker) == sector, (
+            f"{ticker}: expected {sector!r}, got {ns.NGX_SECTOR_MAP.get(ticker)!r}"
+        )
+
+
+def test_ngx_29_live_tickers_unaffected_by_candidate_bridge():
+    """The 29 live tickers' NGX_SECTOR_MAP entries must be byte-identical
+    before/after the Session D bridge -- extending the dict with 56 new
+    keys must not touch any of the original 29."""
+    import ngx_screener as ns
+
+    expected = {
+        "GTCO.LG": "banking", "ZENITHBANK.LG": "banking", "ACCESSCORP.LG": "banking",
+        "UBA.LG": "banking", "FIRSTHOLDCO.LG": "banking", "MTNN.LG": "telecom",
+        "AIRTELAFRI.LG": "telecom", "DANGCEM.LG": "industrial", "SEPLAT.LG": "oil",
+        "STANBIC.LG": "banking", "NB.LG": "consumer", "UNILEVER.LG": "consumer",
+        "OANDO.LG": "oil", "TOTAL.LG": "oil", "BUACEMENT.LG": "industrial",
+        "HBMNG.LG": "industrial", "PRESCO.LG": "agriculture", "OKOMUOIL.LG": "agriculture",
+        "TRANSCORP.LG": "conglomerate", "GEREGU.LG": "power", "NESTLE.LG": "consumer",
+        "FIDELITYBK.LG": "banking", "FCMB.LG": "banking", "UCAP.LG": "financial",
+        "NAHCO.LG": "transport", "DANGSUGAR.LG": "consumer", "NASCON.LG": "consumer",
+        "LIVESTOCK.LG": "agriculture", "CWG.LG": "technology",
+    }
+    for ticker, sector in expected.items():
+        assert ns.NGX_SECTOR_MAP.get(ticker) == sector, (
+            f"{ticker}: expected {sector!r}, got {ns.NGX_SECTOR_MAP.get(ticker)!r} "
+            f"-- a live ticker's mapping was disturbed by the candidate bridge"
+        )
+
+
+def test_ngx_candidates_not_in_live_rotation_despite_having_sector_now():
+    """Having a real NGX_SECTOR_MAP entry must NOT mean a candidate is live
+    -- that's still gated by NGX_ALL membership alone, untouched here."""
+    import ngx_screener as ns
+
+    assert set(ns.NGX_ALL).isdisjoint(set(ns.NGX_TIER3_CANDIDATES))
+    for ticker in ns.NGX_TIER3_CANDIDATES:
+        assert ticker not in ns.NGX_ALL
+
+
+def test_ngx_score_ngx_macro_works_end_to_end_for_candidate_tickers():
+    """score_ngx_macro() must run cleanly for candidates spanning mechanical,
+    Tier A/B judgment, and Tier C muted-default assignments -- proves the
+    bridge works end to end (real scoring call), not just that the dict has
+    an entry. Candidates aren't live-scored yet, but the function must not
+    crash or return nonsense if it's ever exercised for one."""
+    import ngx_screener as ns
+
+    sample = [
+        "ARADEL.LG",       # mechanical -> oil
+        "FIDSON.LG",       # mechanical -> HEALTHCARE
+        "VFDGROUP.LG",     # mechanical -> INVESTMENT
+        "ETI.LG",          # Tier A judgment -> banking
+        "AIICO.LG",        # Tier A judgment -> financial
+        "ETRANZACT.LG",    # Tier B judgment -> technology
+        "CHAMS.LG",        # Tier C muted default -> SERVICES
+        "ABBEYBDS.LG",     # Tier C muted default -> SERVICES
+    ]
+    for ticker in sample:
+        score, reasons, flags = ns.score_ngx_macro(
+            ticker, tier=2, regime="RISK_ON", macro_score=2.0, fx_stress=1.5
+        )
+        assert isinstance(score, (int, float))
+        assert 0 <= score <= 100, f"{ticker} produced out-of-range score {score}"
+        assert isinstance(reasons, list) and isinstance(flags, list)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
