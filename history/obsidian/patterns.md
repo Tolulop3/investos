@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 73.6%  (+0.07%/day)
+- Breadth (200MA): 72.6%  (-0.07%/day)
 - Sharpe: 0.096  (-0.017/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -25,18 +25,18 @@ tags: [investos, patterns, weekly]
 - 📉 **LUN.TO** -8.5 pts/day  (88.0 → 71.0)
 
 ## ⚠️ Sector Concentration Risk
-- **FINANCIALS**: 100.0% of recent picks (3 picks) — HIGH_CONCENTRATION
+- **FINANCIALS**: 75.0% of recent picks (3 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
 | BNY | 🟡 WATCH | 5d | — | — |
-| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
+| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | LUN.TO | 🔴 AVOID | 0d | -8.5 | — |
 | BB.TO | 🔴 AVOID | 0d | -8.5 | — |
