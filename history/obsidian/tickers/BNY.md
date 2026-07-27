@@ -1,6 +1,6 @@
 ---
 ticker: BNY
-updated: 2026-07-24
+updated: 2026-07-27
 streak_days: 5
 score_now: 100.0
 velocity: 0

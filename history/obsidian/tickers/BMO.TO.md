@@ -1,11 +1,11 @@
 ---
 ticker: BMO.TO
-updated: 2026-07-24
+updated: 2026-07-27
 streak_days: 4
 score_now: 97.0
 velocity: 0
 pf_30d: None
-picks_30d: 20
+picks_30d: 19
 tags: [investos, ticker, pattern]
 ---
 
