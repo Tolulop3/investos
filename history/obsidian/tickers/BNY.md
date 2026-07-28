@@ -1,11 +1,11 @@
 ---
 ticker: BNY
-updated: 2026-07-27
+updated: 2026-07-28
 streak_days: 4
 score_now: 100.0
 velocity: 0
 pf_30d: None
-picks_30d: 17
+picks_30d: 18
 tags: [investos, ticker, pattern]
 ---
 
