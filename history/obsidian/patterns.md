@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 79.0%  (+0.57%/day)
+- Breadth (200MA): 78.7%  (+0.53%/day)
 - Sharpe: 0.111  (-0.010/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -30,8 +30,8 @@ tags: [investos, patterns, weekly]
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
-| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
+| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | CNR.TO | 🔴 AVOID | 0d | -9.2 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | TXN | 🔴 AVOID | 0d | -8.8 | — |
