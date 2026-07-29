@@ -1,5 +1,18 @@
 [build]
   functions = "netlify/functions"
+  # Credit-bleed fix (2026-07-28): 18 deploys this billing period consumed
+  # 270/300 credits (~99.9% of spend), while function invocations/bandwidth/
+  # compute stayed near-zero — this was a build-trigger problem, not a
+  # bot-traffic problem. Every push to main (up to 9/weekday from the
+  # automated Brief/Patterns/Research workflows) was triggering a full
+  # rebuild regardless of whether anything Netlify actually serves changed.
+  # Skip the build unless netlify/, netlify.toml, or index.html (the baked
+  # dashboard Brief writes every run) changed. ignore exits 0 -> skip build,
+  # non-zero -> proceed. The `-n "$CACHED_COMMIT_REF"` guard forces a build
+  # when there's no prior deploy to diff against (e.g. site reconnected),
+  # rather than letting an empty ref silently skip. netlify.toml is in the
+  # watched path list, so the deploy that introduces this rule always fires.
+  ignore = '[ -n "$CACHED_COMMIT_REF" ] && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- netlify/ netlify.toml index.html'
 
 # ── Security headers on all pages ────────────────────────────────────────────
 [[headers]]
