@@ -7,11 +7,12 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 76.9%  (+0.17%/day)
+- Breadth (200MA): 76.6%  (+0.13%/day)
 - Sharpe: 0.101  (-0.010/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **BNY** — 4d streak, avg score 100.0
+- **FBP** — 3d streak, avg score 100.0
 - **RTX** — 3d streak, avg score 100.0
 
 ## Score Velocity (rising/falling fast)
@@ -25,8 +26,8 @@ tags: [investos, patterns, weekly]
 - 📉 **PFE** -9.0 pts/day  (95.0 → 77.0)
 
 ## ⚠️ Sector Concentration Risk
-- **Financial Services**: 40.0% of recent picks (2 picks) — HIGH_CONCENTRATION
-- **UNKNOWN**: 60.0% of recent picks (3 picks) — HIGH_CONCENTRATION
+- **Financial Services**: 50.0% of recent picks (3 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 50.0% of recent picks (3 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -35,12 +36,12 @@ tags: [investos, patterns, weekly]
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
-| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | CNR.TO | 🔴 AVOID | 0d | -9.2 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | TXN | 🔴 AVOID | 0d | -8.8 | — |
-| LUN.TO | 🔴 AVOID | 0d | -8.5 | — |
+| BB.TO | 🔴 AVOID | 0d | -8.5 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
