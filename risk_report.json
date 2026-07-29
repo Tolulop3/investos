@@ -9,15 +9,15 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-29T17:02:05.588810",
+    "run_at": "2026-07-29T22:04:30.383824",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 18,
-        "survived": 13,
-        "survival_pct": 72.2,
+        "survived": 15,
+        "survival_pct": 83.3,
         "verdict": "\u2705 ROBUST",
-        "note": "5 picks unviable after doubling costs"
+        "note": "3 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
@@ -32,23 +32,23 @@
         "normal_count": 18,
         "survived": 17,
         "survival_pct": 94.4,
-        "avg_score_change": 4.1,
+        "avg_score_change": 4.2,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.1 pts with 10% noise"
+        "note": "Avg score change: \u00b14.2 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 78.5,
-        "stressed_avg": 72.8,
-        "score_drop": 5.7,
+        "normal_avg": 80.4,
+        "stressed_avg": 72.7,
+        "score_drop": 7.7,
         "removed": [
-          "VLO",
-          "RTX",
           "BMY",
-          "VOYA"
+          "VOYA",
+          "FBP",
+          "RTX"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 5.7 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 7.7 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -62,7 +62,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 78.5,
+      "normal_avg_score": 80.4,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -84,22 +84,22 @@
       "note": "Sharpe from 1723 resolved picks (2026-04-30 \u2192 2026-07-29) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": -1.8,
-      "ret_30d": -1.83,
-      "ret_90d": 13.33,
-      "ann_ret": 37.3,
-      "ann_vol": 14.2,
-      "sharpe": 2.62,
+      "ret_7d": -2.57,
+      "ret_30d": -2.6,
+      "ret_90d": 12.44,
+      "ann_ret": 34.8,
+      "ann_vol": 14.4,
+      "sharpe": 2.42,
       "symbol": "^GSPC"
     },
-    "alpha": -2.519,
+    "alpha": -2.319,
     "neg_alpha_days": 35,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 86.4,
-      "momentum_picks": 22,
-      "note": "19/22 rising-score picks also rose in price"
+      "alignment_pct": 85.7,
+      "momentum_picks": 21,
+      "note": "18/21 rising-score picks also rose in price"
     },
     "alerts": [
       {
