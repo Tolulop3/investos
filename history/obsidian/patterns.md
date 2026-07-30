@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 78.0%  (+0.33%/day)
+- Breadth (200MA): 78.3%  (+0.37%/day)
 - Sharpe: 0.064  (-0.014/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -26,8 +26,8 @@ tags: [investos, patterns, weekly]
 - 📉 **CNR.TO** -9.2 pts/day  (82.0 → 63.7)
 
 ## ⚠️ Sector Concentration Risk
-- **Financial Services**: 42.9% of recent picks (3 picks) — HIGH_CONCENTRATION
-- **UNKNOWN**: 57.1% of recent picks (4 picks) — HIGH_CONCENTRATION
+- **Financial Services**: 50.0% of recent picks (3 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 50.0% of recent picks (3 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -37,8 +37,8 @@ tags: [investos, patterns, weekly]
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | BX | 🟡 WATCH | 0d | +12.5 | — |
 | AAPL | 🟡 WATCH | 0d | +12.1 | — |
-| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | CNR.TO | 🔴 AVOID | 0d | -9.2 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | TXN | 🔴 AVOID | 0d | -8.8 | — |
