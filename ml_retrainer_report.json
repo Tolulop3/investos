@@ -1,23 +1,23 @@
 {
-  "retrained_at": "2026-07-23T10:04:38.944525",
-  "n_rows": 2281,
+  "retrained_at": "2026-07-30T12:50:14.086010",
+  "n_rows": 2373,
   "n_train": 1827,
-  "n_val": 454,
+  "n_val": 546,
   "holdout_cutoff_date": "2026-06-19",
-  "holdout_auc": 0.5262,
-  "cv_auc_mean": 0.6328,
-  "cv_auc_std": 0.0834,
+  "holdout_auc": 0.5018,
+  "cv_auc_mean": 0.6236,
+  "cv_auc_std": 0.0626,
   "feature_importance": {
-    "rs_rating": 0.5679,
-    "momentum_6m": 0.1617,
-    "vol_adj_momentum": 0.1032,
-    "div_yield": 0.0535,
-    "momentum_12m": 0.0417,
-    "fcf_yield": 0.0228,
-    "profit_margin": 0.0162,
-    "roe": 0.0132,
-    "earn_growth": 0.0109,
-    "rev_growth": 0.0089,
+    "vol_adj_momentum": 0.3296,
+    "rs_rating": 0.259,
+    "momentum_12m": 0.1359,
+    "momentum_6m": 0.1161,
+    "fcf_yield": 0.0514,
+    "rev_growth": 0.0453,
+    "roe": 0.0188,
+    "div_yield": 0.0162,
+    "profit_margin": 0.0157,
+    "earn_growth": 0.012,
     "earnings_yield": 0.0,
     "volatility_90d": 0.0,
     "beta": 0.0,
@@ -31,7 +31,33 @@
     "macro_regime_enc": 0.0,
     "market_breadth_50ma": 0.0
   },
-  "calibration_check": {},
+  "calibration_check": {
+    "Q1": {
+      "mean_pred_prob": 0.332,
+      "actual_win_rate": 0.335,
+      "count": 556
+    },
+    "Q2": {
+      "mean_pred_prob": 0.488,
+      "actual_win_rate": 0.46,
+      "count": 480
+    },
+    "Q3": {
+      "mean_pred_prob": 0.509,
+      "actual_win_rate": 0.486,
+      "count": 403
+    },
+    "Q4": {
+      "mean_pred_prob": 0.602,
+      "actual_win_rate": 0.505,
+      "count": 459
+    },
+    "Q5": {
+      "mean_pred_prob": 0.768,
+      "actual_win_rate": 0.737,
+      "count": 475
+    }
+  },
   "features_used": [
     "momentum_6m",
     "momentum_12m",
