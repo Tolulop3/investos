@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-07-30T17:14:00.824138",
+    "run_at": "2026-07-30T22:10:08.390470",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,23 +32,24 @@
         "normal_count": 18,
         "survived": 17,
         "survival_pct": 94.4,
-        "avg_score_change": 4.5,
+        "avg_score_change": 4.3,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b14.5 pts with 10% noise"
+        "note": "Avg score change: \u00b14.3 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 83.1,
-        "stressed_avg": 76.1,
-        "score_drop": 7.0,
+        "normal_avg": 80.9,
+        "stressed_avg": 73.6,
+        "score_drop": 7.3,
         "removed": [
+          "BNY",
           "FBP",
-          "AAPL",
-          "BAC",
-          "RTX"
+          "RTX",
+          "CSU.TO",
+          "LLY"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 7.0 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 7.3 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -62,7 +63,7 @@
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 83.1,
+      "normal_avg_score": 80.9,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -84,22 +85,22 @@
       "note": "Sharpe from 1713 resolved picks (2026-05-01 \u2192 2026-07-30) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": -1.03,
-      "ret_30d": 0.02,
-      "ret_90d": 12.77,
-      "ann_ret": 35.8,
-      "ann_vol": 14.3,
-      "sharpe": 2.5,
+      "ret_7d": -0.82,
+      "ret_30d": 0.24,
+      "ret_90d": 13.02,
+      "ann_ret": 36.4,
+      "ann_vol": 14.4,
+      "sharpe": 2.54,
       "symbol": "^GSPC"
     },
-    "alpha": -2.436,
+    "alpha": -2.476,
     "neg_alpha_days": 36,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 85.7,
-      "momentum_picks": 21,
-      "note": "18/21 rising-score picks also rose in price"
+      "alignment_pct": 85.0,
+      "momentum_picks": 20,
+      "note": "17/20 rising-score picks also rose in price"
     },
     "alerts": [
       {
