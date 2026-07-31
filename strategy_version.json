@@ -4109,5 +4109,142 @@
       ]
     },
     "logged_at": "2026-07-30T22:10:29.273468+00:00"
+  },
+  {
+    "date": "2026-07-31",
+    "version": "4.1",
+    "oos_start": "2026-06-26",
+    "oos_days": 35,
+    "oos_resolved_picks": 430,
+    "rules": {
+      "score_cap_74": [
+        "F",
+        "DXCM",
+        "WPM.TO",
+        "FM.TO",
+        "ABX.TO",
+        "AEM.TO",
+        "AGI.TO",
+        "MDB",
+        "MSFT"
+      ],
+      "score_cap_74_note": "Chronic 90-100 losers capped at 74. Still eligible for 60-74 tier.",
+      "diminishing_returns_above": 85,
+      "diminishing_returns_factor": 0.4,
+      "diminishing_returns_note": "Raw 100 \u2192 91 (was 94). Raw 92 \u2192 87.8 (tier shift to 75-89). Preserves ordinal ordering and ML gate diagnostic unlike hard ceiling.",
+      "news_adjustment_cap_pts": 8,
+      "ml_gate_score_threshold": 90,
+      "ml_gate_ml_prob_threshold": 0.2,
+      "ml_gate_note": "score\u226590 AND ml_prob<0.20 \u2192 removed from sizing AND conviction. Evidence: PF 0.96\u21921.65.",
+      "ml_gate_applies_to": [
+        "sizing",
+        "conviction"
+      ],
+      "sizing_blend": "33% Kelly + 33% vol-targeted + 33% ML-proportional",
+      "kelly_fraction": 0.5,
+      "target_vol": 0.2,
+      "max_single_formula": "max(0.20, 1.5/n_picks)",
+      "max_hard_formula": "max(0.20, 1.5/n_picks)",
+      "sector_cap_max_per_sector": 2,
+      "sector_block_net_score_threshold": -200,
+      "loss_streak_min_losses": 2,
+      "loss_streak_min_loss_pct": 1.5,
+      "loss_streak_lookback_picks": 10,
+      "loss_streak_cooldown_days": 7,
+      "permanent_exclusions_file": "cooldown_flags.json",
+      "permanent_exclusions_note": "7 tickers blocked to 2036 based on factor_investigation.py section 5",
+      "regime_weights": {
+        "market": 0.4,
+        "macro": 0.3,
+        "health": 0.3
+      },
+      "regime_thresholds": {
+        "RISK_ON": 0.5,
+        "NEUTRAL": 0.1,
+        "DEFENSIVE": -0.2,
+        "CAPITAL_PRESERVATION": -9.99
+      },
+      "regime_exposure": {
+        "RISK_ON": 1.0,
+        "NEUTRAL": 0.75,
+        "DEFENSIVE": 0.5,
+        "CAPITAL_PRESERVATION": 0.25
+      },
+      "sharpe_guard_min_threshold": 0.3,
+      "sharpe_guard_trigger_below": 0.0,
+      "sharpe_guard_sizing_factor": 0.12,
+      "sharpe_guard_note": "Guard auto-disengages when Sharpe > 0.3",
+      "risk_multiplier_rules": {
+        "price_bull_pcr_bearish_both": 0.25,
+        "convergence_and_conflict": 0.5,
+        "convergence_only": 0.5,
+        "conflict_only": 0.75,
+        "clean": 1.0
+      },
+      "pcr_bearish_signals": [
+        "BEARISH",
+        "EXTREME_FEAR"
+      ],
+      "pf_baseline_file": "pf_baseline.json",
+      "pf_alert_threshold": 0.2,
+      "pf_baseline_date": "2026-06-25",
+      "pf_baseline_values": {
+        "90-100": 0.91,
+        "75-89": 1.07,
+        "60-74": 1.92,
+        "below-60": 1.09
+      },
+      "universe_static_count": 175,
+      "universe_dynamic_file": "universe_current.json",
+      "universe_dynamic_source": "scout_agent.py (Sunday 6AM)",
+      "universe_removed": [
+        "EEM",
+        "ZCN.TO"
+      ],
+      "oos_commitment": "Rules frozen at v4.1 from Jun 25 2026. No rule changes in response to live performance until Sep 25 2026 minimum. First OOS reading: Sep 25 2026 (~90 days, ~60-70 new resolved picks). Bug fixes and non-strategy changes (UI, security, logging) are exempt.",
+      "oos_periods": [
+        {
+          "period": 1,
+          "label": "OOS \u2014 baseline",
+          "start": "2026-06-26",
+          "end": "2026-06-30",
+          "note": "v4.1 frozen rule set. Diminishing-returns factor 0.4 live. Gate not yet added."
+        },
+        {
+          "period": 2,
+          "label": "OOS \u2014 post-curve",
+          "start": "2026-06-30",
+          "end": "2026-07-01",
+          "note": "Curve fix confirmed active (BAC=94.2\u219291). Gate still off. Very short window."
+        },
+        {
+          "period": 3,
+          "label": "OOS \u2014 pre-gate",
+          "start": "2026-07-01",
+          "end": "2026-07-01",
+          "note": "Placeholder \u2014 gate not yet live. Adjust if gate shipped before 2026-07-01."
+        },
+        {
+          "period": 4,
+          "label": "OOS \u2014 post-gate",
+          "start": "2026-07-01",
+          "end": null,
+          "note": "ML gate activated (score\u226590 AND ml_prob<0.20 \u2192 removed from sizing+conviction). Sector diversity cap added. Reserve pool integrity fix live. First attributable gate-era picks from this date forward."
+        }
+      ],
+      "gev_resolution_tracker": [
+        {
+          "ticker": "GEV",
+          "score": 100,
+          "sector": "INDUSTRIALS",
+          "gate_path": "ML gate \u2014 INDUSTRIALS is neither SECTOR_ALLOW nor SECTOR_BLOCK, falls through to ML gate",
+          "ml_prob": 0.5,
+          "outcome": "PENDING",
+          "expected_resolution": "2026-07-11",
+          "note": "Score 100 but not ML-removed (ml_prob=0.50 \u2265 0.20 threshold). Watch for resolution Jul 11."
+        }
+      ]
+    },
+    "logged_at": "2026-07-31T13:02:42.872305+00:00"
   }
 ]
