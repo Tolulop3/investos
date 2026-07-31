@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 77.6%  (+0.41%/day)
+- Breadth (200MA): 77.3%  (+0.37%/day)
 - Sharpe: 0.050  (-0.011/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -36,10 +36,10 @@ tags: [investos, patterns, weekly]
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | AAPL | 🟡 WATCH | 0d | +12.1 | — |
 | SBUX | 🔴 AVOID | 0d | -10.7 | — |
-| FBP | 🟡 WATCH | 5d | — | — |
 | RTX | 🟡 WATCH | 5d | — | — |
-| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
+| FBP | 🟡 WATCH | 5d | — | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | CNR.TO | 🔴 AVOID | 0d | -9.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
