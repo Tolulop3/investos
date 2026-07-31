@@ -7,8 +7,8 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 78.3%  (+0.51%/day)
-- Sharpe: 0.054  (-0.010/day)
+- Breadth (200MA): 77.6%  (+0.41%/day)
+- Sharpe: 0.050  (-0.011/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **FBP** — 5d streak, avg score 100.0
@@ -18,8 +18,8 @@ tags: [investos, patterns, weekly]
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
 - 📈 **META** +15.0 pts/day  (62.0 → 92.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
-- 📈 **BX** +12.5 pts/day  (66.0 → 91.0)
 - 📈 **AAPL** +12.1 pts/day  (75.8 → 100.0)
+- 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
 - 📉 **NVDA** -9.5 pts/day  (100.0 → 81.0)
 - 📈 **ABX.TO** +9.5 pts/day  (70.0 → 89.0)
 - 📉 **CNR.TO** -9.2 pts/day  (82.0 → 63.7)
@@ -32,14 +32,14 @@ tags: [investos, patterns, weekly]
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
-| BX | 🟡 WATCH | 0d | +12.5 | — |
+| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | AAPL | 🟡 WATCH | 0d | +12.1 | — |
+| SBUX | 🔴 AVOID | 0d | -10.7 | — |
 | FBP | 🟡 WATCH | 5d | — | — |
 | RTX | 🟡 WATCH | 5d | — | — |
-| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
+| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | CNR.TO | 🔴 AVOID | 0d | -9.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
