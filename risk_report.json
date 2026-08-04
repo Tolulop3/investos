@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-08-04T17:28:09.318004",
+    "run_at": "2026-08-04T22:16:32.574067",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -22,8 +22,8 @@
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 18,
-        "survived": 17,
-        "survival_pct": 94.4,
+        "survived": 16,
+        "survival_pct": 88.9,
         "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
@@ -32,38 +32,37 @@
         "normal_count": 18,
         "survived": 17,
         "survival_pct": 94.4,
-        "avg_score_change": 3.9,
+        "avg_score_change": 4.2,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.9 pts with 10% noise"
+        "note": "Avg score change: \u00b14.2 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 74.4,
-        "stressed_avg": 67.9,
-        "score_drop": 6.5,
+        "normal_avg": 79.9,
+        "stressed_avg": 73.1,
+        "score_drop": 6.8,
         "removed": [
-          "VLO",
-          "GWO.TO",
+          "AMGN",
           "MPC",
-          "AUB",
-          "RTX"
+          "GWO.TO",
+          "CSU.TO"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 6.5 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 6.8 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 18,
         "survived": 17,
         "survival_pct": 94.4,
-        "avg_score_drop": 3.0,
+        "avg_score_drop": 2.9,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.0 pts"
+        "note": "If momentum stops working: avg score drops 2.9 pts"
       }
     },
     "summary": {
       "normal_picks": 18,
-      "normal_avg_score": 74.4,
+      "normal_avg_score": 79.9,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -85,10 +84,10 @@
       "note": "Sharpe from 1678 resolved picks (2026-05-06 \u2192 2026-08-04) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": 4.38,
-      "ret_30d": 5.06,
-      "ret_90d": 19.46,
-      "ann_ret": 54.5,
+      "ret_7d": 4.36,
+      "ret_30d": 5.04,
+      "ret_90d": 19.44,
+      "ann_ret": 54.4,
       "ann_vol": 14.7,
       "sharpe": 3.71,
       "symbol": "^GSPC"
