@@ -1,6 +1,6 @@
 ---
 ticker: RTX
-updated: 2026-08-03
+updated: 2026-08-04
 streak_days: 6
 score_now: 100.0
 velocity: 0
