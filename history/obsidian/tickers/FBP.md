@@ -5,7 +5,7 @@ streak_days: 5
 score_now: 100.0
 velocity: 0
 pf_30d: None
-picks_30d: 10
+picks_30d: 11
 tags: [investos, ticker, pattern]
 ---
 

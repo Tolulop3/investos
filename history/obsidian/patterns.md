@@ -7,8 +7,8 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 78.9%  (+0.90%/day)
-- Sharpe: -0.018  (-0.016/day)
+- Breadth (200MA): 80.5%  (+0.46%/day)
+- Sharpe: -0.122  (-0.033/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **RTX** — 6d streak, avg score 100.0
@@ -19,13 +19,13 @@ tags: [investos, patterns, weekly]
 - 📈 **META** +15.0 pts/day  (62.0 → 92.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
+- 📉 **AAPL** -10.7 pts/day  (100.0 → 78.6)
 - 📉 **NVDA** -9.5 pts/day  (100.0 → 81.0)
 - 📈 **ABX.TO** +9.5 pts/day  (70.0 → 89.0)
 - 📉 **CNR.TO** -9.2 pts/day  (82.0 → 63.7)
-- 📉 **PFE** -9.0 pts/day  (95.0 → 77.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 66.7% of recent picks (4 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 75.0% of recent picks (3 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -34,12 +34,12 @@ tags: [investos, patterns, weekly]
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | RTX | 🟡 WATCH | 6d | — | — |
+| AAPL | 🔴 AVOID | 0d | -10.7 | — |
 | SBUX | 🔴 AVOID | 0d | -10.7 | — |
 | FBP | 🟡 WATCH | 5d | — | — |
 | ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | CNR.TO | 🔴 AVOID | 0d | -9.2 | — |
-| PFE | 🔴 AVOID | 0d | -9.0 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
@@ -47,7 +47,7 @@ tags: [investos, patterns, weekly]
 - 2026-04: n=250  WR=56%
 - 2026-05: n=215  WR=53%
 - 2026-06: n=136  WR=39% ⚠️
-- 2026-07: n=127  WR=34% ⚠️
+- 2026-07: n=130  WR=34% ⚠️
 - 2026-08: n=0  WR=—
 
 ---
