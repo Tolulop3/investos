@@ -31,8 +31,8 @@ tags: [investos, patterns, weekly]
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | AAPL | 🔴 AVOID | 0d | -10.7 | — |
 | SBUX | 🔴 AVOID | 0d | -10.7 | — |
 | RTX | 🟡 WATCH | 5d | — | — |
