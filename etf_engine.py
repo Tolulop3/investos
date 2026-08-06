@@ -28,7 +28,6 @@ ETF_UNIVERSE = [
     ("ZGD.TO",  "Canadian Gold Miners",   "SECTOR",    "core",     "TFSA", "GOLD",            0.61, "commodity", "gold"),
     ("GLD",     "Gold",                   "SECTOR",    "core",     "RRSP", "GOLD",            0.40, "commodity", "gold"),
     ("XRE.TO",  "Canadian REITs",         "SECTOR",    "core",     "TFSA", "CANADIAN_REITS",  0.61, "earnings",  "cdn_reit"),
-    ("ZLB.TO",  "Canadian Low-Vol",       "SECTOR",    "core",     "FHSA", None,              0.39, "index",     "cdn_lowvol"),
     ("BOTZ",    "Robotics & AI",          "THEMATIC",  "thematic", "RRSP", "TECH",            0.69, "theme",     "ai_tech"),
     ("SMH",     "Semiconductors",         "THEMATIC",  "thematic", "RRSP", "TECH",            0.35, "earnings",  "semis"),
     ("SKYY",    "Cloud Computing",        "THEMATIC",  "thematic", "RRSP", "TECH",            0.68, "theme",     "cloud"),

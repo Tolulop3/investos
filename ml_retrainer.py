@@ -533,17 +533,23 @@ def train_and_save(X, y, w, dates=None):
     try:
         all_probs = calibrator.predict_proba(X)[:,1] if calibrator else model.predict_proba(X)[:,1]
         df_check  = pd.DataFrame({"prob": all_probs, "label": y.values})
-        df_check["decile"] = pd.qcut(df_check["prob"], q=5,
-                                      labels=["Q1","Q2","Q3","Q4","Q5"],
-                                      duplicates="drop")
+        # rank(method="first") breaks ties before qcut. Sector-median imputation
+        # gives many rows identical predicted probabilities, which collide at
+        # quantile bin edges — qcut(labels=[...], duplicates="drop") then raises
+        # "Bin labels must be one fewer than the number of bin edges" on most
+        # runs. That was previously swallowed by a bare `except: pass` below,
+        # leaving calib_check silently empty in production. Ranking first makes
+        # every value unique, so qcut always produces exactly 5 populated bins.
+        df_check["decile"] = pd.qcut(df_check["prob"].rank(method="first"), q=5,
+                                      labels=["Q1","Q2","Q3","Q4","Q5"])
         for q, grp in df_check.groupby("decile", observed=True):
             calib_check[str(q)] = {
                 "mean_pred_prob":  round(float(grp["prob"].mean()), 3),
                 "actual_win_rate": round(float(grp["label"].mean()), 3),
                 "count": len(grp),
             }
-    except Exception:
-        pass
+    except Exception as _cce:
+        print(f"  ⚠️  Calibration check failed: {_cce}")
 
     if calib_check:
         print("  📊 Calibration check (Q1=lowest predicted, Q5=highest):")

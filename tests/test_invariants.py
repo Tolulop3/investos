@@ -2175,3 +2175,132 @@ def test_outcome_recompute_only_touches_classification():
                   "ticker", "signal_date"):
         assert after[field] == before[field], f"{field} was modified"
     assert after["outcome"] != before["outcome"]  # only this changed
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-06): calibration_check silently empty in production
+# Bug: pd.qcut(df["prob"], q=5, labels=[...], duplicates="drop") raises
+# "Bin labels must be one fewer than the number of bin edges" whenever
+# sector-median imputation creates tied predicted probabilities (collides at
+# quantile bin edges, duplicates="drop" then removes edges but not labels).
+# A bare `except: pass` swallowed this on most real retrains, leaving
+# ml_retrainer_report.json's calibration_check silently empty with no error.
+# Fix: rank(method="first") before qcut makes every value unique, so qcut
+# always produces exactly 5 populated bins.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_ml_retrainer_calibration_check_survives_heavy_probability_ties(monkeypatch, tmp_path):
+    """calib_check must be non-empty (5 populated Q1-Q5 buckets) even when
+    most rows share identical feature values -- the exact condition
+    (sector-median imputation) that triggered the original qcut crash."""
+    try:
+        import numpy as np
+    except ImportError:
+        pytest.skip("numpy/xgboost not available")
+
+    import ml_retrainer as mr
+    monkeypatch.setattr(mr, "MODEL_CACHE", str(tmp_path / "model_cache.pkl"))
+    monkeypatch.setattr(mr, "REPORT_FILE", str(tmp_path / "report.json"))
+
+    resolved = []
+    # 80% of rows share IDENTICAL feature values (heavy ties, like real
+    # sector-median-imputed data) -- only 20% carry distinct real values.
+    for i in range(200):
+        real = i < 40
+        resolved.append({
+            "resolved": True,
+            "actual_return": 5.0 if i % 2 == 0 else -3.0,
+            "outcome": "WIN" if i % 2 == 0 else "LOSS",
+            "perf_90d":      (10.0 + i) if real else 10.0,
+            "roe":           (15.0 + i) if real else 15.0,
+            "profit_margin": (20.0 + i) if real else 20.0,
+            "sector": "Technology", "regime": "BULL",
+            "signal_date": f"2026-0{1 + (i % 9)}-01",
+        })
+
+    X, y, w, dates = mr.build_feature_matrix(resolved)
+    if X is None:
+        pytest.skip("Coverage gate blocked")
+
+    report = mr.train_and_save(X, y, w, dates)
+    if report is None:
+        pytest.skip("Training libraries unavailable")
+
+    calib = report["calibration_check"]
+    assert calib, "calibration_check is empty -- qcut crash regressed"
+    assert set(calib.keys()) == {"Q1", "Q2", "Q3", "Q4", "Q5"}
+    total = sum(d["count"] for d in calib.values())
+    assert total == report["n_rows"], (
+        f"calibration_check covers {total} rows, expected all {report['n_rows']}"
+    )
+
+
+def test_ml_retrainer_calibration_check_all_identical_probabilities(monkeypatch, tmp_path):
+    """Stress case: every row has literally the same features (worst-case
+    ties). Must not crash -- qcut on ranks still produces 5 equal-count bins
+    even though there's no real information to bucket on."""
+    try:
+        import numpy as np
+    except ImportError:
+        pytest.skip("numpy/xgboost not available")
+
+    import ml_retrainer as mr
+    monkeypatch.setattr(mr, "MODEL_CACHE", str(tmp_path / "model_cache.pkl"))
+    monkeypatch.setattr(mr, "REPORT_FILE", str(tmp_path / "report.json"))
+
+    resolved = []
+    for i in range(150):
+        resolved.append({
+            "resolved": True,
+            "actual_return": 5.0 if i % 2 == 0 else -3.0,
+            "outcome": "WIN" if i % 2 == 0 else "LOSS",
+            "perf_90d": 10.0, "roe": 15.0, "profit_margin": 20.0,
+            "sector": "Technology", "regime": "BULL",
+            "signal_date": f"2026-0{1 + (i % 9)}-01",
+        })
+
+    X, y, w, dates = mr.build_feature_matrix(resolved)
+    if X is None:
+        pytest.skip("Coverage gate blocked")
+
+    report = mr.train_and_save(X, y, w, dates)
+    if report is None:
+        pytest.skip("Training libraries unavailable")
+
+    assert report["calibration_check"], (
+        "calibration_check crashed/empty on all-identical-probability input"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-06): ZLB.TO duplicated across SECTOR and DEFENSIVE in
+# ETF_UNIVERSE with divergent REGIME_WEIGHTS (RISK_ON: SECTOR=1.0x vs
+# DEFENSIVE=0.3x; RISK_OFF: SECTOR=0.4x vs DEFENSIVE=1.2x). Whichever
+# duplicate scored higher silently won each run, so the same low-volatility
+# fund was treated as an aggressive RISK_ON pick some runs and a defensive
+# one other runs, by accident of which entry happened to score higher.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_etf_universe_no_duplicate_tickers():
+    """No ticker should appear more than once in ETF_UNIVERSE -- a duplicate
+    with a different category means the same fund gets scored twice under
+    different REGIME_WEIGHTS, with one silently discarded per run."""
+    import etf_engine as ee
+    from collections import Counter
+
+    tickers = [row[0] for row in ee.ETF_UNIVERSE]
+    counts = Counter(tickers)
+    dupes = {t: n for t, n in counts.items() if n > 1}
+    assert not dupes, f"duplicate tickers in ETF_UNIVERSE: {dupes}"
+
+
+def test_etf_zlb_to_categorized_defensive_not_sector():
+    """ZLB.TO (Canadian Low-Vol) is a single entry, tagged DEFENSIVE --
+    matches its actual design (low-volatility equity = defensive posture)
+    and strategy_engine.py's own existing treatment of it alongside
+    ZAG.TO/GLD as a capital-preservation holding."""
+    import etf_engine as ee
+
+    zlb_rows = [row for row in ee.ETF_UNIVERSE if row[0] == "ZLB.TO"]
+    assert len(zlb_rows) == 1
+    assert zlb_rows[0][2] == "DEFENSIVE"
