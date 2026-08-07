@@ -2730,3 +2730,50 @@ def test_index_html_netlify_route_no_longer_skips_canadian_tickers():
 
     assert "isCanadian" not in fn_body
     assert "investos-proxy.netlify.app" in fn_body
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): insider engine's SEC EDGAR 403 was never a
+# GitHub-Actions-IP-block -- SEC's own 403 page said so explicitly:
+# "Your Request Originates from an Undeclared Automated Tool... Please
+# declare your traffic by updating your user agent to include company
+# specific information." The old UA used github.com (GitHub's domain, not
+# an owned domain) as the "company" contact, which SEC's declared-traffic
+# check rejects. Confirmed directly against the exact CIK that 403'd in
+# production (AMGN): old UA fails every time, three different properly-
+# declared UAs succeed every time, immediately, no network/IP change
+# needed. A minimal Netlify diagnostic probe was built to test the
+# IP-block hypothesis and deleted once this simpler, correct root cause
+# was found via a much cheaper direct test -- no deploy ever needed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_edgar_user_agent_does_not_use_github_domain():
+    """Locks in the fix -- the actual User-Agent header sent must never
+    regress to using github.com (or another shared-platform domain) as
+    the declared contact, since that's confirmed to trigger SEC's
+    undeclared-tool rejection. Inspects the real header urllib.request
+    would send (not the function source, which legitimately discusses
+    github.com in its docstring while explaining the fix) via a
+    lightweight Request stand-in, to keep the suite deterministic -- the
+    live confirmation was done manually against the real endpoint and the
+    real production CIK that failed."""
+    import insider_engine as ie
+    from unittest.mock import patch, MagicMock
+
+    captured = {}
+
+    def fake_urlopen(req, timeout=None):
+        captured["ua"] = req.get_header("User-agent")
+        cm = MagicMock()
+        cm.__enter__.return_value.read.return_value = b'{"ok": true}'
+        return cm
+
+    with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        ie._edgar_request("https://data.sec.gov/submissions/CIK0000000000.json")
+
+    assert captured["ua"] is not None
+    assert "github.com" not in captured["ua"], (
+        f"User-Agent {captured['ua']!r} uses github.com as the declared "
+        f"contact domain -- confirmed to trigger SEC EDGAR's 403 "
+        f"undeclared-automated-tool rejection, this must not regress"
+    )

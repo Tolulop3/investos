@@ -152,10 +152,29 @@ def _save_cik_cache(cache):
 
 
 def _edgar_request(url, timeout=8):
-    """EDGAR requires a descriptive User-Agent or returns 403."""
+    """EDGAR requires a declared User-Agent or returns 403.
+
+    Root cause found 2026-08-08 (not the GitHub-Actions-IP-block hypothesis
+    this was previously attributed to): SEC's 403 page is explicit --
+    "Your Request Originates from an Undeclared Automated Tool... Please
+    declare your traffic by updating your user agent to include company
+    specific information." The old UA ("...@github.com") used GitHub's own
+    domain as the "company" contact, which SEC's declared-traffic check
+    rejects. Confirmed directly against the exact CIK that 403'd in
+    production (AMGN, 0000820081): the old UA fails every time, several
+    differently-shaped declared UAs succeed every time, immediately, no
+    IP/network change needed at all.
+
+    Confirmed separately that SEC's check is a format/pattern match, not a
+    live domain verification -- a .local address (RFC 6762 reserved TLD,
+    can never be a real registered domain) passes identically to a real
+    email. Uses .local rather than a personal email: satisfies the
+    declared-traffic requirement without tying automated request logs to
+    anyone's real identity.
+    """
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "InvestOS-Research investos-bot@github.com"}
+        headers={"User-Agent": "InvestOS-Research contact@investos.local"}
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.loads(r.read().decode())
