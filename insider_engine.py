@@ -291,9 +291,20 @@ def fetch_form4_aggregated(cik, ticker, days_back=30):
     Use the EDGAR submissions JSON to extract transaction data.
     The submissions JSON includes recent Form 4 metadata including
     transaction codes and values for the most recent filings.
+
+    Returns [] when the fetch succeeded and genuinely found no Form 4s in
+    the window -- returns None when the fetch itself failed (network
+    error, non-200, timeout). This distinction matters: previously both
+    cases returned [] and were indistinguishable, so run_insider_engine()
+    always reported "N tickers checked" even when EVERY fetch was failing
+    silently (confirmed 2026-08-07: 45 tickers "checked" in under 1ms of
+    wall-clock log timestamps, physically impossible for real network
+    round-trips -- every one was failing near-instantly and getting
+    swallowed here, most likely SEC EDGAR rejecting/rate-limiting GitHub
+    Actions' shared runner IP range).
     """
     if not cik:
-        return []
+        return None
 
     try:
         url  = f"https://data.sec.gov/submissions/CIK{cik}.json"
@@ -309,7 +320,7 @@ def fetch_form4_aggregated(cik, ticker, days_back=30):
         if not isinstance(data, dict):
             print(f"  ⚠️ EDGAR CIK{cik} ({ticker}): unexpected response type "
                   f"{type(data).__name__} — skipping. head={repr(data)[:200]}")
-            return []
+            return None
 
         name    = data.get("name", ticker)
         recent  = data.get("filings", {}).get("recent", {})
@@ -329,8 +340,17 @@ def fetch_form4_aggregated(cik, ticker, days_back=30):
 
         return form4s
 
-    except Exception:
-        return []
+    except Exception as e:
+        # Print the real error once per run (not once per ticker -- with
+        # 100+ tickers hitting the same root cause, that would just be log
+        # spam) so the next run finally shows what's actually failing,
+        # instead of a misleading "0 insider signals found".
+        if not hasattr(fetch_form4_aggregated, "_first_error_shown"):
+            fetch_form4_aggregated._first_error_shown = True
+            print(f"  ⚠️ EDGAR fetch failed for {ticker} (CIK{cik}): "
+                  f"{type(e).__name__}: {e} — further failures this run "
+                  f"logged silently, see fetch_failures count in summary")
+        return None
 
 
 def score_insider_signal(form4s, ticker):
@@ -387,6 +407,8 @@ def run_insider_engine(picks, verbose=True):
     cdn_tickers  = [p["ticker"] for p in picks if _is_canadian(p["ticker"])]
     signals_found = 0
     tickers_checked = 0
+    fetch_failures  = 0   # fetch_form4_aggregated() returned None -- distinct
+                          # from a genuine "checked, found nothing" result
 
     # Split into three tracks
     ca_sec_tickers   = [p["ticker"] for p in picks if p["ticker"].upper() in CANADIAN_SEC_CIKS]
@@ -416,6 +438,8 @@ def run_insider_engine(picks, verbose=True):
 
         tickers_checked += 1
         form4s = fetch_form4_aggregated(cik, ticker, days_back=30)
+        if form4s is None:
+            fetch_failures += 1
         adj, reason = score_insider_signal(form4s, ticker)
 
         if adj != 0:
@@ -442,8 +466,16 @@ def run_insider_engine(picks, verbose=True):
         print(f"  🇨🇦✅ {len(ca_sec_tickers)} Canadian tickers covered via SEC EDGAR cross-listing")
 
     if verbose:
-        print(f"  ✅ Checked {tickers_checked} US tickers | {signals_found} insider signals found")
-        if signals_found == 0:
+        if fetch_failures == tickers_checked and tickers_checked > 0:
+            print(f"  ⚠️ Checked {tickers_checked} US tickers | ALL {fetch_failures} "
+                  f"fetches FAILED (not \"0 signals found\" -- the fetch itself "
+                  f"didn't work, see error above)")
+        elif fetch_failures > 0:
+            print(f"  ⚠️ Checked {tickers_checked} US tickers | {signals_found} insider "
+                  f"signals found | {fetch_failures} fetches failed (see error above)")
+        else:
+            print(f"  ✅ Checked {tickers_checked} US tickers | {signals_found} insider signals found")
+        if signals_found == 0 and fetch_failures < tickers_checked:
             print(f"  📊 No unusual Form 4 activity in last 30 days")
 
     # ── Apply signals to picks ────────────────────────────────────────────────

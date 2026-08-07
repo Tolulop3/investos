@@ -2304,3 +2304,191 @@ def test_etf_zlb_to_categorized_defensive_not_sector():
     zlb_rows = [row for row in ee.ETF_UNIVERSE if row[0] == "ZLB.TO"]
     assert len(zlb_rows) == 1
     assert zlb_rows[0][2] == "DEFENSIVE"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): insider engine silently swallowed every EDGAR fetch
+# failure, indistinguishable from "checked, found nothing". Confirmed live:
+# 45 tickers "checked" in under 1ms of wall-clock log timestamps (physically
+# impossible for real network round-trips) -- every fetch was failing near-
+# instantly (SEC EDGAR 403 on GitHub Actions' shared runner IP range, most
+# likely) and getting caught by a bare except. run_manifest.json's
+# insider_ok:true meant "didn't crash", not "worked".
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_insider_fetch_form4_returns_none_not_empty_list_on_failure():
+    """fetch_form4_aggregated() must return None (distinguishable failure)
+    when the EDGAR request raises, not [] (which is indistinguishable from
+    a genuine successful-but-empty result)."""
+    import insider_engine as ie
+    from unittest.mock import patch
+
+    with patch.object(ie, "_edgar_request", side_effect=Exception("boom")):
+        result = ie.fetch_form4_aggregated("0000320193", "AAPL")
+    assert result is None, "fetch failure must return None, not []"
+
+
+def test_insider_fetch_form4_returns_empty_list_on_genuine_no_data():
+    """A successful fetch with zero Form 4s in the window must still
+    return [] (not None) -- only real failures return None."""
+    import insider_engine as ie
+    from unittest.mock import patch
+
+    fake_response = {"name": "AAPL", "filings": {"recent": {"form": [], "filingDate": []}}}
+    with patch.object(ie, "_edgar_request", return_value=fake_response):
+        result = ie.fetch_form4_aggregated("0000320193", "AAPL")
+    assert result == []
+
+
+def test_insider_run_engine_summary_distinguishes_failures_from_no_data(capsys):
+    """run_insider_engine()'s printed summary must say fetches FAILED when
+    every fetch failed, not silently report '0 insider signals found' as if
+    the engine had genuinely checked and found nothing."""
+    import insider_engine as ie
+    from unittest.mock import patch
+
+    with patch.object(ie, "fetch_form4_aggregated", return_value=None):
+        picks = [{"ticker": "AAPL"}, {"ticker": "MSFT"}]
+        ie.run_insider_engine(picks, verbose=True)
+    out = capsys.readouterr().out
+    assert "FAILED" in out
+    assert "0 insider signals found" not in out or "fetches failed" in out.lower() or "FAILED" in out
+
+
+def test_insider_score_insider_signal_handles_none_gracefully():
+    """score_insider_signal(None, ...) must not crash -- safe_parse_records
+    already handles None, this just locks in that contract now that
+    fetch_form4_aggregated can genuinely return None."""
+    import insider_engine as ie
+
+    adj, reason = ie.score_insider_signal(None, "AAPL")
+    assert adj == 0
+    assert reason == ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): NGX resolution silently blended frozen-price artifacts
+# (exit_price exactly equal to entry_price -- confirmed on SEPLAT.LG/
+# TOTAL.LG/AIRTELAFRI.LG/GEREGU.LG/DANGCEM.LG across multiple independent
+# resolution runs) into FLAT, distorting sector-level win rates (oil/
+# telecom/power looked uniformly bad -- backfill against real data found
+# 17 frozen rows, zero false positives, zero false negatives; win rate
+# moved from 17.6% to 23.5% once excluded).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_ngx_resolve_sets_price_frozen_true_when_exit_equals_entry(monkeypatch):
+    """resolve_ngx_outcomes() must flag price_frozen=True (and still
+    resolve, not block forever) when exit_price exactly equals entry_price."""
+    import ngx_outcome_tracker as ngxt
+
+    outcomes = [{
+        "ticker": "FROZEN.LG", "sector": "oil", "tier": 2,
+        "signal_date": "2026-07-01", "entry_price": 100.0,
+        "resolved": False, "excluded_legacy": False,
+    }]
+    saved = {}
+    monkeypatch.setattr(ngxt, "load_ngx_outcomes", lambda: outcomes)
+    monkeypatch.setattr(ngxt, "save_ngx_outcomes", lambda o: saved.setdefault("out", o))
+    monkeypatch.setattr(ngxt, "fetch_companies_prices", lambda verbose=False: {"FROZEN": 100.0})
+
+    ngx_result = {"all_scored": [{"ticker": "FROZEN.LG", "score": 60}], "macro_regime": "NEUTRAL"}
+    ngxt.resolve_ngx_outcomes(ngx_result)
+
+    row = saved["out"][0]
+    assert row["resolved"] is True
+    assert row["outcome"] == "FLAT"
+    assert row["price_frozen"] is True
+
+
+def test_ngx_resolve_sets_price_frozen_false_when_price_moves(monkeypatch):
+    """A real price move must NOT be flagged price_frozen, regardless of
+    outcome direction."""
+    import ngx_outcome_tracker as ngxt
+
+    outcomes = [{
+        "ticker": "MOVED.LG", "sector": "banking", "tier": 1,
+        "signal_date": "2026-07-01", "entry_price": 100.0,
+        "resolved": False, "excluded_legacy": False,
+    }]
+    saved = {}
+    monkeypatch.setattr(ngxt, "load_ngx_outcomes", lambda: outcomes)
+    monkeypatch.setattr(ngxt, "save_ngx_outcomes", lambda o: saved.setdefault("out", o))
+    monkeypatch.setattr(ngxt, "fetch_companies_prices", lambda verbose=False: {"MOVED": 105.0})
+
+    ngx_result = {"all_scored": [{"ticker": "MOVED.LG", "score": 70}], "macro_regime": "NEUTRAL"}
+    ngxt.resolve_ngx_outcomes(ngx_result)
+
+    row = saved["out"][0]
+    assert row["outcome"] == "WIN"
+    assert row["price_frozen"] is False
+
+
+def test_ngx_outcome_summary_excludes_price_frozen_from_win_rate(monkeypatch):
+    """ngx_outcome_summary() must drop price_frozen rows from total_resolved/
+    wins/losses/flats/win_rate/sector stats -- same pattern as
+    excluded_legacy -- while still surfacing price_frozen_total for audit."""
+    import ngx_outcome_tracker as ngxt
+
+    outcomes = [
+        {"ticker": "A.LG", "sector": "oil", "tier": 1, "resolved": True,
+         "outcome": "FLAT", "price_frozen": True, "excluded_legacy": False},
+        {"ticker": "B.LG", "sector": "banking", "tier": 1, "resolved": True,
+         "outcome": "WIN", "price_frozen": False, "excluded_legacy": False},
+    ]
+    monkeypatch.setattr(ngxt, "load_ngx_outcomes", lambda: outcomes)
+    s = ngxt.ngx_outcome_summary()
+
+    assert s["price_frozen_total"] == 1
+    assert s["total_resolved"] == 1          # only B.LG
+    assert s["wins"] == 1
+    assert s["win_rate"] == 100.0
+    assert s["sector_total"] == {"banking": 1}  # A.LG's oil entry excluded
+
+
+def test_ngx_price_frozen_backfill_never_changes_resolved_outcome_fields(monkeypatch):
+    """apply_price_frozen_backfill() must only add price_frozen and append
+    to outcome_reason -- never touch resolved/outcome/exit_price/
+    actual_return_pct/entry_price, preserving the audit trail."""
+    import ngx_outcome_tracker as ngxt
+    import copy
+
+    original = {
+        "ticker": "OLD.LG", "sector": "oil", "resolved": True,
+        "outcome": "FLAT", "entry_price": 50.0, "exit_price": 50.0,
+        "actual_return_pct": 0.0, "resolved_date": "2026-07-15",
+        "outcome_reason": "Price 50.0->50.0 (+0.00%)", "excluded_legacy": False,
+    }
+    outcomes = [copy.deepcopy(original)]
+    saved = {}
+    monkeypatch.setattr(ngxt, "load_ngx_outcomes", lambda: outcomes)
+    monkeypatch.setattr(ngxt, "save_ngx_outcomes", lambda o: saved.setdefault("out", o))
+
+    n_flagged = ngxt.apply_price_frozen_backfill()
+
+    assert n_flagged == 1
+    row = saved["out"][0]
+    for field in ("resolved", "outcome", "entry_price", "exit_price",
+                  "actual_return_pct", "resolved_date"):
+        assert row[field] == original[field], f"{field} was modified by the backfill"
+    assert row["price_frozen"] is True
+    assert "PRICE FROZEN" in row["outcome_reason"]
+
+
+def test_ngx_price_frozen_backfill_skips_excluded_legacy_rows(monkeypatch):
+    """The backfill must not touch excluded_legacy rows -- they're already
+    excluded from stats for a different reason and shouldn't gain a
+    price_frozen field that implies they were checked on this basis."""
+    import ngx_outcome_tracker as ngxt
+
+    outcomes = [{
+        "ticker": "OLD.LG", "resolved": True, "outcome": "FLAT",
+        "entry_price": 50.0, "exit_price": 50.0, "excluded_legacy": True,
+    }]
+    saved = {}
+    monkeypatch.setattr(ngxt, "load_ngx_outcomes", lambda: outcomes)
+    monkeypatch.setattr(ngxt, "save_ngx_outcomes", lambda o: saved.setdefault("out", o))
+
+    n_flagged = ngxt.apply_price_frozen_backfill()
+
+    assert n_flagged == 0
+    assert "price_frozen" not in saved["out"][0]

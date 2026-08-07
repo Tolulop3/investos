@@ -327,12 +327,30 @@ def resolve_ngx_outcomes(ngx_result):
 
         actual_return_pct = (exit_price - entry_price) / entry_price * 100
 
+        # Frozen-price detection (2026-08-08): exit_price exactly equal to
+        # entry_price, to the cent, is not a realistic outcome for a live-
+        # traded stock — confirmed by diagnosis that SEPLAT.LG/TOTAL.LG/
+        # AIRTELAFRI.LG/GEREGU.LG returned this pattern across multiple
+        # independent resolution runs days apart. fetch_companies_prices()
+        # fetches fresh from the live API every call (no local caching bug),
+        # so this is either a genuinely illiquid NGX name (last-traded price
+        # frozen) or upstream provider staleness — can't distinguish which
+        # from here. Either way, it was previously silently blended into
+        # FLAT, which distorted sector-level win-rate reads (oil/telecom/
+        # power looked uniformly bad, when it was mostly this artifact).
+        # Still resolves normally (does NOT block on it forever — an
+        # illiquid stock could stay frozen indefinitely) but flags it so
+        # ngx_outcome_summary() can exclude it from WR/PF, the same pattern
+        # already used for excluded_legacy.
+        price_frozen = (exit_price == entry_price)
+
         o["resolved"]          = True
         o["resolved_date"]     = today.isoformat()
         o["score_at_resolve"]  = score_exit
         o["regime_at_resolve"] = regime_exit   # logged for context only
         o["exit_price"]        = round(exit_price, 4)
         o["actual_return_pct"] = round(actual_return_pct, 2)
+        o["price_frozen"]      = price_frozen
 
         # Determine outcome — ticker's own price movement, not regime
         if actual_return_pct > WIN_THRESHOLD_PCT:
@@ -345,6 +363,12 @@ def resolve_ngx_outcomes(ngx_result):
             f"Price {entry_price}→{exit_price} ({actual_return_pct:+.2f}%) | "
             f"regime at resolve: {regime_exit} (context only, not decisive)"
         )
+        if price_frozen:
+            o["outcome_reason"] += (
+                " | ⚠️ PRICE FROZEN: exit_price exactly equals entry_price — "
+                "likely illiquid ticker or stale provider data, not a real "
+                "flat outcome. Excluded from win-rate/PF."
+            )
 
         resolved += 1
 
@@ -352,6 +376,45 @@ def resolve_ngx_outcomes(ngx_result):
     if resolved:
         print(f"   ✅ NGX outcomes: resolved {resolved} signals")
     return resolved
+
+
+def apply_price_frozen_backfill():
+    """One-time migration entry point (2026-08-08): retroactively flag
+    already-resolved entries where exit_price exactly equals entry_price,
+    the same price_frozen check resolve_ngx_outcomes() now applies to new
+    resolutions going forward. resolve_ngx_outcomes() skips entries that
+    are already resolved, so without this backfill the fix would only
+    affect signals resolved after it landed -- the existing SEPLAT.LG/
+    TOTAL.LG/AIRTELAFRI.LG/GEREGU.LG rows that motivated this fix would
+    keep silently distorting WR/PF/sector stats forever.
+
+    Never overwrites resolved/outcome/exit_price/actual_return_pct --
+    only adds price_frozen=True and appends a note to outcome_reason, so
+    the original resolution is still fully visible in the audit trail.
+    Not part of the daily pipeline -- run manually, once.
+    """
+    outcomes = load_ngx_outcomes()
+    n_flagged = 0
+    for o in outcomes:
+        if not o.get("resolved") or o.get("excluded_legacy"):
+            continue
+        if o.get("price_frozen") is not None:
+            continue  # already has the field (resolved after the fix landed)
+        entry_price = o.get("entry_price")
+        exit_price  = o.get("exit_price")
+        if entry_price is None or exit_price is None:
+            continue
+        frozen = (exit_price == entry_price)
+        o["price_frozen"] = frozen
+        if frozen:
+            n_flagged += 1
+            note = (" | ⚠️ PRICE FROZEN: exit_price exactly equals entry_price — "
+                    "likely illiquid ticker or stale provider data, not a real "
+                    "flat outcome. Excluded from win-rate/PF.")
+            if note not in (o.get("outcome_reason") or ""):
+                o["outcome_reason"] = (o.get("outcome_reason") or "") + note
+    save_ngx_outcomes(outcomes)
+    return n_flagged
 
 
 # ── Summary report ────────────────────────────────────────────────────────────
@@ -369,6 +432,16 @@ def ngx_outcome_summary():
     surfaced separately (excluded_legacy_total) for audit transparency —
     see print_ngx_outcome_report().
 
+    price_frozen entries (2026-08-08: exit_price exactly equal to
+    entry_price — confirmed on SEPLAT.LG/TOTAL.LG/AIRTELAFRI.LG/GEREGU.LG
+    across multiple independent resolution runs, not a local caching bug,
+    see resolve_ngx_outcomes()) are ALSO dropped from `resolved`/WR/PF/
+    sector stats for the same reason as excluded_legacy: a frozen price
+    isn't a real trading outcome, and blending it into FLAT was silently
+    distorting sector-level win rates (oil/telecom/power looked uniformly
+    bad when it was mostly this artifact). Counted separately
+    (price_frozen_total) for transparency, same pattern as excluded_legacy.
+
     The clean NGX OOS clock (oos_start_date / oos_day) is derived
     dynamically from the first signal that actually has a non-null
     entry_price — not a hardcoded date — since as of this fix landing,
@@ -381,8 +454,11 @@ def ngx_outcome_summary():
     active    = [o for o in outcomes if not o.get("excluded_legacy")]
     excluded  = [o for o in outcomes if o.get("excluded_legacy")]
 
-    resolved  = [o for o in active if o.get("resolved")]
-    pending   = [o for o in active if not o.get("resolved")]
+    resolved_all = [o for o in active if o.get("resolved")]
+    pending      = [o for o in active if not o.get("resolved")]
+
+    frozen   = [o for o in resolved_all if o.get("price_frozen")]
+    resolved = [o for o in resolved_all if not o.get("price_frozen")]
 
     wins    = sum(1 for o in resolved if o.get("outcome") == "WIN")
     losses  = sum(1 for o in resolved if o.get("outcome") == "LOSS")
@@ -423,6 +499,7 @@ def ngx_outcome_summary():
         "excluded_legacy_total":len(excluded),
         "excluded_legacy_resolved": sum(1 for o in excluded if o.get("resolved")),
         "excluded_legacy_pending":  sum(1 for o in excluded if not o.get("resolved")),
+        "price_frozen_total":  len(frozen),
         "total_resolved":      total_r,
         "pending":             len(pending),
         "wins":                wins,
@@ -464,6 +541,10 @@ def print_ngx_outcome_report():
               f"non-actionable) — audit only, not counted above "
               f"({s['excluded_legacy_resolved']} macro-regime-resolved, "
               f"{s['excluded_legacy_pending']} orphaned/never-priced)")
+    if s['price_frozen_total']:
+        print(f"  ⓘ  {s['price_frozen_total']} signals excluded — exit_price exactly "
+              f"equals entry_price (illiquid ticker or stale provider data, "
+              f"not a real flat outcome) — not counted in WR/PF above")
 
     if s['total_resolved'] > 0:
         print(f"\n  WIN RATE:        {s['win_rate']}%  "
