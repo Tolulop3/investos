@@ -1455,6 +1455,14 @@ def run_daily(test_mode=False, dry_run=False):
         )
         with open("etf_signals.json", "w") as f:
             json.dump(etf_signals, f, indent=2, default=str)
+
+        try:
+            from etf_outcome_tracker import log_etf_signals, resolve_etf_outcomes
+            log_etf_signals(etf_signals)
+            current_etf_prices = {e["ticker"]: e["price"] for e in etf_signals.get("scored", [])}
+            resolve_etf_outcomes(current_prices=current_etf_prices)
+        except Exception as _etoe:
+            print(f"   ⚠️ ETF outcome tracker error: {_etoe} — continuing without")
     except Exception as _etfe:
         import traceback as _etb
         print(f"   ⚠️ ETF engine error: {_etfe}")

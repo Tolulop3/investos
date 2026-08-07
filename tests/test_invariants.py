@@ -2492,3 +2492,241 @@ def test_ngx_price_frozen_backfill_skips_excluded_legacy_rows(monkeypatch):
 
     assert n_flagged == 0
     assert "price_frozen" not in saved["out"][0]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW (2026-08-08): ETF outcome tracker. etf_engine.py has scored ETFs daily
+# since inception with zero way to know if any of it was ever right. Own
+# file (etf_outcome_tracker.py / etf_outcomes.json), not a reuse of
+# outcome_tracker.py or ngx_outcome_tracker.py, since neither the schema
+# (no ETF ML features) nor a single threshold (2 years of real price
+# history showed DEFENSIVE and THEMATIC ETFs differ 10x+ in typical
+# 30-day move size) transfers. Category-tiered thresholds, 30-day window,
+# full_universe vs top_n_by_account kept as separate report sections.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_etf_classify_outcome_uses_category_specific_threshold():
+    """The same return magnitude must classify differently depending on
+    category -- this is the whole point of category-tiered thresholds,
+    not a single flat one."""
+    import etf_outcome_tracker as eot
+
+    # 0.60% is a WIN for DEFENSIVE (threshold 0.25) but only FLAT for
+    # CORE (threshold 0.75) -- proves the threshold is actually keyed by
+    # category, not a shared default.
+    assert eot._classify_etf_outcome(0.60, "DEFENSIVE") == "WIN"
+    assert eot._classify_etf_outcome(0.60, "CORE") == "FLAT"
+
+    # -1.20% is a LOSS for CORE (threshold 0.75) but only FLAT for
+    # THEMATIC (threshold 1.50).
+    assert eot._classify_etf_outcome(-1.20, "CORE") == "LOSS"
+    assert eot._classify_etf_outcome(-1.20, "THEMATIC") == "FLAT"
+
+
+def test_etf_classify_outcome_unknown_category_uses_default():
+    import etf_outcome_tracker as eot
+
+    assert eot._classify_etf_outcome(0.60, "NOT_A_REAL_CATEGORY") == "FLAT"
+    assert eot._classify_etf_outcome(0.90, "NOT_A_REAL_CATEGORY") == "WIN"
+
+
+def test_etf_log_signals_captures_full_universe_not_just_top_picks():
+    """log_etf_signals() must log every scored ETF, not just each
+    account's top-N -- the point is validating the scoring itself, and
+    only logging cherry-picked top picks risks survivorship bias."""
+    import etf_outcome_tracker as eot
+    from unittest.mock import patch
+
+    fake_result = {
+        "regime": "NEUTRAL",
+        "scored": [
+            {"ticker": "AAA", "name": "A Fund", "category": "CORE", "score": 40.0, "price": 10.0},
+            {"ticker": "BBB", "name": "B Fund", "category": "THEMATIC", "score": 30.0, "price": 20.0},
+        ],
+        "rrsp_picks": [{"ticker": "AAA"}],
+        "tfsa_picks": [],
+        "fhsa_picks": [],
+    }
+    with patch.object(eot, "load_etf_outcomes", return_value=[]), \
+         patch.object(eot, "save_etf_outcomes") as mock_save:
+        n = eot.log_etf_signals(fake_result, run_time="2026-08-08T00:00:00")
+        saved = mock_save.call_args[0][0]
+
+    assert n == 2
+    tickers = {o["ticker"] for o in saved}
+    assert tickers == {"AAA", "BBB"}  # BBB never a top pick, still logged
+    bbb = next(o for o in saved if o["ticker"] == "BBB")
+    assert bbb["acct_flags"] == {"rrsp": False, "tfsa": False, "fhsa": False}
+    aaa = next(o for o in saved if o["ticker"] == "AAA")
+    assert aaa["acct_flags"]["rrsp"] is True
+    assert aaa["entry_price"] == 10.0
+
+
+def test_etf_log_signals_no_duplicate_on_same_day():
+    import etf_outcome_tracker as eot
+    from unittest.mock import patch
+    from datetime import datetime
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    existing = [{"ticker": "AAA", "signal_date": today_str}]
+    fake_result = {
+        "scored": [{"ticker": "AAA", "name": "A", "category": "CORE", "score": 50.0, "price": 10.0}],
+        "rrsp_picks": [], "tfsa_picks": [], "fhsa_picks": [],
+    }
+    with patch.object(eot, "load_etf_outcomes", return_value=existing), \
+         patch.object(eot, "save_etf_outcomes") as mock_save:
+        n = eot.log_etf_signals(fake_result)
+
+    assert n == 0
+
+
+def test_etf_resolve_leaves_unresolved_without_faking_outcome(monkeypatch):
+    """Missing entry_price, failed exit_price fetch, or too-recent a
+    signal must all leave the row unresolved -- never silently default
+    to a fake outcome."""
+    import etf_outcome_tracker as eot
+    from datetime import datetime, timedelta
+
+    old_date = (datetime.now() - timedelta(days=31)).strftime("%Y-%m-%d")
+    recent_date = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+    outcomes = [
+        {"ticker": "NO_ENTRY", "category": "CORE", "signal_date": old_date,
+         "entry_price": None, "resolved": False},
+        {"ticker": "TOO_RECENT", "category": "CORE", "signal_date": recent_date,
+         "entry_price": 100.0, "resolved": False},
+    ]
+    saved = {}
+    monkeypatch.setattr(eot, "load_etf_outcomes", lambda: outcomes)
+    monkeypatch.setattr(eot, "save_etf_outcomes", lambda o: saved.setdefault("out", o))
+
+    n = eot.resolve_etf_outcomes(current_prices={})
+
+    assert n == 0
+    assert all(not o["resolved"] for o in saved["out"])
+
+
+def test_etf_resolve_classifies_correctly_with_provided_prices(monkeypatch):
+    import etf_outcome_tracker as eot
+    from datetime import datetime, timedelta
+
+    old_date = (datetime.now() - timedelta(days=31)).strftime("%Y-%m-%d")
+    outcomes = [{"ticker": "WINNER", "category": "DEFENSIVE",
+                 "signal_date": old_date, "entry_price": 100.0, "resolved": False}]
+    saved = {}
+    monkeypatch.setattr(eot, "load_etf_outcomes", lambda: outcomes)
+    monkeypatch.setattr(eot, "save_etf_outcomes", lambda o: saved.setdefault("out", o))
+
+    n = eot.resolve_etf_outcomes(current_prices={"WINNER": 100.30})
+
+    assert n == 1
+    row = saved["out"][0]
+    assert row["resolved"] is True
+    assert row["actual_return_pct"] == 0.3
+    assert row["outcome"] == "WIN"
+
+
+def test_etf_outcome_summary_full_universe_and_top_n_never_blended(monkeypatch):
+    """full_universe and top_n_by_account must be separate sections with
+    independently-computed win rates -- same multi-cut pattern as
+    win_rate.json, never combined into one number."""
+    import etf_outcome_tracker as eot
+
+    outcomes = [
+        {"ticker": "A", "category": "CORE", "resolved": True, "outcome": "WIN",
+         "acct_flags": {"rrsp": True, "tfsa": False, "fhsa": False}},
+        {"ticker": "B", "category": "CORE", "resolved": True, "outcome": "LOSS",
+         "acct_flags": {"rrsp": False, "tfsa": False, "fhsa": False}},
+    ]
+    monkeypatch.setattr(eot, "load_etf_outcomes", lambda: outcomes)
+    s = eot.etf_outcome_summary()
+
+    assert s["full_universe"]["win_rate"] == 50.0
+    assert s["full_universe"]["total_resolved"] == 2
+    assert s["top_n_by_account"]["rrsp"]["win_rate"] == 100.0
+    assert s["top_n_by_account"]["rrsp"]["total_resolved"] == 1
+    assert s["top_n_by_account"]["tfsa"]["total_resolved"] == 0
+
+
+def test_etf_outcome_tracker_wired_into_run_daily():
+    """run_daily.py must actually call the new tracker -- a module that's
+    never invoked doesn't close the 'ETF picks are unmeasured' gap."""
+    with open("run_daily.py") as f:
+        content = f.read()
+    assert "log_etf_signals" in content
+    assert "resolve_etf_outcomes" in content
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): dead thingproxy.freeboard.io route removed from
+# fetchYahooData()'s fallback waterfall. Confirmed via independent DNS
+# lookup (NXDOMAIN, not a transient outage) that this domain no longer
+# resolves -- it could only ever hit its own 10s timeout, adding dead
+# latency to every ticker lookup that fell through to it with zero chance
+# of ever succeeding. Stress-testing the live proxy services themselves
+# (corsproxy.io, allorigins.win, codetabs.com) isn't something a unit
+# test can assert on -- their availability changes independently of this
+# codebase -- so this just locks in that the known-dead one stays removed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_index_html_no_longer_references_dead_thingproxy_domain():
+    """thingproxy.freeboard.io must not be fetched from anymore -- the
+    domain is confirmed dead (NXDOMAIN), keeping the fetch call would
+    just guarantee a stuck 10s timeout on affected lookups."""
+    with open("index.html") as f:
+        content = f.read()
+    assert "fetch('https://thingproxy.freeboard.io" not in content
+    assert 'fetch("https://thingproxy.freeboard.io' not in content
+
+
+def test_index_html_no_longer_fetches_confirmed_broken_proxies():
+    """corsproxy.io, allorigins.win, and codetabs.com must not be fetched
+    from anymore in fetchYahooData()'s waterfall -- all three confirmed
+    non-functional by live stress test (corsproxy.io silently returning
+    its own HTML landing page instead of JSON, reproduced twice;
+    allorigins.win erroring/timing out; codetabs.com's origin down via
+    Cloudflare 521). They may still appear in an explanatory comment --
+    only the live fetch() calls are asserted against."""
+    with open("index.html") as f:
+        content = f.read()
+    start = content.index("async function fetchYahooData")
+    i = content.index("{", start)
+    depth = 0
+    end = -1
+    for idx in range(i, len(content)):
+        if content[idx] == "{":
+            depth += 1
+        elif content[idx] == "}":
+            depth -= 1
+            if depth == 0:
+                end = idx
+                break
+    fn_body = content[start:end + 1]
+
+    for domain in ("corsproxy.io", "allorigins.win", "codetabs.com"):
+        assert f"fetch('https://{domain}" not in fn_body, f"{domain} still fetched from"
+        assert f'fetch("https://{domain}' not in fn_body, f"{domain} still fetched from"
+
+
+def test_index_html_netlify_route_no_longer_skips_canadian_tickers():
+    """The Netlify proxy (the only route in the original waterfall
+    verified reliable) must be tried for every ticker, not just non-
+    Canadian ones -- ticker.js's own sanitisation already allows periods
+    (needed for .TO), and the Yahoo endpoint it calls is ticker-agnostic."""
+    with open("index.html") as f:
+        content = f.read()
+    start = content.index("async function fetchYahooData")
+    i = content.index("{", start)
+    depth = 0
+    end = -1
+    for idx in range(i, len(content)):
+        if content[idx] == "{":
+            depth += 1
+        elif content[idx] == "}":
+            depth -= 1
+            if depth == 0:
+                end = idx
+                break
+    fn_body = content[start:end + 1]
+
+    assert "isCanadian" not in fn_body
+    assert "investos-proxy.netlify.app" in fn_body

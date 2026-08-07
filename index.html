@@ -5820,11 +5820,28 @@ function parseStooqCSV(csv, ticker) {
 }
 
 async function fetchYahooData(ticker) {
-  // ── Netlify proxy (Route 1) + 8-route fallback waterfall ─────────────────
-  // Route 1: InvestOS Netlify proxy — server-side crumb+cookie auth.
-  //          Full chart data for every ticker. No CORS. No auth wall.
-  //          Deployed at: investos-proxy.netlify.app
-  // Routes 2-9: Public proxies + Yahoo v7 quote fallback
+  // ── Netlify proxy (Route 1, all tickers) + direct-Yahoo fallback ──────────
+  // Simplified 2026-08-08 from a 9-route waterfall after live-stress-testing
+  // it: 7 of the 8 non-Netlify routes were non-functional (corsproxy.io
+  // silently returning its own HTML landing page instead of JSON, not a
+  // transient error -- reproduced twice; allorigins.win erroring/timing out;
+  // codetabs.com's origin down via Cloudflare 521; thingproxy.freeboard.io a
+  // dead domain, confirmed NXDOMAIN via independent DNS lookup). The "9
+  // routes of redundancy" this waterfall implied had quietly rotted to
+  // ~1-2 real working paths as those free third-party services changed or
+  // died over time, without any signal that it had happened.
+  //
+  // Route 1 (Netlify) was previously skipped for Canadian .TO/.V tickers on
+  // the assumption direct browser access to Yahoo works fine for them and
+  // to save Netlify function invocations -- but ticker.js's own ticker
+  // sanitisation already allows periods (needed for .TO), the Yahoo chart
+  // endpoint it calls is ticker-agnostic, and the earlier Netlify credit
+  // investigation confirmed function invocations were near-zero (the whole
+  // credit bleed was build-trigger volume, already fixed separately) -- so
+  // there's real headroom and no technical reason to exclude them. Now the
+  // primary route for every ticker, since it's the only one of the original
+  // 9 verified reliable. Direct Yahoo (2 attempts) remains as the fallback
+  // for if Netlify itself is unreachable.
   // ─────────────────────────────────────────────────────────────────────────
   var NETLIFY = 'https://investos-proxy.netlify.app/api/ticker?s=';
   // ── INVESTOS_KEY: set this to match INVESTOS_API_KEY in Netlify env vars ──
@@ -5847,106 +5864,19 @@ async function fetchYahooData(ticker) {
     });
   }
 
-  // ── Route 1: Netlify proxy (US stocks + Crypto only — TSX free on browser) ──
-  // TSX (.TO) stocks bypass Netlify — Yahoo allows browser requests for .TO
-  // Netlify Twelve Data free tier only covers US stocks and crypto
-  var isCanadian = ticker.endsWith('.TO') || ticker.endsWith('.V');
-  if (!isCanadian) {
-    try {
-      var r1 = await tr(fetch(NETLIFY + encodeURIComponent(ticker), {
-        headers: { 'x-investos-key': NETLIFY_KEY }
-      }), 12000);
-      return await parseYChart(r1);
-    } catch(_) {}
-  }
+  // ── Route 1: Netlify proxy — every ticker, US and Canadian alike ─────────
+  try {
+    var r1 = await tr(fetch(NETLIFY + encodeURIComponent(ticker), {
+      headers: { 'x-investos-key': NETLIFY_KEY }
+    }), 12000);
+    return await parseYChart(r1);
+  } catch(_) {}
 
   // ── Route 2 & 3: Direct Yahoo (works in some regions) ───────────────────
   for (var u of [yUrl, yUrl2]) {
     try {
       var rd = await tr(fetch(u, { headers:{'Accept':'application/json'}, mode:'cors' }), 6000);
       return await parseYChart(rd);
-    } catch(_) {}
-  }
-
-  // ── Route 4: corsproxy.io ────────────────────────────────────────────────
-  try {
-    var r4 = await tr(fetch('https://corsproxy.io/?' + encodeURIComponent(yUrl),
-      { headers:{'Accept':'application/json','x-requested-with':'XMLHttpRequest'} }), 8000);
-    return await parseYChart(r4);
-  } catch(_) {}
-
-  // ── Route 5: allorigins /get ─────────────────────────────────────────────
-  try {
-    var r5 = await tr(fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(yUrl)), 8000);
-    if (r5.ok) {
-      var w5 = await r5.json();
-      var j5 = null;
-      try { j5 = JSON.parse(w5.contents || '{}'); } catch(_) {}
-      var c5 = j5 && j5.chart && j5.chart.result && j5.chart.result[0];
-      if (c5) return parseYahooChart(c5);
-    }
-  } catch(_) {}
-
-  // ── Route 6: thingproxy ──────────────────────────────────────────────────
-  try {
-    var r6 = await tr(fetch('https://thingproxy.freeboard.io/fetch/' + yUrl), 10000);
-    return await parseYChart(r6);
-  } catch(_) {}
-
-  // ── Route 7: codetabs ────────────────────────────────────────────────────
-  try {
-    var r7 = await tr(fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(yUrl)), 8000);
-    return await parseYChart(r7);
-  } catch(_) {}
-
-  // ── Route 8 & 9: Yahoo v7 quote via allorigins + corsproxy (limitedData fallback) ──
-  var yUrlV7 = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + encodeURIComponent(ticker);
-  for (var [label, proxyUrl] of [
-    ['allorigins', 'https://api.allorigins.win/get?url=' + encodeURIComponent(yUrlV7)],
-    ['corsproxy',  'https://corsproxy.io/?' + encodeURIComponent(yUrlV7)],
-  ]) {
-    try {
-      var rv = await tr(fetch(proxyUrl, { headers:{'Accept':'application/json'} }), 9000);
-      if (rv.ok) {
-        var wv = await rv.json();
-        // allorigins wraps in {contents:...}, corsproxy returns direct
-        var jv = null;
-        try {
-          jv = label === 'allorigins'
-            ? JSON.parse(wv.contents || '{}')
-            : wv;
-        } catch(_) {}
-        var qv = jv?.quoteResponse?.result?.[0];
-        if (qv && qv.regularMarketPrice) {
-          var pv    = qv.regularMarketPrice;
-          var prev  = qv.regularMarketPreviousClose || pv;
-          return {
-            ticker: ticker, name: qv.longName || qv.shortName || ticker,
-            price: pv, prevClose: prev,
-            dayChg: prev ? ((pv - prev) / prev * 100) : (qv.regularMarketChangePercent || 0),
-            currency: qv.currency || 'USD', exchange: qv.exchange || '',
-            marketCap: qv.marketCap || null,
-            high52: qv.fiftyTwoWeekHigh || 0, low52: qv.fiftyTwoWeekLow || 0,
-            range52pos: qv.fiftyTwoWeekHighChangePercent
-              ? Math.round((1 - Math.abs(qv.fiftyTwoWeekHighChangePercent)) * 100) : 50,
-            ma20: qv.twoHundredDayAverage || 0,
-            ma50: qv.fiftyDayAverage || 0,
-            ma200: qv.twoHundredDayAverage || 0,
-            aboveMa20: false,
-            aboveMa50:  pv > (qv.fiftyDayAverage || 0),
-            aboveMa200: pv > (qv.twoHundredDayAverage || 0),
-            perf5d: qv.regularMarketChangePercent || 0, perf20d: 0, perf60d: 0,
-            rsi: 50, atr: 0,
-            avgVol: qv.averageDailyVolume3Month || 0,
-            todayVol: qv.regularMarketVolume || 0,
-            volRatio: qv.averageDailyVolume3Month
-              ? (qv.regularMarketVolume / qv.averageDailyVolume3Month) : 1,
-            closes: [], volumes: [], timestamps: [],
-            sector: qv.sector || '', industry: qv.industry || '',
-            quoteType: qv.quoteType || '', limitedData: true,
-          };
-        }
-      }
     } catch(_) {}
   }
 
