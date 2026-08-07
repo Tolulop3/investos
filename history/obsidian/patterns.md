@@ -32,10 +32,10 @@ tags: [investos, patterns, weekly]
 | SO | 🔴 AVOID | 0d | -16.5 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
-| AAPL | 🔴 AVOID | 0d | -10.7 | — |
 | SBUX | 🔴 AVOID | 0d | -10.7 | — |
-| NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| AAPL | 🔴 AVOID | 0d | -10.7 | — |
 | ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
+| NVDA | 🔴 AVOID | 0d | -9.5 | — |
 | CNR.TO | 🔴 AVOID | 0d | -9.2 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | TXN | 🔴 AVOID | 0d | -8.8 | — |
