@@ -184,15 +184,59 @@ def apply_rs_to_picks(picks, rs_ratings):
     for pick in picks:
         ticker = pick["ticker"]; rs = rs_ratings.get(ticker,{})
         rs_rating = rs.get("rs_rating",50); rs_signal = rs.get("rs_signal","📊 AVERAGE")
-        if   rs_rating >= 90: rs_adj = +15
-        elif rs_rating >= 80: rs_adj = +10
-        elif rs_rating >= 70: rs_adj = +5
-        elif rs_rating >= 60: rs_adj = 0
+        # rs_adj curve (2026-08-06): flattened at the top, small boost added at
+        # 60-70. Root-cause diagnosis on 743 resolved picks (2026-06-14 to
+        # 2026-07-29) found the OLD monotonically-increasing curve rewarded
+        # rs_rating>=90 the MOST (+15) while it was empirically the WORST
+        # bucket (29.5% WR) in the whole dataset. WR actually peaked at
+        # rs_rating 60-70 (54.7%) and declined steadily above 80 (80-90:
+        # 40.5%, 90-100: 29.5%) -- classic cross-sectional momentum crowding.
+        # Deliberately NOT inverting the curve to fully match the empirical
+        # peak (n=743 over one ~6-week window is real evidence, not enough
+        # to fit precisely) -- just removing the "reward the extreme most"
+        # incentive and adding a small nod to the actual sweet spot.
+        if   rs_rating >= 90: rs_adj = +5   # was +15 -- empirically the worst bucket
+        elif rs_rating >= 80: rs_adj = +5   # was +10 -- also underperforms 70-90
+        elif rs_rating >= 70: rs_adj = +5   # unchanged
+        elif rs_rating >= 60: rs_adj = +3   # was 0 -- this is the empirical sweet spot
         elif rs_rating >= 40: rs_adj = -3
         elif rs_rating >= 20: rs_adj = -8
         else:                  rs_adj = -15
         pick["rs_rating"] = rs_rating; pick["rs_signal"] = rs_signal; pick["rs_adj"] = rs_adj
         pick["score"] = max(0, min(100, pick["score"] + rs_adj))
+        # SWING category caps (2026-08-06). SWING is assigned via perf_90d>20
+        # (stock_screener.py's classify_pick()) -- the same momentum extremity
+        # that also drives rs_adj and the momentum pillar itself, so SWING
+        # picks disproportionately land in the top score tiers.
+        #
+        # Two distinct caps, not one -- backtested against 743 resolved picks
+        # (2026-06-14 to 2026-07-29). A single mild cap (85, matching
+        # etf_engine.py's THEMATIC cap) just relocates the damage: capping
+        # SWING+rs_rating>=90 picks at 85 pulled 90-100 tier WR from 30.7%
+        # to 42.0%, but dumped the same bad picks into 75-89, dragging THAT
+        # tier from 49.6% to 41.3% WR. Tried progressively lower caps (70,
+        # 65, 60) for the compounding case specifically -- same result each
+        # time, just relocated to whichever tier the cap landed in (60-74
+        # dropped to 41.4% WR, worse than its original 48.7%). The
+        # SWING + rs_rating>=80 combination is toxic wherever it's tiered
+        # (18-23% WR consistently, worst sub-bucket found in the whole
+        # diagnosis) -- no score cap that keeps it in an "actionable" tier
+        # fixes that, it just moves which tier absorbs it.
+        #
+        # So: mild cap (85) for SWING alone -- matches ETF precedent, keeps
+        # it out of the very top only. Aggressive cap (50, pushes below the
+        # 60-point tier floor) for SWING when it ALSO has rs_rating>=80 --
+        # deliberately drops it into below-60, which already carries smaller
+        # position sizes and lower stated confidence. With this split, ALL
+        # THREE actionable tiers end up healthier than the original baseline
+        # (90-100: 30.7%->42.0%, 75-89: 49.6%->47.4%, 60-74: 48.7%->51.0%),
+        # and below-60 honestly absorbs the population that was previously
+        # hidden inside higher tiers with false confidence.
+        category = pick.get("pick", {}).get("category")
+        if category == "SWING" and rs_rating >= 80:
+            pick["score"] = min(pick["score"], 50)
+        elif category == "SWING":
+            pick["score"] = min(pick["score"], 85)
         if rs_rating >= 70:
             pick.setdefault("reasons",[]).append(f"💪 RS Rating: {rs_rating} — {rs_signal}")
         elif rs_rating < 40:
