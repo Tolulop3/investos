@@ -7,12 +7,11 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 81.3%  (+0.67%/day)
-- Sharpe: -0.222  (-0.046/day)
+- Breadth (200MA): 80.1%  (+0.26%/day)
+- Sharpe: -0.213  (-0.040/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **RTX** — 4d streak, avg score 100.0
-- **FBP** — 3d streak, avg score 100.0
+- **RTX** — 3d streak, avg score 100.0
 
 ## Score Velocity (rising/falling fast)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
@@ -25,18 +24,18 @@ tags: [investos, patterns, weekly]
 - 📉 **CNR.TO** -9.2 pts/day  (82.0 → 63.7)
 
 ## ⚠️ Sector Concentration Risk
-- **HEALTHCARE**: 100.0% of recent picks (1 picks) — HIGH_CONCENTRATION
+- **HEALTHCARE**: 100.0% of recent picks (2 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | AAPL | 🔴 AVOID | 0d | -10.7 | — |
 | SBUX | 🔴 AVOID | 0d | -10.7 | — |
-| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | NVDA | 🔴 AVOID | 0d | -9.5 | — |
+| ABX.TO | 🟡 WATCH | 0d | +9.5 | — |
 | CNR.TO | 🔴 AVOID | 0d | -9.2 | — |
 | PFE | 🔴 AVOID | 0d | -9.0 | — |
 | TXN | 🔴 AVOID | 0d | -8.8 | — |
@@ -47,7 +46,7 @@ tags: [investos, patterns, weekly]
 - 2026-04: n=250  WR=56%
 - 2026-05: n=215  WR=53%
 - 2026-06: n=136  WR=39% ⚠️
-- 2026-07: n=140  WR=35% ⚠️
+- 2026-07: n=144  WR=36% ⚠️
 - 2026-08: n=0  WR=—
 
 ---
