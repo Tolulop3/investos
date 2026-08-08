@@ -3429,3 +3429,133 @@ def test_run_ml_engine_scoring_table_shows_category_and_source(monkeypatch, tmp_
 
     assert "Category" in out and "Source" in out, "scoring table header must show Category/Source columns"
     assert "WATCH" in out and "rules_based" in out, "per-row output must show the pick's actual category and routing source"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): audit of the FHSA/TFSA duplicate-pick root cause (see
+# pick_utils.py's module docstring) found it recurring independently in 3
+# more call sites beyond top_flat, one of them severe:
+# ml_engine.py's _apply_sector_cap() checked basket_tickers once before its
+# reserve-fill loop but never re-checked during it, so a duplicate could be
+# added to the FINAL position-sizing basket TWICE -- real double capital
+# allocation to the same stock. risk_engine.py's track_signal_accuracy() and
+# run_stress_simulation() both flattened screener buckets with zero dedup at
+# all, double-counting a straddling ticker in accuracy tracking and in the
+# stress-test baseline average respectively.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_pick_utils_dedupe_degrades_to_score_only_without_ml_prob():
+    """Some call sites (risk_engine.py's stress-test baseline) build summary
+    dicts that never carry an ml_prob field at all -- the shared utility
+    must still dedupe correctly in that case, falling back to score."""
+    from pick_utils import dedupe_picks_by_ticker
+
+    picks = [
+        {"ticker": "AMGN", "score": 100, "bucket": "FHSA_top5"},
+        {"ticker": "AMGN", "score": 96,  "bucket": "TFSA_growth_top5"},
+        {"ticker": "MPC",  "score": 85,  "bucket": "TFSA_swing_top3"},
+    ]
+    result = dedupe_picks_by_ticker(picks, verbose=False)
+    assert len(result) == 2
+    amgn = [p for p in result if p["ticker"] == "AMGN"][0]
+    assert amgn["score"] == 100, "with no ml_prob on either copy, must fall back to higher score"
+
+
+def test_apply_sector_cap_never_duplicates_a_ticker_in_final_basket():
+    """The severe case: reproduces the actual bug shape (a duplicate ticker
+    in the reserve pool that the old fill loop could add twice) and drives
+    the real _apply_sector_cap(), not a reimplementation of its logic.
+
+    The fill loop only breaks once len(filled) reaches len(picks) -- with
+    just one excess slot, it fills and breaks before ever reaching a second
+    reserve entry, silently *not* exercising the bug regardless of whether
+    the fix is present. Needs >=2 excess slots so the loop processes past
+    the first AMGN copy into the duplicate second one (confirmed by
+    reverting the fix and watching this exact test pass anyway until the
+    slot count was corrected -- the fix's own regression coverage failed
+    silently the same way the original bug did)."""
+    import ml_engine as me
+
+    # 5 FINANCIALS picks, cap=2 -> kept=2, excess=3: needs 3 replacements,
+    # more than the reserve pool can supply, so the loop consumes every
+    # reserve candidate rather than breaking after the first.
+    picks = [
+        {"ticker": "BAC",  "score": 97, "sector": "Financial Services", "data": {}},
+        {"ticker": "JPM",  "score": 95, "sector": "Financial Services", "data": {}},
+        {"ticker": "V",    "score": 90, "sector": "Financial Services", "data": {}},
+        {"ticker": "WFC",  "score": 88, "sector": "Financial Services", "data": {}},
+        {"ticker": "GS",   "score": 85, "sector": "Financial Services", "data": {}},
+    ]
+    # AMGN appears twice in the reserve source -- exactly today's real shape
+    # (FHSA copy with ml_prob, TFSA copy without) -- in a non-capped sector.
+    screener_picks = {
+        "TFSA_growth_top5": [
+            {"ticker": "AMGN", "score": 100, "ml_prob": 0.68, "sector": "Healthcare", "data": {}},
+        ],
+        "TFSA_income_top5": [],
+        "TFSA_swing_top3": [],
+        "FHSA_top5": [
+            {"ticker": "AMGN", "score": 96, "sector": "Healthcare", "data": {}},
+        ],
+        "conviction_picks": [],
+    }
+
+    result = me._apply_sector_cap(picks, screener_picks, max_per_sector=2)
+    tickers = [p["ticker"] for p in result]
+    assert tickers.count("AMGN") <= 1, (
+        f"AMGN must not appear twice in the final basket, got: {tickers}"
+    )
+    assert len(tickers) == len(set(tickers)), f"final basket has duplicate tickers: {tickers}"
+
+
+def test_track_signal_accuracy_does_not_double_log_duplicate_ticker(monkeypatch, tmp_path):
+    """A straddling ticker must generate exactly one set of pending
+    accuracy-check entries (one per check_window), not two."""
+    import risk_engine as re
+
+    monkeypatch.setattr(re, "SIGNAL_ACCURACY_FILE", str(tmp_path / "signal_accuracy_test.json"))
+
+    todays_picks = [
+        {"ticker": "AMGN", "score": 100, "ml_prob": 0.68, "data": {"price": 410.94}, "pick": {"category": "FHSA Conservative Growth"}},
+        {"ticker": "AMGN", "score": 96, "data": {"price": 410.94}, "pick": {"category": "GROWTH CORE"}},
+        {"ticker": "MPC", "score": 85, "ml_prob": 0.31, "data": {"price": 298.20}, "pick": {"category": "SWING"}},
+    ]
+    re.track_signal_accuracy(todays_picks, score_history={}, check_windows=(3, 7, 14))
+
+    saved = re.load_signal_accuracy()
+    amgn_entries = [e for e in saved.get("entries", []) if e["ticker"] == "AMGN"]
+    mpc_entries  = [e for e in saved.get("entries", []) if e["ticker"] == "MPC"]
+    assert len(amgn_entries) == 3, f"expected 3 pending checks (one per window) for AMGN, got {len(amgn_entries)}"
+    assert len(mpc_entries) == 3, f"expected 3 pending checks for MPC, got {len(mpc_entries)}"
+
+
+def test_stress_simulation_baseline_not_skewed_by_duplicate_ticker():
+    """A straddling ticker must not be double-counted in the stress-test
+    baseline's avg score / pick count."""
+    import risk_engine as re
+
+    screener_results = {
+        "FHSA_top5": [
+            {"ticker": "AMGN", "score": 100, "pick": {"exp_high": 50}, "data": {"price": 410.94, "volatility": 1.5}},
+        ],
+        "TFSA_growth_top5": [
+            {"ticker": "AMGN", "score": 96, "pick": {"exp_high": 45}, "data": {"price": 410.94, "volatility": 1.5}},
+            {"ticker": "MPC", "score": 85, "pick": {"exp_high": 40}, "data": {"price": 298.20, "volatility": 1.2}},
+        ],
+        "TFSA_income_top5": [],
+        "TFSA_swing_top3": [],
+    }
+    results = re.run_stress_simulation(screener_results, ml_results=None, verbose=False)
+
+    normal_count = results["scenarios"]["double_costs"]["normal_count"]
+    assert normal_count == 2, (
+        f"AMGN's duplicate must not inflate the pick count -- expected 2 "
+        f"unique tickers (AMGN, MPC), got normal_count={normal_count}"
+    )
+
+    normal_avg = results["scenarios"]["remove_top5"]["normal_avg"]
+    expected_avg = round((100 + 85) / 2, 1)  # AMGN's higher-score copy (100) + MPC (85)
+    assert normal_avg == expected_avg, (
+        f"baseline avg score must use AMGN's deduped score once, not both "
+        f"copies -- expected {expected_avg}, got {normal_avg}"
+    )

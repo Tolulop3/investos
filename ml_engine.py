@@ -33,6 +33,7 @@ from collections import defaultdict, Counter
 
 from gate_engine import MLGate, load_outcomes_ticker_counts, PROBATION_CAP
 from outcome_tracker import ml_prob_bucket
+from pick_utils import dedupe_picks_by_ticker
 
 warnings.filterwarnings('ignore')
 
@@ -1021,6 +1022,15 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2, excluded_tickers=
             all_candidates.append(p)
     if _sec_cap_excluded:
         print(f"  🏛  Sector cap reserve: filtered {_sec_cap_excluded} excluded tickers")
+
+    # FIX (2026-08-08): a ticker qualifying for both an FHSA pick and a TFSA
+    # pick produces two independent dict objects here (see pick_utils.py).
+    # Without this, the fill loop below checks basket_tickers only ONCE
+    # before it starts and never re-checks during it, so a duplicate could
+    # be added to the FINAL basket twice -- real double capital allocation
+    # to the same stock. Dedupe here, before eligible_replacements is even
+    # built, so the duplicate never reaches the fill loop at all.
+    all_candidates = dedupe_picks_by_ticker(all_candidates, verbose=True, label="sector_cap_reserve")
 
     # Pre-filter reserve: exclude any sector already at the cap limit.
     # Without this, the fallback below would re-admit excess picks from capped

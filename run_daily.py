@@ -739,49 +739,20 @@ def dedupe_top_flat_picks(picks, verbose=True):
     FIX (2026-08-08): a ticker qualifying for both an FHSA pick and a TFSA
     pick gets two INDEPENDENT dict objects -- stock_screener.py's FHSA pass
     and TFSA pass each build their own via classify_pick(), not shared
-    references. run_ml_engine() dedupes its own internal copy before
-    scoring (only one duplicate ever gets ml_prob/an ML-adjusted score),
-    but concatenating all four top-N buckets for intelligence-layer input
-    used to feed BOTH duplicates through, and update_score_history()
-    overwrites same-day entries in loop order -- so whichever duplicate
-    came last silently won, regardless of whether it was the ML-scored one.
-    Confirmed live 2026-08-08: TOST/CSCO/RTX/VLO all collapsed to
-    score=50.0 in score_history.json despite having real, much higher
-    ML-scored values elsewhere in the same run.
+    references. Confirmed live 2026-08-08: TOST/CSCO/RTX/VLO all collapsed
+    to score=50.0 in score_history.json when an un-scored duplicate
+    silently overwrote the real ML-scored entry.
 
-    Dedupes by ticker, prioritizing the copy that actually has ml_prob (the
-    definitive signal it went through ML scoring) over raw score -- the
-    un-scored duplicate's PRE-ML score can coincidentally exceed the
-    ML-scored copy's POST-adjustment score, so score alone isn't a
-    reliable tiebreaker. Warns (if verbose) whenever a genuine mismatch is
-    found, so a future recurrence is visible in the log instead of
-    requiring after-the-fact reconstruction.
+    Thin wrapper around pick_utils.dedupe_picks_by_ticker() -- kept as a
+    named function here (rather than inlining the shared call at every
+    top_flat use site) so existing call sites and tests didn't need to
+    change when this was generalized into a shared utility usable by
+    ml_engine.py and risk_engine.py too, after an audit found the same
+    root cause recurring independently in 6+ call sites across the
+    pipeline (see pick_utils.py's module docstring).
     """
-    def _priority(p):
-        return (1 if "ml_prob" in p else 0, p.get("score", 0) or 0)
-
-    seen: dict = {}
-    for p in picks:
-        ticker = p.get("ticker")
-        if not ticker:
-            continue
-        existing = seen.get(ticker)
-        if existing is not None:
-            score_gap    = abs((existing.get("score", 0) or 0) - (p.get("score", 0) or 0))
-            ml_mismatch  = ("ml_prob" in existing) != ("ml_prob" in p)
-            if verbose and (score_gap > 0.5 or ml_mismatch):
-                print(f"   ⚠️  top_flat duplicate: {ticker} appeared in multiple buckets "
-                      f"(scores {existing.get('score')} vs {p.get('score')}, "
-                      f"ml_prob present: {'ml_prob' in existing} vs {'ml_prob' in p}) "
-                      f"-- keeping the ML-scored copy")
-        if existing is None or _priority(p) > _priority(existing):
-            seen[ticker] = p
-
-    deduped = list(seen.values())
-    if verbose and len(deduped) < len(picks):
-        print(f"   ℹ️  top_flat dedup: {len(picks)} → {len(deduped)} picks "
-              f"(removed {len(picks)-len(deduped)} duplicates)")
-    return deduped
+    from pick_utils import dedupe_picks_by_ticker
+    return dedupe_picks_by_ticker(picks, verbose=verbose, label="top_flat")
 
 
 # ============================================================

@@ -297,6 +297,15 @@ def run_stress_simulation(screener_results, ml_results=None, verbose=True):
                 "exp_high": p.get("pick", {}).get("exp_high", 0),
             })
 
+    # FIX (2026-08-08): a ticker qualifying for both an FHSA pick and a TFSA
+    # pick produces two independent dict objects (see pick_utils.py). These
+    # summary dicts never carry ml_prob at all, so dedup here degrades to
+    # score-only comparison -- still correct, since without it a straddling
+    # ticker gets double-counted in normal_avg_score/normal_count, skewing
+    # the stress-test baseline every scenario below gets compared against.
+    from pick_utils import dedupe_picks_by_ticker
+    all_picks = dedupe_picks_by_ticker(all_picks, verbose=True, label="stress_baseline")
+
     normal_avg_score     = sum(p["score"] for p in all_picks) / len(all_picks) if all_picks else 0
     normal_count         = len(all_picks)
     normal_avg_exp       = sum(p["exp_high"] for p in all_picks) / len(all_picks) if all_picks else 0
@@ -1238,6 +1247,15 @@ def track_signal_accuracy(todays_picks, score_history, check_windows=(3, 7, 14))
     now      = datetime.now()
     today    = now.strftime("%Y-%m-%d")
     accuracy = load_signal_accuracy()
+
+    # FIX (2026-08-08): a ticker qualifying for both an FHSA pick and a TFSA
+    # pick produces two independent dict objects (see pick_utils.py). Without
+    # this, this loop had no dedup at all -- a straddling ticker would log
+    # 2x the pending accuracy-check entries (one set per duplicate), double-
+    # counting one real trading decision as if it were two when the
+    # accuracy_pct aggregate gets computed later.
+    from pick_utils import dedupe_picks_by_ticker
+    todays_picks = dedupe_picks_by_ticker(todays_picks, verbose=True, label="signal_accuracy")
 
     # ── Step 1: Log today's picks as pending checks ─────
     pending = []
