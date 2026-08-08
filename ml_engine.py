@@ -430,7 +430,7 @@ class StockMLPredictor:
 
     def load_training_data(self):
         if not HAS_PANDAS:
-            return None, None, None
+            return None, None, None, None
 
         # PRIMARY: use the same feature builder as ml_retrainer.py — one builder, two callers.
         # This guarantees the daily training matrix has the same 23 columns in the same order,
@@ -439,12 +439,12 @@ class StockMLPredictor:
             from ml_retrainer import build_feature_matrix, load_resolved_outcomes
             resolved = load_resolved_outcomes()
             if len(resolved) >= 80:
-                X, y, w_arr, _ = build_feature_matrix(resolved)
+                X, y, w_arr, dates_arr = build_feature_matrix(resolved)
                 if X is not None and len(y) >= 50:
                     win_rate = float(y.mean())
                     print(f"   ✅ Loaded {len(y)} real outcomes | WR: {win_rate:.1%} "
                           f"| {len(X.columns)} features via build_feature_matrix")
-                    return X, y, w_arr
+                    return X, y, w_arr, dates_arr
         except Exception as _e:
             print(f"   ⚠️ build_feature_matrix failed ({_e}) — using bootstrap")
 
@@ -489,7 +489,7 @@ class StockMLPredictor:
         )
         y = (score > score.median()).astype(int)
         w = np.ones(n)
-        return X, y, w
+        return X, y, w, None  # no real signal dates on synthetic bootstrap data
 
     def train(self, verbose=True):
         if not HAS_XGB or not HAS_PANDAS or not HAS_SKLEARN:
@@ -528,15 +528,65 @@ class StockMLPredictor:
         if result is None or result[0] is None:
             return False
 
-        X, y, sample_weights = result
+        X, y, sample_weights, dates_arr = result
         if len(y) < 50:
             return False
 
         from sklearn.model_selection import TimeSeriesSplit
-        split = int(len(X) * 0.8)
+
+        # Frozen date-based split + purge buffer — mirrors ml_retrainer.py's
+        # train_and_save() exactly (see HOLDOUT_CUTOFF_DATE there). This used to be
+        # a positional 80/20 split with no purge, which is a *different* split from
+        # ml_retrainer.py's despite training on the same data via the same
+        # build_feature_matrix() call. Confirmed empirically (2026-08-08) on the
+        # live 2465-row matrix: the positional/no-purge split reported holdout
+        # AUC 0.607, but 232 of its "training" rows fell inside the 10-day purge
+        # window of the val boundary -- purging just those (same boundary,
+        # otherwise unchanged) dropped it to 0.543, and the full frozen-cutoff+
+        # purge method matching ml_retrainer.py landed at 0.497 (no real edge).
+        # ml_prob feeds a direct +4/+8 conviction-score boost in run_daily.py, so
+        # the old split wasn't just a misleading report number -- it was pushing
+        # real picks up in rank and size on leakage-inflated confidence.
+        if dates_arr is not None and len(dates_arr) == len(X):
+            from ml_retrainer import HOLDOUT_CUTOFF_DATE
+            dates_arr_np = np.asarray(dates_arr)
+            split = int((dates_arr_np <= HOLDOUT_CUTOFF_DATE).sum())
+        else:
+            if verbose:
+                print("  ⚠️  No signal dates available — falling back to positional "
+                      "80/20 split (NOT reproducible across runs)")
+            split = int(len(X) * 0.8)
+
         X_train, X_val = X.iloc[:split], X.iloc[split:]
         y_train, y_val = y.iloc[:split], y.iloc[split:]
         w_train        = sample_weights[:split]
+
+        # Purge buffer: labels resolve in 7 days, so the last ~10 days before the
+        # val boundary can have labels that overlap the holdout window. Purge
+        # those training rows out rather than let them leak. Same PURGE_DAYS as
+        # ml_retrainer.py.
+        if dates_arr is not None and len(dates_arr) >= split + 1 and split > 0:
+            try:
+                PURGE_DAYS = 10
+                val_start_dt = datetime.strptime(dates_arr[split], "%Y-%m-%d")
+                purge_cutoff = (val_start_dt - timedelta(days=PURGE_DAYS)).strftime("%Y-%m-%d")
+                keep_mask = np.array([d < purge_cutoff for d in dates_arr[:split]])
+                n_purged = int((~keep_mask).sum())
+                if n_purged > 0:
+                    X_train = X_train.iloc[keep_mask]
+                    y_train = y_train.iloc[keep_mask]
+                    w_train = w_train[keep_mask]
+                    if verbose:
+                        print(f"  🧹 Purge buffer ({PURGE_DAYS}d): removed {n_purged} "
+                              f"training rows near val start {val_start_dt.date()} — "
+                              f"{len(y_train)} remain")
+            except Exception:
+                pass
+
+        n_val = len(X) - split
+        if verbose and split > 0 and n_val > 0.4 * split:
+            print(f"  ⚠️  Holdout ({n_val} rows) exceeds 40% of train ({split} rows) — "
+                  f"consider a manual re-freeze of HOLDOUT_CUTOFF_DATE.")
 
         # No StandardScaler: XGBoost (tree-based) doesn't need feature scaling,
         # and scaling destroys (a) column names needed for dict-form monotone_constraints

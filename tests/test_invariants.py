@@ -532,6 +532,101 @@ def test_retrain_reproducible_on_unchanged_data(monkeypatch, tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): ml_engine.py's daily live-scoring model trained on the same
+# data as ml_retrainer.py (same build_feature_matrix() call) but split it with
+# plain positional int(n*0.8) and no purge buffer -- a *different, leakier*
+# split than ml_retrainer.py's frozen date-cutoff+purge, despite both claiming
+# to validate "the" model. Confirmed empirically on the live 2465-row matrix:
+# positional/no-purge reported holdout AUC 0.607; purging only the rows within
+# 10 days of that same boundary dropped it to 0.543; the full date-cutoff+
+# purge method (matching ml_retrainer.py) landed at 0.497 -- no real edge.
+# ml_prob feeds a direct +4/+8 conviction-score boost in run_daily.py, so this
+# wasn't just a misleading report number -- real picks were being pushed up in
+# rank/size on leakage-inflated confidence, on every day a retrain wasn't due
+# (ml_model_cache.pkl is gitignored and not persisted across CI runs, so this
+# was effectively every day).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_ml_engine_load_training_data_returns_dates():
+    """load_training_data() must return a 4-tuple (X, y, w, dates), not the
+    old 3-tuple -- train() needs dates to do a date-based split. Locks in
+    the return shape for both the real-data path and the bootstrap
+    fallback (which has no real dates, so must return None, not omit the
+    slot entirely)."""
+    import ml_engine as me
+
+    p = me.StockMLPredictor()
+    result = p.load_training_data()
+    assert result is not None
+    assert len(result) == 4, (
+        f"load_training_data() must return (X, y, w, dates) -- got "
+        f"{len(result)} values"
+    )
+
+
+def test_ml_engine_train_uses_date_based_split_not_positional(monkeypatch, tmp_path):
+    """train()'s final model fit must be trained on the date-cutoff split,
+    not the old positional int(n*0.8) -- this is the actual regression:
+    ml_engine.py silently used a different (leakier) split than
+    ml_retrainer.py despite sharing the same build_feature_matrix() data."""
+    try:
+        import numpy as np
+    except ImportError:
+        pytest.skip("numpy/xgboost not available")
+
+    import ml_engine as me
+    import ml_retrainer as mr
+
+    if not (me.HAS_XGB and me.HAS_PANDAS and me.HAS_SKLEARN):
+        pytest.skip("Training libraries unavailable")
+
+    resolved = _synthetic_resolved_for_split_test()
+    X, y, w, dates = mr.build_feature_matrix(resolved)
+    if X is None:
+        pytest.skip("Coverage gate blocked")
+
+    n = len(y)
+    n_before_cutoff = int((dates <= mr.HOLDOUT_CUTOFF_DATE).sum())
+    positional_split = int(n * 0.8)
+    assert n_before_cutoff != positional_split, (
+        "test fixture must use a ratio where date-based and positional "
+        "splits disagree, otherwise this test can't distinguish them"
+    )
+
+    p = me.StockMLPredictor()
+    monkeypatch.setattr(p, "load_training_data", lambda: (X, y, w, dates))
+    # Force the fresh-train path -- don't let this test touch the real cache.
+    _real_exists = os.path.exists
+    monkeypatch.setattr(
+        me.os.path, "exists",
+        lambda path: False if path == "ml_model_cache.pkl" else _real_exists(path)
+    )
+
+    real_xgb = me.XGBClassifier
+    final_fit_train_len = {}
+
+    class SpyXGBClassifier(real_xgb):
+        def fit(self, X_arg, y_arg, **kwargs):
+            if "eval_set" in kwargs:  # only the final model fit passes eval_set
+                final_fit_train_len["n"] = len(X_arg)
+            return super().fit(X_arg, y_arg, **kwargs)
+
+    monkeypatch.setattr(me, "XGBClassifier", SpyXGBClassifier)
+
+    ok = p.train(verbose=False)
+    assert ok, "train() should succeed on valid synthetic data"
+    assert "n" in final_fit_train_len, "final model fit (with eval_set) never ran"
+
+    assert final_fit_train_len["n"] != positional_split, (
+        "final model was trained on the OLD positional int(n*0.8) split -- regression"
+    )
+    assert final_fit_train_len["n"] <= n_before_cutoff, (
+        "final training set is larger than the date-cutoff population -- "
+        "split is not respecting HOLDOUT_CUTOFF_DATE"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # FIX 1 (2026-07-17): Same-day duplicate picks in outcomes_log
 # Bug: log_picks() built logged_today once from file; if the same ticker appeared
 # twice in the picks list (from two screener buckets), both got logged.
@@ -2340,12 +2435,20 @@ def test_insider_fetch_form4_returns_empty_list_on_genuine_no_data():
     assert result == []
 
 
-def test_insider_run_engine_summary_distinguishes_failures_from_no_data(capsys):
+def test_insider_run_engine_summary_distinguishes_failures_from_no_data(capsys, monkeypatch, tmp_path):
     """run_insider_engine()'s printed summary must say fetches FAILED when
     every fetch failed, not silently report '0 insider signals found' as if
     the engine had genuinely checked and found nothing."""
     import insider_engine as ie
     from unittest.mock import patch
+
+    # run_insider_engine() unconditionally writes today's insider_scores to
+    # HISTORY_FILE -- without this redirect, running the suite locally
+    # silently overwrites the real insider_history.json's entry for today
+    # with this test's synthetic (all-failed) result. Confirmed this
+    # happening for real (2026-08-08): today's 16 genuine signals got wiped
+    # to {} by a single local `pytest tests/test_invariants.py` run.
+    monkeypatch.setattr(ie, "HISTORY_FILE", str(tmp_path / "insider_history.json"))
 
     with patch.object(ie, "fetch_form4_aggregated", return_value=None):
         picks = [{"ticker": "AAPL"}, {"ticker": "MSFT"}]
