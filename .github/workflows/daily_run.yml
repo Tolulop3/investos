@@ -28,6 +28,23 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Restore ML model cache
+        uses: actions/cache@v6.1.0
+        with:
+          path: ml_model_cache.pkl
+          # ml_last_retrain.txt is git-tracked and only changes when ml_retrainer.py
+          # actually retrains (weekly gate, RETRAIN_EVERY_DAYS=7) -- hashing it means
+          # this key changes exactly when the cached model should be considered
+          # stale. On a retrain day this misses, ml_retrainer.py trains a fresh
+          # model and ml_engine.py loads it in the same job (already worked before
+          # this step existed); actions/cache then saves it under the new key
+          # automatically. On any other day this hits, restoring the model trained
+          # at the last retrain so ml_engine.py doesn't retrain from scratch. If the
+          # feature set ever changes without a retrain, ml_engine.py's own
+          # feature_hash check still catches it and falls back to a fresh,
+          # correctly-split retrain -- this key doesn't need to account for that.
+          key: ml-model-cache-${{ hashFiles('ml_last_retrain.txt') }}
+
       - name: Run InvestOS daily analysis
         run: python run_daily.py --github
         env:
