@@ -3239,3 +3239,83 @@ def test_predict_swing_clips_extreme_probabilities():
     p.swing_model.predict_proba.return_value = np.array([[0.4, 0.6]])
     result = p.predict_swing({"momentum_6m": 0.05})
     assert result == 0.6, f"mid-range value should pass through unclipped, got {result}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): run_ml_engine()'s category-based routing read
+# pick.get("category"), but every screener bucket builds picks as
+# {"ticker":..., "data":..., "pick": {"category":..., ...}} -- category
+# lives nested under pick["pick"]["category"]. pick.get("category") was
+# always None, so every pick silently fell through to the general-model
+# branch and the SWING/rules-based routing added earlier this session
+# never actually ran. Confirmed dead in production via latest_brief.json:
+# every pick showed ml_prob_source="model" regardless of category, even
+# on the run right after the routing code shipped. Caught by checking
+# real production output, not by the unit tests written alongside the
+# original fix -- those called predict_swing()/predict_rules_based()
+# directly with a category string extracted correctly by the TEST code,
+# never exercising run_ml_engine()'s actual (buggy) extraction line. This
+# test closes that gap: it drives the real run_ml_engine() dispatch with
+# realistically-nested pick dicts, matching stock_screener.py's actual
+# shape, instead of testing the routed-to methods in isolation.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_run_ml_engine_routes_by_nested_pick_category(monkeypatch, tmp_path):
+    """run_ml_engine() must read category from pick["pick"]["category"]
+    (the real shape), not pick.get("category") directly -- that returns
+    None for every real pick and silently defeats all category routing."""
+    import ml_engine as me
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    # Avoid live network calls (Yahoo Finance chart data) and avoid
+    # writing to the real tracked ml_score_smooth.json.
+    monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
+    monkeypatch.setattr(
+        me, "build_features_for_stock",
+        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+    )
+    monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
+        "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
+        "spx_price": 0, "ma200": 0, "pct_above_ma": 0,
+    })
+
+    # Fast, deterministic general model -- avoid a real ~2465-row XGBoost
+    # train just to test dispatch wiring.
+    def fake_train(self, verbose=True):
+        self.trained = True
+        self.model = MagicMock()
+        self.model.predict_proba.return_value = np.array([[0.3, 0.7]])
+        self.calibrator = None
+        self.swing_model, self.swing_scaler = None, None  # force SWING fallback path off
+        return True
+    monkeypatch.setattr(me.StockMLPredictor, "train", fake_train)
+
+    def make_pick(ticker, category):
+        return {"ticker": ticker, "score": 50, "data": {}, "pick": {"category": category}}
+
+    screener_picks = {
+        "FHSA_top5":        [make_pick("SWINGCO", "SWING")],
+        "TFSA_growth_top5": [make_pick("WATCHCO", "WATCH")],
+        "TFSA_income_top5": [make_pick("FHSACO", "FHSA Conservative Growth")],
+        "TFSA_swing_top3":  [make_pick("OTHERCO", "SOME_OTHER_CATEGORY")],
+    }
+
+    me.run_ml_engine(screener_picks, {}, verbose=False)
+
+    assert screener_picks["FHSA_top5"][0]["ml_prob_source"] in ("swing_model", "model"), (
+        "SWING pick should route to swing_model (or fall back to model if unavailable), "
+        f"got {screener_picks['FHSA_top5'][0]['ml_prob_source']!r}"
+    )
+    assert screener_picks["TFSA_growth_top5"][0]["ml_prob_source"] == "rules_based", (
+        f"WATCH pick should route to rules_based, got "
+        f"{screener_picks['TFSA_growth_top5'][0]['ml_prob_source']!r}"
+    )
+    assert screener_picks["TFSA_income_top5"][0]["ml_prob_source"] == "rules_based", (
+        f"FHSA Conservative Growth pick should route to rules_based, got "
+        f"{screener_picks['TFSA_income_top5'][0]['ml_prob_source']!r}"
+    )
+    assert screener_picks["TFSA_swing_top3"][0]["ml_prob_source"] == "model", (
+        f"unrecognized category should route to the general model, got "
+        f"{screener_picks['TFSA_swing_top3'][0]['ml_prob_source']!r}"
+    )

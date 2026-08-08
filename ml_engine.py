@@ -1697,7 +1697,16 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         pick["sector_canonical"] = _SECTOR_NORM_INF.get(_sc_raw.lower(), _sc_raw.upper() or "UNKNOWN")
 
         features = build_features_for_stock(ticker, stock_data, rs)
-        category = pick.get("category")
+        # FIX (2026-08-08): category lives nested under pick["pick"]["category"]
+        # (see the {"ticker":..., "data":..., "pick": {...}} shape every
+        # screener bucket builds in stock_screener.py's classify_pick() call
+        # sites) -- pick.get("category") was always None, so every pick
+        # silently fell through to the general-model branch below and the
+        # SWING/rules-based routing never actually ran. Confirmed dead in
+        # production via latest_brief.json: every pick showed
+        # ml_prob_source="model" regardless of category. outcome_tracker.py's
+        # log_picks() already reads it correctly this way -- mirror that.
+        category = pick.get("pick", {}).get("category")
 
         if features:
             # Category-based routing (2026-08-08 ML diagnostic session):
