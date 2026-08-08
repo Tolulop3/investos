@@ -3047,3 +3047,160 @@ console.log(JSON.stringify(results));
     assert results["wrong_origin_correct_key"] == 200, "correct INVESTOS_API_KEY must authorise even with wrong origin"
     assert results["wrong_origin_wrong_key"] == 401, "wrong origin + wrong key must be rejected pre-invocation"
     assert results["no_origin_no_key"] == 401, "no origin + no key must be rejected pre-invocation"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): every pick was labeled off a fixed 7-day price move for ML
+# training, regardless of category, despite stock_screener.py explicitly
+# assigning categories real intended hold periods (SWING 30d, WATCH 90d,
+# GROWTH CORE/FHSA 180d, income categories 365d). Empirically confirmed: at
+# SWING's real 30-day horizon, the same signal-time ml_prob's correlation
+# with outcome roughly doubles (0.118 non-significant -> 0.284, p<0.0001)
+# and the top/bottom tercile return spread goes from +1.90% to +10.95%. A
+# genuine temporal-holdout LogisticRegression on the correctly-labeled SWING
+# data hit AUC 0.692, vs 0.497-0.567 for anything trained on the old
+# 7-day label. Also: 3 features (sector_momentum, market_regime,
+# close_to_ema20_ratio) were confirmed constant across all 2465 rows --
+# dead weight, removed. And the roe monotone constraint was flipped from
+# +1 to -1 to match its empirically negative correlation (-0.096).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_category_horizons_match_screener_hold_days():
+    """CATEGORY_HORIZONS in outcome_tracker.py must stay in sync with the
+    hold_days stock_screener.py actually assigns per category -- these
+    were hand-copied once; a future screener change to hold_days without
+    updating CATEGORY_HORIZONS would silently reintroduce the horizon
+    mismatch this fix targets."""
+    import outcome_tracker as ot
+    import re
+
+    with open("stock_screener.py") as f:
+        src = f.read()
+
+    # Parse "category = "X"" ... "hold_days = N" pairs out of the
+    # if/elif chain that assigns pick categories (mirrors the source
+    # structure rather than re-deriving it independently).
+    pairs = re.findall(
+        r'category\s*=\s*"([^"]+)"\s*\n\s*hold_days\s*=\s*(\d+)', src
+    )
+    assert pairs, "couldn't find any category/hold_days pairs in stock_screener.py -- did its structure change?"
+
+    screener_horizons = {cat: int(days) for cat, days in pairs}
+    for cat, days in screener_horizons.items():
+        assert ot.CATEGORY_HORIZONS.get(cat) == days, (
+            f"stock_screener.py assigns {cat!r} hold_days={days}, but "
+            f"outcome_tracker.py's CATEGORY_HORIZONS has "
+            f"{ot.CATEGORY_HORIZONS.get(cat)!r} -- these must match"
+        )
+
+
+def test_resolve_true_horizon_preserves_existing_7day_fields(monkeypatch):
+    """resolve_true_horizon_outcomes() must be purely additive -- it must
+    never touch the existing resolved/actual_return/outcome fields the
+    dashboard and win_rate.json read, only add the new true_horizon_*
+    fields alongside them."""
+    import outcome_tracker as ot
+
+    outcomes = [{
+        "ticker": "TEST", "category": "SWING",
+        "signal_date": "2020-01-01",  # far enough in the past that horizon has passed
+        "entry_price": 100.0,
+        "resolved": True, "actual_return": 1.23, "outcome": "WIN",
+        "resolved_date": "2020-01-08",
+    }]
+
+    def fake_fetch(ticker, target_date, cache, max_lookahead=5):
+        return 110.0  # arbitrary price, just needs to be non-None
+
+    monkeypatch.setattr(ot, "_fetch_historical_price", fake_fetch)
+    updated, n_resolved = ot.resolve_true_horizon_outcomes(outcomes, save=False)
+
+    assert n_resolved == 1
+    o = updated[0]
+    # Original 7-day fields untouched
+    assert o["resolved"] is True
+    assert o["actual_return"] == 1.23
+    assert o["outcome"] == "WIN"
+    # New true-horizon fields added
+    assert o["true_horizon_resolved"] is True
+    assert o["true_horizon_return"] == 10.0  # (110-100)/100*100
+    assert o["true_horizon_days"] == 30
+
+
+def test_resolve_true_horizon_skips_picks_not_yet_at_horizon():
+    """A pick signaled recently (well within its category's horizon) must
+    not be resolved, regardless of how old the function call itself is."""
+    import outcome_tracker as ot
+    from datetime import datetime, timedelta
+
+    recent_date = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+    outcomes = [{
+        "ticker": "TEST", "category": "SWING",  # 30d horizon, only 5d elapsed
+        "signal_date": recent_date, "entry_price": 100.0,
+    }]
+    updated, n_resolved = ot.resolve_true_horizon_outcomes(outcomes, save=False)
+    assert n_resolved == 0
+    assert "true_horizon_resolved" not in updated[0]
+
+
+def test_dead_features_removed_and_configs_stay_in_sync():
+    """sector_momentum, market_regime, close_to_ema20_ratio were confirmed
+    constant (zero variance) across the entire training set -- must not
+    reappear in either file's feature list, and both files' feature lists
+    must stay identical (feature_hash compatibility depends on it)."""
+    import ml_engine as me
+    import ml_retrainer as mr
+
+    dead = {"sector_momentum", "market_regime", "close_to_ema20_ratio"}
+    assert not (dead & set(me.ML_CONFIG["features"])), "dead feature reappeared in ml_engine.py"
+    assert not (dead & set(mr.FEATURES)), "dead feature reappeared in ml_retrainer.py"
+    assert me.ML_CONFIG["features"] == mr.FEATURES, (
+        "ml_engine.py and ml_retrainer.py feature lists diverged -- "
+        "breaks feature_hash cache compatibility between the two"
+    )
+
+
+def test_roe_monotone_constraint_is_negative():
+    """roe's empirical correlation with the label is negative (-0.096,
+    confirmed on live data) -- the constraint must match, not fight it."""
+    import ml_engine as me
+    import ml_retrainer as mr
+
+    assert me.ML_CONFIG["xgb_params"]["monotone_constraints"]["roe"] == -1
+    assert mr.XGB_PARAMS["monotone_constraints"]["roe"] == -1
+    # close_to_ema20_ratio's constraint must be gone along with the dead feature
+    assert "close_to_ema20_ratio" not in me.ML_CONFIG["xgb_params"]["monotone_constraints"]
+    assert "close_to_ema20_ratio" not in mr.XGB_PARAMS["monotone_constraints"]
+
+
+def test_rules_based_categories_score_without_a_trained_model():
+    """WATCH/GROWTH CORE/FHSA/income categories have no signal old enough
+    yet to validate an ML model against their true 90-365 day horizon --
+    predict_rules_based() must work standalone, regardless of self.trained,
+    and RULES_BASED_CATEGORIES must cover exactly the long-horizon
+    categories (SWING is deliberately excluded -- it has its own model)."""
+    import ml_engine as me
+
+    p = me.StockMLPredictor()
+    assert p.trained is False
+    features = {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.7}
+    prob = p.predict_rules_based(features, market_regime=1)
+    assert 0.1 <= prob <= 0.9
+
+    assert me.RULES_BASED_CATEGORIES == {
+        "WATCH", "GROWTH CORE", "FHSA Conservative Growth",
+        "INCOME", "DIVIDEND GROWTH", "INCOME + GROWTH",
+    }
+    assert "SWING" not in me.RULES_BASED_CATEGORIES
+
+
+def test_predict_swing_returns_none_without_a_loaded_model():
+    """predict_swing() must degrade gracefully (None, not a crash or a
+    silent 0.5) when no SWING model is loaded, so callers can fall back
+    to the general model -- exactly what run_ml_engine's routing does."""
+    import ml_engine as me
+
+    p = me.StockMLPredictor()
+    assert p.swing_model is None
+    result = p.predict_swing({"momentum_6m": 0.05})
+    assert result is None

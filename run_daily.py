@@ -65,7 +65,7 @@ from content_engine      import run_content_engine
 from crypto_engine       import run_crypto_engine
 from options_engine      import run_options_engine
 from regime_predictor    import predict_regime_shift
-from ml_retrainer        import retrain_if_due
+from ml_retrainer        import retrain_if_due, train_swing_model
 
 
 # ============================================================
@@ -895,6 +895,14 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception as _rte:
         print(f"  ⚠️  ML retrain skipped: {_rte}")
 
+    # Dedicated SWING model — retrains every run (LR is cheap, unlike the
+    # weekly-gated XGBoost retrain above), on true-30-day-horizon SWING
+    # data only. See CATEGORY_HORIZONS in outcome_tracker.py.
+    try:
+        train_swing_model(verbose=True)
+    except Exception as _ste:
+        print(f"  ⚠️  SWING model retrain skipped: {_ste}")
+
     # Load previous day's win_rate for Kelly position sizing calibration
     _wr_for_kelly = {}
     try:
@@ -1641,7 +1649,8 @@ def run_daily(test_mode=False, dry_run=False):
 
     # ── OUTCOME TRACKING ─────────────────────────────────────
     try:
-        from outcome_tracker import log_picks, resolve_outcomes, compute_win_rate, print_win_rate_report
+        from outcome_tracker import (log_picks, resolve_outcomes, compute_win_rate,
+                                      print_win_rate_report, resolve_true_horizon_outcomes)
         all_picks_to_log = (
             screener.get("FHSA_top5", []) +
             screener.get("TFSA_growth_top5", []) +
@@ -1656,6 +1665,15 @@ def run_daily(test_mode=False, dry_run=False):
         current_prices = {p["ticker"]: p.get("data",{}).get("price",0)
                          for p in all_picks_to_log if p.get("data",{}).get("price")}
         resolve_outcomes(current_prices)
+        # Separate, category-correct-horizon resolution for ML training
+        # (see CATEGORY_HORIZONS in outcome_tracker.py) -- purely additive,
+        # does not touch the 7-day resolved/actual_return fields above.
+        try:
+            _, _n_true_horizon = resolve_true_horizon_outcomes(save=True)
+            if _n_true_horizon:
+                print(f"  ✅ True-horizon resolved: {_n_true_horizon} picks")
+        except Exception as _the:
+            print(f"  ⚠️  True-horizon resolution skipped: {_the}")
         import hashlib as _hl, subprocess as _sp, time as _t
         _is_gh  = "--github" in sys.argv
         _ts_b   = str(int(_t.time())).encode()

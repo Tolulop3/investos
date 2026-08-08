@@ -141,16 +141,19 @@ ML_CONFIG = {
         "div_yield",
         "debt_equity",
         "rs_rating",
-        "sector_momentum",
-        "market_regime",
         "spx_vs_ma200",
         "news_boost",
-        "close_to_ema20_ratio",
         "unified_regime_enc",
         "macro_regime_enc",
         "market_breadth_50ma",
         # sector_encoded removed: model was degenerate (importance 1.0000, flat 0.4495 output).
         # Sector logic lives in the gate (SECTOR_ALLOW / SECTOR_BLOCK). Do NOT re-add.
+        # sector_momentum, market_regime, close_to_ema20_ratio removed (2026-08-08):
+        # confirmed constant (zero variance) across all 2465 training rows -- a
+        # data-pipeline bug (never actually computed per-row), pure dead weight.
+        # If these are ever wired up to compute real per-row values, re-add here
+        # AND in ml_retrainer.py's FEATURES (must stay in sync -- feature_hash
+        # compatibility between the two files depends on it).
     ],
     "xgb_params": {
         "n_estimators":     150,   # aligned with ml_retrainer.py
@@ -166,11 +169,14 @@ ML_CONFIG = {
         "verbosity":        0,
         # enable_categorical removed with sector_encoded — no categorical features remain
         "monotone_constraints": {     # must match ml_retrainer.py exactly
-            "roe":                  1,
-            "profit_margin":        1,
-            "earnings_yield":       1,
-            "volatility_90d":      -1,
-            "close_to_ema20_ratio":-1,
+            # roe flipped +1 -> -1 (2026-08-08): empirically confirmed negative
+            # correlation with the label (-0.096) in the live dataset -- the old
+            # +1 constraint was forcing the model to fit the opposite of what the
+            # data actually shows.
+            "roe":                  -1,
+            "profit_margin":         1,
+            "earnings_yield":        1,
+            "volatility_90d":       -1,
         },
     },
     "max_positions":        20,
@@ -184,6 +190,16 @@ ML_CONFIG = {
     "drawdown_reduction_amount":  0.30,
     "regime_cash_pct":            0.50,
     "transaction_cost_bps":       15,
+}
+
+# Categories whose true intended hold period (CATEGORY_HORIZONS in
+# outcome_tracker.py) is 180-365 days -- no signal in the system is old
+# enough yet (earliest ~159 days) to validate an ML model against their
+# real horizon. Scored with predict_rules_based() instead of any ML model
+# until enough calendar time passes. See run_ml_engine()'s scoring loop.
+RULES_BASED_CATEGORIES = {
+    "WATCH", "GROWTH CORE", "FHSA Conservative Growth",
+    "INCOME", "DIVIDEND GROWTH", "INCOME + GROWTH",
 }
 
 # ── Score smoothing cache (in-memory, persisted to JSON) ──────────────────────
@@ -427,6 +443,8 @@ class StockMLPredictor:
         self.trained            = False
         self.feature_importance = {}
         self.model_file         = "ml_model_state.json"
+        self.swing_model        = None
+        self.swing_scaler       = None
 
     def load_training_data(self):
         if not HAS_PANDAS:
@@ -491,7 +509,20 @@ class StockMLPredictor:
         w = np.ones(n)
         return X, y, w, None  # no real signal dates on synthetic bootstrap data
 
+    def _load_swing_model(self, verbose=True):
+        """Load the dedicated SWING model independently of the general
+        model's cache state -- separate concern, separate cache file."""
+        try:
+            from ml_retrainer import load_swing_model
+            self.swing_model, self.swing_scaler = load_swing_model()
+            if verbose and self.swing_model is not None:
+                print("   OK Loaded SWING model")
+        except Exception:
+            self.swing_model, self.swing_scaler = None, None
+
     def train(self, verbose=True):
+        self._load_swing_model(verbose=verbose)
+
         if not HAS_XGB or not HAS_PANDAS or not HAS_SKLEARN:
             self.trained = False
             return False
@@ -671,18 +702,54 @@ class StockMLPredictor:
         df  = pd.DataFrame([row])
         return df
 
+    def predict_rules_based(self, features_dict, market_regime=1):
+        """
+        Weighted-factor formula, no trained model involved. Originally
+        only used when no model was trained at all; now also the
+        deliberate scoring path for categories whose true-outcome horizon
+        (CATEGORY_HORIZONS in outcome_tracker.py -- GROWTH CORE, FHSA
+        Conservative Growth, the income categories) is 180-365 days, far
+        longer than any data currently on hand can validate an ML model
+        against (earliest signal in the system is only ~159 days old).
+        Scoring those categories with a model trained/measured on a 7-day
+        proxy would be scoring them on noise -- see the 2026-08-08 ML
+        diagnostic session. Rules-based is the honest choice until enough
+        calendar time passes for a real model to be validated on them.
+        """
+        score = (features_dict.get("momentum_6m", 0) * 0.20 +
+                 features_dict.get("roe", 0) * 0.15 +
+                 features_dict.get("rs_rating", 0.5) * 0.15 +
+                 features_dict.get("momentum_12m", 0) * 0.15 +
+                 features_dict.get("earnings_yield", 0) * 0.10 +
+                 features_dict.get("div_yield", 0) * 0.10 +
+                 market_regime * 0.10 -
+                 features_dict.get("volatility_90d", 0.2) * 0.05 -
+                 features_dict.get("debt_equity", 0.5) * 0.05)
+        return max(0.1, min(0.9, 0.5 + score))
+
+    def predict_swing(self, features_dict):
+        """
+        Score using the dedicated SWING LogisticRegression model (true
+        30-day horizon, empirically validated at AUC 0.692 on a genuine
+        temporal holdout vs 0.497-0.567 for anything using the old
+        uniform 7-day label -- see the 2026-08-08 ML diagnostic session).
+        Falls back to 0.5 if the SWING model isn't loaded; caller decides
+        what to do next (run_ml_engine falls back to the general model).
+        """
+        if self.swing_model is None or self.swing_scaler is None or not HAS_PANDAS:
+            return None
+        try:
+            row = {f: features_dict.get(f, 0) for f in ML_CONFIG["features"]}
+            df = pd.DataFrame([row])
+            scaled = self.swing_scaler.transform(df)
+            prob = self.swing_model.predict_proba(scaled)[0][1]
+            return round(float(prob), 4)
+        except Exception:
+            return None
+
     def predict(self, features_dict, market_regime=1):
         if not self.trained or not HAS_PANDAS:
-            score = (features_dict.get("momentum_6m", 0) * 0.20 +
-                     features_dict.get("roe", 0) * 0.15 +
-                     features_dict.get("rs_rating", 0.5) * 0.15 +
-                     features_dict.get("momentum_12m", 0) * 0.15 +
-                     features_dict.get("earnings_yield", 0) * 0.10 +
-                     features_dict.get("div_yield", 0) * 0.10 +
-                     market_regime * 0.10 -
-                     features_dict.get("volatility_90d", 0.2) * 0.05 -
-                     features_dict.get("debt_equity", 0.5) * 0.05)
-            return max(0.1, min(0.9, 0.5 + score))
+            return self.predict_rules_based(features_dict, market_regime)
         try:
             model_input = self._build_model_input(features_dict)
             if self.calibrator is not None:
@@ -1621,9 +1688,37 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         pick["sector_canonical"] = _SECTOR_NORM_INF.get(_sc_raw.lower(), _sc_raw.upper() or "UNKNOWN")
 
         features = build_features_for_stock(ticker, stock_data, rs)
+        category = pick.get("category")
 
         if features:
-            calibrated, xgb_raw = predictor.predict_raw_pair(features, market_regime=regime_num)
+            # Category-based routing (2026-08-08 ML diagnostic session):
+            # SWING has enough true-30d-horizon data to support its own
+            # model (AUC 0.692, genuine temporal holdout); RULES_BASED_
+            # CATEGORIES have real intended horizons of 180-365 days that
+            # no data on hand is old enough to validate an ML model
+            # against yet (earliest signal ~159 days old) -- scoring them
+            # with any model trained/measured on the old 7-day proxy would
+            # be scoring on noise. Everything else keeps the existing
+            # general-model path unchanged.
+            xgb_raw = None
+            if category == "SWING":
+                swing_prob = predictor.predict_swing(features)
+                if swing_prob is not None:
+                    calibrated = swing_prob
+                    source = "swing_model"
+                else:
+                    calibrated, xgb_raw = predictor.predict_raw_pair(features, market_regime=regime_num)
+                    source = "model"
+            elif category in RULES_BASED_CATEGORIES:
+                calibrated = predictor.predict_rules_based(features, market_regime=regime_num)
+                source = "rules_based"
+            else:
+                calibrated, xgb_raw = predictor.predict_raw_pair(features, market_regime=regime_num)
+                source = "model"
+
+            if xgb_raw is None:
+                xgb_raw = calibrated
+
             # ── Score smoothing: 3-day EMA to dampen single-day spikes ──────
             smoothed_prob = smooth_ml_prob(ticker, calibrated, alpha=0.4)
             if abs(smoothed_prob - calibrated) > 0.03:
@@ -1631,7 +1726,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
             pick["ml_prob"]        = smoothed_prob
             pick["ml_prob_raw"]    = calibrated   # post-calibration, pre-smoothing
             pick["ml_prob_xgb"]    = xgb_raw      # raw XGBoost output (pre-calibration)
-            pick["ml_prob_source"] = "model"
+            pick["ml_prob_source"] = source
             _raw_calib_log.append((ticker, xgb_raw, calibrated, smoothed_prob))
         else:
             pick["ml_prob"]        = 0.5

@@ -35,6 +35,38 @@ WIN_RATE_FILE = "win_rate.json"
 OUTCOME_THRESHOLD_PCT   = 0.5
 OUTCOME_LEGACY_030_FIELD = "outcome_legacy_030"
 
+# FIX (2026-08-08): every pick was labeled WIN/LOSS/FLAT (and used to train
+# the ML model) off a fixed 7-day price move, regardless of category --
+# but stock_screener.py explicitly assigns each category a real intended
+# hold period (SWING 30d, WATCH 90d, GROWTH CORE/FHSA 180d, income
+# categories 365d). Confirmed empirically: at SWING's real 30-day horizon,
+# the same signal-time ml_prob's correlation with outcome roughly doubles
+# (0.118, not significant -> 0.284, p<0.0001) and the top/bottom tercile
+# return spread goes from +1.90% to +10.95% versus the 7-day number. A
+# 7-day read is mostly noise relative to what these categories are
+# actually meant to measure.
+#
+# This does NOT replace the existing 7-day resolved/actual_return fields
+# used by the dashboard and win_rate.json -- those keep working exactly as
+# before. It adds a SEPARATE true_horizon_* track (below,
+# resolve_true_horizon_outcomes()) that only ML training reads from. Two
+# reasons for keeping both: (1) most of the dataset (GROWTH CORE, FHSA --
+# 54% of all picks -- and the 365-day income categories) has no signal old
+# enough yet to have reached its true horizon at all, so relying on
+# true-horizon-only would mean months of zero outcome visibility for the
+# majority of picks; (2) the 7-day read still has real value as an early
+# read even where it isn't the final word.
+CATEGORY_HORIZONS = {
+    "SWING":                    30,
+    "WATCH":                    90,
+    "GROWTH CORE":              180,
+    "FHSA Conservative Growth": 180,
+    "INCOME + GROWTH":         365,
+    "DIVIDEND GROWTH":         365,
+    "INCOME":                  365,
+}
+DEFAULT_HORIZON_DAYS = 90  # any future/unmapped category
+
 
 def _classify_outcome(actual_return, threshold_pct=OUTCOME_THRESHOLD_PCT):
     """The one place WIN/LOSS/FLAT classification happens. Used by both the
@@ -320,6 +352,85 @@ def _fetch_stale_prices(tickers):
     except Exception as _e:
         pass  # graceful fallback — unresolved entries stay pending
     return prices
+
+
+def _fetch_historical_price(ticker, target_date, cache, max_lookahead=5):
+    """
+    Price for `ticker` nearest `target_date` (searches +/- max_lookahead
+    calendar days to land on the closest real trading day). `cache` is a
+    dict of {ticker: {date: close}} the caller owns across a batch of
+    lookups so each ticker's full history is only downloaded once.
+    """
+    import datetime as _dt
+    if ticker not in cache:
+        try:
+            import yfinance as yf
+            hist = yf.Ticker(ticker).history(period="2y", auto_adjust=True)
+            if hist.empty:
+                cache[ticker] = {}
+            else:
+                hist.index = hist.index.tz_localize(None)
+                cache[ticker] = {d.date(): float(v) for d, v in hist["Close"].items()}
+        except Exception:
+            cache[ticker] = {}
+    series = cache[ticker]
+    for offset in range(max_lookahead + 1):
+        for cand in (target_date + _dt.timedelta(days=offset),
+                     target_date - _dt.timedelta(days=offset)):
+            if cand in series:
+                return series[cand]
+    return None
+
+
+def resolve_true_horizon_outcomes(outcomes=None, save=True):
+    """
+    Separate from resolve_outcomes()'s 7-day resolution -- computes
+    true_horizon_return/true_horizon_resolved/true_horizon_date/
+    true_horizon_days once a pick's CATEGORY_HORIZONS threshold has
+    actually passed, using a historical price lookup (not "today's"
+    price, since the true horizon date is rarely today). See
+    CATEGORY_HORIZONS comment above for why this exists.
+
+    Idempotent and safe to call every run: only touches entries where
+    true_horizon_resolved is not already True, and only attempts entries
+    whose horizon has actually elapsed (no wasted fetches for picks still
+    too young). Returns (outcomes, n_resolved).
+    """
+    if outcomes is None:
+        outcomes = load_outcomes()
+
+    today = datetime.now().date()
+    price_cache = {}
+    n_resolved = 0
+
+    for o in outcomes:
+        if o.get("true_horizon_resolved"):
+            continue
+        signal_date_str = o.get("signal_date")
+        entry_price = o.get("entry_price", 0)
+        if not signal_date_str or not entry_price or entry_price <= 0:
+            continue
+        signal_date = datetime.strptime(signal_date_str, "%Y-%m-%d").date()
+        horizon = CATEGORY_HORIZONS.get(o.get("category"), DEFAULT_HORIZON_DAYS)
+        if (today - signal_date).days < horizon:
+            continue
+
+        target_date = signal_date + timedelta(days=horizon)
+        exit_price = _fetch_historical_price(o["ticker"], target_date, price_cache)
+        if exit_price is None:
+            continue
+
+        ret = (exit_price - entry_price) / entry_price * 100
+        o["true_horizon_return"]   = round(ret, 2)
+        o["true_horizon_days"]     = horizon
+        o["true_horizon_resolved"] = True
+        o["true_horizon_date"]     = today.isoformat()
+        o["true_horizon_outcome"]  = _classify_outcome(ret)
+        n_resolved += 1
+
+    if save and n_resolved:
+        save_outcomes(outcomes)
+    return outcomes, n_resolved
 
 
 def resolve_outcomes(current_prices):

@@ -60,6 +60,19 @@ OUTCOMES_FILE  = "outcomes_log.json"
 MODEL_CACHE    = "ml_model_cache.pkl"
 REPORT_FILE    = "ml_retrainer_report.json"
 
+# Dedicated SWING model (2026-08-08) — see CATEGORY_HORIZONS in
+# outcome_tracker.py. SWING is the only category with enough true-horizon
+# (30d) data to support its own model right now; empirically validated at
+# AUC 0.692 on a genuine temporal holdout, vs 0.497-0.567 for anything
+# trained on the old uniform 7-day label. A plain LogisticRegression, not
+# XGBoost, per the same session's finding that LR beats XGBoost on this
+# feature set/sample size. Separate cache file from the general model —
+# this one is small and cheap enough to retrain on every call rather than
+# needing a weekly gate.
+SWING_MODEL_CACHE  = "swing_model_cache.pkl"
+SWING_MODEL_REPORT = "swing_model_report.json"
+SWING_MIN_ROWS_TO_TRAIN = 80
+
 # ── Sector normalization: yfinance raw string → canonical key ─────────────────
 # Must stay in sync with _apply_sector_cap() in ml_engine.py
 SECTOR_NORM = {
@@ -142,11 +155,8 @@ FEATURES = [
     "div_yield",
     "debt_equity",
     "rs_rating",
-    "sector_momentum",
-    "market_regime",
     "spx_vs_ma200",
     "news_boost",
-    "close_to_ema20_ratio",  # overextension signal added 2026-07-04
     # Regime context features — wired into log_picks() 2026-07-04
     # unified_regime/macro_regime: ordinal-encoded (0=worst, 3=best)
     # market_breadth_50ma: normalized [0,1]. Coverage grows as new picks resolve.
@@ -157,6 +167,11 @@ FEATURES = [
     "market_breadth_50ma",   # pct of universe above 50MA, normalized to [0,1]
     # sector_encoded removed: model was degenerate (importance 1.0000). Sector logic
     # lives in the gate (SECTOR_ALLOW / SECTOR_BLOCK). Do NOT re-add.
+    # sector_momentum, market_regime, close_to_ema20_ratio removed (2026-08-08):
+    # confirmed constant (zero variance) across all 2465 training rows -- a
+    # data-pipeline bug (never actually computed per-row), pure dead weight. Must
+    # stay in sync with ml_engine.py's ML_CONFIG['features'] -- feature_hash
+    # compatibility between the two files depends on it.
 ]
 
 XGB_PARAMS = {
@@ -177,11 +192,14 @@ XGB_PARAMS = {
     # Unmentioned features default to 0 (unconstrained). Regime features are ordinal
     # (higher = more bullish) but left unconstrained to allow non-monotonic interactions.
     "monotone_constraints": {
-        "roe":                  1,   # higher ROE → better stock
-        "profit_margin":        1,   # higher margin → better
-        "earnings_yield":       1,   # higher E/P → cheaper → better
-        "volatility_90d":      -1,   # higher vol → worse risk-adj returns
-        "close_to_ema20_ratio": -1,  # more overbought → lower forward return
+        # roe flipped +1 -> -1 (2026-08-08): empirically confirmed negative
+        # correlation with the label (-0.096) in the live dataset -- the old
+        # +1 constraint was forcing the model to fit the opposite of what the
+        # data actually shows.
+        "roe":                  -1,
+        "profit_margin":         1,   # higher margin → better
+        "earnings_yield":        1,   # higher E/P → cheaper → better
+        "volatility_90d":       -1,   # higher vol → worse risk-adj returns
     },
 }
 
@@ -649,6 +667,136 @@ def retrain_if_due(force=False):
         except Exception:
             pass
     return retrain()
+
+
+def _load_category_true_horizon_outcomes(category):
+    """
+    Load outcomes_log.json entries for one category that have reached
+    their true CATEGORY_HORIZONS horizon (see outcome_tracker.py), aliased
+    into the shape build_feature_matrix() expects: true_horizon_return ->
+    actual_return, true_horizon_outcome -> outcome. Does not touch the
+    original 7-day resolved/actual_return fields on disk -- this only
+    reshapes an in-memory copy for feature building.
+    """
+    if not os.path.exists(OUTCOMES_FILE):
+        return []
+    try:
+        with open(OUTCOMES_FILE) as f:
+            raw = json.load(f)
+    except Exception:
+        return []
+    out = []
+    for o in raw:
+        if o.get("category") != category or not o.get("true_horizon_resolved"):
+            continue
+        o2 = dict(o)
+        o2["actual_return"] = o["true_horizon_return"]
+        o2["outcome"]       = o["true_horizon_outcome"]
+        out.append(o2)
+    return out
+
+
+def train_swing_model(verbose=True):
+    """
+    Train the dedicated SWING LogisticRegression model on true-30-day-
+    horizon SWING outcomes. Unlike the general XGBoost model, retrains on
+    every call (LR is cheap) rather than needing a weekly gate, and keeps
+    a temporal holdout (last 20% by date) purely for reporting an honest
+    holdout AUC in SWING_MODEL_REPORT -- the deployed model itself is
+    exactly what's tested, no separate "production" retrain on 100% of
+    data.
+    """
+    if not (HAS_PANDAS and HAS_SKLEARN and HAS_JOBLIB):
+        if verbose: print("  ⚠️  Required libraries not available.")
+        return None
+
+    resolved = _load_category_true_horizon_outcomes("SWING")
+    if len(resolved) < SWING_MIN_ROWS_TO_TRAIN:
+        if verbose:
+            print(f"  ⚠️  Only {len(resolved)} true-horizon SWING picks "
+                  f"(need {SWING_MIN_ROWS_TO_TRAIN}). Skipping SWING model.")
+        return None
+
+    X, y, w, dates = build_feature_matrix(resolved)
+    if X is None or len(y) < SWING_MIN_ROWS_TO_TRAIN:
+        return None
+
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.metrics import roc_auc_score
+
+    n = len(y)
+    split = int(n * 0.8)
+    X_tr, X_val = X.iloc[:split], X.iloc[split:]
+    y_tr, y_val = y.iloc[:split], y.iloc[split:]
+    w_tr = w[:split]
+
+    scaler = StandardScaler()
+    X_tr_s = scaler.fit_transform(X_tr)
+
+    model = LogisticRegression(penalty="l2", C=1.0, max_iter=1000, class_weight="balanced")
+    model.fit(X_tr_s, y_tr, sample_weight=w_tr)
+
+    holdout_auc = None
+    if len(set(y_val)) >= 2 and len(y_val) >= 10:
+        X_val_s = scaler.transform(X_val)
+        holdout_auc = round(float(roc_auc_score(y_val, model.predict_proba(X_val_s)[:, 1])), 4)
+
+    # Refit on ALL available data for the deployed model -- the holdout
+    # split above exists only to report an honest AUC, not to withhold
+    # data from the model that actually goes live.
+    scaler_full = StandardScaler()
+    X_full_s = scaler_full.fit_transform(X)
+    model_full = LogisticRegression(penalty="l2", C=1.0, max_iter=1000, class_weight="balanced")
+    model_full.fit(X_full_s, y, sample_weight=w)
+
+    import hashlib
+    feat_hash = hashlib.md5(str(FEATURES).encode()).hexdigest()[:8]
+    payload = {
+        "model":         model_full,
+        "scaler":        scaler_full,
+        "feature_hash":  feat_hash,
+        "_features":     FEATURES,
+        "_trained_at":   datetime.now().isoformat(),
+        "_n_rows":       n,
+        "_holdout_auc":  holdout_auc,
+    }
+    import joblib
+    joblib.dump(payload, SWING_MODEL_CACHE)
+
+    report = {
+        "trained_at":  datetime.now().isoformat(),
+        "n_rows":      n,
+        "n_train":     split,
+        "n_val":       n - split,
+        "holdout_auc": holdout_auc,
+        "horizon_days": 30,
+        "category":    "SWING",
+    }
+    with open(SWING_MODEL_REPORT, "w") as f:
+        json.dump(report, f, indent=2)
+
+    if verbose:
+        print(f"  ✅ SWING model trained | n={n} | Holdout AUC: {holdout_auc}")
+        print(f"  💾 Saved to {SWING_MODEL_CACHE}")
+
+    return report
+
+
+def load_swing_model():
+    """Load the cached SWING model+scaler for inference. Returns
+    (model, scaler) or (None, None) if unavailable/incompatible."""
+    if not (HAS_JOBLIB and os.path.exists(SWING_MODEL_CACHE)):
+        return None, None
+    try:
+        import joblib, hashlib
+        cached = joblib.load(SWING_MODEL_CACHE)
+        feat_hash = hashlib.md5(str(FEATURES).encode()).hexdigest()[:8]
+        if cached.get("feature_hash") != feat_hash:
+            return None, None
+        return cached["model"], cached["scaler"]
+    except Exception:
+        return None, None
 
 
 def diagnose():
