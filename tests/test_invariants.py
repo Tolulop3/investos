@@ -2367,6 +2367,83 @@ def test_insider_score_insider_signal_handles_none_gracefully():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): 21 of 24 entries in CANADIAN_SEC_CIKS pointed at the
+# wrong company entirely -- e.g. TIH.TO was wired to Sprint LLC, WPM.TO to
+# Bank of Israel, POW.TO to National Presto Industries. One (ATD.TO ->
+# Northrim BanCorp, an Alaska bank) had already produced a live,
+# wrong-company insider-activity score adjustment in production on
+# 2026-08-07 and 2026-08-08. Every value below was re-verified directly
+# against SEC EDGAR's submissions.json / company_tickers.json master file.
+# Root cause: the whole dict was added in a single "Add files via upload"
+# GitHub web-UI commit (93157d23, 2026-06-24), never checked against EDGAR
+# or covered by any test at the time.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_canadian_sec_ciks_match_verified_edgar_values():
+    """Locks in the corrected CIKs so a future edit can't silently
+    reintroduce a wrong-company mapping without the test failing. These
+    exact values were confirmed live against SEC EDGAR on 2026-08-08 (see
+    each ticker's expected company name) -- this test doesn't re-hit the
+    network (keeps the suite deterministic/offline) but pins the dict to
+    the verified-correct snapshot."""
+    import insider_engine as ie
+
+    expected = {
+        "RY.TO":  ("0001000275", "Royal Bank of Canada"),
+        "TD.TO":  ("0000947263", "Toronto Dominion Bank"),
+        "BNS.TO": ("0000009631", "Bank of Nova Scotia"),
+        "BMO.TO": ("0000927971", "Bank of Montreal"),
+        "CM.TO":  ("0001045520", "CIBC"),
+        "NA.TO":  ("0000926171", "National Bank of Canada"),
+        "MFC.TO": ("0001086888", "Manulife Financial"),
+        "SLF.TO": ("0001097362", "Sun Life Financial"),
+        "ENB.TO": ("0000895728", "Enbridge Inc"),
+        "TRP.TO": ("0001232384", "TC Energy Corp"),
+        "CNQ.TO": ("0001017413", "Canadian Natural Resources"),
+        "SU.TO":  ("0000311337", "Suncor Energy"),
+        "CVE.TO": ("0001475260", "Cenovus Energy"),
+        "PPL.TO": ("0001546066", "Pembina Pipeline Corp"),
+        "CP.TO":  ("0000016875", "Canadian Pacific Kansas City"),
+        "CNR.TO": ("0000016868", "Canadian National Railway"),
+        "TIH.TO": ("0002072098", "Toromont Industries/ADR"),
+        "BAM.TO": ("0001001085", "Brookfield Corp"),
+        "BN.TO":  ("0001001085", "Brookfield Corp"),
+        "POW.TO": ("0000801166", "Power Corp of Canada"),
+        "WPM.TO": ("0001323404", "Wheaton Precious Metals"),
+        "ABX.TO": ("0000756894", "Barrick Mining Corp"),
+        "AEM.TO": ("0000002809", "Agnico Eagle Mines"),
+        "NTR.TO": ("0001725964", "Nutrien Ltd"),
+    }
+
+    assert set(ie.CANADIAN_SEC_CIKS.keys()) == set(expected.keys()), (
+        "CANADIAN_SEC_CIKS ticker set changed -- update this test's "
+        "expected dict (with a freshly EDGAR-verified CIK) rather than "
+        "just letting it drift"
+    )
+    for ticker, (cik, company) in expected.items():
+        assert ie.CANADIAN_SEC_CIKS[ticker] == cik, (
+            f"{ticker} CIK changed from the verified value for {company} "
+            f"({cik}) -- re-verify against SEC EDGAR before changing this"
+        )
+
+
+def test_stale_sec_entities_moved_to_sedi_only():
+    """ATD.TO, FM.TO, LUN.TO were removed from CANADIAN_SEC_CIKS -- each
+    has a real EDGAR entity but it's a stale shell registration with no
+    Form 4 activity in 7-19 years (TSX-only, no active US equity
+    cross-listing). Pointing at that CIK would silently return empty
+    forever; SEDI_ONLY_TICKERS is the honest classification."""
+    import insider_engine as ie
+
+    for ticker in ("ATD.TO", "FM.TO", "LUN.TO"):
+        assert ticker not in ie.CANADIAN_SEC_CIKS, (
+            f"{ticker} has no active US SEC equity registration -- "
+            f"must not be reinstated to CANADIAN_SEC_CIKS"
+        )
+        assert ticker in ie.SEDI_ONLY_TICKERS
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # FIX (2026-08-08): NGX resolution silently blended frozen-price artifacts
 # (exit_price exactly equal to entry_price -- confirmed on SEPLAT.LG/
 # TOTAL.LG/AIRTELAFRI.LG/GEREGU.LG/DANGCEM.LG across multiple independent

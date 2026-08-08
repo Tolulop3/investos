@@ -94,36 +94,56 @@ KNOWN_CIKS = {
 # ── Canadian cross-listed tickers with SEC CIKs ─────────────────────────────
 # These companies trade on both TSX and US exchanges — they file with SEC.
 # Covers the most common Canadian picks in InvestOS universe.
+#
+# FIX (2026-08-08): every entry here was re-verified against SEC EDGAR's
+# submissions.json and company_tickers.json master file after BNS.TO's CIK
+# turned out not to exist at all (404). That check found 21 of the 24
+# original entries pointed at the wrong company entirely -- e.g. TIH.TO was
+# wired to Sprint LLC, WPM.TO to Bank of Israel, POW.TO to National Presto
+# Industries -- syntactically valid CIKs with no relation to the intended
+# company. One of them (ATD.TO -> Northrim BanCorp, an Alaska bank) had
+# already produced a live, wrong-company insider-activity score adjustment
+# in production on 2026-08-07 and 2026-08-08. Root cause: the whole dict was
+# added in a single "Add files via upload" GitHub web-UI commit
+# (93157d23, 2026-06-24), never run through EDGAR or any test at the time.
+# All values below are the CIK EDGAR's submissions.json itself reports for
+# that exact company name.
 CANADIAN_SEC_CIKS = {
     # Big 6 Banks
-    "RY.TO":  "0001000177",  "TD.TO":  "0000947484",
-    "BNS.TO": "0000009870",  "BMO.TO": "0000927971",
-    "CM.TO":  "0000021175",  "NA.TO":  "0001672050",
+    "RY.TO":  "0001000275",  "TD.TO":  "0000947263",
+    "BNS.TO": "0000009631",  "BMO.TO": "0000927971",
+    "CM.TO":  "0001045520",  "NA.TO":  "0000926171",
     # Insurers
-    "MFC.TO": "0001086888",  "SLF.TO": "0001090012",
+    "MFC.TO": "0001086888",  "SLF.TO": "0001097362",
     # Energy
-    "ENB.TO": "0000880285",  "TRP.TO": "0001040570",
-    "CNQ.TO": "0001070154",  "SU.TO":  "0001144519",
-    "CVE.TO": "0001374310",  "PPL.TO": "0000020212",
+    "ENB.TO": "0000895728",  "TRP.TO": "0001232384",
+    "CNQ.TO": "0001017413",  "SU.TO":  "0000311337",
+    "CVE.TO": "0001475260",  "PPL.TO": "0001546066",
     # Rails + industrials
-    "CP.TO":  "0000016160",  "CNR.TO": "0001021162",
-    "TIH.TO": "0000101830",
+    "CP.TO":  "0000016875",  "CNR.TO": "0000016868",
+    "TIH.TO": "0002072098",
     # Financials / alt asset
     "BAM.TO": "0001001085",  "BN.TO":  "0001001085",
-    "POW.TO": "0000080172",  "ATD.TO": "0001163370",
+    "POW.TO": "0000801166",
     # Miners (already capped but keep for signal completeness)
-    "WPM.TO": "0001638175",  "ABX.TO": "0000756502",
-    "AEM.TO": "0000002187",  "NTR.TO": "0000875657",
-    "FM.TO":  "0000036966",  "LUN.TO": "0000060714",
+    "WPM.TO": "0001323404",  "ABX.TO": "0000756894",
+    "AEM.TO": "0000002809",  "NTR.TO": "0001725964",
 }
 
 # Tickers requiring SEDI (TSX-only, no SEC cross-listing)
 # sedi.ca blocks automated access from GitHub Actions — flagged for manual check
+#
+# ATD.TO, FM.TO, LUN.TO moved here 2026-08-08: each has a real EDGAR entity
+# (Couche-Tard, First Quantum, Lundin Mining) but it's a stale shell
+# registration with no Form 4 activity in 7-19 years -- these three are
+# TSX-only with no active US equity cross-listing, so pointing at that CIK
+# would just silently return empty forever. Honest to treat as SEDI-only.
 SEDI_ONLY_TICKERS = {
     "BCE.TO", "T.TO", "FTS.TO", "EMA.TO", "H.TO", "STN.TO",
     "KXS.TO", "REI-UN.TO", "HR-UN.TO", "GRT-UN.TO", "WELL.TO",
     "MRU.TO", "XIU.TO", "XIC.TO", "ZEB.TO", "ZCN.TO", "HXT.TO",
     "BB.TO", "SHOP.TO", "AC.TO", "MG.TO", "CAE.TO",
+    "ATD.TO", "FM.TO", "LUN.TO",
 }
 
 # Canadian tickers (no EDGAR — SEDI Canada has no public API)
