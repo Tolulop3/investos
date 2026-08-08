@@ -1682,7 +1682,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     if verbose: print(f"\n🤖 Scoring {len(all_picks)} picks with ML...")
 
     smoothed_count  = 0
-    _raw_calib_log  = []   # [(ticker, xgb_raw, calibrated, smoothed)] — logged once after loop
+    _raw_calib_log  = []   # [(ticker, xgb_raw, calibrated, smoothed, category, source)] — logged once after loop
     for pick in all_picks:
         ticker     = pick["ticker"]
         stock_data = pick.get("data", {})
@@ -1745,13 +1745,13 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
             pick["ml_prob_raw"]    = calibrated   # post-calibration, pre-smoothing
             pick["ml_prob_xgb"]    = xgb_raw      # raw XGBoost output (pre-calibration)
             pick["ml_prob_source"] = source
-            _raw_calib_log.append((ticker, xgb_raw, calibrated, smoothed_prob))
+            _raw_calib_log.append((ticker, xgb_raw, calibrated, smoothed_prob, category, source))
         else:
             pick["ml_prob"]        = 0.5
             pick["ml_prob_raw"]    = 0.5
             pick["ml_prob_xgb"]    = 0.5
             pick["ml_prob_source"] = "default"
-            _raw_calib_log.append((ticker, 0.5, 0.5, 0.5))
+            _raw_calib_log.append((ticker, 0.5, 0.5, 0.5, category, "default"))
 
         pick["ml_signal"] = ("🔥 STRONG BUY"  if pick["ml_prob"] >= 0.70 else
                              "✅ BUY"          if pick["ml_prob"] >= 0.58 else
@@ -1780,10 +1780,10 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         if _xgb_spread > _cal_spread + 0.05:
             print(f"  ⚠️  Calibrator compressing spread by "
                   f"{(_xgb_spread - _cal_spread):.3f} — isotonic needs refit on real outcomes")
-        print(f"  {'Ticker':<12} {'XGB-raw':>8} {'Calib':>8} {'Smoothed':>9}")
-        for tk, xr, ca, sm in sorted(_raw_calib_log, key=lambda x: -x[2]):
+        print(f"  {'Ticker':<12} {'Category':<26} {'Source':<12} {'XGB-raw':>8} {'Calib':>8} {'Smoothed':>9}")
+        for tk, xr, ca, sm, cat, src in sorted(_raw_calib_log, key=lambda x: -x[2]):
             marker = " ⚠️" if abs(xr - ca) > 0.05 else ""
-            print(f"  {tk:<12} {xr:>8.4f} {ca:>8.4f} {sm:>9.4f}{marker}")
+            print(f"  {tk:<12} {str(cat or '—'):<26} {src:<12} {xr:>8.4f} {ca:>8.4f} {sm:>9.4f}{marker}")
 
     # Save updated smooth cache
     _save_smooth_cache()

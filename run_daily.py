@@ -734,6 +734,56 @@ def load_penalized_tickers():
     return set(_score_cap_74) | set(_cooldowns.keys())
 
 
+def dedupe_top_flat_picks(picks, verbose=True):
+    """
+    FIX (2026-08-08): a ticker qualifying for both an FHSA pick and a TFSA
+    pick gets two INDEPENDENT dict objects -- stock_screener.py's FHSA pass
+    and TFSA pass each build their own via classify_pick(), not shared
+    references. run_ml_engine() dedupes its own internal copy before
+    scoring (only one duplicate ever gets ml_prob/an ML-adjusted score),
+    but concatenating all four top-N buckets for intelligence-layer input
+    used to feed BOTH duplicates through, and update_score_history()
+    overwrites same-day entries in loop order -- so whichever duplicate
+    came last silently won, regardless of whether it was the ML-scored one.
+    Confirmed live 2026-08-08: TOST/CSCO/RTX/VLO all collapsed to
+    score=50.0 in score_history.json despite having real, much higher
+    ML-scored values elsewhere in the same run.
+
+    Dedupes by ticker, prioritizing the copy that actually has ml_prob (the
+    definitive signal it went through ML scoring) over raw score -- the
+    un-scored duplicate's PRE-ML score can coincidentally exceed the
+    ML-scored copy's POST-adjustment score, so score alone isn't a
+    reliable tiebreaker. Warns (if verbose) whenever a genuine mismatch is
+    found, so a future recurrence is visible in the log instead of
+    requiring after-the-fact reconstruction.
+    """
+    def _priority(p):
+        return (1 if "ml_prob" in p else 0, p.get("score", 0) or 0)
+
+    seen: dict = {}
+    for p in picks:
+        ticker = p.get("ticker")
+        if not ticker:
+            continue
+        existing = seen.get(ticker)
+        if existing is not None:
+            score_gap    = abs((existing.get("score", 0) or 0) - (p.get("score", 0) or 0))
+            ml_mismatch  = ("ml_prob" in existing) != ("ml_prob" in p)
+            if verbose and (score_gap > 0.5 or ml_mismatch):
+                print(f"   ⚠️  top_flat duplicate: {ticker} appeared in multiple buckets "
+                      f"(scores {existing.get('score')} vs {p.get('score')}, "
+                      f"ml_prob present: {'ml_prob' in existing} vs {'ml_prob' in p}) "
+                      f"-- keeping the ML-scored copy")
+        if existing is None or _priority(p) > _priority(existing):
+            seen[ticker] = p
+
+    deduped = list(seen.values())
+    if verbose and len(deduped) < len(picks):
+        print(f"   ℹ️  top_flat dedup: {len(picks)} → {len(deduped)} picks "
+              f"(removed {len(picks)-len(deduped)} duplicates)")
+    return deduped
+
+
 # ============================================================
 # MAIN RUN
 # ============================================================
@@ -957,8 +1007,9 @@ def run_daily(test_mode=False, dry_run=False):
     all_raw = [p["data"] for bucket in
                ["FHSA_all","TFSA_core_all","TFSA_income_all","TFSA_swing_all"]
                for p in screener.get(bucket,[]) if p.get("data")]
-    top_flat = (screener.get("FHSA_top5",[]) + screener.get("TFSA_growth_top5",[]) +
+    _top_flat_raw = (screener.get("FHSA_top5",[]) + screener.get("TFSA_growth_top5",[]) +
                 screener.get("TFSA_income_top5",[]) + screener.get("TFSA_swing_top3",[]))
+    top_flat = dedupe_top_flat_picks(_top_flat_raw, verbose=True)
     intel = run_all_intelligence_layers(all_raw, top_flat, verbose=True)
 
     # ── 6b. Post-intelligence sizing cap for exit watch tickers ─

@@ -3319,3 +3319,113 @@ def test_run_ml_engine_routes_by_nested_pick_category(monkeypatch, tmp_path):
         f"unrecognized category should route to the general model, got "
         f"{screener_picks['TFSA_swing_top3'][0]['ml_prob_source']!r}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): a ticker qualifying for both an FHSA pick and a TFSA pick
+# gets two independent dict objects (stock_screener.py's FHSA pass and TFSA
+# pass each call classify_pick() separately). run_ml_engine() dedupes its own
+# internal copy before scoring, but the picks fed into intelligence layers
+# (score history, trend detection) used to concatenate all four top-N buckets
+# without deduping -- so an un-scored duplicate (no ml_prob, stale pre-ML
+# score) could silently overwrite the real ML-scored one in
+# update_score_history(), which processes picks in list order and overwrites
+# same-day entries. Confirmed live 2026-08-08: TOST/CSCO/RTX/VLO all
+# collapsed to score=50.0 in score_history.json despite having real, much
+# higher ML-scored values elsewhere in the same run.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_dedupe_top_flat_picks_prefers_ml_scored_duplicate():
+    """The un-scored duplicate's pre-ML score can coincidentally exceed the
+    ML-scored copy's post-adjustment score -- this is the exact shape of
+    the real bug, so the dedup must key off ml_prob presence, not just
+    raw score."""
+    from run_daily import dedupe_top_flat_picks
+
+    # FHSA-bucket copy: went through ML scoring, has ml_prob, but its
+    # score dropped slightly after the ML adjustment.
+    scored_copy = {"ticker": "TOST", "score": 84.6, "ml_prob": 0.851,
+                   "pick": {"category": "GROWTH CORE"}}
+    # TFSA-bucket copy: never touched by run_ml_engine, no ml_prob, but its
+    # stale pre-ML score happens to be higher.
+    unscored_copy = {"ticker": "TOST", "score": 86.6,
+                      "pick": {"category": "SWING"}}
+
+    result = dedupe_top_flat_picks([unscored_copy, scored_copy], verbose=False)
+    assert len(result) == 1
+    assert result[0] is scored_copy, (
+        "must keep the ml_prob-bearing duplicate even though the other "
+        "duplicate has a higher raw score"
+    )
+
+    # Order shouldn't matter -- same result either way.
+    result2 = dedupe_top_flat_picks([scored_copy, unscored_copy], verbose=False)
+    assert result2[0] is scored_copy
+
+
+def test_dedupe_top_flat_picks_warns_on_mismatch(capsys):
+    """A real duplicate (different scores or ml_prob presence) must print
+    a visible warning -- this is what makes a future recurrence
+    diagnosable from the log instead of requiring reconstruction."""
+    from run_daily import dedupe_top_flat_picks
+
+    picks = [
+        {"ticker": "TOST", "score": 86.6, "pick": {"category": "SWING"}},
+        {"ticker": "TOST", "score": 84.6, "ml_prob": 0.851, "pick": {"category": "GROWTH CORE"}},
+    ]
+    dedupe_top_flat_picks(picks, verbose=True)
+    out = capsys.readouterr().out
+    assert "TOST" in out and "duplicate" in out.lower()
+
+
+def test_dedupe_top_flat_picks_no_duplicates_is_a_noop():
+    """Picks with unique tickers must pass through unchanged, in the same
+    order, with no spurious warnings."""
+    from run_daily import dedupe_top_flat_picks
+
+    picks = [
+        {"ticker": "AAA", "score": 90, "ml_prob": 0.7, "pick": {"category": "SWING"}},
+        {"ticker": "BBB", "score": 80, "ml_prob": 0.6, "pick": {"category": "WATCH"}},
+    ]
+    result = dedupe_top_flat_picks(picks, verbose=False)
+    assert len(result) == 2
+    assert [p["ticker"] for p in result] == ["AAA", "BBB"]
+
+
+def test_run_ml_engine_scoring_table_shows_category_and_source(monkeypatch, tmp_path, capsys):
+    """The printed scoring table must show category and ml_prob_source per
+    pick -- this is the log-visibility fix: without it, diagnosing which
+    routing path a pick took requires reconstructing state after the fact
+    (exactly what was needed to find the TOST/CSCO/RTX/VLO bug above)."""
+    import ml_engine as me
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
+    monkeypatch.setattr(
+        me, "build_features_for_stock",
+        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+    )
+    monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
+        "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
+        "spx_price": 0, "ma200": 0, "pct_above_ma": 0,
+    })
+
+    def fake_train(self, verbose=True):
+        self.trained = True
+        self.model = MagicMock()
+        self.model.predict_proba.return_value = np.array([[0.3, 0.7]])
+        self.calibrator = None
+        self.swing_model, self.swing_scaler = None, None
+        return True
+    monkeypatch.setattr(me.StockMLPredictor, "train", fake_train)
+
+    screener_picks = {
+        "FHSA_top5": [{"ticker": "WATCHCO", "score": 50, "data": {}, "pick": {"category": "WATCH"}}],
+        "TFSA_growth_top5": [], "TFSA_income_top5": [], "TFSA_swing_top3": [],
+    }
+    me.run_ml_engine(screener_picks, {}, verbose=True)
+    out = capsys.readouterr().out
+
+    assert "Category" in out and "Source" in out, "scoring table header must show Category/Source columns"
+    assert "WATCH" in out and "rules_based" in out, "per-row output must show the pick's actual category and routing source"
