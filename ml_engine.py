@@ -735,6 +735,15 @@ class StockMLPredictor:
         uniform 7-day label -- see the 2026-08-08 ML diagnostic session).
         Falls back to 0.5 if the SWING model isn't loaded; caller decides
         what to do next (run_ml_engine falls back to the general model).
+
+        Clipped to [0.1, 0.9], matching predict_rules_based() -- checked
+        the real distribution on the 239-row training set (2026-08-08):
+        raw predict_proba output is genuinely extreme at the low end
+        (p1=0.0009, p5=0.0026, 21/239 rows below 0.05), not rare noise --
+        small-sample-size overconfidence from a model trained on ~190
+        rows. Clipping is order-preserving (doesn't touch the AUC/decile
+        ranking already validated), only bounds the magnitude fed into
+        score adjustments and the raw ml_prob shown downstream.
         """
         if self.swing_model is None or self.swing_scaler is None or not HAS_PANDAS:
             return None
@@ -743,7 +752,7 @@ class StockMLPredictor:
             df = pd.DataFrame([row])
             scaled = self.swing_scaler.transform(df)
             prob = self.swing_model.predict_proba(scaled)[0][1]
-            return round(float(prob), 4)
+            return round(max(0.1, min(0.9, float(prob))), 4)
         except Exception:
             return None
 

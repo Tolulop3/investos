@@ -3204,3 +3204,38 @@ def test_predict_swing_returns_none_without_a_loaded_model():
     assert p.swing_model is None
     result = p.predict_swing({"momentum_6m": 0.05})
     assert result is None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): predict_swing() returned raw, unclipped
+# LogisticRegression output while predict_rules_based() clips to
+# [0.1, 0.9]. Checked the real distribution on the 239-row SWING training
+# set: genuinely extreme at the low end (p1=0.0009, p5=0.0026, 21/239
+# rows below 0.05) -- small-sample overconfidence, not rare noise.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_predict_swing_clips_extreme_probabilities():
+    """predict_swing()'s output must be bounded to [0.1, 0.9], matching
+    predict_rules_based()'s convention -- confirmed real training-set
+    probabilities go as low as 0.0003, which must not reach callers
+    unclipped."""
+    import ml_engine as me
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    p = me.StockMLPredictor()
+    p.swing_model = MagicMock()
+    p.swing_model.predict_proba.return_value = np.array([[0.9997, 0.0003]])
+    p.swing_scaler = MagicMock()
+    p.swing_scaler.transform.return_value = [[0, 0, 0]]
+
+    result = p.predict_swing({"momentum_6m": 0.05})
+    assert result == 0.1, f"expected clip to 0.1 floor, got {result}"
+
+    p.swing_model.predict_proba.return_value = np.array([[0.01, 0.99]])
+    result = p.predict_swing({"momentum_6m": 0.05})
+    assert result == 0.9, f"expected clip to 0.9 ceiling, got {result}"
+
+    p.swing_model.predict_proba.return_value = np.array([[0.4, 0.6]])
+    result = p.predict_swing({"momentum_6m": 0.05})
+    assert result == 0.6, f"mid-range value should pass through unclipped, got {result}"
