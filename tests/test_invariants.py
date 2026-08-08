@@ -2777,3 +2777,93 @@ def test_edgar_user_agent_does_not_use_github_domain():
         f"contact domain -- confirmed to trigger SEC EDGAR's 403 "
         f"undeclared-automated-tool rejection, this must not regress"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): ticker.js bills a function invocation the instant
+# exports.handler starts running, even for requests it immediately
+# rejects with 401 -- so unauthorised traffic (bad/missing origin,
+# no key) was silently burning Netlify credits with no way to stop it
+# short of rejecting before the origin function is ever invoked.
+# netlify/edge-functions/gate-ticker.js runs ahead of the origin (Edge
+# Functions execute pre-invocation) and mirrors ticker.js's own
+# ALLOWED_ORIGIN / INVESTOS_API_KEY logic exactly, so legitimate
+# traffic is unaffected but unauthorised requests never reach (and
+# never bill) ticker.js at all.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_gate_ticker_edge_function_auth_matrix():
+    """Drives the real gate-ticker.js file through Node's native
+    Request/Response (available since Node 18, no deps needed) to
+    exercise its actual exported auth logic -- not a source-text
+    inspection. Mirrors the same origin/key matrix ticker.js itself is
+    keyed on: valid origin passes, valid key without origin passes,
+    OPTIONS preflight always passes through untouched (ticker.js owns
+    the CORS preflight response), and anything else is rejected with
+    401 before context.next() -- i.e. before the origin function, and
+    its billing, is ever reached. Skips (does not fail) if `node` isn't
+    on PATH, since this environment cannot run a real Deno Edge
+    Functions runtime either -- this is the strongest local
+    verification available short of a live deploy."""
+    import shutil, subprocess, json as _json
+
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node not available in this environment")
+
+    script = r"""
+import gateTicker from '../netlify/edge-functions/gate-ticker.js';
+
+globalThis.Netlify = { env: { get: (k) => k === 'INVESTOS_API_KEY' ? 'real-secret-key' : undefined } };
+
+const ORIGIN = 'https://investos-proxy.netlify.app';
+const mockContext = { next: async () => new Response('PASSED_THROUGH', { status: 200 }) };
+
+async function run(req) {
+  const res = await gateTicker(req, mockContext);
+  return res.status;
+}
+
+const results = {};
+
+results.options_no_auth = await run(
+  new Request('https://x/api/ticker?s=AAPL', { method: 'OPTIONS' }));
+
+results.valid_origin_no_key = await run(
+  new Request('https://x/api/ticker?s=AAPL', { headers: { origin: ORIGIN } }));
+
+results.wrong_origin_correct_key = await run(
+  new Request('https://x/api/ticker?s=AAPL', {
+    headers: { origin: 'https://evil.example.com', 'x-investos-key': 'real-secret-key' } }));
+
+results.wrong_origin_wrong_key = await run(
+  new Request('https://x/api/ticker?s=AAPL', {
+    headers: { origin: 'https://evil.example.com', 'x-investos-key': 'nope' } }));
+
+results.no_origin_no_key = await run(
+  new Request('https://x/api/ticker?s=AAPL'));
+
+console.log(JSON.stringify(results));
+"""
+    script_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "_gate_ticker_probe.mjs"
+    )
+    with open(script_path, "w") as f:
+        f.write(script)
+    try:
+        proc = subprocess.run(
+            [node, script_path],
+            cwd=os.path.dirname(script_path),
+            capture_output=True, text=True, timeout=15,
+        )
+    finally:
+        os.remove(script_path)
+
+    assert proc.returncode == 0, f"probe script failed: {proc.stderr}"
+    results = _json.loads(proc.stdout.strip().splitlines()[-1])
+
+    assert results["options_no_auth"] == 200, "OPTIONS preflight must always pass through"
+    assert results["valid_origin_no_key"] == 200, "valid ALLOWED_ORIGIN must be authorised"
+    assert results["wrong_origin_correct_key"] == 200, "correct INVESTOS_API_KEY must authorise even with wrong origin"
+    assert results["wrong_origin_wrong_key"] == 401, "wrong origin + wrong key must be rejected pre-invocation"
+    assert results["no_origin_no_key"] == 401, "no origin + no key must be rejected pre-invocation"
