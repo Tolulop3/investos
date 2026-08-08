@@ -11,6 +11,13 @@ v2: Fixed double https:// typo in 5 feed URLs (was silently failing since Day 1)
     Yahoo Finance removed (unreliable endpoint).
     Reuters Business added.
     Expected: 9/15 → 13-14/15 feeds online, 111 → 140-160+ articles.
+
+v3 (2026-08-08): Removed Reuters Business, AP Business, Investopedia -- all
+    three confirmed dead, not just UA-blocked. feeds.reuters.com and
+    feeds.apnews.com no longer resolve in DNS at all (Reuters discontinued
+    public RSS years ago; AP's feed subdomain is gone). Investopedia's feed
+    path 404s and its robots.txt now explicitly prohibits automated
+    scraping. None of these are fixable by URL correction or UA rotation.
 """
 
 import json
@@ -36,14 +43,17 @@ USER_AGENTS = [
     "Gecko/20100101 Firefox/126.0",
 ]
 
-# Apply rotating UA + rate-limit delay to feeds known to 403 on the default UA
-ROTATING_UA_SOURCES = {"Reuters Business", "AP Business", "Investopedia"}
+# Apply rotating UA + rate-limit delay to feeds known to 403 on the default UA.
+# Empty as of 2026-08-08 -- the 3 sources this existed for (Reuters, AP,
+# Investopedia) were all confirmed dead outright, not just UA-blocked, and
+# were removed from NEWS_SOURCES. Left in place, ready to reuse if a future
+# source needs it.
+ROTATING_UA_SOURCES = set()
 
 NEWS_SOURCES = [
     # Global macro — v2: fixed double https:// typo, Barrons→AP, Yahoo→Reuters
     {"name": "MarketWatch",          "url": "https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines", "weight": 3},
     {"name": "CNBC Markets",         "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114", "weight": 3},
-    {"name": "Reuters Business",     "url": "https://feeds.reuters.com/reuters/businessNews",           "weight": 3},
     {"name": "Financial Times",      "url": "https://www.ft.com/rss/home",                             "weight": 3},
     {"name": "WSJ Markets",          "url": "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",           "weight": 3},
 
@@ -53,12 +63,10 @@ NEWS_SOURCES = [
     {"name": "CBC Business",         "url": "https://www.cbc.ca/cmlink/rss-business",                  "weight": 2},
 
     # Policy & political
-    {"name": "AP Business",          "url": "https://feeds.apnews.com/apf-business",                   "weight": 2},
     {"name": "Guardian Business",    "url": "https://www.theguardian.com/business/rss",                "weight": 2},
 
     # Health
     {"name": "WHO News",             "url": "https://www.who.int/rss-feeds/news-english.xml",          "weight": 2},
-    {"name": "Investopedia",         "url": "https://www.investopedia.com/feedbuilder/feed/getfeed/?feedName=rss_headline", "weight": 2},
 
     # Energy & commodities
     {"name": "OilPrice.com",         "url": "https://oilprice.com/rss/main",                           "weight": 2},

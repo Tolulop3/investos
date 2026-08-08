@@ -506,14 +506,14 @@ def run_insider_engine(picks, verbose=True):
 
     if verbose:
         if fetch_failures == tickers_checked and tickers_checked > 0:
-            print(f"  ⚠️ Checked {tickers_checked} US tickers | ALL {fetch_failures} "
+            print(f"  ⚠️ Checked {tickers_checked} US + CA-SEC tickers | ALL {fetch_failures} "
                   f"fetches FAILED (not \"0 signals found\" -- the fetch itself "
                   f"didn't work, see error above)")
         elif fetch_failures > 0:
-            print(f"  ⚠️ Checked {tickers_checked} US tickers | {signals_found} insider "
+            print(f"  ⚠️ Checked {tickers_checked} US + CA-SEC tickers | {signals_found} insider "
                   f"signals found | {fetch_failures} fetches failed (see error above)")
         else:
-            print(f"  ✅ Checked {tickers_checked} US tickers | {signals_found} insider signals found")
+            print(f"  ✅ Checked {tickers_checked} US + CA-SEC tickers | {signals_found} insider signals found")
         if signals_found == 0 and fetch_failures < tickers_checked:
             print(f"  📊 No unusual Form 4 activity in last 30 days")
 
