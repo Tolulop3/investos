@@ -4499,3 +4499,165 @@ def test_ml_engine_routes_to_category_model_when_ready_and_deployed(monkeypatch,
         f"WATCHCO must show category_model as source once ready+deployed, "
         f"full output:\n{out}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-09): full-system audit found signal_quality.py's earnings-date
+# filter silently never fired -- it parsed next_earnings as ISO "%Y-%m-%d",
+# but stock_screener.py actually formats it as "%b %d, %Y" (e.g. "Aug 12,
+# 2026"). The bare except swallowed the resulting ValueError every time,
+# always returning False. Confirmed live: a simulated 3-days-out earnings
+# date in the real format returned False (should be True) before this fix.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_is_near_earnings_parses_real_stock_screener_date_format():
+    """The actual format stock_screener.py produces (%b %d, %Y) must be
+    parsed correctly, not silently fail to a false-negative."""
+    import signal_quality as sq
+    from datetime import datetime, timedelta
+
+    near_date = (datetime.now() + timedelta(days=3)).strftime("%b %d, %Y")
+    assert sq.is_near_earnings({"data": {"next_earnings": near_date}}) is True
+
+    far_date = (datetime.now() + timedelta(days=60)).strftime("%b %d, %Y")
+    assert sq.is_near_earnings({"data": {"next_earnings": far_date}}) is False
+
+
+def test_is_near_earnings_still_handles_iso_and_na_and_missing():
+    """Regression guard: the fix must not break the pre-existing ISO-format
+    fallback, the literal "N/A" default stock_screener.py uses when no
+    earnings date is found, or a missing field entirely."""
+    import signal_quality as sq
+    from datetime import datetime, timedelta
+
+    iso_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+    assert sq.is_near_earnings({"data": {"next_earnings": iso_date}}) is True
+
+    assert sq.is_near_earnings({"data": {"next_earnings": "N/A"}}) is False
+    assert sq.is_near_earnings({"data": {}}) is False
+    assert sq.is_near_earnings({"data": {"next_earnings": "garbage"}}) is False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-09): full-system audit found FX and crypto signals had no
+# outcome tracking at all -- every other signal type (stocks, NGX, ETFs)
+# could report its own historical win rate; FX/crypto could not. New files:
+# fx_outcome_tracker.py, crypto_outcome_tracker.py. Dry-tested against real
+# production fx_signals.json/crypto_signals.json before being wired into
+# run_daily.py -- these tests lock in the behavior found during that dry
+# test (only real active calls get logged, never a fake-resolved outcome).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_fx_tracker_only_logs_active_calls_not_neutral(monkeypatch, tmp_path):
+    import fx_outcome_tracker as fxt
+    monkeypatch.setattr(fxt, "FX_OUTCOMES_FILE", str(tmp_path / "fx_outcomes.json"))
+
+    fx_result = {
+        "active_calls": [
+            {"pair": "EUR/USD", "symbol": "EURUSD=X", "direction": "LONG",
+             "conviction": 63, "entry": 1.1562, "target": 1.1686, "stop": 1.1488,
+             "hold_period": "1-3 days", "key_driver": "Peace Deal"},
+        ],
+    }
+    n = fxt.log_fx_signals(fx_result)
+    assert n == 1
+    outcomes = fxt.load_fx_outcomes()
+    assert len(outcomes) == 1
+    assert outcomes[0]["pair"] == "EUR/USD"
+    assert outcomes[0]["resolved"] is False
+
+    # Calling again same day must not double-log
+    n2 = fxt.log_fx_signals(fx_result)
+    assert n2 == 0
+    assert len(fxt.load_fx_outcomes()) == 1
+
+
+def test_fx_tracker_resolution_is_direction_aware_and_time_gated(monkeypatch, tmp_path):
+    import fx_outcome_tracker as fxt
+    monkeypatch.setattr(fxt, "FX_OUTCOMES_FILE", str(tmp_path / "fx_outcomes.json"))
+    from datetime import datetime, timedelta
+
+    old_date = (datetime.now() - timedelta(days=fxt.RESOLUTION_DAYS + 1)).strftime("%Y-%m-%d")
+    recent_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    outcomes = [
+        {"pair": "EUR/USD", "symbol": "EURUSD=X", "signal_date": old_date,
+         "direction": "LONG", "entry_price": 1.1000, "resolved": False},
+        {"pair": "USD/JPY", "symbol": "JPY=X", "signal_date": old_date,
+         "direction": "SHORT", "entry_price": 150.00, "resolved": False},
+        {"pair": "GBP/USD", "symbol": "GBPUSD=X", "signal_date": recent_date,
+         "direction": "LONG", "entry_price": 1.2500, "resolved": False},
+    ]
+    fxt.save_fx_outcomes(outcomes)
+
+    # LONG EUR/USD price went up -> WIN. SHORT USD/JPY price went up -> LOSS
+    # (wrong direction for a short). GBP/USD too recent -- must stay unresolved.
+    n = fxt.resolve_fx_outcomes(current_prices={
+        "EUR/USD": 1.1050,   # +0.45%, above 0.3% threshold -> WIN for LONG
+        "USD/JPY": 151.00,   # +0.67% price move -> LOSS for a SHORT call
+    })
+    assert n == 2
+
+    result = fxt.load_fx_outcomes()
+    by_pair = {o["pair"]: o for o in result}
+    assert by_pair["EUR/USD"]["outcome"] == "WIN"
+    assert by_pair["USD/JPY"]["outcome"] == "LOSS"
+    assert by_pair["GBP/USD"]["resolved"] is False, "must not resolve before RESOLUTION_DAYS elapses"
+
+
+def test_fx_tracker_never_fake_resolves_without_a_real_price(monkeypatch, tmp_path):
+    """If a fetch fails and no current_prices entry is supplied, the entry
+    must stay unresolved -- never defaulted to a fake outcome."""
+    import fx_outcome_tracker as fxt
+    monkeypatch.setattr(fxt, "FX_OUTCOMES_FILE", str(tmp_path / "fx_outcomes.json"))
+    monkeypatch.setattr("fx_engine.fetch_fx_data", lambda symbol: {"status": "error"})
+    from datetime import datetime, timedelta
+
+    old_date = (datetime.now() - timedelta(days=fxt.RESOLUTION_DAYS + 1)).strftime("%Y-%m-%d")
+    fxt.save_fx_outcomes([
+        {"pair": "EUR/USD", "symbol": "EURUSD=X", "signal_date": old_date,
+         "direction": "LONG", "entry_price": 1.1000, "resolved": False},
+    ])
+    n = fxt.resolve_fx_outcomes()
+    assert n == 0
+    assert fxt.load_fx_outcomes()[0]["resolved"] is False
+
+
+def test_crypto_tracker_only_logs_calls_clearing_own_actionability_bar(monkeypatch, tmp_path):
+    """Confirmed via dry test against real crypto_signals.json (2026-08-09):
+    both BTC/SOL sat at 46% conviction (WATCH/WAIT, not a real call) --
+    must not be logged. Only conviction >= ACTIVE_CALL_MIN_CONVICTION (65,
+    matching crypto_engine.py's own BUY/ADD /SELL/REDUCE action threshold)
+    counts as a real prediction worth grading."""
+    import crypto_outcome_tracker as ct
+    monkeypatch.setattr(ct, "CRYPTO_OUTCOMES_FILE", str(tmp_path / "crypto_outcomes.json"))
+
+    crypto_result = {
+        "assets": {
+            "BTC-USD": {"symbol": "BTC-USD", "name": "BTC", "direction": "SHORT",
+                        "conviction": 46, "entry": 65000, "price": 65000},
+            "SOL-USD": {"symbol": "SOL-USD", "name": "SOL", "direction": "LONG",
+                        "conviction": 72, "entry": 180.0, "target": 200.0, "stop": 170.0,
+                        "hold_period": 14},
+        },
+    }
+    n = ct.log_crypto_signals(crypto_result)
+    assert n == 1, "only SOL-USD (72% conviction) clears the actionability bar"
+    outcomes = ct.load_crypto_outcomes()
+    assert len(outcomes) == 1
+    assert outcomes[0]["symbol"] == "SOL-USD"
+
+
+def test_crypto_tracker_resolution_direction_aware(monkeypatch, tmp_path):
+    import crypto_outcome_tracker as ct
+    monkeypatch.setattr(ct, "CRYPTO_OUTCOMES_FILE", str(tmp_path / "crypto_outcomes.json"))
+    from datetime import datetime, timedelta
+
+    old_date = (datetime.now() - timedelta(days=ct.RESOLUTION_DAYS + 1)).strftime("%Y-%m-%d")
+    ct.save_crypto_outcomes([
+        {"symbol": "BTC-USD", "signal_date": old_date, "direction": "LONG",
+         "entry_price": 60000.0, "resolved": False},
+    ])
+    # +5% move on a LONG, above the 3% threshold -> WIN
+    n = ct.resolve_crypto_outcomes(current_prices={"BTC-USD": 63000.0})
+    assert n == 1
+    assert ct.load_crypto_outcomes()[0]["outcome"] == "WIN"

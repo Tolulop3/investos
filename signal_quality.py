@@ -71,11 +71,29 @@ def is_near_earnings(pick, days_before=7, days_after=2):
     today = datetime.now().date()
 
     try:
-        # Yahoo returns earnings date as string "YYYY-MM-DD" or unix timestamp
+        # FIX (2026-08-09): this always parsed as "YYYY-MM-DD" and silently
+        # failed (caught by the bare except below, returning False) on every
+        # real call -- stock_screener.py actually formats this field as
+        # "%b %d, %Y" (e.g. "Aug 12, 2026", see its next_earnings assignment),
+        # never ISO. Confirmed live: a simulated 3-days-out earnings date in
+        # the real format returned False (should be True) before this fix.
+        # Try the real format first, ISO/timestamp as fallbacks in case the
+        # upstream field shape ever changes.
         if isinstance(next_earnings, (int, float)):
             earnings_date = datetime.fromtimestamp(next_earnings).date()
         else:
-            earnings_date = datetime.strptime(str(next_earnings)[:10], "%Y-%m-%d").date()
+            ne_str = str(next_earnings).strip()
+            earnings_date = None
+            for fmt in ("%b %d, %Y", "%Y-%m-%d"):
+                try:
+                    earnings_date = datetime.strptime(ne_str, fmt).date()
+                    break
+                except ValueError:
+                    continue
+            if earnings_date is None:
+                # Last resort: ISO-prefix parse (original behavior), in case
+                # a caller ever passes a raw ISO timestamp string.
+                earnings_date = datetime.strptime(ne_str[:10], "%Y-%m-%d").date()
 
         days_to_earnings = (earnings_date - today).days
 

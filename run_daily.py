@@ -1252,6 +1252,17 @@ def run_daily(test_mode=False, dry_run=False):
         print(f"  ⚠️  Stale FX pairs: {', '.join(stale_pairs)}")
     with open("fx_signals.json","w") as f:
         json.dump(fx_signals, f, indent=2, default=str)
+    # FIX (2026-08-09): FX calls had no outcome tracking at all -- every
+    # other signal type in this system (stocks, NGX, ETFs) can report its
+    # own historical win rate; FX could not. Additive only, same pattern
+    # as etf_outcome_tracker.py below.
+    try:
+        from fx_outcome_tracker import log_fx_signals, resolve_fx_outcomes, print_fx_outcome_report
+        log_fx_signals(fx_signals)
+        resolve_fx_outcomes()
+        print_fx_outcome_report()
+    except Exception as _fxe:
+        print(f"  ⚠️  FX outcome tracking skipped: {_fxe}")
 
     # ── 10. Crypto Signals ───────────────────────────────────
     print(f"\n[10/12] 🪙 CRYPTO SIGNALS (BTC + SOL)")
@@ -1259,6 +1270,15 @@ def run_daily(test_mode=False, dry_run=False):
     crypto_signals = run_crypto_engine(news_analysis=news, portfolio_value=10000, verbose=True)  # hardcoded same as ML engine
     with open("crypto_signals.json","w") as f:
         json.dump(crypto_signals, f, indent=2, default=str)
+    # FIX (2026-08-09): same gap as FX -- see fx_outcome_tracker.py's
+    # module docstring for the full audit context.
+    try:
+        from crypto_outcome_tracker import log_crypto_signals, resolve_crypto_outcomes, print_crypto_outcome_report
+        log_crypto_signals(crypto_signals)
+        resolve_crypto_outcomes()
+        print_crypto_outcome_report()
+    except Exception as _cte:
+        print(f"  ⚠️  Crypto outcome tracking skipped: {_cte}")
 
     # ── 11. Risk Audit ───────────────────────────────────────
     print(f"\n[11/12] 🛡  RISK AUDIT (Stress Test + Decay Monitor)")

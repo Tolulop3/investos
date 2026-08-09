@@ -1606,8 +1606,13 @@ body::after {
   <div class="panel fi">
     <div class="panel-hdr"><span class="panel-title">📖 SIGNAL QUALITY FILTERS</span></div>
     <div style="padding:14px 16px;font-size:11px;color:var(--t2);line-height:1.8">
-      <p><strong style="color:var(--t1)">Graham Intrinsic Value</strong> — For FLOOR picks, the system estimates what a stock is theoretically worth. If the price is more than 60% above intrinsic value, it gets hard-rejected from FHSA. 40–60% above = graduated penalty.</p>
-      <p><strong style="color:var(--t1)">Factor Conflict Detector</strong> — Catches dangerous combinations: RS 90+ with EQ WEAK (speculative), high value score with declining revenue (value trap), high short interest with weak fundamentals.</p>
+      <!-- FIX (2026-08-09): "Graham Intrinsic Value" and "Factor Conflict
+           Detector" removed from this panel -- both live only in
+           signal_quality.py, which is never imported/called anywhere in
+           the pipeline (confirmed via repo-wide grep). This panel was
+           describing them to the user as active filters when no pick has
+           ever been scored or rejected by either. Re-add only once that
+           module is actually wired in and dry-tested against live runs. -->
       <p><strong style="color:var(--t1)">Half-life Decay</strong> — Signals fade at different rates: news = 5 days, breakout = 10 days, earnings quality = 30 days, value = 90 days. Fresh signals (score rising) are exempt.</p>
       <p><strong style="color:var(--t1)">Volume Accumulation</strong> — Ratio of volume on up-days vs down-days over 20 sessions. High ratio = institutional buying quietly. Low ratio = distribution.</p>
     </div>
