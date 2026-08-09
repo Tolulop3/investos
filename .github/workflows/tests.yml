@@ -28,3 +28,9 @@ jobs:
 
       - name: Run invariant tests
         run: pytest tests/test_invariants.py -v --tb=short
+
+      - name: Run standalone unit tests
+        # Run as a separate pytest process from the invariant suite above: these files
+        # stub sys.modules["numpy"/"sklearn"/"pandas"] at import time so they can run
+        # without those deps installed, which would poison a shared pytest process.
+        run: pytest test_account_sizing.py test_gate_engine.py test_safe_parse_records.py -v --tb=short

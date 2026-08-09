@@ -882,6 +882,27 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception as _ase:
         print(f"  ⚠️  all_scores.json write failed: {_ase}")
 
+    # ── 3b. Earnings-Date Filter ──────────────────────────────
+    # signal_quality.py's is_near_earnings()/apply_earnings_filter() were
+    # fully built and tested (module docstring: "the biggest single source
+    # of false signals") but never wired into the live pipeline. Wiring in
+    # only this one piece for now -- Graham floor, breakout signals,
+    # earnings-quality, and the module's separate insider scorer stay
+    # unwired pending separate validation. Applied only to the top-N
+    # buckets that actually become real picks; the *_all buckets that feed
+    # all_scores.json above are left unfiltered so the full-universe
+    # snapshot is unaffected.
+    try:
+        from signal_quality import apply_earnings_filter
+        for _bkt in ["FHSA_top5", "TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3"]:
+            _clean, _filtered = apply_earnings_filter(screener.get(_bkt, []), verbose=True)
+            if _filtered:
+                print(f"  📅 Earnings filter [{_bkt}]: dropped "
+                      f"{[p.get('ticker') for p in _filtered]} (within 7d before/2d after earnings)")
+            screener[_bkt] = _clean
+    except Exception as _ef_err:
+        print(f"  ⚠️  Earnings filter skipped: {_ef_err}")
+
     # ── 4. News Adjustment ───────────────────────────────────
     print(f"\n[4/10] 🔗 APPLYING NEWS TO SCORES")
     screener = apply_news_to_screener(screener, news)
