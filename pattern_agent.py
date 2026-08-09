@@ -268,8 +268,12 @@ def ticker_pf(ticker, outcomes):
     if len(picks) < MIN_PICKS_FOR_PF:
         return None, len(picks)
 
-    wins   = [abs(p.get("return_pct", 0)) for p in picks if p.get("outcome") == "WIN"]
-    losses = [abs(p.get("return_pct", 0)) for p in picks if p.get("outcome") == "LOSS"]
+    # FIX (2026-08-09): "return_pct" was never a real outcomes_log.json field
+    # (real field: actual_return) -- pf was always None, and write_watchlist()'s
+    # "(pf or 0) < 1.0" AVOID condition below was unconditionally true for any
+    # FALLING-velocity ticker regardless of its real profit factor.
+    wins   = [abs(p.get("actual_return", 0)) for p in picks if p.get("outcome") == "WIN"]
+    losses = [abs(p.get("actual_return", 0)) for p in picks if p.get("outcome") == "LOSS"]
 
     gw = sum(wins)
     gl = sum(losses)

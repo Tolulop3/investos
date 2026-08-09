@@ -17,7 +17,7 @@ import json
 import os
 from datetime import datetime
 
-OUTCOMES_FILE = "outcomes.json"
+OUTCOMES_FILE = "outcomes_log.json"
 MIN_OBSERVATIONS = 20   # minimum before we show evidence (don't bluff with 5 obs)
 SCORE_WINDOW    = 8     # ±8 points around pick's score counts as "similar"
 
@@ -91,7 +91,7 @@ def lookup_evidence(pick_score, current_regime, outcomes=None, spx_90d_return=No
     max_drawdown = min(returns)
 
     # Regime breakdown
-    regime_matches = [o for o in similar if _regime_matches(o.get("regime"), current_regime)]
+    regime_matches = [o for o in similar if _regime_matches(o.get("unified_regime"), current_regime)]
     regime_match_pct = len(regime_matches) / len(similar) * 100 if similar else 0
 
     # Regime-filtered stats (more relevant)

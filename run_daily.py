@@ -1035,25 +1035,36 @@ def run_daily(test_mode=False, dry_run=False):
 
     # ── 6. Intelligence Layers ───────────────────────────────
     # ── EVIDENCE ENGINE — enrich picks with historical backing ──────────────
+    # FIX (2026-08-09): three compounding bugs made this a no-op since
+    # inception. (1) evidence_engine.OUTCOMES_FILE pointed at "outcomes.json",
+    # which has never existed (real file: outcomes_log.json) -- every lookup
+    # silently returned the INSUFFICIENT placeholder. (2) This only enriched
+    # ml_results["sized_positions"], which does not share object identity
+    # with conviction_picks -- build_conviction_picks() below reads from the
+    # screener's own top-N buckets (dedupe_picks_by_ticker preserves object
+    # identity, doesn't copy), so conviction_picks[].evidence was always
+    # null regardless of what sized_positions got. (3) `brief["evidence_
+    # summary"] = ...` referenced brief before its definition (brief = {...}
+    # is ~600 lines below this point) -- an UnboundLocalError on every run,
+    # silently swallowed by the except below. Fixed all three; kept sized_
+    # positions as an additional enrichment target since it's serialized
+    # into the brief separately (via dict-unpacking of these same mutated
+    # objects, so enrichment here still reaches it).
+    _evidence_summary = None
     try:
         from evidence_engine import enrich_picks_with_evidence, get_tier_evidence_summary
         _spx_ret = regime.get("pct_above_ma", 0) if regime else 0
-        # Enrich ALL ml shortlist picks (not just conviction — those are usually empty)
-        # sized_positions is the 5-pick basket that actually shows on dashboard
-        _all_for_evidence = ml_results.get("sized_positions", [])
-        if not _all_for_evidence:
-            # Fallback: try all screener candidates that made it to ML step
-            _all_for_evidence = (
-                screener.get("TFSA_growth_top5", []) +
-                screener.get("TFSA_income_top5", [])
-            )[:10]
-        if _all_for_evidence:
-            enrich_picks_with_evidence(_all_for_evidence, unified_regime,
+        _all_for_evidence = (
+            screener.get("FHSA_top5", []) + screener.get("TFSA_growth_top5", []) +
+            screener.get("TFSA_income_top5", []) + screener.get("TFSA_swing_top3", [])
+        )
+        _sized_for_evidence = ml_results.get("sized_positions", []) if ml_results else []
+        if _all_for_evidence or _sized_for_evidence:
+            enrich_picks_with_evidence(_all_for_evidence + _sized_for_evidence, unified_regime,
                                        spx_90d_return=_spx_ret, verbose=True)
-        # Add tier evidence summary to brief for dashboard
-        brief["evidence_summary"] = get_tier_evidence_summary()
+        _evidence_summary = get_tier_evidence_summary()
     except Exception as _ee:
-        pass  # non-fatal — evidence is additive, never blocking
+        print(f"  ⚠️  Evidence engine skipped: {_ee}")
 
     print(f"\n[6/10] 🧠 INTELLIGENCE LAYERS (RS + History + Analyst)")
     # FIX (2026-08-08): see pick_utils.dedupe_raw_data_by_ticker's docstring
@@ -1748,6 +1759,7 @@ def run_daily(test_mode=False, dry_run=False):
             for p in (ml_results.get("sized_positions", []) if ml_results else [])
         ],
     }
+    brief["evidence_summary"] = _evidence_summary
 
     # ── GATE STATUS (baked so dashboard can display active filters) ──────
     try:
@@ -2567,8 +2579,8 @@ if __name__ == "__main__":
         try:
             from history_analyzer import run_history_analysis as _ha
             _ha(verbose=False)
-        except Exception:
-            pass
+        except Exception as _hae:
+            print(f"  ⚠️  History analyzer failed: {_hae}")
 
         # ── Strategist Agent ──────────────────────────────────────────────
         # Calls Claude API to write daily research note — silent fail

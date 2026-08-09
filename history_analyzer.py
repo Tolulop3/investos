@@ -84,7 +84,16 @@ def regime_timeline(snaps):
         else:
             regime = str(regime_data)
 
-        sharpe = s.get("sharpe") or 0
+        # FIX (2026-08-09): history/*.json stores "sharpe" as a dict
+        # ({"sharpe": val, "avg_ret_pct": ..., ...} -- see risk_engine.
+        # compute_rolling_sharpe()'s return shape), not a raw float. This
+        # crashed regime_timeline() on every call since inception (int +
+        # dict in the avg_sharpe sum below), silently swallowed by run_
+        # daily.py's bare except -- history_analysis.json has never once
+        # been generated. Unwrap it the same way regime_data is unwrapped
+        # just above.
+        sharpe_data = s.get("sharpe")
+        sharpe = sharpe_data.get("sharpe") if isinstance(sharpe_data, dict) else (sharpe_data or 0)
 
         if current is None or current["regime"] != regime:
             if current:
@@ -122,7 +131,9 @@ def sharpe_trajectory(snaps, window=7):
     buffer = []
 
     for s in snaps:
-        sharpe = s.get("sharpe")
+        # See regime_timeline()'s FIX comment above -- "sharpe" is a dict, not a float.
+        sharpe_data = s.get("sharpe")
+        sharpe = sharpe_data.get("sharpe") if isinstance(sharpe_data, dict) else sharpe_data
         if sharpe is None:
             continue
         buffer.append(sharpe)
@@ -161,7 +172,10 @@ def pick_quality_by_macro(resolved_picks, snaps):
 
     for pick in resolved_picks:
         date = (pick.get("signal_date") or pick.get("date") or "")[:10]
-        ret  = pick.get("return_pct") or 0
+        # FIX (2026-08-09): "return_pct" has never been a real field in
+        # outcomes_log.json (real field: actual_return) -- ret was always 0,
+        # silently zeroing gross_win/gross_loss below (pf always None).
+        ret  = pick.get("actual_return") or 0
         win  = pick.get("outcome") == "WIN"
         loss = pick.get("outcome") == "LOSS"
 
@@ -254,9 +268,11 @@ def oos_performance(resolved_picks):
             return {"n": 0, "wr": None, "avg_return": None, "pf": None}
         wins   = [p for p in picks if p.get("outcome") == "WIN"]
         losses = [p for p in picks if p.get("outcome") == "LOSS"]
-        rets   = [p.get("return_pct") or 0 for p in picks]
-        gw = sum(abs(p.get("return_pct") or 0) for p in wins)
-        gl = sum(abs(p.get("return_pct") or 0) for p in losses)
+        # FIX (2026-08-09): "return_pct" was never a real outcomes_log.json
+        # field (real field: actual_return) -- avg_return/pf were always 0/None.
+        rets   = [p.get("actual_return") or 0 for p in picks]
+        gw = sum(abs(p.get("actual_return") or 0) for p in wins)
+        gl = sum(abs(p.get("actual_return") or 0) for p in losses)
         return {
             "n":          len(picks),
             "wr":         round(len(wins) / len(picks) * 100, 1),
