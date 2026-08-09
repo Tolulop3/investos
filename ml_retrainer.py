@@ -73,6 +73,19 @@ SWING_MODEL_CACHE  = "swing_model_cache.pkl"
 SWING_MODEL_REPORT = "swing_model_report.json"
 SWING_MIN_ROWS_TO_TRAIN = 80
 
+# FIX (2026-08-09): neither train_swing_model() nor retrain() (the general
+# model) previously gated deployment on holdout_auc at all -- both computed
+# it, printed it, and then unconditionally overwrote the live model cache
+# regardless of the value, every single call (train_swing_model runs 3x/day
+# via run_daily.py, with no demotion path if a bad retrain got deployed).
+# 0.53 was already used as an informal "better than random" cutoff in
+# retrain()'s print statement (see the AUC log line below) -- promoted here
+# from a comment to an actual enforcement gate for both models. Below this
+# bar (or holdout_auc is None -- validation set too small/degenerate to
+# trust at all), the retrain is REJECTED: the previously-deployed model (if
+# any) stays live, and nothing is overwritten.
+MIN_HOLDOUT_AUC_TO_DEPLOY = 0.53
+
 # ── Sector normalization: yfinance raw string → canonical key ─────────────────
 # Must stay in sync with _apply_sector_cap() in ml_engine.py
 SECTOR_NORM = {
@@ -600,9 +613,6 @@ def train_and_save(X, y, w, dates=None):
         "_regime_encoding":   REGIME_ENCODING,
         "_macro_encoding":    MACRO_ENCODING,
     }
-    joblib.dump(payload, MODEL_CACHE)
-    print(f"  💾 Saved to {MODEL_CACHE} (feature_hash: {feat_hash})")
-
     report = {
         "retrained_at":       datetime.now().isoformat(),
         "n_rows":             n,
@@ -617,6 +627,23 @@ def train_and_save(X, y, w, dates=None):
         "features_used":      FEATURES,
         "label_definition":   "actual_return > median(actual_return)",
     }
+    # FIX (2026-08-09): deploy gate -- see MIN_HOLDOUT_AUC_TO_DEPLOY comment.
+    # Previously this always deployed regardless of holdout_auc (the
+    # "better than random" print above was informational only, not
+    # enforced).
+    if holdout_auc < MIN_HOLDOUT_AUC_TO_DEPLOY:
+        report["deployed"] = False
+        report["rejected_reason"] = f"holdout_auc {round(holdout_auc,4)} < minimum {MIN_HOLDOUT_AUC_TO_DEPLOY}"
+        with open(REPORT_FILE, "w") as f:
+            json.dump(report, f, indent=2)
+        print(f"  ⛔ Retrain REJECTED (n={n}): {report['rejected_reason']} "
+              f"-- keeping previously-deployed model.")
+        return report
+
+    joblib.dump(payload, MODEL_CACHE)
+    print(f"  💾 Saved to {MODEL_CACHE} (feature_hash: {feat_hash})")
+
+    report["deployed"] = True
     with open(REPORT_FILE, "w") as f:
         json.dump(report, f, indent=2)
     print(f"  📄 Report saved to {REPORT_FILE}")
@@ -742,6 +769,30 @@ def train_swing_model(verbose=True):
         X_val_s = scaler.transform(X_val)
         holdout_auc = round(float(roc_auc_score(y_val, model.predict_proba(X_val_s)[:, 1])), 4)
 
+    # FIX (2026-08-09): deploy gate -- see MIN_HOLDOUT_AUC_TO_DEPLOY comment.
+    # Previously this always deployed regardless of holdout_auc.
+    report = {
+        "trained_at":  datetime.now().isoformat(),
+        "n_rows":      n,
+        "n_train":     split,
+        "n_val":       n - split,
+        "holdout_auc": holdout_auc,
+        "horizon_days": 30,
+        "category":    "SWING",
+    }
+    if holdout_auc is None or holdout_auc < MIN_HOLDOUT_AUC_TO_DEPLOY:
+        report["deployed"] = False
+        report["rejected_reason"] = (
+            "holdout_auc is None (validation set too small/degenerate)" if holdout_auc is None
+            else f"holdout_auc {holdout_auc} < minimum {MIN_HOLDOUT_AUC_TO_DEPLOY}"
+        )
+        with open(SWING_MODEL_REPORT, "w") as f:
+            json.dump(report, f, indent=2)
+        if verbose:
+            print(f"  ⛔ SWING retrain REJECTED (n={n}): {report['rejected_reason']} "
+                  f"-- keeping previously-deployed model, if any.")
+        return report
+
     # Refit on ALL available data for the deployed model -- the holdout
     # split above exists only to report an honest AUC, not to withhold
     # data from the model that actually goes live.
@@ -764,20 +815,12 @@ def train_swing_model(verbose=True):
     import joblib
     joblib.dump(payload, SWING_MODEL_CACHE)
 
-    report = {
-        "trained_at":  datetime.now().isoformat(),
-        "n_rows":      n,
-        "n_train":     split,
-        "n_val":       n - split,
-        "holdout_auc": holdout_auc,
-        "horizon_days": 30,
-        "category":    "SWING",
-    }
+    report["deployed"] = True
     with open(SWING_MODEL_REPORT, "w") as f:
         json.dump(report, f, indent=2)
 
     if verbose:
-        print(f"  ✅ SWING model trained | n={n} | Holdout AUC: {holdout_auc}")
+        print(f"  ✅ SWING model trained + DEPLOYED | n={n} | Holdout AUC: {holdout_auc}")
         print(f"  💾 Saved to {SWING_MODEL_CACHE}")
 
     return report

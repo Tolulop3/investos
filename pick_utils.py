@@ -68,3 +68,30 @@ def dedupe_picks_by_ticker(picks, verbose=False, label="picks"):
         print(f"   ℹ️  {label} dedup: {len(picks)} → {len(deduped)} picks "
               f"(removed {len(picks)-len(deduped)} duplicates)")
     return deduped
+
+
+def dedupe_raw_data_by_ticker(data_list):
+    """
+    Same root cause as dedupe_picks_by_ticker(), but for raw stock "data"
+    dicts (perf_90d/volatility/sector/etc, keyed by "ticker") rather than
+    pick dicts -- e.g. run_daily.py's `all_raw` fed into
+    calculate_relative_strength(). Unlike pick dicts, a straddling ticker's
+    "data" entries across FHSA/TFSA buckets are literally the SAME object
+    reference (see stock_screener.py's `"data": d` in both the FHSA and
+    TFSA pass), so there is no "which copy is better" question -- plain
+    first-seen-wins is correct, no score/ml_prob priority logic needed.
+
+    Un-deduped, a straddling ticker is inserted twice into
+    calculate_relative_strength()'s population, inflating `total` and
+    shifting every stock's percentile-ranked rs_rating, not just the
+    duplicate's.
+    """
+    seen = set()
+    out = []
+    for d in data_list:
+        t = d.get("ticker")
+        if not t or t in seen:
+            continue
+        seen.add(t)
+        out.append(d)
+    return out

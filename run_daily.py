@@ -117,7 +117,14 @@ def apply_news_to_screener(screener_results, news_analysis):
                         f"📰 News {n_capped}pts: {', '.join(adj.get('reasons',[])[:1])}")
                 count += 1
 
-            yf_sector  = pick.get("sector", "")
+            # FIX (2026-08-08): sector lives at pick["data"]["sector"], never
+            # at the top level (see stock_screener.py's {"ticker":...,
+            # "data":..., "pick":...} shape) -- pick.get("sector","") was
+            # always "", so this block's SECTOR_MAP lookup always missed and
+            # the sector-headwind news penalty below has been dead code
+            # since it was written. Same fallback pattern already used
+            # correctly at run_daily.py:1128.
+            yf_sector  = pick.get("sector", "") or pick.get("data", {}).get("sector", "")
             news_sector = SECTOR_MAP.get(yf_sector)
             if news_sector and sector_sent:
                 net = sector_sent.get(news_sector, {}).get("net_score", 0)
@@ -229,6 +236,16 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
         screener_results.get("TFSA_income_top5", []) +
         screener_results.get("TFSA_swing_top3", [])
     )
+    # FIX (2026-08-08): a ticker eligible for both FHSA and TFSA gets two
+    # independent dict objects here (see pick_utils.py's module docstring).
+    # The old plain "seen" set below kept whichever copy came first in
+    # concat order (FHSA always beats TFSA) regardless of which one was
+    # actually ML-scored -- same wrong-copy failure mode as the top_flat
+    # incident, just surfacing as silently-wrong conviction pick data
+    # instead of a duplicate. Dedupe with priority for the ML-scored copy
+    # before the seen-set loop below (which still guards ml_sized adds).
+    from pick_utils import dedupe_picks_by_ticker
+    all_picks = dedupe_picks_by_ticker(all_picks, verbose=True, label="conviction_input")
     # Also include ML sizing picks — these may have been sector-capped from screener
     # but still scored by ML. Avoids AFRM-type gaps where ML sees the pick but conviction doesn't.
     ml_sized = ml_results.get("position_sizing", []) if ml_results else []
@@ -924,6 +941,22 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception as _ste:
         print(f"  ⚠️  SWING model retrain skipped: {_ste}")
 
+    # FIX (2026-08-09): auto-demotion signal, computed once per run so
+    # ml_engine.py's scoring loop can read a fresh verdict without
+    # recomputing it per-pick. See outcome_tracker.model_health_check()'s
+    # docstring -- "insufficient_data" is expected for weeks (SWING's model
+    # only deployed 2026-08-08; its 30-day true-horizon can't resolve any
+    # swing_model-sourced pick before 2026-09-07).
+    try:
+        from outcome_tracker import model_health_check, save_model_health
+        _health = {"SWING": model_health_check("SWING", "swing_model")}
+        save_model_health(_health)
+        _sw_h = _health["SWING"]
+        _sw_h_detail = _sw_h.get("reason") or f"win_rate={_sw_h.get('win_rate_pct')}%"
+        print(f"  🩺 Model health [SWING]: {_sw_h['status']} ({_sw_h_detail})")
+    except Exception as _he2:
+        print(f"  ⚠️  Model health check skipped: {_he2}")
+
     # Load previous day's win_rate for Kelly position sizing calibration
     _wr_for_kelly = {}
     try:
@@ -975,9 +1008,16 @@ def run_daily(test_mode=False, dry_run=False):
         pass  # non-fatal — evidence is additive, never blocking
 
     print(f"\n[6/10] 🧠 INTELLIGENCE LAYERS (RS + History + Analyst)")
-    all_raw = [p["data"] for bucket in
-               ["FHSA_all","TFSA_core_all","TFSA_income_all","TFSA_swing_all"]
-               for p in screener.get(bucket,[]) if p.get("data")]
+    # FIX (2026-08-08): see pick_utils.dedupe_raw_data_by_ticker's docstring
+    # -- a ticker eligible for both FHSA and TFSA appears in both "_all"
+    # buckets sharing the same "data" object, inflating
+    # calculate_relative_strength()'s population and shifting every stock's
+    # rs_rating, not just the duplicate's.
+    from pick_utils import dedupe_raw_data_by_ticker
+    all_raw = dedupe_raw_data_by_ticker([
+        p["data"] for bucket in ["FHSA_all","TFSA_core_all","TFSA_income_all","TFSA_swing_all"]
+        for p in screener.get(bucket,[]) if p.get("data")
+    ])
     _top_flat_raw = (screener.get("FHSA_top5",[]) + screener.get("TFSA_growth_top5",[]) +
                 screener.get("TFSA_income_top5",[]) + screener.get("TFSA_swing_top3",[]))
     top_flat = dedupe_top_flat_picks(_top_flat_raw, verbose=True)
@@ -1673,11 +1713,20 @@ def run_daily(test_mode=False, dry_run=False):
     try:
         from outcome_tracker import (log_picks, resolve_outcomes, compute_win_rate,
                                       print_win_rate_report, resolve_true_horizon_outcomes)
+        from pick_utils import dedupe_picks_by_ticker
         all_picks_to_log = (
             screener.get("FHSA_top5", []) +
             screener.get("TFSA_growth_top5", []) +
             screener.get("TFSA_swing_top3", [])
         )
+        # FIX (2026-08-08): a ticker eligible for both FHSA and TFSA gets two
+        # independent dict objects here. log_picks() already guards against
+        # double-logging via its own logged_today set, so this was never a
+        # duplication bug -- but that guard is first-wins (whichever copy
+        # this concat orders first gets permanently written into training
+        # data), not ML-scored-copy-wins. Dedupe here so the copy that
+        # actually carries ml_prob is what gets logged.
+        all_picks_to_log = dedupe_picks_by_ticker(all_picks_to_log, verbose=True, label="outcome_log_input")
         # Strip cooldown tickers and hard-excluded picks — they must not appear
         # in the outcome log (would skew WR and inflate logged-pick count).
         _log_cd = cooldown_set if isinstance(cooldown_set, set) else set()
@@ -1793,6 +1842,7 @@ def run_daily(test_mode=False, dry_run=False):
 
     # ── DAILY HISTORY ARCHIVE ─────────────────────────────────
     try:
+        from pick_utils import dedupe_picks_by_ticker
         os.makedirs("history", exist_ok=True)
         _today = datetime.now().strftime("%Y-%m-%d")
         _snap  = {
@@ -1805,10 +1855,21 @@ def run_daily(test_mode=False, dry_run=False):
             "sector_sentiment": news.get("sector_sentiment",{}),
             "system_exposure":  brief.get("system_exposure",None),
             "conviction_picks": brief.get("conviction_picks",[]),
+            # FIX (2026-08-08): brief has no top-level "TFSA_growth_top5"/
+            # "FHSA_top5" keys -- those buckets live nested at
+            # brief["accounts"]["TFSA"]["growth_picks"] / brief["accounts"]
+            # ["FHSA"]["top_picks"] (see the "accounts" dict built earlier
+            # in this function). Both .get()s always returned [], so
+            # history/*.json's "top_picks" has always been empty. Also
+            # fixes a second, stacked instance of the same bug class:
+            # category lives at pick["pick"]["category"], not pick
+            # ["category"] (see pick_utils.py's module docstring).
             "top_picks":        [{"ticker":p.get("ticker"),"score":p.get("score"),
-                                  "category":p.get("category")}
-                                 for p in (brief.get("TFSA_growth_top5",[]) +
-                                           brief.get("FHSA_top5",[]))[:10]],
+                                  "category":p.get("pick", {}).get("category")}
+                                 for p in dedupe_picks_by_ticker(
+                                     brief.get("accounts",{}).get("TFSA",{}).get("growth_picks",[]) +
+                                     brief.get("accounts",{}).get("FHSA",{}).get("top_picks",[]),
+                                     verbose=False)][:10],
             "etf_top":          [{"ticker":e.get("ticker"),"score":e.get("score"),
                                   "ret_90":e.get("ret_90")}
                                  for e in brief.get("etf_signals",{}).get("scored",[])[:5]],

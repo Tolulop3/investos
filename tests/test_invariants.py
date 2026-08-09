@@ -3559,3 +3559,524 @@ def test_stress_simulation_baseline_not_skewed_by_duplicate_ticker():
         f"baseline avg score must use AMGN's deduped score once, not both "
         f"copies -- expected {expected_avg}, got {normal_avg}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-08): further audit of the FHSA/TFSA duplicate-pick root cause
+# found 3 MORE exposed call sites beyond the original top_flat/sector_cap_
+# reserve/stress_baseline/signal_accuracy fixes: run_daily.py's RS-rating
+# input (all_raw), build_conviction_picks' first-wins bias, and the
+# outcome-log input's first-wins bias. Also fixed two unrelated dict-shape
+# bugs (sector news penalty dead code, history archive wrong keys) and two
+# structural improvements: a Kelly calibration fix (prefer model-sourced
+# ml_prob-bucket data over the legacy-diluted pooled table) and a
+# data-driven category-readiness check (see outcome_tracker.py's
+# category_is_data_ready, replacing ml_engine.py's hardcoded
+# RULES_BASED_CATEGORIES membership as the long-term promotion path).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_dedupe_raw_data_by_ticker_keeps_one_entry_per_ticker():
+    """Raw data dicts (not pick dicts) -- straddling tickers are literally
+    the same object reference across FHSA/TFSA buckets, so first-seen-wins
+    is correct with no priority tiebreak needed."""
+    from pick_utils import dedupe_raw_data_by_ticker
+
+    shared_amgn = {"ticker": "AMGN", "status": "ok", "perf_30d": 5, "perf_90d": 25}
+    data_list = [shared_amgn, shared_amgn, {"ticker": "MPC", "status": "ok", "perf_30d": 1, "perf_90d": 2}]
+    result = dedupe_raw_data_by_ticker(data_list)
+    tickers = [d["ticker"] for d in result]
+    assert tickers.count("AMGN") == 1
+    assert sorted(tickers) == ["AMGN", "MPC"]
+
+
+def test_calculate_relative_strength_not_skewed_by_duplicate_raw_data():
+    """A duplicate entry inflates calculate_relative_strength()'s population
+    (`total`), which shifts every OTHER stock's percentile-ranked rs_rating
+    -- not just the duplicate's. Deduping first must produce the same
+    ratings as a population that was never duplicated in the first place."""
+    from intelligence_layers import calculate_relative_strength
+    from pick_utils import dedupe_raw_data_by_ticker
+
+    base_universe = [
+        {"ticker": f"T{i}", "status": "ok", "perf_30d": i, "perf_90d": i * 2}
+        for i in range(20)
+    ]
+    # AMGN (a straddling ticker) is a real, legitimate member of the
+    # universe -- the bug is it appearing TWICE (same shared "data" object
+    # across FHSA/TFSA buckets), not that it appears at all. The correct
+    # baseline to compare against is one real AMGN entry, not zero.
+    amgn = {"ticker": "AMGN", "status": "ok", "perf_30d": 10, "perf_90d": 20}
+    clean_ratings = calculate_relative_strength(base_universe + [amgn])
+    duplicated_universe = base_universe + [amgn, amgn]
+
+    deduped = dedupe_raw_data_by_ticker(duplicated_universe)
+    fixed_ratings = calculate_relative_strength(deduped)
+
+    # T10 (mid-pack, composite ties with AMGN's insertion point) must rank
+    # identically whether or not AMGN's duplicate ever existed in the raw
+    # list. (T19, the top performer, is a poor choice here -- rank is
+    # always total-1 regardless of insertions below it, so its rs_rating
+    # is mathematically invariant and wouldn't demonstrate the bug.)
+    assert fixed_ratings["T10"]["rs_rating"] == clean_ratings["T10"]["rs_rating"]
+
+    # Without the fix, feeding duplicated_universe directly (no dedupe)
+    # inflates total and shifts T10's rank -- confirm that's still true
+    # (i.e. this test would have caught the bug pre-fix).
+    unfixed_ratings = calculate_relative_strength(duplicated_universe)
+    assert unfixed_ratings["T10"]["rs_rating"] != clean_ratings["T10"]["rs_rating"], (
+        "expected duplicate-population inflation to shift T10's rank in the "
+        "un-deduped case -- if this now matches, the test fixture no longer "
+        "demonstrates the bug this fix addresses"
+    )
+
+
+def test_build_conviction_picks_dedup_prefers_ml_scored_copy():
+    """Old behavior: build_conviction_picks' `seen` set marks a ticker seen
+    on its FIRST occurrence regardless of whether that copy actually
+    qualifies for conviction (>=2 signals). If FHSA_top5's copy (no
+    ml_prob, low rs_rating) came first and scored 0 signals, the ticker was
+    silently skipped entirely -- even though TFSA_growth_top5's copy (real
+    ml_prob, high rs_rating) would have cleared the 2-signal bar. Deduping
+    for the ML-scored copy BEFORE the seen-set loop fixes this."""
+    from run_daily import build_conviction_picks
+
+    screener_results = {
+        "FHSA_top5": [
+            {"ticker": "AMGN", "score": 100, "data": {}, "pick": {"category": "FHSA Conservative Growth"}},
+        ],
+        "TFSA_growth_top5": [
+            {"ticker": "AMGN", "score": 96, "data": {}, "pick": {"category": "GROWTH CORE"},
+             "ml_prob": 0.75, "rs_rating": 85},
+        ],
+        "TFSA_income_top5": [],
+        "TFSA_swing_top3": [],
+    }
+    conviction = build_conviction_picks(
+        screener_results, x_signals={}, trends={}, news_analysis={}, ml_results=None,
+    )
+    tickers = [p["ticker"] for p in conviction]
+    assert tickers.count("AMGN") <= 1, f"must not duplicate AMGN: {tickers}"
+    assert "AMGN" in tickers, (
+        "AMGN's ML-scored TFSA copy (rs_rating=85, ml_prob=0.75) clears the "
+        "2-signal conviction bar and must not be silently dropped because "
+        "the non-qualifying FHSA copy happened to be deduped-in first"
+    )
+
+
+def test_apply_news_to_screener_sector_penalty_now_applies():
+    """FIX (2026-08-08): pick.get("sector","") was always "" (sector only
+    lives at pick["data"]["sector"]), so the sector-headwind news penalty
+    was dead code. A pick in a sector with strongly negative net sentiment
+    must now actually get docked."""
+    from run_daily import apply_news_to_screener
+
+    screener_results = {
+        "FHSA_top5": [
+            {"ticker": "AC.TO", "score": 80, "data": {"sector": "Industrials"}},
+        ],
+        "TFSA_growth_top5": [], "TFSA_income_top5": [], "TFSA_swing_top3": [],
+        "FHSA_all": [], "TFSA_core_all": [], "TFSA_income_all": [], "TFSA_swing_all": [],
+    }
+    news_analysis = {
+        "ticker_adjustments": {},
+        "sector_sentiment": {"AIRLINES": {"net_score": -594}},  # Industrials -> AIRLINES per SECTOR_MAP
+        "macro_regime": "CAUTIOUS",
+    }
+    result = apply_news_to_screener(screener_results, news_analysis)
+    pick = result["FHSA_top5"][0]
+    assert pick["score"] < 80, (
+        f"sector headwind penalty must dock AC.TO's score (net=-594 -> -12pts "
+        f"expected), got unchanged score={pick['score']}"
+    )
+    assert any("Sector headwind" in f for f in pick.get("flags", [])), (
+        "expected a sector-headwind flag to be recorded on the pick"
+    )
+
+
+def test_kelly_prefers_model_sourced_bucket_over_pooled_when_it_disagrees():
+    """FIX (2026-08-08): checked empirically against outcomes_log.json --
+    the pooled by_ml_prob_bucket table (89% legacy 'unknown'-source rows)
+    can show POSITIVE edge for a bucket that the live model's own
+    ml_prob_source=='model' rows show NEGATIVE edge for (and vice versa).
+    Kelly must follow the model-sourced table when it clears the sample
+    gate, not the pooled one, even though both tables are present."""
+    from ml_engine import compute_target_weights
+
+    market_regime = {"regime": "BULL", "cash_pct": 0.0}
+    # Pooled table says 0.6-0.8 is strong (positive edge).
+    # Model-sourced table says 0.6-0.8 is actually a LOSER (negative edge).
+    wr_data = {
+        "by_ml_prob_bucket": {
+            "0.6-0.8": {"win_rate": 70.0, "avg_win": 5.0, "avg_loss": 1.0, "count": 320},
+        },
+        "by_ml_prob_bucket_model": {
+            "0.6-0.8": {"win_rate": 30.0, "avg_win": 1.0, "avg_loss": 5.0, "count": 37},
+        },
+    }
+    result = compute_target_weights([_kelly_pick("AAA", 80, 0.70)], market_regime,
+                                     win_rate_data=wr_data, verbose=False)
+    assert result[0]["kelly_wt"] == 0.0, (
+        "model-sourced data shows negative edge for this bucket (p=0.30, "
+        "aw=1.0, al=5.0) -- Kelly must floor to 0, not use the pooled "
+        "table's positive-edge numbers"
+    )
+
+
+def test_kelly_falls_back_to_pooled_when_model_bucket_too_thin():
+    """A bucket with real model-sourced data but too few rows to clear the
+    n>=10-win/n>=10-loss sample gate (e.g. today's live 0.8-1.0 bucket,
+    which has ZERO model-sourced rows at all) must fall back to the pooled
+    table rather than going straight to the static fallback -- the pooled
+    table is still better-than-nothing evidence."""
+    from ml_engine import compute_target_weights
+
+    market_regime = {"regime": "BULL", "cash_pct": 0.0}
+    wr_data = {
+        "by_ml_prob_bucket": {
+            "0.6-0.8": {"win_rate": 61.7, "avg_win": 5.41, "avg_loss": 2.70, "count": 269},
+        },
+        "by_ml_prob_bucket_model": {},  # no model-sourced rows in this bucket at all
+    }
+    result = compute_target_weights([_kelly_pick("AAA", 80, 0.70)], market_regime,
+                                     win_rate_data=wr_data, verbose=False)
+    assert result[0]["kelly_wt"] > 0.0, (
+        "pooled table shows real positive edge and model table is simply "
+        "empty for this bucket -- must fall back to pooled, not floor to 0"
+    )
+
+
+def test_category_is_data_ready_requires_real_feature_coverage_not_just_rows():
+    """FIX (2026-08-08): dry-tested against real data -- WATCH has 273
+    true-horizon-resolved rows (comfortably over the 80-row bar) but ALL of
+    them predate the 2026-06-14 feature-capture instrumentation date, so
+    100% have roe=perf_90d=0. A row-count-only readiness check would have
+    falsely called WATCH ready to train on. This locks in that the check
+    requires real feature coverage, not just volume."""
+    from outcome_tracker import category_is_data_ready
+
+    # 100 resolved rows, well over the 80-row bar, but zero real features
+    # (simulates WATCH's actual pre-instrumentation-era true-horizon data).
+    feature_starved = [
+        {"category": "WATCH", "true_horizon_resolved": True, "roe": 0}
+        for _ in range(100)
+    ]
+    assert category_is_data_ready("WATCH", outcomes=feature_starved) is False
+
+    # Same row count, but with real feature coverage above the 10% bar
+    # (mirrors SWING's live model, which trains today at 40% raw coverage).
+    feature_complete = (
+        [{"category": "WATCH", "true_horizon_resolved": True, "roe": 12.5} for _ in range(20)] +
+        [{"category": "WATCH", "true_horizon_resolved": True, "roe": 0} for _ in range(80)]
+    )
+    assert category_is_data_ready("WATCH", outcomes=feature_complete) is True
+
+
+def test_category_is_data_ready_matches_known_live_categories():
+    """Sanity-checks category_is_data_ready against real outcomes_log.json:
+    SWING (which already trains a working live model) must read ready;
+    every category currently gated to rules_based in ml_engine.py's
+    RULES_BASED_CATEGORIES must read not-ready. This is what makes the
+    check trustworthy as a future drop-in replacement for that hardcoded
+    set -- it must agree with today's known-correct manual classification
+    before it's trusted to drive it automatically."""
+    from outcome_tracker import category_is_data_ready, load_outcomes
+    from ml_engine import RULES_BASED_CATEGORIES
+
+    outcomes = load_outcomes()
+    assert category_is_data_ready("SWING", outcomes=outcomes) is True
+    for cat in RULES_BASED_CATEGORIES:
+        assert category_is_data_ready(cat, outcomes=outcomes) is False, (
+            f"{cat} is hardcoded rules_based today -- category_is_data_ready "
+            f"must agree it isn't ready, or the two would silently disagree"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-09): stress-testing the "fully automatic" auto-promotion idea
+# surfaced that neither train_swing_model() nor train_and_save() (the general
+# model) had ANY holdout-AUC gate before deploying -- both unconditionally
+# overwrote the live model cache regardless of the computed AUC, every call,
+# with no path back down if a bad retrain went live. Bootstrapped against
+# real SWING data: random-resplit AUC std nearly doubles (0.056 -> 0.118)
+# going from SWING's actual n=239 down to the 80-row minimum bar, meaning a
+# marginal pass right at threshold is plausibly noise, not skill. Two fixes:
+# (1) a deploy gate (MIN_HOLDOUT_AUC_TO_DEPLOY) on both model paths, and
+# (2) an ongoing health check (model_health_check) on REAL subsequent
+# resolved performance, since a one-time pass doesn't prove it stays good.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _synthetic_resolved_rows(n, informative, seed=0):
+    """Synthetic rows with dates spanning well before AND after
+    HOLDOUT_CUTOFF_DATE (2026-06-19), so both train and holdout populations
+    are real and class-balanced. Label assignment is independent random
+    (not tied to date index via modular arithmetic like
+    _synthetic_resolved_for_split_test's i%2 -- that correlates perfectly
+    with date-cycle position whenever the date-list length is even,
+    silently producing a single-class holdout).
+
+    informative=True: roe and profit_margin cleanly separate WIN/LOSS, in
+    the direction XGB_PARAMS' monotone_constraints actually expects (roe:
+    -1, i.e. LOWER roe -> higher win probability -- see the constraint's
+    own comment: "empirically confirmed negative correlation with the
+    label"; profit_margin: +1, higher -> better). Getting this backwards
+    fights the constraint and produces a degenerate, zero-importance model
+    regardless of how cleanly separated the raw data looks -- confirmed by
+    hand: a roe-positively-correlated-with-WIN version of this fixture
+    trains a model with every feature importance at 0.0000 and AUC pinned
+    at exactly 0.500, because the constraint forbids the split direction
+    the data would otherwise support.
+
+    informative=False: features are the SAME constant regardless of
+    outcome -> AUC should sit at chance, exercising the reject path
+    without crashing on a degenerate single-class split."""
+    import random
+    rng = random.Random(seed)
+    rows = []
+    # Dates clustered as close to HOLDOUT_CUTOFF_DATE (2026-06-19) as
+    # possible on the train side, and after it on the holdout side.
+    # build_feature_matrix applies a 90-day-half-life recency-decay sample
+    # weight (exp(-ln2/90 * days_old)) -- with XGB_PARAMS' min_child_weight=4
+    # (a WEIGHTED-hessian threshold, not a row count), dates spread months
+    # further back than the cutoff decay the weights so much that no split
+    # can meet the threshold at a small synthetic n, producing a silently
+    # degenerate zero-importance model (confirmed by hand: this exact
+    # fixture with Feb-May 2026 dates and n=90 trains a real 0.53 AUC signal
+    # in isolation but collapses to 0.0 importance/0.5 AUC the moment
+    # sample_weight is applied) -- not a bug in the fix under test, just a
+    # constraint synthetic fixtures need to respect that real production
+    # data (1000s of rows) never bumps into.
+    dates_before = [f"2026-06-{d:02d}" for d in range(1, 20)]     # up to the cutoff
+    dates_after  = [f"2026-{m:02d}-{d:02d}" for m in (7, 8) for d in (1, 5, 10, 15, 20)]
+    for i in range(n):
+        is_win = rng.random() < 0.5
+        date = dates_after[i % len(dates_after)] if i % 3 == 0 else dates_before[i % len(dates_before)]
+        if informative:
+            roe           = -10.0 + rng.uniform(-2, 2) if is_win else 40.0 + rng.uniform(-2, 2)
+            profit_margin =  40.0 + rng.uniform(-2, 2) if is_win else -10.0 + rng.uniform(-2, 2)
+        else:
+            roe, profit_margin = 15.0, 20.0  # constant regardless of outcome -- uninformative
+        rows.append({
+            "resolved": True,
+            "actual_return": 5.0 + rng.uniform(-0.1, 0.1) if is_win else -3.0 + rng.uniform(-0.1, 0.1),
+            "outcome": "WIN" if is_win else "LOSS",
+            "perf_90d": 10.0, "roe": roe, "profit_margin": profit_margin,
+            "sector": "Technology", "regime": "BULL",
+            "signal_date": date,
+        })
+    return rows
+
+
+def test_train_and_save_rejects_deploy_below_auc_bar(monkeypatch, tmp_path):
+    """Constant, uninformative features must produce a near-random holdout
+    AUC and get REJECTED -- no cache write, report says deployed=False.
+    Locks in the fix: previously this always deployed."""
+    import ml_retrainer as mr
+
+    resolved = _synthetic_resolved_rows(n=90, informative=False, seed=3)
+    X, y, w, dates = mr.build_feature_matrix(resolved)
+    if X is None:
+        pytest.skip("Coverage gate blocked")
+
+    cache_path = tmp_path / "model_cache.pkl"
+    monkeypatch.setattr(mr, "MODEL_CACHE", str(cache_path))
+    monkeypatch.setattr(mr, "REPORT_FILE", str(tmp_path / "report.json"))
+
+    report = mr.train_and_save(X, y, w, dates)
+    if report is None:
+        pytest.skip("Training libraries unavailable")
+
+    assert report["holdout_auc"] < mr.MIN_HOLDOUT_AUC_TO_DEPLOY, (
+        f"test fixture must produce a sub-bar AUC to exercise rejection -- "
+        f"got {report['holdout_auc']} >= {mr.MIN_HOLDOUT_AUC_TO_DEPLOY}"
+    )
+    assert report["deployed"] is False
+    assert "rejected_reason" in report
+    assert not cache_path.exists(), "rejected retrain must not write a model cache file"
+
+
+def test_train_and_save_preserves_previous_model_on_rejection(monkeypatch, tmp_path):
+    """The core safety property: if a NEW retrain fails the bar, the
+    PREVIOUSLY-deployed model (already on disk from an earlier good
+    retrain) must be left untouched, not overwritten with a bad one."""
+    import ml_retrainer as mr
+
+    cache_path = tmp_path / "model_cache.pkl"
+    cache_path.write_bytes(b"PREVIOUS_GOOD_MODEL_BYTES")
+    monkeypatch.setattr(mr, "MODEL_CACHE", str(cache_path))
+    monkeypatch.setattr(mr, "REPORT_FILE", str(tmp_path / "report.json"))
+
+    resolved = _synthetic_resolved_rows(n=90, informative=False, seed=4)
+    X, y, w, dates = mr.build_feature_matrix(resolved)
+    if X is None:
+        pytest.skip("Coverage gate blocked")
+
+    report = mr.train_and_save(X, y, w, dates)
+    if report is None:
+        pytest.skip("Training libraries unavailable")
+    assert report["deployed"] is False
+
+    assert cache_path.read_bytes() == b"PREVIOUS_GOOD_MODEL_BYTES", (
+        "a rejected retrain must not touch the previously-deployed cache file"
+    )
+
+
+def test_train_and_save_deploys_when_auc_clears_bar(monkeypatch, tmp_path):
+    """A model with a real, learnable signal must clear the bar and deploy
+    -- confirms the gate doesn't just reject everything."""
+    import ml_retrainer as mr
+
+    resolved = _synthetic_resolved_rows(n=90, informative=True, seed=1)
+    X, y, w, dates = mr.build_feature_matrix(resolved)
+    if X is None:
+        pytest.skip("Coverage gate blocked")
+
+    cache_path = tmp_path / "model_cache.pkl"
+    monkeypatch.setattr(mr, "MODEL_CACHE", str(cache_path))
+    monkeypatch.setattr(mr, "REPORT_FILE", str(tmp_path / "report.json"))
+
+    report = mr.train_and_save(X, y, w, dates)
+    if report is None:
+        pytest.skip("Training libraries unavailable")
+
+    assert report["holdout_auc"] >= mr.MIN_HOLDOUT_AUC_TO_DEPLOY, (
+        f"test fixture must produce a clearing AUC -- got {report['holdout_auc']}"
+    )
+    assert report["deployed"] is True
+    assert cache_path.exists(), "a passing retrain must write the model cache"
+
+
+def test_train_swing_model_rejects_deploy_below_auc_bar(monkeypatch, tmp_path):
+    """Same gate, SWING's own training path -- constant/uninformative
+    features must not get deployed to swing_model_cache.pkl."""
+    import ml_retrainer as mr
+
+    outcomes_path = tmp_path / "outcomes_log.json"
+    rows = []
+    for r in _synthetic_resolved_rows(n=50, informative=False, seed=2):
+        r = dict(r)
+        r["category"] = "SWING"
+        r["true_horizon_resolved"] = True
+        r["true_horizon_outcome"] = r["outcome"]
+        r["true_horizon_return"] = r["actual_return"]
+        rows.append(r)
+    outcomes_path.write_text(__import__("json").dumps(rows))
+
+    monkeypatch.setattr(mr, "OUTCOMES_FILE", str(outcomes_path))
+    monkeypatch.setattr(mr, "SWING_MIN_ROWS_TO_TRAIN", 40)
+    cache_path = tmp_path / "swing_model_cache.pkl"
+    monkeypatch.setattr(mr, "SWING_MODEL_CACHE", str(cache_path))
+    monkeypatch.setattr(mr, "SWING_MODEL_REPORT", str(tmp_path / "swing_report.json"))
+
+    report = mr.train_swing_model(verbose=False)
+    if report is None:
+        pytest.skip("Training libraries unavailable")
+
+    assert report.get("deployed") is False
+    assert not cache_path.exists()
+
+
+def test_model_health_check_no_opinion_below_min_sample():
+    """Fewer than min_n true-horizon-resolved, model-sourced picks ->
+    'insufficient_data', not a default 'healthy' or 'degraded' verdict.
+    This is the expected real state for weeks after SWING's model deploy
+    (2026-08-08 + 30d horizon = no swing_model true-horizon data before
+    2026-09-07)."""
+    from outcome_tracker import model_health_check
+
+    outcomes = [
+        {"category": "SWING", "ml_prob_source": "swing_model",
+         "true_horizon_resolved": True, "true_horizon_outcome": "WIN",
+         "true_horizon_date": "2026-08-01"}
+        for _ in range(5)  # well under the 20-row min
+    ]
+    result = model_health_check("SWING", "swing_model", outcomes=outcomes)
+    assert result["status"] == "insufficient_data"
+    assert result["n"] == 5
+
+
+def test_model_health_check_detects_degraded_model():
+    """A deployed model whose real recent win rate has fallen below the
+    floor must read 'degraded', with the win rate that triggered it."""
+    from outcome_tracker import model_health_check
+
+    outcomes = (
+        [{"category": "SWING", "ml_prob_source": "swing_model", "true_horizon_resolved": True,
+          "true_horizon_outcome": "LOSS", "true_horizon_date": f"2026-08-{i:02d}"} for i in range(1, 26)]
+        + [{"category": "SWING", "ml_prob_source": "swing_model", "true_horizon_resolved": True,
+            "true_horizon_outcome": "WIN", "true_horizon_date": f"2026-07-{i:02d}"} for i in range(1, 6)]
+    )
+    result = model_health_check("SWING", "swing_model", outcomes=outcomes)
+    assert result["status"] == "degraded"
+    assert result["win_rate_pct"] < 40.0
+
+
+def test_model_health_check_ignores_other_categories_and_sources():
+    """Must only count rows matching BOTH the target category AND the
+    target ml_prob_source -- a WATCH pick or a general-model-scored SWING
+    pick must not contaminate SWING's swing_model health read."""
+    from outcome_tracker import model_health_check
+
+    outcomes = (
+        [{"category": "SWING", "ml_prob_source": "swing_model", "true_horizon_resolved": True,
+          "true_horizon_outcome": "WIN", "true_horizon_date": f"2026-08-{i:02d}"} for i in range(1, 21)]
+        + [{"category": "SWING", "ml_prob_source": "model", "true_horizon_resolved": True,
+            "true_horizon_outcome": "LOSS", "true_horizon_date": f"2026-08-{i:02d}"} for i in range(1, 21)]
+        + [{"category": "WATCH", "ml_prob_source": "swing_model", "true_horizon_resolved": True,
+            "true_horizon_outcome": "LOSS", "true_horizon_date": f"2026-08-{i:02d}"} for i in range(1, 21)]
+    )
+    result = model_health_check("SWING", "swing_model", outcomes=outcomes)
+    assert result["n"] == 20, f"must count only SWING+swing_model rows, got n={result['n']}"
+    assert result["status"] == "healthy"
+
+
+def test_ml_engine_falls_back_when_swing_model_marked_degraded(monkeypatch, tmp_path, capsys):
+    """Real end-to-end check (same pattern as
+    test_run_ml_engine_scoring_table_shows_category_and_source): a SWING
+    pick, with a swing_model mocked to return a real, usable probability,
+    must NOT be routed through it when the saved health check says
+    degraded -- proving the auto-demotion signal actually reaches live
+    routing, not just sitting in a JSON file nobody reads. Source must
+    read "model" (general fallback), not "swing_model"."""
+    import ml_engine as me
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
+    monkeypatch.setattr(
+        me, "build_features_for_stock",
+        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+    )
+    monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
+        "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
+        "spx_price": 0, "ma200": 0, "pct_above_ma": 0,
+    })
+    monkeypatch.setattr("outcome_tracker.load_model_health",
+                         lambda *a, **k: {"SWING": {"status": "degraded", "reason": "test"}})
+
+    def fake_train(self, verbose=True):
+        self.trained = True
+        self.model = MagicMock()
+        self.model.predict_proba.return_value = np.array([[0.3, 0.7]])
+        self.calibrator = None
+        # A REAL, usable SWING model -- would return 0.8 if actually called.
+        # Proves the skip is caused by the health check, not a coincidental
+        # None from an unloaded model.
+        self.swing_model = MagicMock()
+        self.swing_model.predict_proba.return_value = np.array([[0.2, 0.8]])
+        self.swing_scaler = MagicMock()
+        self.swing_scaler.transform.return_value = [[0, 0, 0]]
+        return True
+    monkeypatch.setattr(me.StockMLPredictor, "train", fake_train)
+
+    screener_picks = {
+        "FHSA_top5": [{"ticker": "SWINGCO", "score": 50, "data": {}, "pick": {"category": "SWING"}}],
+        "TFSA_growth_top5": [], "TFSA_income_top5": [], "TFSA_swing_top3": [],
+    }
+    me.run_ml_engine(screener_picks, {}, verbose=True)
+    out = capsys.readouterr().out
+
+    assert "DEGRADED" in out, "degraded health status must be logged visibly"
+    assert "SWINGCO" in out and "swing_model" not in out.split("SWINGCO")[1].split("\n")[0], (
+        f"SWINGCO's row must not show swing_model as source when health is "
+        f"degraded -- full output:\n{out}"
+    )

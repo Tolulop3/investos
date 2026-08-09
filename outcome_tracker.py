@@ -67,6 +67,145 @@ CATEGORY_HORIZONS = {
 }
 DEFAULT_HORIZON_DAYS = 90  # any future/unmapped category
 
+# Minimum true-horizon-resolved rows needed before a category's data is even
+# worth attempting to train a dedicated model on (mirrors ml_retrainer.py's
+# SWING_MIN_ROWS_TO_TRAIN=80 -- kept as a separate constant here rather than
+# importing ml_retrainer, since outcome_tracker.py has no other dependency on
+# it and this value is a data-readiness threshold, not a training detail).
+MIN_TRUE_HORIZON_ROWS_FOR_ML = 80
+
+
+def true_horizon_resolved_count(category, outcomes=None):
+    """
+    How many outcomes_log.json rows for `category` have reached their real
+    CATEGORY_HORIZONS horizon (true_horizon_resolved=True). Pure data count
+    -- says nothing about whether a model exists or would validate, only
+    whether there's enough resolved history to attempt training one.
+    """
+    if outcomes is None:
+        outcomes = load_outcomes()
+    return sum(1 for o in outcomes
+               if o.get("category") == category and o.get("true_horizon_resolved"))
+
+
+def category_is_data_ready(category, min_rows=MIN_TRUE_HORIZON_ROWS_FOR_ML, outcomes=None):
+    """
+    Data-volume AND feature-coverage readiness (the PAPER_ONLY -> "enough to
+    attempt training" gate) -- NOT the same as "has a validated, deployed
+    model". A category can pass this and still have no model if training
+    fails validation (see ml_retrainer.py's holdout-AUC bar on
+    train_swing_model, and its generalization).
+
+    Row count alone is NOT sufficient (dry-tested 2026-08-08): per-pick
+    fundamentals (roe, perf_90d, rev_growth, ...) only started being
+    captured into outcomes_log.json on 2026-06-14 (verified: earliest
+    signal_date with roe populated). A category with horizon H can only
+    have a true-horizon-resolved row with real features once a pick logged
+    ON OR AFTER 2026-06-14 has aged past H days -- for WATCH (90d) that's
+    2026-09-12, for GROWTH CORE/FHSA (180d) 2026-12-11, for the 365d income
+    categories 2027-06-14. Confirmed live: WATCH already has 273
+    true-horizon-resolved rows (comfortably over the 80-row bar) but EVERY
+    ONE predates 2026-06-14, so ALL of them have roe=perf_90d=rev_growth=0
+    -- build_feature_matrix()'s own 10% coverage gate correctly refuses to
+    train on this, but a row-count-only check would have falsely called
+    WATCH ready. So this checks real feature presence directly, not just
+    volume or elapsed calendar time.
+    """
+    if outcomes is None:
+        outcomes = load_outcomes()
+    rows = [o for o in outcomes
+            if o.get("category") == category and o.get("true_horizon_resolved")]
+    if len(rows) < min_rows:
+        return False
+    # Same "non-zero = real data" heuristic ml_retrainer.py's coverage log
+    # already uses -- roe is a reliable proxy since a genuine 0.0 ROE is
+    # rare among picks that passed the screener's quality filters. Bar
+    # matched to ml_retrainer.py's own MIN_COVERAGE_PCT=10.0 (the threshold
+    # build_feature_matrix's caller actually gates real training on) rather
+    # than picking a fresh number here -- SWING's live model trains today
+    # at 40% raw coverage, comfortably over this bar; a stricter bar would
+    # have called SWING itself not-ready, contradicting its working model.
+    with_features = sum(1 for o in rows if o.get("roe"))
+    return (with_features / len(rows)) >= 0.10
+
+
+# FIX (2026-08-09): train_swing_model()/retrain() previously had a
+# deploy-side gate added (MIN_HOLDOUT_AUC_TO_DEPLOY in ml_retrainer.py) but
+# NO ongoing health check -- once a model passed one holdout read and went
+# live, nothing ever re-checked whether it kept working on real subsequent
+# outcomes. A single holdout AUC is a noisy, one-shot sample (bootstrapped
+# against real SWING data: resplit std jumps from 0.056 at n=239 to 0.118 at
+# the 80-row minimum bar -- a marginal pass is plausibly luck, not skill).
+# This is the missing other half: a periodic check of the DEPLOYED model's
+# real, resolved, true-horizon performance, with an explicit "not enough
+# data yet, no opinion" state rather than defaulting to healthy OR degraded
+# on thin evidence.
+MODEL_HEALTH_FILE = "model_health.json"
+MIN_HEALTH_CHECK_SAMPLE = 20   # below this: no opinion, not "healthy" by default
+HEALTH_DEGRADED_WIN_RATE_PCT = 40.0  # win rate floor on real resolved outcomes
+
+
+def model_health_check(category, ml_prob_source_tag, outcomes=None, min_n=MIN_HEALTH_CHECK_SAMPLE,
+                        max_lookback=50, degraded_floor_pct=HEALTH_DEGRADED_WIN_RATE_PCT):
+    """
+    Checks a deployed category model's REAL performance: the last
+    `max_lookback` outcomes_log.json rows for `category` that (a) were
+    actually scored by this model (ml_prob_source == ml_prob_source_tag,
+    e.g. "swing_model") and (b) have reached their true CATEGORY_HORIZONS
+    horizon (true_horizon_resolved) -- not the 7-day proxy, since that
+    measures something the model isn't actually trying to predict.
+
+    Returns {"status": "healthy"|"degraded"|"insufficient_data", "n":,
+    "win_rate_pct":, "checked_at":, "reason":}. "insufficient_data" is a
+    real third state, not silently treated as healthy -- callers must
+    decide explicitly what to do when there's no evidence yet (the
+    honest answer, this early in a model's life, is usually "keep using
+    it" since demoting on zero evidence isn't safer than promoting on
+    zero evidence).
+    """
+    if outcomes is None:
+        outcomes = load_outcomes()
+    rows = [o for o in outcomes
+            if o.get("category") == category
+            and o.get("ml_prob_source") == ml_prob_source_tag
+            and o.get("true_horizon_resolved")]
+    rows = sorted(rows, key=lambda o: o.get("true_horizon_date") or "", reverse=True)[:max_lookback]
+    n = len(rows)
+    result = {"category": category, "ml_prob_source": ml_prob_source_tag,
+              "checked_at": datetime.now().isoformat(), "n": n}
+
+    if n < min_n:
+        result["status"] = "insufficient_data"
+        result["reason"] = (f"only {n} true-horizon-resolved {ml_prob_source_tag} picks "
+                             f"(need {min_n}) -- no opinion yet")
+        return result
+
+    wins = sum(1 for o in rows if o.get("true_horizon_outcome") == "WIN")
+    win_rate_pct = round(wins / n * 100, 1)
+    result["win_rate_pct"] = win_rate_pct
+    if win_rate_pct < degraded_floor_pct:
+        result["status"] = "degraded"
+        result["reason"] = f"win rate {win_rate_pct}% over last {n} picks < {degraded_floor_pct}% floor"
+    else:
+        result["status"] = "healthy"
+    return result
+
+
+def save_model_health(results, path=MODEL_HEALTH_FILE):
+    """results: {category_key: model_health_check(...) dict, ...}"""
+    with open(path, "w") as f:
+        json.dump(results, f, indent=2)
+
+
+def load_model_health(path=MODEL_HEALTH_FILE):
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
 
 def _classify_outcome(actual_return, threshold_pct=OUTCOME_THRESHOLD_PCT):
     """The one place WIN/LOSS/FLAT classification happens. Used by both the
@@ -744,6 +883,43 @@ def compute_win_rate():
                 "avg_loss":      _b_avg_loss,
             }
 
+    # By ml_prob bucket, MODEL-SOURCED ROWS ONLY (2026-08-08). by_ml_prob
+    # above pools every ml_prob_source together (89% of resolved rows are
+    # "unknown" -- legacy, pre-model-tracking, or from earlier model
+    # versions). Checked empirically against outcomes_log.json: pooled data
+    # says bucket 0.6-0.8 is the strongest (WR 54.4%, PF 2.95) and 0.4-0.5
+    # is weak (WR 48.5%, PF 1.16) -- filtered to ml_prob_source=="model"
+    # only, that INVERTS: 0.6-0.8 shows negative edge (WR 40.5%, PF 0.76)
+    # while 0.4-0.5 looks genuinely good (WR 58.0%, PF 1.59). The bucket the
+    # pooled table currently trusts most is not what the live model actually
+    # produces. ml_engine.py's score_to_kelly_wt() prefers this table when a
+    # bucket clears the sample gate, falling back to the pooled table above
+    # only for buckets with too few model-sourced rows (e.g. 0.8-1.0 has 0
+    # model-sourced rows today -- a live cold-start gap, not fixable by
+    # filtering).
+    by_ml_prob_model = {}
+    model_resolved = [o for o in resolved if o.get("ml_prob_source") == "model"]
+    for lo, hi, label in ML_PROB_BUCKETS:
+        bp = [o for o in model_resolved
+              if o.get("ml_prob") is not None and lo <= o["ml_prob"] < hi]
+        if bp:
+            bw          = len([o for o in bp if o["outcome"]=="WIN"])
+            rets        = [o["actual_return"] for o in bp]
+            wins_abs    = [r for r in rets if r > 0]
+            loss_abs    = [abs(r) for r in rets if r < 0]
+            pf          = round(sum(wins_abs)/sum(loss_abs), 2) if loss_abs else 0
+            _m_avg_win  = round(sum(wins_abs)/len(wins_abs), 2) if wins_abs else 0
+            _m_avg_loss = round(sum(loss_abs)/len(loss_abs), 2) if loss_abs else 0
+            by_ml_prob_model[label] = {
+                "win_rate":      round(bw/len(bp)*100, 1),
+                "count":         len(bp),
+                "avg_ret":       round(sum(rets)/len(rets), 2),
+                "avg_return":    round(sum(rets)/len(rets), 2),
+                "profit_factor": pf,
+                "avg_win":       _m_avg_win,
+                "avg_loss":      _m_avg_loss,
+            }
+
     # By category
     by_cat = {}
     for cat in set(o.get("category","OTHER") for o in resolved):
@@ -871,6 +1047,7 @@ def compute_win_rate():
         "worst_return":   round(min(o["actual_return"] for o in resolved), 2),
         "by_score_tier":  by_score,
         "by_ml_prob_bucket": by_ml_prob,
+        "by_ml_prob_bucket_model": by_ml_prob_model,
         "by_category":    by_cat,
         "recent_10":      recent_10,
         "streak":         streak,

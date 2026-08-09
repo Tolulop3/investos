@@ -1178,17 +1178,45 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
         b_source = "static_fallback"
 
         bucket = ml_prob_bucket(ml_prob)
-        if wr_data and wr_data.get("by_ml_prob_bucket"):
-            d = wr_data["by_ml_prob_bucket"].get(bucket, {})
-            _aw = d.get("avg_win")    # mean return on winning picks in this ml_prob bucket
-            _al = d.get("avg_loss")   # mean abs-return on losing picks in this ml_prob bucket
+
+        def _bucket_stats(table, bucket):
+            d   = (table or {}).get(bucket, {})
+            _aw = d.get("avg_win")
+            _al = d.get("avg_loss")
             _n  = d.get("count", 0)
             _nw = round(_n * d.get("win_rate", 0) / 100)
             _nl = _n - _nw
-            if _aw and _al and _al > 0 and _nw >= 10 and _nl >= 10:
+            ok  = bool(_aw and _al and _al > 0 and _nw >= 10 and _nl >= 10)
+            return ok, d, _nw, _nl
+
+        _used = None
+        if wr_data:
+            # FIX (2026-08-08): prefer the bucket table computed from
+            # ml_prob_source=="model" rows only. Checked empirically: pooled
+            # data (89% legacy "unknown" rows) says bucket 0.6-0.8 is the
+            # strongest edge, but restricted to what the live model actually
+            # produced, that bucket shows NEGATIVE edge -- the pooled table
+            # was letting stale/legacy calibration override the current
+            # model's real behavior. Falls back to the pooled table only for
+            # buckets too thin in model-only data (e.g. 0.8-1.0 currently has
+            # 0 model-sourced rows -- a genuine cold-start gap, not something
+            # a filter can fix). See tests/test_invariants.py
+            # test_kelly_prefers_model_sourced_bucket_over_pooled.
+            ok_model, d_model, _nw_m, _nl_m = _bucket_stats(wr_data.get("by_ml_prob_bucket_model"), bucket)
+            if ok_model:
+                d, _used = d_model, "model"
+            else:
+                ok_pooled, d_pooled, _nw_p, _nl_p = _bucket_stats(wr_data.get("by_ml_prob_bucket"), bucket)
+                if ok_pooled:
+                    d, _used = d_pooled, "pooled"
+                elif verbose:
+                    print(f"    [Kelly] thin data (model nw={_nw_m},nl={_nl_m} | pooled nw={_nw_p},nl={_nl_p}) "
+                          f"for ml_prob bucket {bucket} → static fallback")
+
+            if _used:
                 p  = d.get("win_rate", 50) / 100
-                aw = _aw   # proper odds ratio numerator
-                al = _al   # proper odds ratio denominator
+                aw = d.get("avg_win")   # proper odds ratio numerator
+                al = d.get("avg_loss")  # proper odds ratio denominator
                 # FIX (Option B, ml_prob-bucket variant, 2026-07-21): p/b now
                 # come from this PICK'S OWN ml_prob bucket's measured win rate
                 # and payoff ratio — not the score tier's portfolio-wide
@@ -1203,10 +1231,8 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
                 # as p itself). See tests/test_invariants.py
                 # test_kelly_p_source_is_ml_prob_bucket_not_score_tier and
                 # test_ml_prob_bucket_table_matches_recomputation.
-                p_source = f"ml_prob_bucket_win_rate[{bucket}]"
-                b_source = f"ml_prob_bucket_avg_win_loss_ratio[{bucket}]"
-            elif verbose:
-                print(f"    [Kelly] thin data (nw={_nw}, nl={_nl}) for ml_prob bucket {bucket} → static fallback")
+                p_source = f"ml_prob_bucket_win_rate[{_used}:{bucket}]"
+                b_source = f"ml_prob_bucket_avg_win_loss_ratio[{_used}:{bucket}]"
         b = aw / al
         f_raw = (p * b - (1 - p)) / b
         if verbose and f_raw <= 0:
@@ -1671,6 +1697,21 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     predictor = StockMLPredictor()
     predictor.train(verbose=verbose)
 
+    # FIX (2026-08-09): auto-demotion signal -- see outcome_tracker.py's
+    # model_health_check() docstring. Computed once per run (not per-pick)
+    # and written to disk by run_daily.py before this runs; loaded here to
+    # decide whether SWING's model should be trusted this run at all.
+    # "insufficient_data" (the expected state for weeks, since SWING's
+    # model only deployed 2026-08-08 and its 30-day true-horizon can't
+    # resolve any swing_model-sourced pick before 2026-09-07) is NOT
+    # treated as degraded -- only an explicit "degraded" verdict skips it.
+    from outcome_tracker import load_model_health
+    _swing_health = load_model_health().get("SWING", {})
+    _swing_degraded = _swing_health.get("status") == "degraded"
+    if _swing_degraded and verbose:
+        print(f"  🩺 SWING model health: DEGRADED ({_swing_health.get('reason','')}) "
+              f"-- falling back to general model for SWING picks this run")
+
     regime_num = 1 if regime["regime"] in ("BULL", "RECOVERY") else 0
     _raw_picks = (
         screener_picks.get("FHSA_top5", []) +
@@ -1730,7 +1771,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
             # general-model path unchanged.
             xgb_raw = None
             if category == "SWING":
-                swing_prob = predictor.predict_swing(features)
+                swing_prob = None if _swing_degraded else predictor.predict_swing(features)
                 if swing_prob is not None:
                     calibrated = swing_prob
                     source = "swing_model"
