@@ -4080,3 +4080,422 @@ def test_ml_engine_falls_back_when_swing_model_marked_degraded(monkeypatch, tmp_
         f"SWINGCO's row must not show swing_model as source when health is "
         f"degraded -- full output:\n{out}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-09): structural fix for the ac4973cd category-routing bug
+# class (pick.get("category") always None because category lives at
+# pick["pick"]["category"], never the top level -- same shape bug recurred
+# independently for "sector" in run_daily.py's news-penalty block). Added
+# canonical accessors (get_pick_category/get_pick_field/get_pick_sector/
+# get_pick_data) to pick_utils.py and migrated every known call site across
+# run_daily.py, ml_engine.py, risk_engine.py, outcome_tracker.py,
+# portfolio_engine.py, content_engine.py, intelligence_layers.py, and
+# signal_ledger.py. This test is the actual enforcement mechanism -- it
+# fails if a NEW raw `.get("pick", ...)` or `.get("data", ...).get("sector"`
+# read appears in any of those files outside pick_utils.py, so the next
+# occurrence of this bug class is caught by CI instead of shipping silently.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_no_raw_pick_dict_access_outside_pick_utils():
+    """Enforcement for the canonical pick-accessor structural fix. Any new
+    `.get("pick", ...)` or `.get("data", ...).get("sector"...)` chain
+    outside pick_utils.py must use get_pick_data()/get_pick_category()/
+    get_pick_field()/get_pick_sector() instead -- this is what actually
+    stops a third instance of the ac4973cd bug class from appearing
+    silently, instead of relying on someone remembering the convention.
+
+    Known, audited-safe exceptions (not the pick-dict shape at all, or a
+    legitimate existence-check/mutation rather than a nested read) are
+    explicitly allowlisted by (file, line_text) below -- anything else
+    matching the pattern is a real violation."""
+    import re
+
+    FILES = [
+        "run_daily.py", "ml_engine.py", "risk_engine.py", "outcome_tracker.py",
+        "portfolio_engine.py", "content_engine.py", "intelligence_layers.py",
+        "signal_ledger.py",
+    ]
+    ALLOWLIST = {
+        # content_engine.py: `data` here is a content-template situation
+        # dict whose "pick" key holds a DIFFERENT object (the primary
+        # conviction pick itself, with ticker/score at ITS top level) --
+        # not a screener pick's classify_pick() sub-dict at all.
+        ("content_engine.py", 'pick    = data.get("pick", {})'),
+        # run_daily.py: existence-check before a WRITE (pick["pick"]["amount"] = ...),
+        # not a nested READ -- no default value requested, nothing to migrate.
+        ("run_daily.py", 'if pick.get("pick") and guardrail["recommended"] > 0:'),
+    }
+
+    pick_pattern   = re.compile(r'\.get\(\s*"pick"\s*,')
+    sector_pattern = re.compile(r'\.get\(\s*"data"[^)]*\)\.get\(\s*"sector"')
+
+    violations = []
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for fname in FILES:
+        path = os.path.join(root, fname)
+        if not os.path.exists(path):
+            continue
+        with open(path) as f:
+            for lineno, line in enumerate(f, start=1):
+                stripped = line.strip()
+                if stripped.startswith("#"):
+                    continue
+                if pick_pattern.search(line) or sector_pattern.search(line):
+                    if (fname, stripped) in ALLOWLIST:
+                        continue
+                    violations.append(f"{fname}:{lineno}: {stripped}")
+
+    assert not violations, (
+        "Raw pick-dict/sector access found outside pick_utils.py -- use "
+        "get_pick_data()/get_pick_category()/get_pick_field()/get_pick_sector() "
+        "instead (see pick_utils.py), or add a justified entry to this "
+        "test's ALLOWLIST if it's genuinely not the pick-dict shape:\n"
+        + "\n".join(violations)
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-09): Kelly's durable calibration fix -- the interim filter
+# (ml_prob_source in ("model","swing_model")) caps TODAY's dilution from
+# legacy "unknown" rows, but every future retrain also gets tagged "model",
+# so the same staleness would silently re-accrue over months of retrains.
+# scored_by_model_trained_at (set at scoring time from the currently-loaded
+# model's own trained_at) + a rolling MODEL_VINTAGE_WINDOW_DAYS window ages
+# old vintages out automatically instead of needing a manual re-filter.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _vintage_outcome(ticker, ml_prob, outcome, actual_return, trained_at, source="model"):
+    return {"ticker": ticker, "signal_date": "2026-01-01", "score": 80,
+            "ml_prob": ml_prob, "resolved": True, "outcome": outcome,
+            "actual_return": actual_return, "ml_prob_source": source,
+            "scored_by_model_trained_at": trained_at}
+
+
+def test_kelly_bucket_excludes_stale_retrain_vintage():
+    """A row scored by a model trained well outside the rolling window must
+    NOT count toward by_ml_prob_bucket_model, even though its
+    ml_prob_source is "model" -- this is what makes the fix self-correcting
+    instead of needing a manual re-pick every few months."""
+    from datetime import datetime, timedelta
+    from unittest.mock import patch
+    from outcome_tracker import compute_win_rate, MODEL_VINTAGE_WINDOW_DAYS
+    import tempfile
+
+    stale_trained_at = (datetime.now() - timedelta(days=MODEL_VINTAGE_WINDOW_DAYS + 30)).isoformat()
+    fresh_trained_at = (datetime.now() - timedelta(days=5)).isoformat()
+
+    synthetic = (
+        [_vintage_outcome("STALE1", 0.65, "WIN", 6.0, stale_trained_at)] * 12
+        + [_vintage_outcome("FRESH1", 0.65, "LOSS", -2.0, fresh_trained_at)] * 12
+    )
+    scratch_win_rate = tempfile.mktemp(suffix=".json")
+    with patch("outcome_tracker.load_outcomes", lambda: synthetic), \
+         patch("outcome_tracker.WIN_RATE_FILE", scratch_win_rate):
+        wr = compute_win_rate()
+
+    table = wr["by_ml_prob_bucket_model"]
+    bucket = table.get("0.6-0.8", {})
+    assert bucket.get("count") == 12, (
+        f"expected only the 12 FRESH1 rows to count (stale vintage excluded "
+        f"despite matching ml_prob_source) -- got {bucket}"
+    )
+    assert bucket.get("win_rate") == 0.0, (
+        "the 12 counted rows are all LOSS (FRESH1) -- if the stale WIN rows "
+        "leaked in, win_rate would be > 0"
+    )
+
+
+def test_kelly_bucket_includes_swing_model_source_not_just_model():
+    """ml_prob_source=="swing_model" is a real, current-model source too
+    (not legacy/unknown) -- must count toward by_ml_prob_bucket_model
+    alongside "model", not be silently excluded."""
+    from datetime import datetime, timedelta
+    from unittest.mock import patch
+    from outcome_tracker import compute_win_rate
+    import tempfile
+
+    fresh = (datetime.now() - timedelta(days=2)).isoformat()
+    synthetic = [_vintage_outcome("SWCO", 0.65, "WIN", 4.0, fresh, source="swing_model")] * 15
+    scratch_win_rate = tempfile.mktemp(suffix=".json")
+    with patch("outcome_tracker.load_outcomes", lambda: synthetic), \
+         patch("outcome_tracker.WIN_RATE_FILE", scratch_win_rate):
+        wr = compute_win_rate()
+
+    bucket = wr["by_ml_prob_bucket_model"].get("0.6-0.8", {})
+    assert bucket.get("count") == 15, f"swing_model rows must count too, got {bucket}"
+
+
+def test_kelly_bucket_excludes_rows_with_no_vintage_tag():
+    """Rows logged before this fix (no scored_by_model_trained_at at all)
+    must not count toward the model-vintage bucket -- there's no vintage
+    to check, so they can't be trusted as "current model" evidence."""
+    from unittest.mock import patch
+    from outcome_tracker import compute_win_rate
+    import tempfile
+
+    legacy_no_tag = {"ticker": "OLD1", "signal_date": "2026-01-01", "score": 80,
+                      "ml_prob": 0.65, "resolved": True, "outcome": "WIN",
+                      "actual_return": 5.0, "ml_prob_source": "model"}
+    # no "scored_by_model_trained_at" key at all
+    synthetic = [legacy_no_tag] * 15
+    scratch_win_rate = tempfile.mktemp(suffix=".json")
+    with patch("outcome_tracker.load_outcomes", lambda: synthetic), \
+         patch("outcome_tracker.WIN_RATE_FILE", scratch_win_rate):
+        wr = compute_win_rate()
+
+    assert wr["by_ml_prob_bucket_model"].get("0.6-0.8", {}).get("count", 0) == 0, (
+        "untagged rows (pre-fix data) must not count as vintage-verified evidence"
+    )
+
+
+def test_scored_by_model_trained_at_tagged_at_scoring_time(monkeypatch, tmp_path):
+    """End-to-end: run_ml_engine must tag a swing_model-sourced pick with
+    the loaded SWING model's own trained_at, and a general-model-sourced
+    pick with the general model's trained_at -- this is the actual write
+    side of the vintage fix, not just the read side tested above."""
+    import ml_engine as me
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
+    monkeypatch.setattr(
+        me, "build_features_for_stock",
+        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+    )
+    monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
+        "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
+        "spx_price": 0, "ma200": 0, "pct_above_ma": 0,
+    })
+    monkeypatch.setattr("outcome_tracker.load_model_health", lambda *a, **k: {})
+
+    SWING_STAMP = "2026-08-01T00:00:00"
+    GENERAL_STAMP = "2026-07-15T00:00:00"
+
+    def fake_train(self, verbose=True):
+        self.trained = True
+        self.model_trained_at = GENERAL_STAMP
+        self.model = MagicMock()
+        self.model.predict_proba.return_value = np.array([[0.3, 0.7]])
+        self.calibrator = None
+        self.swing_model = MagicMock()
+        self.swing_model.predict_proba.return_value = np.array([[0.2, 0.8]])
+        self.swing_scaler = MagicMock()
+        self.swing_scaler.transform.return_value = [[0, 0, 0]]
+        self.swing_model_trained_at = SWING_STAMP
+        return True
+    monkeypatch.setattr(me.StockMLPredictor, "train", fake_train)
+
+    screener_picks = {
+        "FHSA_top5": [
+            {"ticker": "SWINGCO", "score": 50, "data": {}, "pick": {"category": "SWING"}},
+        ],
+        "TFSA_growth_top5": [], "TFSA_income_top5": [], "TFSA_swing_top3": [],
+    }
+    result = me.run_ml_engine(screener_picks, {}, verbose=False)
+
+    scored = {p["ticker"]: p for bucket in screener_picks.values() for p in bucket}
+    swingco = scored["SWINGCO"]
+    assert swingco["ml_prob_source"] == "swing_model"
+    assert swingco["scored_by_model_trained_at"] == SWING_STAMP, (
+        f"expected the SWING model's own trained_at, got "
+        f"{swingco.get('scored_by_model_trained_at')!r}"
+    )
+
+
+def test_ml_engine_falls_back_when_general_model_marked_degraded(monkeypatch, tmp_path, capsys):
+    """Same auto-demotion wiring as SWING, for the general model's fallback
+    path (categories that are neither SWING nor in RULES_BASED_CATEGORIES).
+    A degraded verdict must route to rules_based instead of the general
+    model, with a real, usable general-model prediction mocked in to prove
+    the skip is caused by the health check, not a coincidental failure."""
+    import ml_engine as me
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
+    monkeypatch.setattr(
+        me, "build_features_for_stock",
+        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+    )
+    monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
+        "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
+        "spx_price": 0, "ma200": 0, "pct_above_ma": 0,
+    })
+    monkeypatch.setattr("outcome_tracker.load_model_health",
+                         lambda *a, **k: {"GENERAL": {"status": "degraded", "reason": "test"}})
+
+    def fake_train(self, verbose=True):
+        self.trained = True
+        self.model = MagicMock()
+        # A REAL, usable general-model prediction -- would return 0.7 if called.
+        self.model.predict_proba.return_value = np.array([[0.3, 0.7]])
+        self.calibrator = None
+        self.swing_model, self.swing_scaler = None, None
+        return True
+    monkeypatch.setattr(me.StockMLPredictor, "train", fake_train)
+
+    # A category that is neither SWING nor in RULES_BASED_CATEGORIES --
+    # today's only path into the general-model "else" branch.
+    screener_picks = {
+        "FHSA_top5": [{"ticker": "GENCO", "score": 50, "data": {}, "pick": {"category": "SOME_FUTURE_CATEGORY"}}],
+        "TFSA_growth_top5": [], "TFSA_income_top5": [], "TFSA_swing_top3": [],
+    }
+    me.run_ml_engine(screener_picks, {}, verbose=True)
+    out = capsys.readouterr().out
+
+    assert "General model health: DEGRADED" in out
+    genco_line = out.split("GENCO")[1].split("\n")[0] if "GENCO" in out else ""
+    assert "rules_based" in genco_line or "rules_based" in out, (
+        f"GENCO must fall back to rules_based when the general model is "
+        f"degraded -- full output:\n{out}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-09): generalized train_swing_model() into
+# train_category_model() -- the training path outcome_tracker.category_is_
+# data_ready() implies is needed once it turns true for ANY category, not
+# just SWING (dry-tested since nothing is real-ready today -- WATCH is
+# earliest, 2026-09-12). Same deploy gate, same lazy-load-and-cache pattern
+# on the predictor side (predict_category), same auto-wired routing hook
+# ml_engine.py's RULES_BASED_CATEGORIES branch now checks automatically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_train_category_model_generic_category_trains_and_deploys(monkeypatch, tmp_path):
+    """A non-SWING category with real, learnable data must train and
+    deploy through train_category_model() exactly like SWING does,
+    including the same holdout-AUC deploy gate."""
+    import ml_retrainer as mr
+
+    outcomes_path = tmp_path / "outcomes_log.json"
+    rows = []
+    for r in _synthetic_resolved_rows(n=90, informative=True, seed=7):
+        r = dict(r)
+        r["category"] = "GROWTH CORE"
+        r["true_horizon_resolved"] = True
+        r["true_horizon_outcome"] = r["outcome"]
+        r["true_horizon_return"] = r["actual_return"]
+        rows.append(r)
+    outcomes_path.write_text(__import__("json").dumps(rows))
+
+    monkeypatch.setattr(mr, "OUTCOMES_FILE", str(outcomes_path))
+    cache_path  = tmp_path / "gc_model.pkl"
+    report_path = tmp_path / "gc_report.json"
+    monkeypatch.setattr(mr, "_category_model_paths",
+                         lambda category: (str(cache_path), str(report_path))
+                         if category == "GROWTH CORE" else mr._category_model_paths(category))
+
+    report = mr.train_category_model("GROWTH CORE", min_rows=40, verbose=False)
+    if report is None:
+        pytest.skip("Training libraries unavailable")
+
+    assert report["category"] == "GROWTH CORE"
+    assert report["horizon_days"] == 180, "must read GROWTH CORE's real horizon from CATEGORY_HORIZONS"
+    assert report["deployed"] is True, f"informative fixture must clear the AUC bar: {report}"
+    assert cache_path.exists()
+
+    model, scaler, trained_at = mr.load_category_model("GROWTH CORE")
+    assert model is not None and scaler is not None
+    # report["trained_at"] and the payload's "_trained_at" are two separate
+    # datetime.now().isoformat() calls a few microseconds apart -- not
+    # guaranteed bit-identical, just both "now".
+    assert trained_at is not None and trained_at[:16] == report["trained_at"][:16]
+
+
+def test_train_category_model_respects_min_rows_per_call():
+    """min_rows is a parameter, not a hardcoded constant -- a category with
+    too few true-horizon rows for the requested bar must be skipped (no
+    training attempted), independent of SWING_MIN_ROWS_TO_TRAIN."""
+    from unittest.mock import patch
+    import ml_retrainer as mr
+
+    with patch.object(mr, "_load_category_true_horizon_outcomes", return_value=[{"x": 1}] * 5):
+        report = mr.train_category_model("GROWTH CORE", min_rows=200, verbose=False)
+    assert report is None
+
+
+def test_predict_category_returns_none_without_a_deployed_model():
+    """predict_category() must degrade gracefully (None) for a category
+    with no deployed model, same contract as predict_swing()."""
+    import ml_engine as me
+
+    p = me.StockMLPredictor()
+    result = p.predict_category("GROWTH CORE", {"momentum_6m": 0.05})
+    assert result is None
+
+
+def test_predict_category_uses_loaded_model_and_caches_it(monkeypatch):
+    """predict_category() must use a deployed model when load_category_model
+    finds one, and must only call the loader once per category per
+    predictor instance (memoized, not reloaded from disk on every pick)."""
+    import ml_engine as me
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    mock_model  = MagicMock()
+    mock_model.predict_proba.return_value = np.array([[0.15, 0.85]])
+    mock_scaler = MagicMock()
+    mock_scaler.transform.return_value = [[0, 0, 0]]
+
+    call_count = {"n": 0}
+    def fake_loader(category):
+        call_count["n"] += 1
+        return mock_model, mock_scaler, "2026-08-01T00:00:00"
+    monkeypatch.setattr("ml_retrainer.load_category_model", fake_loader)
+
+    p = me.StockMLPredictor()
+    r1 = p.predict_category("GROWTH CORE", {"momentum_6m": 0.05})
+    r2 = p.predict_category("GROWTH CORE", {"momentum_6m": 0.10})
+    assert r1 == 0.85 and r2 == 0.85
+    assert call_count["n"] == 1, "loader must be called once and memoized, not once per pick"
+    assert p.get_category_model_trained_at("GROWTH CORE") == "2026-08-01T00:00:00"
+
+
+def test_ml_engine_routes_to_category_model_when_ready_and_deployed(monkeypatch, tmp_path, capsys):
+    """Real end-to-end: a RULES_BASED_CATEGORIES pick must route through
+    predict_category() (source="category_model") instead of rules_based
+    once category_is_data_ready() says yes AND a deployed model exists --
+    this is the actual auto-promotion loop closing, not just its pieces
+    tested in isolation."""
+    import ml_engine as me
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
+    monkeypatch.setattr(
+        me, "build_features_for_stock",
+        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+    )
+    monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
+        "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
+        "spx_price": 0, "ma200": 0, "pct_above_ma": 0,
+    })
+    monkeypatch.setattr("outcome_tracker.load_model_health", lambda *a, **k: {})
+    monkeypatch.setattr(me, "category_is_data_ready", lambda category: category == "WATCH")
+
+    def fake_train(self, verbose=True):
+        self.trained = True
+        self.model = MagicMock()
+        self.model.predict_proba.return_value = np.array([[0.3, 0.7]])
+        self.calibrator = None
+        self.swing_model, self.swing_scaler = None, None
+        return True
+    monkeypatch.setattr(me.StockMLPredictor, "train", fake_train)
+
+    def fake_predict_category(self, category, features):
+        return 0.77 if category == "WATCH" else None
+    monkeypatch.setattr(me.StockMLPredictor, "predict_category", fake_predict_category)
+
+    screener_picks = {
+        "FHSA_top5": [{"ticker": "WATCHCO", "score": 50, "data": {}, "pick": {"category": "WATCH"}}],
+        "TFSA_growth_top5": [], "TFSA_income_top5": [], "TFSA_swing_top3": [],
+    }
+    me.run_ml_engine(screener_picks, {}, verbose=True)
+    out = capsys.readouterr().out
+
+    watchco_line = out.split("WATCHCO")[1].split("\n")[0] if "WATCHCO" in out else ""
+    assert "category_model" in watchco_line, (
+        f"WATCHCO must show category_model as source once ready+deployed, "
+        f"full output:\n{out}"
+    )

@@ -40,6 +40,7 @@ import urllib.request
 import urllib.parse
 from datetime import datetime, timedelta
 from collections import defaultdict
+from pick_utils import dedupe_picks_by_ticker, get_pick_data, get_pick_category, get_pick_field
 
 HEALTH_FILE   = "strategy_health.json"
 TRADES_FILE   = "trades.csv"
@@ -293,8 +294,8 @@ def run_stress_simulation(screener_results, ml_results=None, verbose=True):
                 "ticker":   p["ticker"],
                 "score":    p["score"],
                 "bucket":   bucket,
-                "pick":     p.get("pick", {}),
-                "exp_high": p.get("pick", {}).get("exp_high", 0),
+                "pick":     get_pick_data(p),
+                "exp_high": get_pick_field(p, "exp_high", 0),
             })
 
     # FIX (2026-08-08): a ticker qualifying for both an FHSA pick and a TFSA
@@ -303,7 +304,6 @@ def run_stress_simulation(screener_results, ml_results=None, verbose=True):
     # score-only comparison -- still correct, since without it a straddling
     # ticker gets double-counted in normal_avg_score/normal_count, skewing
     # the stress-test baseline every scenario below gets compared against.
-    from pick_utils import dedupe_picks_by_ticker
     all_picks = dedupe_picks_by_ticker(all_picks, verbose=True, label="stress_baseline")
 
     normal_avg_score     = sum(p["score"] for p in all_picks) / len(all_picks) if all_picks else 0
@@ -416,7 +416,7 @@ def run_stress_simulation(screener_results, ml_results=None, verbose=True):
     scenario5_picks = []
     score_changes5  = []
     for p in all_picks:
-        data      = p.get("pick", {})
+        data      = get_pick_data(p)
         # Estimate how much of score came from momentum
         # High exp_high picks are usually momentum-driven
         momentum_component = min(20, p["exp_high"] * 0.3)
@@ -1254,7 +1254,6 @@ def track_signal_accuracy(todays_picks, score_history, check_windows=(3, 7, 14))
     # 2x the pending accuracy-check entries (one set per duplicate), double-
     # counting one real trading decision as if it were two when the
     # accuracy_pct aggregate gets computed later.
-    from pick_utils import dedupe_picks_by_ticker
     todays_picks = dedupe_picks_by_ticker(todays_picks, verbose=True, label="signal_accuracy")
 
     # ── Step 1: Log today's picks as pending checks ─────
@@ -1263,7 +1262,7 @@ def track_signal_accuracy(todays_picks, score_history, check_windows=(3, 7, 14))
         ticker    = p.get("ticker","")
         score     = p.get("score", 0)
         price     = p.get("data", {}).get("price", 0)
-        category  = p.get("pick", {}).get("category","") if p.get("pick") else ""
+        category  = get_pick_category(p)
         direction = "LONG"  # All picks are implied long (we're buyers)
 
         if not ticker or not price:

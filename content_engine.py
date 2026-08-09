@@ -22,6 +22,7 @@ Voice: Direct. Calm. Confident. Data-backed. Not a guru.
 import json
 import random
 from datetime import datetime, timedelta
+from pick_utils import get_pick_data
 
 
 # ============================================================
@@ -394,7 +395,7 @@ def build_thread(brief):
         sigs_hit = top.get("conviction_signals", [])
         reasons  = top.get("reasons", [])
         pick_d   = top.get("data", {})
-        pick_p   = top.get("pick", {})
+        pick_p   = get_pick_data(top)
 
         reason_line = reasons[0][:60] if reasons else "multiple factors aligned"
         sig_count   = len(sigs_hit)

@@ -50,6 +50,7 @@ import math
 from datetime import datetime, date
 
 import outcome_tracker
+from pick_utils import get_pick_data, get_pick_category
 
 LEDGER_FILE        = "signal_ledger.json"
 AUDIT_HTML         = "signal_ledger.html"
@@ -137,7 +138,7 @@ def append_signals(picks, regime=None, news_signals=None, run_time=None):
             continue
 
         data      = pick.get("data", {})
-        pick_meta = pick.get("pick", {})
+        pick_meta = get_pick_data(pick)
 
         # Attribution: which signal layers contributed to this pick
         attribution = []
@@ -172,7 +173,11 @@ def append_signals(picks, regime=None, news_signals=None, run_time=None):
             "score":            round(float(pick.get("score", 0) or 0), 1),
             "ml_prob":          round(float(ml_prob), 3),
             # Context (not hashed — can be enriched)
-            "category":         pick_meta.get("category", pick.get("category", "")),
+            # FIX (2026-08-09): the old fallback `pick.get("category", "")`
+            # was dead code -- category never lives at the top level (see
+            # pick_utils.py), so it always evaluated to "". get_pick_category()
+            # already implements the correct (and only) lookup.
+            "category":         get_pick_category(pick),
             "regime_at_signal": regime_state,
             "news_active":      active_news,
             "attribution":      attribution,

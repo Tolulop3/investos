@@ -20,6 +20,7 @@ v2 fix: log_picks() now saves all ML features at signal time.
 import json
 import os
 from datetime import datetime, timedelta
+from pick_utils import get_pick_category, get_pick_field
 
 OUTCOMES_FILE = "outcomes_log.json"
 WIN_RATE_FILE = "win_rate.json"
@@ -73,6 +74,14 @@ DEFAULT_HORIZON_DAYS = 90  # any future/unmapped category
 # importing ml_retrainer, since outcome_tracker.py has no other dependency on
 # it and this value is a data-readiness threshold, not a training detail).
 MIN_TRUE_HORIZON_ROWS_FOR_ML = 80
+
+# Rolling window (days) for Kelly's model-sourced ml_prob-bucket
+# calibration -- see compute_win_rate()'s by_ml_prob_bucket_model comment.
+# ~45 days spans roughly 6 general-model retrains (weekly cadence) or
+# dozens of SWING retrains (every run) -- enough rows for the n>=10
+# win/loss sample gate without pooling across so much time that stale
+# vintages dilute what the CURRENT model actually produces.
+MODEL_VINTAGE_WINDOW_DAYS = 45
 
 
 def true_horizon_resolved_count(category, outcomes=None):
@@ -148,12 +157,23 @@ HEALTH_DEGRADED_WIN_RATE_PCT = 40.0  # win rate floor on real resolved outcomes
 def model_health_check(category, ml_prob_source_tag, outcomes=None, min_n=MIN_HEALTH_CHECK_SAMPLE,
                         max_lookback=50, degraded_floor_pct=HEALTH_DEGRADED_WIN_RATE_PCT):
     """
-    Checks a deployed category model's REAL performance: the last
-    `max_lookback` outcomes_log.json rows for `category` that (a) were
-    actually scored by this model (ml_prob_source == ml_prob_source_tag,
-    e.g. "swing_model") and (b) have reached their true CATEGORY_HORIZONS
-    horizon (true_horizon_resolved) -- not the 7-day proxy, since that
-    measures something the model isn't actually trying to predict.
+    Checks a deployed model's REAL performance: the last `max_lookback`
+    outcomes_log.json rows that (a) were actually scored by this model
+    (ml_prob_source == ml_prob_source_tag, e.g. "swing_model") and (b)
+    have reached their true CATEGORY_HORIZONS horizon (true_horizon_
+    resolved) -- not the 7-day proxy, since that measures something the
+    model isn't actually trying to predict.
+
+    category=None checks ACROSS all categories (for the general model,
+    which isn't tied to one category -- see ml_engine.py's routing:
+    "model" fires either for legacy pre-fix rows or whenever a
+    category-specific model like SWING's fails to load/predict, so its
+    rows can carry any category). Pooling across categories is still
+    correct here because true_horizon_resolved/true_horizon_outcome are
+    computed per-row using THAT row's own category's horizon already
+    (see resolve_true_horizon_outcomes) -- category=None just widens which
+    rows are eligible, it doesn't change what "resolved" means for any of
+    them.
 
     Returns {"status": "healthy"|"degraded"|"insufficient_data", "n":,
     "win_rate_pct":, "checked_at":, "reason":}. "insufficient_data" is a
@@ -166,7 +186,7 @@ def model_health_check(category, ml_prob_source_tag, outcomes=None, min_n=MIN_HE
     if outcomes is None:
         outcomes = load_outcomes()
     rows = [o for o in outcomes
-            if o.get("category") == category
+            if (category is None or o.get("category") == category)
             and o.get("ml_prob_source") == ml_prob_source_tag
             and o.get("true_horizon_resolved")]
     rows = sorted(rows, key=lambda o: o.get("true_horizon_date") or "", reverse=True)[:max_lookback]
@@ -383,9 +403,10 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None,
             "score":         round(float(pick.get("score", 0) or 0), 1),
             "ml_prob":        pick.get("ml_prob", 0.5),
             "ml_prob_source": pick.get("ml_prob_source", "unknown"),
-            "category":      pick.get("pick", {}).get("category", ""),
-            "exp_low":       pick.get("pick", {}).get("exp_low", 0),
-            "exp_high":      pick.get("pick", {}).get("exp_high", 0),
+            "scored_by_model_trained_at": pick.get("scored_by_model_trained_at"),
+            "category":      get_pick_category(pick),
+            "exp_low":       get_pick_field(pick, "exp_low", 0),
+            "exp_high":      get_pick_field(pick, "exp_high", 0),
             "resolved":      False,
             "exit_price":    None,
             "actual_return": None,
@@ -883,22 +904,41 @@ def compute_win_rate():
                 "avg_loss":      _b_avg_loss,
             }
 
-    # By ml_prob bucket, MODEL-SOURCED ROWS ONLY (2026-08-08). by_ml_prob
-    # above pools every ml_prob_source together (89% of resolved rows are
+    # By ml_prob bucket, MODEL-SOURCED ROWS ONLY, WITHIN A ROLLING RETRAIN-
+    # VINTAGE WINDOW (2026-08-08, durable fix 2026-08-09). by_ml_prob above
+    # pools every ml_prob_source together (89% of resolved rows are
     # "unknown" -- legacy, pre-model-tracking, or from earlier model
     # versions). Checked empirically against outcomes_log.json: pooled data
     # says bucket 0.6-0.8 is the strongest (WR 54.4%, PF 2.95) and 0.4-0.5
-    # is weak (WR 48.5%, PF 1.16) -- filtered to ml_prob_source=="model"
-    # only, that INVERTS: 0.6-0.8 shows negative edge (WR 40.5%, PF 0.76)
-    # while 0.4-0.5 looks genuinely good (WR 58.0%, PF 1.59). The bucket the
-    # pooled table currently trusts most is not what the live model actually
-    # produces. ml_engine.py's score_to_kelly_wt() prefers this table when a
-    # bucket clears the sample gate, falling back to the pooled table above
-    # only for buckets with too few model-sourced rows (e.g. 0.8-1.0 has 0
+    # is weak (WR 48.5%, PF 1.16) -- filtered to ml_prob_source in ("model",
+    # "swing_model") only, that INVERTS: 0.6-0.8 shows negative edge (WR
+    # 40.5%, PF 0.76) while 0.4-0.5 looks genuinely good (WR 58.0%, PF
+    # 1.59). The bucket the pooled table currently trusts most is not what
+    # the live model actually produces.
+    #
+    # A source-label-only filter isn't durable, though: every future
+    # retrain also gets tagged "model", so the same dilution this fix
+    # addresses will silently re-accrue over months of retrains, exactly
+    # the way "unknown" did. MODEL_VINTAGE_WINDOW_DAYS bounds this instead
+    # of just capping today's snapshot -- rows are counted only if the
+    # model that scored them was trained within the last N days (read from
+    # each row's scored_by_model_trained_at, set at scoring time in
+    # ml_engine.py from the currently-loaded model's own trained_at). Old
+    # vintages age out on their own; no future manual re-filter needed.
+    #
+    # ml_engine.py's score_to_kelly_wt() prefers this table when a bucket
+    # clears the sample gate, falling back to the pooled table above only
+    # for buckets with too few model-sourced rows (e.g. 0.8-1.0 has 0
     # model-sourced rows today -- a live cold-start gap, not fixable by
     # filtering).
     by_ml_prob_model = {}
-    model_resolved = [o for o in resolved if o.get("ml_prob_source") == "model"]
+    _vintage_cutoff = (datetime.now() - timedelta(days=MODEL_VINTAGE_WINDOW_DAYS)).isoformat()
+    model_resolved = [
+        o for o in resolved
+        if o.get("ml_prob_source") in ("model", "swing_model", "category_model")
+        and o.get("scored_by_model_trained_at")
+        and o["scored_by_model_trained_at"] >= _vintage_cutoff
+    ]
     for lo, hi, label in ML_PROB_BUCKETS:
         bp = [o for o in model_resolved
               if o.get("ml_prob") is not None and lo <= o["ml_prob"] < hi]

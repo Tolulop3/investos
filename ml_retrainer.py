@@ -723,29 +723,59 @@ def _load_category_true_horizon_outcomes(category):
     return out
 
 
-def train_swing_model(verbose=True):
+def _category_model_paths(category):
+    """Cache/report filenames for a category's dedicated model. SWING keeps
+    its original, pre-existing filenames (swing_model_cache.pkl /
+    swing_model_report.json) for backward compatibility with everything
+    that already reads them (predict_swing, load_swing_model, dashboards,
+    existing tests) -- every other category gets a generated name."""
+    if category == "SWING":
+        return SWING_MODEL_CACHE, SWING_MODEL_REPORT
+    slug = category.replace(" ", "_").replace("+", "plus").lower()
+    return f"category_model_{slug}.pkl", f"category_model_{slug}_report.json"
+
+
+def train_category_model(category, min_rows=None, verbose=True):
     """
-    Train the dedicated SWING LogisticRegression model on true-30-day-
-    horizon SWING outcomes. Unlike the general XGBoost model, retrains on
-    every call (LR is cheap) rather than needing a weekly gate, and keeps
-    a temporal holdout (last 20% by date) purely for reporting an honest
-    holdout AUC in SWING_MODEL_REPORT -- the deployed model itself is
-    exactly what's tested, no separate "production" retrain on 100% of
-    data.
+    Generalized version of train_swing_model() -- trains a dedicated
+    LogisticRegression model on ONE category's true-horizon outcomes
+    (CATEGORY_HORIZONS in outcome_tracker.py), for any category, not just
+    SWING. This is the training path outcome_tracker.category_is_data_
+    ready() implies is needed once it turns true for a category: being
+    data-ready doesn't mean the pooled general model (trained on the
+    legacy 7-day-proxy label) becomes valid for that category -- it needs
+    its OWN model trained on its OWN true-horizon labels, same reasoning
+    that justified SWING getting a dedicated model in the first place.
+
+    Same deploy gate as train_swing_model() (MIN_HOLDOUT_AUC_TO_DEPLOY) --
+    a retrain that doesn't clear the bar is rejected, not deployed, and
+    the previously-deployed model (if any) is left untouched.
+
+    min_rows defaults to MIN_TRUE_HORIZON_ROWS_FOR_ML (outcome_tracker.py's
+    80-row bar) unless overridden -- kept as a parameter, not a hardcoded
+    import-time constant, so a category with different data economics can
+    use a different bar without a code change.
     """
+    if min_rows is None:
+        from outcome_tracker import MIN_TRUE_HORIZON_ROWS_FOR_ML
+        min_rows = MIN_TRUE_HORIZON_ROWS_FOR_ML
+    cache_path, report_path = _category_model_paths(category)
+    from outcome_tracker import CATEGORY_HORIZONS, DEFAULT_HORIZON_DAYS
+    horizon_days = CATEGORY_HORIZONS.get(category, DEFAULT_HORIZON_DAYS)
+
     if not (HAS_PANDAS and HAS_SKLEARN and HAS_JOBLIB):
-        if verbose: print("  ⚠️  Required libraries not available.")
+        if verbose: print(f"  ⚠️  Required libraries not available.")
         return None
 
-    resolved = _load_category_true_horizon_outcomes("SWING")
-    if len(resolved) < SWING_MIN_ROWS_TO_TRAIN:
+    resolved = _load_category_true_horizon_outcomes(category)
+    if len(resolved) < min_rows:
         if verbose:
-            print(f"  ⚠️  Only {len(resolved)} true-horizon SWING picks "
-                  f"(need {SWING_MIN_ROWS_TO_TRAIN}). Skipping SWING model.")
+            print(f"  ⚠️  Only {len(resolved)} true-horizon {category} picks "
+                  f"(need {min_rows}). Skipping {category} model.")
         return None
 
     X, y, w, dates = build_feature_matrix(resolved)
-    if X is None or len(y) < SWING_MIN_ROWS_TO_TRAIN:
+    if X is None or len(y) < min_rows:
         return None
 
     from sklearn.linear_model import LogisticRegression
@@ -769,16 +799,14 @@ def train_swing_model(verbose=True):
         X_val_s = scaler.transform(X_val)
         holdout_auc = round(float(roc_auc_score(y_val, model.predict_proba(X_val_s)[:, 1])), 4)
 
-    # FIX (2026-08-09): deploy gate -- see MIN_HOLDOUT_AUC_TO_DEPLOY comment.
-    # Previously this always deployed regardless of holdout_auc.
     report = {
-        "trained_at":  datetime.now().isoformat(),
-        "n_rows":      n,
-        "n_train":     split,
-        "n_val":       n - split,
-        "holdout_auc": holdout_auc,
-        "horizon_days": 30,
-        "category":    "SWING",
+        "trained_at":   datetime.now().isoformat(),
+        "n_rows":       n,
+        "n_train":      split,
+        "n_val":        n - split,
+        "holdout_auc":  holdout_auc,
+        "horizon_days": horizon_days,
+        "category":     category,
     }
     if holdout_auc is None or holdout_auc < MIN_HOLDOUT_AUC_TO_DEPLOY:
         report["deployed"] = False
@@ -786,10 +814,10 @@ def train_swing_model(verbose=True):
             "holdout_auc is None (validation set too small/degenerate)" if holdout_auc is None
             else f"holdout_auc {holdout_auc} < minimum {MIN_HOLDOUT_AUC_TO_DEPLOY}"
         )
-        with open(SWING_MODEL_REPORT, "w") as f:
+        with open(report_path, "w") as f:
             json.dump(report, f, indent=2)
         if verbose:
-            print(f"  ⛔ SWING retrain REJECTED (n={n}): {report['rejected_reason']} "
+            print(f"  ⛔ {category} retrain REJECTED (n={n}): {report['rejected_reason']} "
                   f"-- keeping previously-deployed model, if any.")
         return report
 
@@ -811,35 +839,67 @@ def train_swing_model(verbose=True):
         "_trained_at":   datetime.now().isoformat(),
         "_n_rows":       n,
         "_holdout_auc":  holdout_auc,
+        "_category":     category,
     }
     import joblib
-    joblib.dump(payload, SWING_MODEL_CACHE)
+    joblib.dump(payload, cache_path)
 
     report["deployed"] = True
-    with open(SWING_MODEL_REPORT, "w") as f:
+    with open(report_path, "w") as f:
         json.dump(report, f, indent=2)
 
     if verbose:
-        print(f"  ✅ SWING model trained + DEPLOYED | n={n} | Holdout AUC: {holdout_auc}")
-        print(f"  💾 Saved to {SWING_MODEL_CACHE}")
+        print(f"  ✅ {category} model trained + DEPLOYED | n={n} | Holdout AUC: {holdout_auc}")
+        print(f"  💾 Saved to {cache_path}")
 
     return report
 
 
-def load_swing_model():
-    """Load the cached SWING model+scaler for inference. Returns
-    (model, scaler) or (None, None) if unavailable/incompatible."""
-    if not (HAS_JOBLIB and os.path.exists(SWING_MODEL_CACHE)):
-        return None, None
+def load_category_model(category):
+    """
+    Generalized version of load_swing_model() -- load the cached dedicated
+    model for ANY category. Returns (model, scaler, trained_at) or
+    (None, None, None) if unavailable/incompatible.
+    """
+    cache_path, _ = _category_model_paths(category)
+    if not (HAS_JOBLIB and os.path.exists(cache_path)):
+        return None, None, None
     try:
         import joblib, hashlib
-        cached = joblib.load(SWING_MODEL_CACHE)
+        cached = joblib.load(cache_path)
         feat_hash = hashlib.md5(str(FEATURES).encode()).hexdigest()[:8]
         if cached.get("feature_hash") != feat_hash:
-            return None, None
-        return cached["model"], cached["scaler"]
+            return None, None, None
+        return cached["model"], cached["scaler"], cached.get("_trained_at")
     except Exception:
-        return None, None
+        return None, None, None
+
+
+def train_swing_model(verbose=True):
+    """
+    Train the dedicated SWING LogisticRegression model on true-30-day-
+    horizon SWING outcomes. Unlike the general XGBoost model, retrains on
+    every call (LR is cheap) rather than needing a weekly gate.
+
+    Thin wrapper around train_category_model("SWING", ...) -- kept as a
+    named function (rather than inlining the call at every SWING-specific
+    site) so existing callers/tests didn't need to change when this was
+    generalized to support any category, mirroring run_daily.py's
+    dedupe_top_flat_picks()/pick_utils.dedupe_picks_by_ticker() precedent.
+    """
+    return train_category_model("SWING", min_rows=SWING_MIN_ROWS_TO_TRAIN, verbose=verbose)
+
+
+def load_swing_model():
+    """Load the cached SWING model+scaler for inference. Returns
+    (model, scaler, trained_at) or (None, None, None) if unavailable/
+    incompatible. trained_at (ISO string, from the deploy-gated
+    train_swing_model()'s payload) feeds Kelly's retrain-vintage window --
+    see outcome_tracker.py's compute_win_rate() docstring.
+
+    Thin wrapper around load_category_model("SWING") -- see
+    train_swing_model()'s docstring for why this stays a named function."""
+    return load_category_model("SWING")
 
 
 def diagnose():

@@ -16,6 +16,7 @@ import urllib.request
 import urllib.parse
 from datetime import datetime, timedelta
 from collections import defaultdict
+from pick_utils import get_pick_data, get_pick_category
 
 
 HISTORY_FILE = "score_history.json"
@@ -130,7 +131,7 @@ def apply_score_decay(picks_flat, history):
         if decay_factor < 0.25:   pick["stale_label"] = "DEGRADING"
         elif decay_factor < 0.5:  pick["stale_label"] = "STALE"
         else:                     pick["stale_label"] = "AGING"
-        pick_dict = pick.get("pick",{})
+        pick_dict = get_pick_data(pick)
         if pick_dict:
             existing = pick_dict.get("action",""); note = pick["signal_age_note"]
             if note not in existing:
@@ -232,7 +233,7 @@ def apply_rs_to_picks(picks, rs_ratings):
         # (90-100: 30.7%->42.0%, 75-89: 49.6%->47.4%, 60-74: 48.7%->51.0%),
         # and below-60 honestly absorbs the population that was previously
         # hidden inside higher tiers with false confidence.
-        category = pick.get("pick", {}).get("category")
+        category = get_pick_category(pick)
         if category == "SWING" and rs_rating >= 80:
             pick["score"] = min(pick["score"], 50)
         elif category == "SWING":

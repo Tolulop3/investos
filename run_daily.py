@@ -66,6 +66,8 @@ from crypto_engine       import run_crypto_engine
 from options_engine      import run_options_engine
 from regime_predictor    import predict_regime_shift
 from ml_retrainer        import retrain_if_due, train_swing_model
+from pick_utils           import (dedupe_picks_by_ticker, dedupe_raw_data_by_ticker,
+                                   get_pick_data, get_pick_category, get_pick_field, get_pick_sector)
 
 
 # ============================================================
@@ -124,7 +126,7 @@ def apply_news_to_screener(screener_results, news_analysis):
             # the sector-headwind news penalty below has been dead code
             # since it was written. Same fallback pattern already used
             # correctly at run_daily.py:1128.
-            yf_sector  = pick.get("sector", "") or pick.get("data", {}).get("sector", "")
+            yf_sector  = get_pick_sector(pick)
             news_sector = SECTOR_MAP.get(yf_sector)
             if news_sector and sector_sent:
                 net = sector_sent.get(news_sector, {}).get("net_score", 0)
@@ -200,7 +202,7 @@ def apply_regime_filter(screener_results, early_regime, category_blocks):
             continue
         kept = []
         for pick in picks:
-            cat = pick.get("pick", {}).get("category", "") or ""
+            cat = get_pick_category(pick)
             if any(blk in cat for blk in category_blocks):
                 removed_count += 1
                 pick["regime_blocked"] = True
@@ -244,7 +246,6 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
     # incident, just surfacing as silently-wrong conviction pick data
     # instead of a duplicate. Dedupe with priority for the ML-scored copy
     # before the seen-set loop below (which still guards ml_sized adds).
-    from pick_utils import dedupe_picks_by_ticker
     all_picks = dedupe_picks_by_ticker(all_picks, verbose=True, label="conviction_input")
     # Also include ML sizing picks — these may have been sector-capped from screener
     # but still scored by ML. Avoids AFRM-type gaps where ML sees the pick but conviction doesn't.
@@ -322,7 +323,7 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
                 pick["rs_blocked"] = True
                 continue
 
-            cat = pick.get("pick", {}).get("category", "") or ""
+            cat = get_pick_category(pick)
             STYLE_MAP = {
                 "SWING": "breakout", "GROWTH CORE": "momentum",
                 "FHSA Conservative": "defensive", "INCOME": "dividend",
@@ -398,7 +399,7 @@ def build_calendar(screener_results, news_analysis):
     )
 
     for pick in all_picks:
-        d = pick.get("data", {}); ticker = pick["ticker"]; p = pick.get("pick", {})
+        d = pick.get("data", {}); ticker = pick["ticker"]; p = get_pick_data(pick)
         days_ex = d.get("days_to_ex_div", 999)
         if 0 < days_ex <= 45 and f"ex_{ticker}" not in seen:
             calendar.append({"date": d.get("ex_div_date","TBD"),
@@ -768,7 +769,6 @@ def dedupe_top_flat_picks(picks, verbose=True):
     root cause recurring independently in 6+ call sites across the
     pipeline (see pick_utils.py's module docstring).
     """
-    from pick_utils import dedupe_picks_by_ticker
     return dedupe_picks_by_ticker(picks, verbose=verbose, label="top_flat")
 
 
@@ -866,8 +866,7 @@ def run_daily(test_mode=False, dry_run=False):
             for _p in screener.get(_bkt, []):
                 _t  = _p.get("ticker")
                 _sc = float(_p.get("score", 0) or 0)
-                _sec = (_p.get("sector") or
-                        (_p.get("data") or {}).get("sector", "") or "Unknown")
+                _sec = get_pick_sector(_p) or "Unknown"
                 if _t and (_t not in _all_scored or _sc > _all_scored[_t]["score"]):
                     if   _sc >= 90: _tier = "90-100"
                     elif _sc >= 75: _tier = "75-89"
@@ -941,6 +940,27 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception as _ste:
         print(f"  ⚠️  SWING model retrain skipped: {_ste}")
 
+    # FIX (2026-08-09): auto-promotion trigger -- the training path
+    # category_is_data_ready() implies is needed once it turns true for a
+    # category. Runs every daily call (cheap: category_is_data_ready() is
+    # a fast count/coverage check over outcomes_log.json; train_category_
+    # model() only does real work -- and only for categories that pass
+    # that check -- so this is a no-op today for all of them, earliest
+    # real trigger is WATCH on 2026-09-12). No human has to notice
+    # readiness and go edit RULES_BASED_CATEGORIES/wire a new model by
+    # hand -- ml_engine.py's routing already picks up a newly-deployed
+    # category model automatically (see its RULES_BASED_CATEGORIES branch).
+    try:
+        from outcome_tracker import CATEGORY_HORIZONS, category_is_data_ready
+        from ml_retrainer import train_category_model
+        for _cat in CATEGORY_HORIZONS:
+            if _cat == "SWING":
+                continue  # already trained above, on its own established path
+            if category_is_data_ready(_cat):
+                train_category_model(_cat, verbose=True)
+    except Exception as _cte:
+        print(f"  ⚠️  Category model auto-promotion skipped: {_cte}")
+
     # FIX (2026-08-09): auto-demotion signal, computed once per run so
     # ml_engine.py's scoring loop can read a fresh verdict without
     # recomputing it per-pick. See outcome_tracker.model_health_check()'s
@@ -949,11 +969,18 @@ def run_daily(test_mode=False, dry_run=False):
     # swing_model-sourced pick before 2026-09-07).
     try:
         from outcome_tracker import model_health_check, save_model_health
-        _health = {"SWING": model_health_check("SWING", "swing_model")}
+        # category=None for the general model: it isn't tied to one
+        # category (see model_health_check's docstring) -- it only ever
+        # fires today as SWING's fallback when predict_swing() fails, or
+        # on legacy pre-routing-fix rows.
+        _health = {
+            "SWING":   model_health_check("SWING", "swing_model"),
+            "GENERAL": model_health_check(None, "model"),
+        }
         save_model_health(_health)
-        _sw_h = _health["SWING"]
-        _sw_h_detail = _sw_h.get("reason") or f"win_rate={_sw_h.get('win_rate_pct')}%"
-        print(f"  🩺 Model health [SWING]: {_sw_h['status']} ({_sw_h_detail})")
+        for _hk, _h in _health.items():
+            _h_detail = _h.get("reason") or f"win_rate={_h.get('win_rate_pct')}%"
+            print(f"  🩺 Model health [{_hk}]: {_h['status']} ({_h_detail})")
     except Exception as _he2:
         print(f"  ⚠️  Model health check skipped: {_he2}")
 
@@ -1013,7 +1040,6 @@ def run_daily(test_mode=False, dry_run=False):
     # buckets sharing the same "data" object, inflating
     # calculate_relative_strength()'s population and shifting every stock's
     # rs_rating, not just the duplicate's.
-    from pick_utils import dedupe_raw_data_by_ticker
     all_raw = dedupe_raw_data_by_ticker([
         p["data"] for bucket in ["FHSA_all","TFSA_core_all","TFSA_income_all","TFSA_swing_all"]
         for p in screener.get(bucket,[]) if p.get("data")
@@ -1165,8 +1191,7 @@ def run_daily(test_mode=False, dry_run=False):
     sector_counts = {}
     kept = []; removed = []
     for pick in conviction:
-        sector = (pick.get("sector","") or
-                  pick.get("data",{}).get("sector","") or "Unknown")
+        sector = get_pick_sector(pick) or "Unknown"
         r30    = pick.get("data",{}).get("perf_30d", None)
         correlated = False
         # Sector cap — hard limit 2 per sector
@@ -1177,8 +1202,7 @@ def run_daily(test_mode=False, dry_run=False):
         else:
             # Return proximity within same sector
             for k in kept:
-                k_sector = (k.get("sector","") or
-                            k.get("data",{}).get("sector","") or "Unknown")
+                k_sector = get_pick_sector(k) or "Unknown"
                 k_r30    = k.get("data",{}).get("perf_30d", None)
                 if (sector == k_sector and sector not in ("","Unknown") and
                         r30 is not None and k_r30 is not None and
@@ -1566,7 +1590,7 @@ def run_daily(test_mode=False, dry_run=False):
         acc_sum  = signal_accuracy if signal_accuracy.get("resolved",0) > 0 else None
         guardrail = compute_position_size_guardrail(
             pick["ticker"], tfsa_bal,
-            pick.get("pick",{}).get("category","GROWTH CORE"),
+            get_pick_field(pick, "category", "GROWTH CORE"),
             acc_sum, regime.get("regime","NORMAL")
         )
         pick["size_guardrail"] = guardrail
@@ -1713,10 +1737,14 @@ def run_daily(test_mode=False, dry_run=False):
     try:
         from outcome_tracker import (log_picks, resolve_outcomes, compute_win_rate,
                                       print_win_rate_report, resolve_true_horizon_outcomes)
-        from pick_utils import dedupe_picks_by_ticker
+        # FIX (2026-08-09): TFSA_income_top5 was missing from this concat --
+        # income/dividend-category picks were never logged to
+        # outcomes_log.json at all, invisible to win-rate tracking and ML
+        # training regardless of how they performed.
         all_picks_to_log = (
             screener.get("FHSA_top5", []) +
             screener.get("TFSA_growth_top5", []) +
+            screener.get("TFSA_income_top5", []) +
             screener.get("TFSA_swing_top3", [])
         )
         # FIX (2026-08-08): a ticker eligible for both FHSA and TFSA gets two
@@ -1782,7 +1810,7 @@ def run_daily(test_mode=False, dry_run=False):
         primary = None
         for p in all_conv[:5]:
             if p.get("score", 0) >= 70:
-                d = p.get("data", {}); pk = p.get("pick", {})
+                d = p.get("data", {}); pk = get_pick_data(p)
                 primary = {
                     "ticker": p["ticker"], "score": p.get("score",0),
                     "ml_prob": round(p.get("ml_prob",0.5)*100),
@@ -1798,7 +1826,7 @@ def run_daily(test_mode=False, dry_run=False):
         for p in all_conv[1:6]:
             if primary and p["ticker"] == primary["ticker"]: continue
             if p.get("score",0) >= 60:
-                pk = p.get("pick",{})
+                pk = get_pick_data(p)
                 backup = {
                     "ticker": p["ticker"], "score": p.get("score",0),
                     "ml_prob": round(p.get("ml_prob",0.5)*100),
@@ -1842,7 +1870,6 @@ def run_daily(test_mode=False, dry_run=False):
 
     # ── DAILY HISTORY ARCHIVE ─────────────────────────────────
     try:
-        from pick_utils import dedupe_picks_by_ticker
         os.makedirs("history", exist_ok=True)
         _today = datetime.now().strftime("%Y-%m-%d")
         _snap  = {
@@ -1865,7 +1892,7 @@ def run_daily(test_mode=False, dry_run=False):
             # category lives at pick["pick"]["category"], not pick
             # ["category"] (see pick_utils.py's module docstring).
             "top_picks":        [{"ticker":p.get("ticker"),"score":p.get("score"),
-                                  "category":p.get("pick", {}).get("category")}
+                                  "category":get_pick_category(p)}
                                  for p in dedupe_picks_by_ticker(
                                      brief.get("accounts",{}).get("TFSA",{}).get("growth_picks",[]) +
                                      brief.get("accounts",{}).get("FHSA",{}).get("top_picks",[]),
@@ -2124,7 +2151,7 @@ def send_morning_brief(brief, fx_signals, crypto_signals):
     html_picks_rows = ""
     for p in all_email_picks:
         t   = p.get("ticker","?"); sc = p.get("score",0)
-        pk  = p.get("pick",{}); cat = pk.get("category","")
+        pk  = get_pick_data(p); cat = pk.get("category","")
         act = (pk.get("action","") or "")[:65]
         tag = "FHSA" if "FHSA" in cat else "TFSA"
         sc_col = "#00f5a0" if sc>=75 else "#ffc947" if sc>=55 else "#ff4d4d"

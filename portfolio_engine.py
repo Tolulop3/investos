@@ -16,6 +16,7 @@ import urllib.request
 import urllib.parse
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
+from pick_utils import get_pick_category, get_pick_field, get_pick_sector
 
 CONFIG = {
     "investor": {
@@ -297,20 +298,20 @@ def compute_deployment_plan(deploy_amount, account_balance=None, top_picks=None,
     floor_pick = None
     if top_picks:
         for p in top_picks:
-            cat = p.get("pick",{}).get("category","")
+            cat = get_pick_category(p)
             if "INCOME" in cat or "DIVIDEND" in cat or "FLOOR" in cat or "FHSA" in cat:
                 floor_pick = p; break
         if not floor_pick:
-            non_swing = [p for p in top_picks if "SWING" not in p.get("pick",{}).get("category","")]
+            non_swing = [p for p in top_picks if "SWING" not in get_pick_category(p)]
             floor_pick = non_swing[0] if non_swing else None
     if floor_pick and floor_dollars>=5:
         price = floor_pick.get("data",{}).get("price",0)
         stop_pct = stops["floor"]/100
         plan["splits"]["floor"] = {"dollars":floor_dollars,"pick":floor_pick["ticker"],
-                                    "category":floor_pick.get("pick",{}).get("category",""),
+                                    "category":get_pick_category(floor_pick),
                                     "price":price,"stop":round(price*(1-stop_pct),2) if price else None,
                                     "stop_pct":stops["floor"],"score":floor_pick.get("score",0),
-                                    "action":floor_pick.get("pick",{}).get("action",""),
+                                    "action":get_pick_field(floor_pick, "action", ""),
                                     "venue":"STOCK_ACCOUNT","tag":"[TFSA]"}
         plan["venue_map"][floor_pick["ticker"]] = "STOCK_ACCOUNT"
         remaining -= floor_dollars
@@ -321,17 +322,17 @@ def compute_deployment_plan(deploy_amount, account_balance=None, top_picks=None,
     model_pick = None
     if top_picks:
         for p in top_picks:
-            cat = p.get("pick",{}).get("category","")
+            cat = get_pick_category(p)
             if "GROWTH" in cat or "CORE" in cat:
                 model_pick = p; break
     if model_pick and model_dollars>=5:
         price = model_pick.get("data",{}).get("price",0)
         stop_pct = stops["model_picks"]/100
         plan["splits"]["model_picks"] = {"dollars":model_dollars,"pick":model_pick["ticker"],
-                                          "category":model_pick.get("pick",{}).get("category",""),
+                                          "category":get_pick_category(model_pick),
                                           "price":price,"stop":round(price*(1-stop_pct),2) if price else None,
                                           "stop_pct":stops["model_picks"],"score":model_pick.get("score",0),
-                                          "action":model_pick.get("pick",{}).get("action",""),
+                                          "action":get_pick_field(model_pick, "action", ""),
                                           "venue":"STOCK_ACCOUNT","tag":"[TFSA]"}
         plan["venue_map"][model_pick["ticker"]] = "STOCK_ACCOUNT"
         remaining -= model_dollars
@@ -345,7 +346,7 @@ def compute_deployment_plan(deploy_amount, account_balance=None, top_picks=None,
         if top_fx.get("conviction",0)>=70: fx_swing = top_fx
     if top_picks and not fx_swing:
         for p in top_picks:
-            if "SWING" in p.get("pick",{}).get("category",""): swing_pick = p; break
+            if "SWING" in get_pick_category(p): swing_pick = p; break
     if fx_swing and swing_dollars>=5:
         plan["splits"]["swing"] = {"dollars":swing_dollars,"pick":fx_swing.get("pair","FX"),
                                     "category":"FX SWING","price":fx_swing.get("entry",0),
@@ -362,7 +363,7 @@ def compute_deployment_plan(deploy_amount, account_balance=None, top_picks=None,
                                     "category":"SWING","price":price,
                                     "stop":round(price*(1-stop_pct),2) if price else None,
                                     "stop_pct":stops["swing"],"score":swing_pick.get("score",0),
-                                    "action":swing_pick.get("pick",{}).get("action",""),
+                                    "action":get_pick_field(swing_pick, "action", ""),
                                     "venue":"STOCK_ACCOUNT","tag":"[TFSA]"}
         plan["venue_map"][swing_pick["ticker"]] = "STOCK_ACCOUNT"
         remaining -= swing_dollars
@@ -613,7 +614,7 @@ def apply_sector_cap(picks, max_per_sector=2, regime=None):
 
     for pick in picks:
         ticker  = pick["ticker"]
-        _yf_sec = (pick.get("data", {}).get("sector") or "").strip()
+        _yf_sec = get_pick_sector(pick).strip()
         sector  = SECTOR_MAP.get(ticker) or _yf_sec or "OTHER"
         count  = sector_counts.get(sector, 0)
         if count < effective_max:

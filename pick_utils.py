@@ -70,6 +70,54 @@ def dedupe_picks_by_ticker(picks, verbose=False, label="picks"):
     return deduped
 
 
+def get_pick_data(p):
+    """
+    Canonical accessor for a pick's classify_pick() sub-dict -- every
+    screener bucket builds picks as {"ticker":..., "score":..., "data":
+    {...raw market data, including "sector"...}, "pick": {...category,
+    hold_days, exp_low, exp_high, action, etc...}, ...}. classify_pick()
+    output lives ONLY under p["pick"], never at the top level.
+
+    FIX (2026-08-09): this is the structural fix for a recurring bug class
+    -- ac4973cd (category routing read pick["category"], always None, so
+    routing silently fell through) and run_daily.py's sector-headwind
+    penalty (same shape, sector instead of category) both happened because
+    there was no single place enforcing this shape; every call site
+    hand-rolled its own `.get("pick", {})` chain. Use this (and
+    get_pick_category/get_pick_field/get_pick_sector below) instead of
+    reaching into p["pick"] or p["data"] directly -- see
+    tests/test_invariants.py's test_no_raw_pick_dict_access_outside_pick_utils
+    for the enforcement mechanism that keeps this the ONLY place that does.
+    """
+    return p.get("pick") or {}
+
+
+def get_pick_category(p):
+    """category lives under p["pick"]["category"], never p["category"]."""
+    return get_pick_data(p).get("category", "")
+
+
+def get_pick_field(p, field, default=None):
+    """Any other classify_pick() output field (hold_days, exp_low,
+    exp_high, action, exit_note, risk_label, etc) -- same shape as
+    get_pick_category, generalized."""
+    return get_pick_data(p).get(field, default)
+
+
+def get_pick_sector(p):
+    """
+    sector lives under p["data"]["sector"] (raw yfinance sector string,
+    e.g. "Financial Services"), never at the top level -- p["sector"] is
+    written back later in ml_engine.py's scoring loop for a DIFFERENT,
+    normalized purpose (sector_canonical / gate checks), so it can be
+    present-but-stale or absent depending on pipeline stage. Checking it
+    first (if present) then falling back to the raw data dict matches the
+    one call site that already had this right (run_daily.py's
+    correlation filter) before this became a shared utility.
+    """
+    return p.get("sector", "") or p.get("data", {}).get("sector", "")
+
+
 def dedupe_raw_data_by_ticker(data_list):
     """
     Same root cause as dedupe_picks_by_ticker(), but for raw stock "data"

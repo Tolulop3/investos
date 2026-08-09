@@ -32,8 +32,8 @@ from datetime import datetime, timedelta
 from collections import defaultdict, Counter
 
 from gate_engine import MLGate, load_outcomes_ticker_counts, PROBATION_CAP
-from outcome_tracker import ml_prob_bucket
-from pick_utils import dedupe_picks_by_ticker
+from outcome_tracker import ml_prob_bucket, category_is_data_ready
+from pick_utils import dedupe_picks_by_ticker, get_pick_category, get_pick_sector
 
 warnings.filterwarnings('ignore')
 
@@ -124,6 +124,27 @@ def _encode_sector(raw_sector_string, ticker=None):
         raw = _TICKER_SECTOR_OVERRIDE.get(ticker, "")
     key = _SECTOR_NORM_INF.get(raw.strip().lower(), "UNKNOWN")
     return _SECTOR_ENC_INF.get(key, -1)
+
+
+def get_canonical_sector(p):
+    """
+    Canonical NORMALIZED sector string (e.g. "FINANCIALS", "MATERIALS") for
+    a pick, matching what sector-cap/gate logic compares against.
+
+    FIX (2026-08-09): this exact 3-tier fallback (prefer pre-computed
+    sector_canonical -> raw sector via pick_utils.get_pick_sector() ->
+    per-ticker override -> normalize) was copy-pasted independently at 4
+    call sites in this file's sector-cap reserve/replacement/basket-summary
+    logic, each with slightly different completeness (some skipped the
+    ticker override, some skipped the top-level-sector leg) -- exactly the
+    kind of drift the pick_utils.py accessor module exists to prevent.
+    """
+    if p.get("sector_canonical"):
+        return p["sector_canonical"]
+    raw = get_pick_sector(p).strip()
+    if not raw:
+        raw = _TICKER_SECTOR_OVERRIDE.get(p.get("ticker", ""), "")
+    return _SECTOR_NORM_INF.get(raw.lower(), raw.upper() or "UNKNOWN")
 
 
 ML_CONFIG = {
@@ -446,6 +467,12 @@ class StockMLPredictor:
         self.model_file         = "ml_model_state.json"
         self.swing_model        = None
         self.swing_scaler       = None
+        # FIX (2026-08-09): retrain-vintage tracking for Kelly's durable
+        # calibration fix -- see outcome_tracker.py's compute_win_rate()
+        # docstring on by_ml_prob_bucket_model / MODEL_VINTAGE_WINDOW_DAYS.
+        self.model_trained_at       = None
+        self.swing_model_trained_at = None
+        self._category_models       = {}  # lazily populated, see predict_category()
 
     def load_training_data(self):
         if not HAS_PANDAS:
@@ -515,11 +542,11 @@ class StockMLPredictor:
         model's cache state -- separate concern, separate cache file."""
         try:
             from ml_retrainer import load_swing_model
-            self.swing_model, self.swing_scaler = load_swing_model()
+            self.swing_model, self.swing_scaler, self.swing_model_trained_at = load_swing_model()
             if verbose and self.swing_model is not None:
                 print("   OK Loaded SWING model")
         except Exception:
-            self.swing_model, self.swing_scaler = None, None
+            self.swing_model, self.swing_scaler, self.swing_model_trained_at = None, None, None
 
     def train(self, verbose=True):
         self._load_swing_model(verbose=verbose)
@@ -537,6 +564,7 @@ class StockMLPredictor:
                 self.scaler             = None   # scaler removed; model trained on DataFrame
                 self.calibrator         = cached.get("calibrator")
                 self.feature_importance = cached.get("feature_importance", {})
+                self.model_trained_at   = cached.get("_retrained_at")
                 _feat_hash = _hl.md5(str(ML_CONFIG["features"]).encode()).hexdigest()[:8]
                 if cached.get("feature_hash") != _feat_hash:
                     os.remove(cache_file)
@@ -668,6 +696,7 @@ class StockMLPredictor:
                 key=lambda x: x[1], reverse=True))
 
         self.trained = True
+        self.model_trained_at = datetime.now().isoformat()
 
         # Degenerate model check — mirrors ml_retrainer.py so daily training also warns.
         if self.feature_importance:
@@ -756,6 +785,46 @@ class StockMLPredictor:
             return round(max(0.1, min(0.9, float(prob))), 4)
         except Exception:
             return None
+
+    def predict_category(self, category, features_dict):
+        """
+        Generalized version of predict_swing() -- score using a category's
+        own dedicated model (see ml_retrainer.train_category_model()), for
+        any category once outcome_tracker.category_is_data_ready() says
+        it's ready. Lazily loads and memoizes each category's model on
+        first use per predictor instance (most categories will never be
+        ready in a given run, so eagerly loading all of them upfront like
+        train()/predict_swing() do for SWING would be wasted work).
+
+        Returns None if no deployed model exists for this category (not
+        ready yet, or its last retrain was rejected by the AUC gate) --
+        caller falls back to predict_rules_based(), same contract as
+        predict_swing().
+        """
+        if category not in self._category_models:
+            try:
+                from ml_retrainer import load_category_model
+                self._category_models[category] = load_category_model(category)
+            except Exception:
+                self._category_models[category] = (None, None, None)
+        model, scaler, _trained_at = self._category_models[category]
+        if model is None or scaler is None or not HAS_PANDAS:
+            return None
+        try:
+            row = {f: features_dict.get(f, 0) for f in ML_CONFIG["features"]}
+            df = pd.DataFrame([row])
+            scaled = scaler.transform(df)
+            prob = model.predict_proba(scaled)[0][1]
+            return round(max(0.1, min(0.9, float(prob))), 4)
+        except Exception:
+            return None
+
+    def get_category_model_trained_at(self, category):
+        """The loaded category model's trained_at, for Kelly's retrain-
+        vintage tagging (see ml_engine.py's scoring loop). Must be called
+        AFTER predict_category() has populated the cache for this category
+        (returns None otherwise, same as "no model")."""
+        return (self._category_models.get(category) or (None, None, None))[2]
 
     def predict(self, features_dict, market_regime=1):
         if not self.trained or not HAS_PANDAS:
@@ -936,7 +1005,7 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2, excluded_tickers=
     If >max_per_sector picks share a sector, replace excess with next-best
     pick from an under-represented sector.
 
-    Sector is taken from pick.get("sector") or pick.get("data",{}).get("sector").
+    Sector comes from pick_utils.get_pick_sector() (see _get_sector below).
     Picks without sector info are treated as "Unknown" — count toward no cap.
     """
     # Sector normalization map — yfinance returns inconsistent strings
@@ -975,7 +1044,7 @@ def _apply_sector_cap(picks, screener_picks, max_per_sector=2, excluded_tickers=
     }
 
     def _get_sector(pick):
-        s = pick.get("sector") or pick.get("data", {}).get("sector", "")
+        s = get_pick_sector(pick)
         if not (s or "").strip():
             s = _TICKER_SECTOR_OVERRIDE.get(pick.get("ticker", ""), "")
         s = (s or "Unknown").strip()
@@ -1144,7 +1213,7 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
     }
     sector_blocked = set()
     for p in picks[:n_picks]:
-        yf_sector  = p.get("data", {}).get("sector", "") or p.get("sector", "")
+        yf_sector  = get_pick_sector(p)
         news_sector = SECTOR_MAP_BLOCK.get(yf_sector)
         if news_sector and sector_sentiment:
             net = sector_sentiment.get(news_sector, {}).get("net_score", 0)
@@ -1706,11 +1775,17 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     # resolve any swing_model-sourced pick before 2026-09-07) is NOT
     # treated as degraded -- only an explicit "degraded" verdict skips it.
     from outcome_tracker import load_model_health
-    _swing_health = load_model_health().get("SWING", {})
-    _swing_degraded = _swing_health.get("status") == "degraded"
+    _health_state    = load_model_health()
+    _swing_health    = _health_state.get("SWING", {})
+    _swing_degraded  = _swing_health.get("status") == "degraded"
+    _general_health  = _health_state.get("GENERAL", {})
+    _general_degraded = _general_health.get("status") == "degraded"
     if _swing_degraded and verbose:
         print(f"  🩺 SWING model health: DEGRADED ({_swing_health.get('reason','')}) "
               f"-- falling back to general model for SWING picks this run")
+    if _general_degraded and verbose:
+        print(f"  🩺 General model health: DEGRADED ({_general_health.get('reason','')}) "
+              f"-- falling back to rules-based scoring for general-model picks this run")
 
     regime_num = 1 if regime["regime"] in ("BULL", "RECOVERY") else 0
     _raw_picks = (
@@ -1742,10 +1817,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         # Write canonical sector now so gate reads the SAME normalized value that
         # the sector trace prints. pick["sector"] is absent (sector lives in data dict);
         # without this write-back the gate reads "" → falls through to UNKNOWN.
-        _sc_raw = (stock_data.get("sector", "") or "").strip()
-        if not _sc_raw:
-            _sc_raw = _TICKER_SECTOR_OVERRIDE.get(ticker, "")
-        pick["sector_canonical"] = _SECTOR_NORM_INF.get(_sc_raw.lower(), _sc_raw.upper() or "UNKNOWN")
+        pick["sector_canonical"] = get_canonical_sector(pick)
 
         features = build_features_for_stock(ticker, stock_data, rs)
         # FIX (2026-08-08): category lives nested under pick["pick"]["category"]
@@ -1757,7 +1829,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         # production via latest_brief.json: every pick showed
         # ml_prob_source="model" regardless of category. outcome_tracker.py's
         # log_picks() already reads it correctly this way -- mirror that.
-        category = pick.get("pick", {}).get("category")
+        category = get_pick_category(pick)
 
         if features:
             # Category-based routing (2026-08-08 ML diagnostic session):
@@ -1775,10 +1847,34 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
                 if swing_prob is not None:
                     calibrated = swing_prob
                     source = "swing_model"
+                elif _general_degraded:
+                    calibrated = predictor.predict_rules_based(features, market_regime=regime_num)
+                    source = "rules_based"
                 else:
                     calibrated, xgb_raw = predictor.predict_raw_pair(features, market_regime=regime_num)
                     source = "model"
             elif category in RULES_BASED_CATEGORIES:
+                # FIX (2026-08-09): auto-promotion hook -- see ml_retrainer.
+                # train_category_model()'s docstring. category_is_data_
+                # ready() is False for every category here today (earliest
+                # is WATCH on 2026-09-12), so this is a safe no-op until
+                # then: predict_category() returns None (no deployed model
+                # exists yet) and every pick still falls through to
+                # rules_based exactly as before. Once a category becomes
+                # ready AND train_category_model() has deployed a model for
+                # it (run_daily.py's daily trigger), this starts scoring it
+                # for real automatically -- no code change needed here.
+                cat_prob = (predictor.predict_category(category, features)
+                            if category_is_data_ready(category) else None)
+                if cat_prob is not None:
+                    calibrated = cat_prob
+                    source = "category_model"
+                else:
+                    calibrated = predictor.predict_rules_based(features, market_regime=regime_num)
+                    source = "rules_based"
+            elif _general_degraded:
+                # FIX (2026-08-09): auto-demotion for the general model,
+                # mirroring SWING's -- see model_health_check()'s docstring.
                 calibrated = predictor.predict_rules_based(features, market_regime=regime_num)
                 source = "rules_based"
             else:
@@ -1796,6 +1892,18 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
             pick["ml_prob_raw"]    = calibrated   # post-calibration, pre-smoothing
             pick["ml_prob_xgb"]    = xgb_raw      # raw XGBoost output (pre-calibration)
             pick["ml_prob_source"] = source
+            # FIX (2026-08-09): Kelly's durable calibration fix needs to know
+            # WHICH retrain generation scored this pick, not just that some
+            # model did -- see outcome_tracker.py's compute_win_rate()
+            # docstring. None for rules_based (no model involved).
+            if source == "swing_model":
+                pick["scored_by_model_trained_at"] = predictor.swing_model_trained_at
+            elif source == "model":
+                pick["scored_by_model_trained_at"] = predictor.model_trained_at
+            elif source == "category_model":
+                pick["scored_by_model_trained_at"] = predictor.get_category_model_trained_at(category)
+            else:
+                pick["scored_by_model_trained_at"] = None
             _raw_calib_log.append((ticker, xgb_raw, calibrated, smoothed_prob, category, source))
         else:
             pick["ml_prob"]        = 0.5
@@ -1869,11 +1977,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
     _pre_filter_tickers = {p.get("ticker") for p in tfsa_picks}   # snapshot before any removal
     _pre_gate_filtered = []
     for _p in tfsa_picks:
-        if _p.get("sector_canonical"):
-            _sec = _p["sector_canonical"]
-        else:
-            _sec_raw = ((_p.get("data") or {}).get("sector", "") or _p.get("sector", "") or "").strip()
-            _sec     = _SECTOR_NORM_INF.get(_sec_raw.lower(), _sec_raw.upper())
+        _sec = get_canonical_sector(_p)
         _score = _p.get("score", 0) or 0
         if _sec in _BLOCK_75 and _score >= 75:
             if verbose:
@@ -1924,13 +2028,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         # sector_canonical is written during the scoring loop above from pick["data"]["sector"].
         # pick.get("sector") is the TOP-LEVEL field which is absent on screener picks (sector
         # lives nested under pick["data"]) — reading it returns "" → UNKNOWN (the prior bug).
-        sector = pick.get("sector_canonical") or ""
-        if not sector:
-            # Fallback: compute canonically from data dict (should not happen after scoring loop)
-            _raw_sec = ((pick.get("data") or {}).get("sector", "") or "").strip()
-            if not _raw_sec:
-                _raw_sec = _TICKER_SECTOR_OVERRIDE.get(ticker, "")
-            sector = _SECTOR_NORM_INF.get(_raw_sec.lower(), _raw_sec.upper() or "UNKNOWN")
+        sector = get_canonical_sector(pick)
 
         if score < ML_GATE_SCORE_MIN:
             passed.append(pick)
@@ -1988,12 +2086,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
                 # Canonical normalization so "Consumer Defensive" → CONSUMER, "Banks" → FINANCIALS
                 # Reserve picks are from screener_picks (not all_picks), so sector_canonical
                 # may not be set; fall back to data dict where the real sector string lives.
-                _sec_r_raw = (p.get("sector_canonical") or
-                              (p.get("data") or {}).get("sector", "") or
-                              p.get("sector", "") or "").strip()
-                if not _sec_r_raw:
-                    _sec_r_raw = _TICKER_SECTOR_OVERRIDE.get(_tkr, "")
-                _sec_r = _SECTOR_NORM_INF.get(_sec_r_raw.lower(), _sec_r_raw.upper())
+                _sec_r = get_canonical_sector(p)
                 _scr   = p.get("score", 0) or 0
                 _mp_r  = p.get("ml_prob", 0.5) or 0.5
                 if _sec_r == "MATERIALS" and _scr >= 75:
@@ -2015,12 +2108,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         # FINANCIALS (or any sector) that the pre-gate cap already trimmed.
         _repl_sector_counts: dict = {}
         for _pp in passed:
-            _ps = _pp.get("sector_canonical") or ""
-            if not _ps:
-                _ps_raw = ((_pp.get("data") or {}).get("sector", "") or "").strip()
-                if not _ps_raw:
-                    _ps_raw = _TICKER_SECTOR_OVERRIDE.get(_pp.get("ticker", ""), "")
-                _ps = _SECTOR_NORM_INF.get(_ps_raw.lower(), _ps_raw.upper() or "UNKNOWN")
+            _ps = get_canonical_sector(_pp)
             if _ps and _ps != "UNKNOWN":
                 _repl_sector_counts[_ps] = _repl_sector_counts.get(_ps, 0) + 1
 
@@ -2029,12 +2117,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         for _cand in reserve:
             if len(replacements) >= len(gated_out):
                 break
-            _cs = _cand.get("sector_canonical") or ""
-            if not _cs:
-                _cs_raw = ((_cand.get("data") or {}).get("sector", "") or "").strip()
-                if not _cs_raw:
-                    _cs_raw = _TICKER_SECTOR_OVERRIDE.get(_cand.get("ticker", ""), "")
-                _cs = _SECTOR_NORM_INF.get(_cs_raw.lower(), _cs_raw.upper() or "UNKNOWN")
+            _cs = get_canonical_sector(_cand)
             if _cs and _cs != "UNKNOWN" and _repl_sector_counts.get(_cs, 0) >= _repl_max_per_sector:
                 continue   # would exceed sector cap — skip
             replacements.append(_cand)
@@ -2051,18 +2134,10 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
 
     # ── FINAL BASKET SECTOR COUNTS (canonical — FIX 3 / FIX 1 audit) ────────────
     if verbose:
-        def _canon_sec(p):
-            # prefer pre-computed canonical; fallback to data dict
-            if p.get("sector_canonical"):
-                return p["sector_canonical"]
-            _sr = ((p.get("data") or {}).get("sector", "") or p.get("sector", "") or "").strip()
-            if not _sr:
-                _sr = _TICKER_SECTOR_OVERRIDE.get(p.get("ticker", ""), "")
-            return _SECTOR_NORM_INF.get(_sr.lower(), _sr.upper() or "UNKNOWN")
-        _basket_sectors = Counter(_canon_sec(p) for p in tfsa_picks)
+        _basket_sectors = Counter(get_canonical_sector(p) for p in tfsa_picks)
         print(f"  📊 Final basket sector counts (canonical, max-2 cap): {dict(_basket_sectors)}")
         for p in tfsa_picks:
-            _cs = _canon_sec(p)
+            _cs = get_canonical_sector(p)
             print(f"     {p.get('ticker','?'):<12} → {_cs}")
 
     # ── TARGET WEIGHTS (capital-agnostic) ────────────────────────────────────
