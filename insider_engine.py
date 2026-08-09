@@ -73,21 +73,34 @@ def safe_parse_records(raw, list_keys=('filings', 'results', 'data', 'items')):
 
 
 # ── KNOWN CIKs — avoids EDGAR company search API call (saves time + quota) ───
+# FIX (2026-08-09): 12 of these were wrong -- verified every US-ticker
+# entry below against SEC's own authoritative company_tickers.json
+# (https://www.sec.gov/files/company_tickers.json) live. Most look like
+# stale entries surviving a corporate re-domiciliation/reorg that issued
+# a new CIK (e.g. Medtronic's move to plc structure) that the hardcoded
+# map was never updated for -- same root cause class as the already-
+# documented Canadian cross-listed CIK incident below, just found here
+# independently while building fetch_recent_form4()'s real XML parsing.
+# Confirmed materially wrong, not a rounding/format difference: AMGN
+# (this system's own most-frequent high-conviction pick) was pointing at
+# CAMBREX CORP, an entirely different, unrelated company -- every
+# insider signal ever computed for "AMGN" was checking Cambrex's Form 4
+# filings, not Amgen's.
 KNOWN_CIKS = {
     "JPM":    "0000019617", "MS":     "0000895421", "GS":     "0000886982",
     "BAC":    "0000070858", "WFC":    "0000072971", "C":      "0000831001",
-    "MDT":    "0000064996", "ABT":    "0000001800", "ISRG":   "0001035267",
-    "DXCM":   "0001385187", "AFRM":   "0001820175", "SNOW":   "0001640147",
-    "MDB":    "0001333513", "NVDA":   "0001045810", "MSFT":   "0000789019",
+    "MDT":    "0001613103", "ABT":    "0000001800", "ISRG":   "0001035267",
+    "DXCM":   "0001093557", "AFRM":   "0001820953", "SNOW":   "0001640147",
+    "MDB":    "0001441816", "NVDA":   "0001045810", "MSFT":   "0000789019",
     "META":   "0001326801", "AMZN":   "0001018724", "GOOGL":  "0001652044",
     "AAPL":   "0000320193", "F":      "0000037996", "GM":     "0001467858",
     "PFE":    "0000078003", "JNJ":    "0000200406", "ABBV":   "0001551152",
-    "MRK":    "0000310158", "BMY":    "0000014272", "AMGN":   "0000820081",
-    "BIIB":   "0000875320", "REGN":   "0000872589", "GILD":   "0000882184",
+    "MRK":    "0000310158", "BMY":    "0000014272", "AMGN":   "0000318154",
+    "BIIB":   "0000875045", "REGN":   "0000872589", "GILD":   "0000882095",
     "LOW":    "0000060667", "HD":     "0000354950", "TGT":    "0000027419",
-    "SBUX":   "0000829224", "O":      "0000726854", "VICI":   "0001692415",
-    "AMT":    "0001053507", "MAIN":   "0001325702", "STAG":   "0001538827",
-    "BX":     "0001393818", "BLK":    "0001364742", "KO":     "0000021344",
+    "SBUX":   "0000829224", "O":      "0000726728", "VICI":   "0001705696",
+    "AMT":    "0001053507", "MAIN":   "0001396440", "STAG":   "0001479094",
+    "BX":     "0001393818", "BLK":    "0002012383", "KO":     "0000021344",
     "PEP":    "0000077476", "PG":     "0000080424",
 }
 
@@ -248,13 +261,49 @@ def lookup_cik(ticker, cache):
     return None
 
 
-def fetch_recent_form4(cik, days_back=30):
+# Real, open-market transaction codes (SEC Form 4 Table I/II "Transaction
+# Code" field, standard 17 CFR 249.104 list). Everything else (A=grant/
+# award, M=option/RSU exercise, F=tax withholding on vest, G=gift,
+# C=conversion, etc.) is compensation/administrative mechanics, not a
+# discretionary buy/sell decision -- confirmed empirically 2026-08-09
+# against real filings (BMY: M+F codes = RSU vest + tax withholding,
+# GOOGL: G+G = a gift transfer) -- neither is a real conviction trade,
+# and this is the norm, not the exception: most Form 4s are NOT P/S.
+OPEN_MARKET_BUY_CODES  = {"P"}
+OPEN_MARKET_SELL_CODES = {"S"}
+
+
+def _edgar_request_text(url, timeout=10):
+    """Same declared-UA requirement as _edgar_request(), but for raw XML/
+    text documents (Form 4 filings), not JSON API responses."""
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "InvestOS-Research contact@investos.local"}
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read().decode("utf-8", errors="replace")
+
+
+def fetch_recent_form4(cik, days_back=30, max_filings=10):
     """
-    Fetch recent Form 4 filings for a CIK.
-    Returns list of transactions: [{date, type, shares, price, value, insider}]
+    Fetch recent Form 4 filings for a CIK, with REAL transaction-level
+    detail (code, shares, price, acquired/disposed) parsed from each
+    filing's actual XML document -- not just filing metadata.
+
+    Returns list of transactions: [{date, code, shares, price, value,
+    acquired_disposed, company}], or None if the submissions fetch itself
+    failed (distinct from "fetched fine, zero Form 4s in window" -- same
+    None-vs-[] distinction fetch_form4_aggregated() already makes, for
+    the same reason: run_insider_engine() needs to tell "nothing to
+    report" apart from "the fetch didn't work").
+
+    max_filings caps how many individual filing XMLs get fetched per
+    ticker (each is a separate HTTP request beyond the one submissions-
+    JSON fetch) -- bounds worst-case latency/rate-limit exposure for a
+    ticker with an unusually large recent Form 4 count.
     """
     if not cik:
-        return []
+        return None
 
     try:
         url  = f"https://data.sec.gov/submissions/CIK{cik}.json"
@@ -263,65 +312,119 @@ def fetch_recent_form4(cik, days_back=30):
         if not isinstance(data, dict):
             print(f"  ⚠️ EDGAR CIK{cik}: unexpected response type "
                   f"{type(data).__name__} — skipping. head={repr(data)[:200]}")
-            return []
+            return None
 
+        name     = data.get("name", "")
         recent   = data.get("filings", {}).get("recent", {})
         forms    = recent.get("form", [])
         dates    = recent.get("filingDate", [])
         accnums  = recent.get("accessionNumber", [])
+        pdocs    = recent.get("primaryDocument", [])
 
         cutoff = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
         transactions = []
+        filings_fetched = 0
 
         for i, form_type in enumerate(forms):
             if form_type != "4":
                 continue
             filing_date = dates[i] if i < len(dates) else ""
             if filing_date < cutoff:
-                break  # filings are reverse-chronological, can stop early
+                continue  # NOT a `break` -- filing order interleaves all
+                          # form types for this CIK, not just Form 4s, so
+                          # an out-of-window Form 4 doesn't mean every
+                          # later one is too (confirmed empirically: a
+                          # naive break here missed real 2026 Form 4s
+                          # sitting behind older non-4 filings)
 
-            accn = accnums[i].replace("-", "") if i < len(accnums) else ""
-            if not accn:
+            if filings_fetched >= max_filings:
+                break
+
+            accn = accnums[i] if i < len(accnums) else ""
+            pdoc = pdocs[i] if i < len(pdocs) else ""
+            if not accn or not pdoc:
                 continue
 
-            # Fetch the actual Form 4 XML
-            try:
-                xml_url = (f"https://www.sec.gov/Archives/edgar/full-index/"
-                           f"{filing_date[:4]}/{filing_date[5:7]}/")
-                # Direct accession URL
-                accn_fmt = f"{accn[:10]}-{accn[10:12]}-{accn[12:]}"
-                doc_url  = (f"https://www.sec.gov/Archives/edgar/data/"
-                            f"{int(cik)}/{accn}/")
-                # Parse XML from filing index
-                idx_url = (f"https://www.sec.gov/cgi-bin/browse-edgar?"
-                           f"action=getcompany&CIK={cik}&type=4&dateb=&owner=include"
-                           f"&count=1&search_text=&output=atom")
-                # Use the submissions data instead — it has enough info
-                # transactions type: NonDerivativeTransaction
-                txns = _parse_form4_from_accession(cik, accn, filing_date)
-                transactions.extend(txns)
-                time.sleep(0.1)  # rate limit
-            except Exception:
-                continue
+            txns = _parse_form4_from_accession(cik, accn, pdoc)
+            filings_fetched += 1
+            time.sleep(0.15)  # gentle rate limit -- one extra fetch per filing now
+
+            for t in txns:
+                t["date"]    = filing_date
+                t["company"] = name
+                transactions.append(t)
 
         return transactions
 
     except Exception as e:
-        return []
+        print(f"  ⚠️ fetch_recent_form4 CIK{cik} failed: {type(e).__name__}: {e}")
+        return None
 
 
-def _parse_form4_from_accession(cik, accn, filing_date):
-    """Parse a Form 4 XML filing to extract buy/sell transactions."""
+def _parse_form4_from_accession(cik, accn, primary_document):
+    """
+    Parse a Form 4 XML filing to extract real, non-derivative (i.e.
+    actual common-stock, not options/RSUs) transactions: code, shares,
+    price, acquired/disposed direction.
+
+    URL discovery (verified live 2026-08-09 against real BMY and GOOGL
+    filings): the submissions JSON's `primaryDocument` field points at
+    the XSL-STYLED human-readable rendering (e.g.
+    "xslF345X06/wk-form4_1785874216.xml"), not the raw machine-readable
+    XML. The raw XML sits at the ACCESSION FOLDER ROOT under the same
+    base filename with the "xslNNNXNN/" folder prefix stripped --
+    confirmed via each filing's own index.json directory listing, not
+    assumed. derivativeTable (options/RSU grants and their later
+    exercise) is deliberately NOT parsed here -- those aren't a
+    real-price, real-share open-market transaction to grade the way a
+    nonDerivativeTransaction is.
+    """
     try:
-        # Build the accession number URL format
-        accn_url = accn.replace("-","")
-        # Try to get the primary document
-        idx_url = (f"https://www.sec.gov/Archives/edgar/data/"
-                   f"{int(cik)}/{accn_url}/{accn}-index.htm")
-        # Actually use the JSON submissions — it has aggregated transaction data
-        # The CIK submission already has the key data we need
-        return []  # XML parsing too complex without lxml — use aggregated data below
+        import xml.etree.ElementTree as ET
+
+        accn_nodash = accn.replace("-", "")
+        filename    = primary_document.split("/")[-1]
+        xml_url     = (f"https://www.sec.gov/Archives/edgar/data/"
+                       f"{int(cik)}/{accn_nodash}/{filename}")
+
+        content = _edgar_request_text(xml_url, timeout=10)
+        root    = ET.fromstring(content)
+
+        # One Form 4 filing = one reporting owner's transactions -- captured
+        # once per filing so the scorer can count DISTINCT insiders for its
+        # cluster logic (2+ insiders buying is the signal, not 2+ line items
+        # from the same person's one filing).
+        owner_name = root.findtext(".//reportingOwner/reportingOwnerId/rptOwnerName") or ""
+        owner_cik  = root.findtext(".//reportingOwner/reportingOwnerId/rptOwnerCik") or ""
+
+        out = []
+        for txn in root.findall(".//nonDerivativeTable/nonDerivativeTransaction"):
+            code   = txn.findtext(".//transactionCoding/transactionCode")
+            shares = txn.findtext(".//transactionAmounts/transactionShares/value")
+            price  = txn.findtext(".//transactionAmounts/transactionPricePerShare/value")
+            ad     = txn.findtext(".//transactionAmounts/transactionAcquiredDisposedCode/value")
+            if not code:
+                continue
+            try:
+                shares_f = float(shares) if shares else 0.0
+                price_f  = float(price) if price else 0.0
+            except ValueError:
+                shares_f, price_f = 0.0, 0.0
+            out.append({
+                "code":              code,
+                "shares":            shares_f,
+                "price":             price_f,
+                "reporting_owner":   owner_name,
+                "reporting_owner_cik": owner_cik,
+                "value":             round(shares_f * price_f, 2),
+                "acquired_disposed": ad,
+            })
+        return out
+
     except Exception:
+        # Malformed/unexpected filing shape -- skip this one filing, not
+        # the whole ticker (fetch_recent_form4's caller just gets fewer
+        # transactions than it might have, never a crash).
         return []
 
 
@@ -424,6 +527,66 @@ def score_insider_signal(form4s, ticker):
     return 0, ""
 
 
+def score_insider_signal_by_direction(transactions, ticker):
+    """
+    Direction-aware scoring using REAL transaction-level Form 4 data (see
+    fetch_recent_form4()/_parse_form4_from_accession()) -- this is the
+    scoring this module's own docstring specified from the start
+    (module docstring's "Signal logic" section), completed 2026-08-09
+    once real XML parsing existed to feed it.
+
+    Only OPEN_MARKET_BUY_CODES ("P") and OPEN_MARKET_SELL_CODES ("S")
+    count -- everything else (grants, option exercises, tax-withholding
+    dispositions, gifts, conversions) is compensation/administrative
+    mechanics, not a discretionary trade, and is silently excluded
+    (matches the module docstring's "AWARD ONLY = 0pts").
+
+    "Cluster" means 2+ DISTINCT insiders (by reporting_owner_cik, falling
+    back to name), not 2+ transaction lines -- a single Form 4 can list
+    several dated transactions for the same one person, which is not the
+    same signal as two different insiders independently deciding to buy.
+
+    A buy signal always takes priority over a sell signal in the same
+    window (matches "CLUSTER SELL... no concurrent buys" in the module
+    docstring) -- concurrent buying and selling across different insiders
+    is a mixed, not a clean, signal, and the buy is the rarer/more
+    informative one of the two.
+    """
+    transactions = safe_parse_records(transactions)
+    if not transactions:
+        return 0, ""
+
+    buys  = [t for t in transactions if t.get("code") in OPEN_MARKET_BUY_CODES]
+    sells = [t for t in transactions if t.get("code") in OPEN_MARKET_SELL_CODES]
+
+    def _insiders(rows):
+        return {r.get("reporting_owner_cik") or r.get("reporting_owner") for r in rows
+                if r.get("reporting_owner_cik") or r.get("reporting_owner")}
+
+    buy_insiders  = _insiders(buys)
+    sell_insiders = _insiders(sells)
+    buy_total     = sum(t.get("value", 0) or 0 for t in buys)
+    sell_total    = sum(t.get("value", 0) or 0 for t in sells)
+
+    if len(buy_insiders) >= 2 and buy_total >= 50_000:
+        return 8, f"🟢 Cluster BUY: {len(buy_insiders)} insiders, ${buy_total:,.0f}"
+    elif len(buy_insiders) >= 1 and buy_total >= 25_000:
+        return 4, f"🟢 Insider BUY: ${buy_total:,.0f}"
+    elif buys:
+        # A real open-market buy exists but is below the scoring
+        # threshold -- per the module docstring's "CLUSTER SELL...no
+        # concurrent buys", ANY buy activity (not just one that clears
+        # its own threshold) makes a concurrent sell a mixed signal, not
+        # a clean one -- score neither rather than let a small buy get
+        # silently overridden by a larger sell total.
+        return 0, ""
+    elif len(sell_insiders) >= 2:
+        return -5, f"🔴 Cluster SELL: {len(sell_insiders)} insiders, ${sell_total:,.0f}"
+    elif len(sell_insiders) >= 1:
+        return -2, f"🔴 Insider SELL: ${sell_total:,.0f}"
+    return 0, ""
+
+
 def run_insider_engine(picks, verbose=True):
     """
     Main entry point. Called from run_daily.py with the screener picks list.
@@ -476,10 +639,30 @@ def run_insider_engine(picks, verbose=True):
             continue
 
         tickers_checked += 1
-        form4s = fetch_form4_aggregated(cik, ticker, days_back=30)
-        if form4s is None:
-            fetch_failures += 1
-        adj, reason = score_insider_signal(form4s, ticker)
+
+        # FIX (2026-08-09): direction-aware scoring, completing the design
+        # this module's own docstring specified from the start. Try real
+        # transaction-level parsing first; only fall back to the filing-
+        # count-only proxy if the fetch itself failed (None) -- a genuine
+        # empty transaction list (fetch succeeded, no open-market P/S
+        # activity found) is a real, correctly-scored 0, not a failure to
+        # paper over with the cruder count-based fallback.
+        transactions = fetch_recent_form4(cik, days_back=30)
+        if transactions is not None:
+            form4s = transactions
+            adj, reason = score_insider_signal_by_direction(transactions, ticker)
+            source = "direction"
+        else:
+            # Primary path failed -- fall back, and only count this as a
+            # genuine fetch_failures ticker if the fallback ALSO comes up
+            # empty (fetch_failures drives the "is EDGAR broken this run"
+            # diagnostic below; a ticker the fallback rescued isn't that).
+            form4s = fetch_form4_aggregated(cik, ticker, days_back=30)
+            if form4s is None:
+                fetch_failures += 1
+                form4s = []
+            adj, reason = score_insider_signal(form4s, ticker)
+            source = "count_fallback"
 
         if adj != 0:
             signals_found += 1
@@ -489,6 +672,7 @@ def run_insider_engine(picks, verbose=True):
                 "form4_count": len(form4s),
                 "cik":        cik,
                 "last_filing": form4s[0]["date"] if form4s else None,
+                "scoring_source": source,
             }
             if verbose:
                 print(f"  {'📈' if adj>0 else '📉'} {ticker:<10} {reason} → {adj:+d}pts")

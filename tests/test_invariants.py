@@ -2450,7 +2450,15 @@ def test_insider_run_engine_summary_distinguishes_failures_from_no_data(capsys, 
     # to {} by a single local `pytest tests/test_invariants.py` run.
     monkeypatch.setattr(ie, "HISTORY_FILE", str(tmp_path / "insider_history.json"))
 
-    with patch.object(ie, "fetch_form4_aggregated", return_value=None):
+    # FIX (2026-08-09): run_insider_engine() now tries fetch_recent_form4()
+    # (real transaction-level parsing) FIRST, falling back to
+    # fetch_form4_aggregated() only if that fails -- both must be mocked to
+    # actually simulate "every fetch failed" (this test previously only
+    # mocked the fallback, so fetch_recent_form4 ran un-mocked and made a
+    # real live SEC EDGAR call during the test run once that primary path
+    # was added).
+    with patch.object(ie, "fetch_recent_form4", return_value=None), \
+         patch.object(ie, "fetch_form4_aggregated", return_value=None):
         picks = [{"ticker": "AAPL"}, {"ticker": "MSFT"}]
         ie.run_insider_engine(picks, verbose=True)
     out = capsys.readouterr().out
@@ -4661,3 +4669,229 @@ def test_crypto_tracker_resolution_direction_aware(monkeypatch, tmp_path):
     n = ct.resolve_crypto_outcomes(current_prices={"BTC-USD": 63000.0})
     assert n == 1
     assert ct.load_crypto_outcomes()[0]["outcome"] == "WIN"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-09): insider_engine.py's buy/sell-direction path was dead code
+# (_parse_form4_from_accession unconditionally returned [], comment blamed a
+# missing lxml dependency that wasn't actually required -- stdlib
+# ElementTree works fine, verified live against real BMY/GOOGL Form 4
+# filings). Completed the real XML parsing + direction-aware scoring this
+# module's own docstring specified from the start. Along the way, found a
+# separate, real, previously-undiscovered bug: 12 of KNOWN_CIKS' hardcoded
+# US-ticker CIKs were wrong (verified against SEC's own company_tickers.json)
+# -- including AMGN, this system's own most-frequent high-conviction pick,
+# which was pointing at CAMBREX CORP, an unrelated company. Concrete proof
+# of the scoring fix's real-world impact: with the CIK corrected, AMGN's
+# real Form 4 data shows a genuine cluster SELL (-5pts) where the old
+# count-only scorer said +3pts "insider activity" -- the old scoring was
+# pushing the score in the OPPOSITE direction from what insiders were
+# actually doing.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# A trimmed but structurally-real Form 4 XML, matching the exact schema
+# verified live against SEC EDGAR 2026-08-09 (BMY reporting owner Massacesi
+# Cristian, filing 0002080176-26-000004) -- two nonDerivativeTransactions
+# (M=exercise, F=tax withholding; neither a real open-market trade) plus a
+# derivativeTable entry that must NOT be parsed as a transaction.
+_REAL_SHAPE_FORM4_XML = """<?xml version="1.0"?>
+<ownershipDocument>
+    <issuer>
+        <issuerCik>0000014272</issuerCik>
+        <issuerTradingSymbol>BMY</issuerTradingSymbol>
+    </issuer>
+    <reportingOwner>
+        <reportingOwnerId>
+            <rptOwnerCik>0002080176</rptOwnerCik>
+            <rptOwnerName>Massacesi Cristian</rptOwnerName>
+        </reportingOwnerId>
+    </reportingOwner>
+    <nonDerivativeTable>
+        <nonDerivativeTransaction>
+            <transactionCoding><transactionCode>M</transactionCode></transactionCoding>
+            <transactionAmounts>
+                <transactionShares><value>51172</value></transactionShares>
+                <transactionPricePerShare><value>0</value></transactionPricePerShare>
+                <transactionAcquiredDisposedCode><value>A</value></transactionAcquiredDisposedCode>
+            </transactionAmounts>
+        </nonDerivativeTransaction>
+        <nonDerivativeTransaction>
+            <transactionCoding><transactionCode>F</transactionCode></transactionCoding>
+            <transactionAmounts>
+                <transactionShares><value>26175</value></transactionShares>
+                <transactionPricePerShare><value>65.31</value></transactionPricePerShare>
+                <transactionAcquiredDisposedCode><value>D</value></transactionAcquiredDisposedCode>
+            </transactionAmounts>
+        </nonDerivativeTransaction>
+    </nonDerivativeTable>
+    <derivativeTable>
+        <derivativeTransaction>
+            <transactionCoding><transactionCode>M</transactionCode></transactionCoding>
+            <transactionAmounts>
+                <transactionShares><value>999999</value></transactionShares>
+                <transactionPricePerShare><value>0</value></transactionPricePerShare>
+                <transactionAcquiredDisposedCode><value>D</value></transactionAcquiredDisposedCode>
+            </transactionAmounts>
+        </derivativeTransaction>
+    </derivativeTable>
+</ownershipDocument>"""
+
+_OPEN_MARKET_BUY_XML = """<?xml version="1.0"?>
+<ownershipDocument>
+    <issuer><issuerCik>0000014272</issuerCik><issuerTradingSymbol>BMY</issuerTradingSymbol></issuer>
+    <reportingOwner>
+        <reportingOwnerId><rptOwnerCik>0001111111</rptOwnerCik><rptOwnerName>Test Insider</rptOwnerName></reportingOwnerId>
+    </reportingOwner>
+    <nonDerivativeTable>
+        <nonDerivativeTransaction>
+            <transactionCoding><transactionCode>P</transactionCode></transactionCoding>
+            <transactionAmounts>
+                <transactionShares><value>1000</value></transactionShares>
+                <transactionPricePerShare><value>50.0</value></transactionPricePerShare>
+                <transactionAcquiredDisposedCode><value>A</value></transactionAcquiredDisposedCode>
+            </transactionAmounts>
+        </nonDerivativeTransaction>
+    </nonDerivativeTable>
+</ownershipDocument>"""
+
+
+def test_parse_form4_extracts_only_nonderivative_transactions(monkeypatch):
+    """Real-shape XML (verified live 2026-08-09): must extract the 2 real
+    nonDerivativeTransaction entries (M, F) and NOT the derivativeTable
+    entry -- options/RSU derivative activity isn't a real-price,
+    real-share open-market transaction to grade."""
+    import insider_engine as ie
+    monkeypatch.setattr(ie, "_edgar_request_text", lambda url, timeout=10: _REAL_SHAPE_FORM4_XML)
+
+    txns = ie._parse_form4_from_accession("0000014272", "0002080176-26-000004",
+                                           "xslF345X06/wk-form4_1785874216.xml")
+    assert len(txns) == 2, "must extract exactly the 2 nonDerivativeTransaction entries, not the derivative one"
+    codes = {t["code"] for t in txns}
+    assert codes == {"M", "F"}
+    assert all(t["reporting_owner"] == "Massacesi Cristian" for t in txns)
+    m_txn = next(t for t in txns if t["code"] == "M")
+    assert m_txn["shares"] == 51172.0
+    assert m_txn["value"] == 0.0  # price 0 -> value 0, correctly not treated as a real dollar trade
+
+
+def test_parse_form4_returns_empty_list_on_malformed_xml(monkeypatch):
+    """Must degrade gracefully (empty list, no crash) on unparseable
+    content -- one bad filing must not take down the whole ticker."""
+    import insider_engine as ie
+    monkeypatch.setattr(ie, "_edgar_request_text", lambda url, timeout=10: "not valid xml <<<")
+    txns = ie._parse_form4_from_accession("123", "0001-26-000001", "primary_doc.xml")
+    assert txns == []
+
+
+def test_score_insider_signal_by_direction_ignores_non_open_market_codes():
+    """M (exercise) and F (tax withholding) are compensation mechanics,
+    not discretionary trades -- must score 0, matching the module
+    docstring's 'AWARD ONLY = 0pts'."""
+    import insider_engine as ie
+    txns = [
+        {"code": "M", "shares": 51172, "price": 0, "value": 0, "reporting_owner": "A"},
+        {"code": "F", "shares": 26175, "price": 65.31, "value": 1709812.5, "reporting_owner": "A"},
+    ]
+    adj, reason = ie.score_insider_signal_by_direction(txns, "BMY")
+    assert adj == 0
+    assert reason == ""
+
+
+def test_score_insider_signal_by_direction_cluster_buy():
+    import insider_engine as ie
+    txns = [
+        {"code": "P", "shares": 1000, "price": 30, "value": 30_000, "reporting_owner_cik": "1"},
+        {"code": "P", "shares": 1000, "price": 30, "value": 30_000, "reporting_owner_cik": "2"},
+    ]
+    adj, reason = ie.score_insider_signal_by_direction(txns, "TEST")
+    assert adj == 8
+    assert "Cluster BUY" in reason
+    assert "2 insiders" in reason
+
+
+def test_score_insider_signal_by_direction_single_buy_below_cluster():
+    import insider_engine as ie
+    txns = [{"code": "P", "shares": 1000, "price": 30, "value": 30_000, "reporting_owner_cik": "1"}]
+    adj, reason = ie.score_insider_signal_by_direction(txns, "TEST")
+    assert adj == 4
+    assert "Insider BUY" in reason
+
+
+def test_score_insider_signal_by_direction_buy_below_threshold_still_suppresses_sell():
+    """A real buy exists but doesn't clear the $25k single-buy threshold --
+    per the module docstring's 'no concurrent buys' condition for cluster
+    sell, this must score 0 (mixed signal), not fall through to a sell
+    score."""
+    import insider_engine as ie
+    txns = [
+        {"code": "P", "shares": 100, "price": 10, "value": 1_000, "reporting_owner_cik": "1"},   # tiny buy
+        {"code": "S", "shares": 5000, "price": 100, "value": 500_000, "reporting_owner_cik": "2"},
+        {"code": "S", "shares": 5000, "price": 100, "value": 500_000, "reporting_owner_cik": "3"},
+    ]
+    adj, reason = ie.score_insider_signal_by_direction(txns, "TEST")
+    assert adj == 0, "any buy present must suppress a sell score, even a small one"
+
+
+def test_score_insider_signal_by_direction_cluster_sell_no_buys():
+    import insider_engine as ie
+    txns = [
+        {"code": "S", "shares": 5000, "price": 100, "value": 500_000, "reporting_owner_cik": "1"},
+        {"code": "S", "shares": 5000, "price": 100, "value": 500_000, "reporting_owner_cik": "2"},
+    ]
+    adj, reason = ie.score_insider_signal_by_direction(txns, "TEST")
+    assert adj == -5
+    assert "Cluster SELL" in reason
+
+
+def test_score_insider_signal_by_direction_counts_distinct_insiders_not_line_items():
+    """One insider with 3 separate buy transaction lines in the same
+    filing is 1 insider, not a 3-insider cluster."""
+    import insider_engine as ie
+    txns = [
+        {"code": "P", "shares": 100, "price": 30, "value": 3_000, "reporting_owner_cik": "1"},
+        {"code": "P", "shares": 100, "price": 30, "value": 3_000, "reporting_owner_cik": "1"},
+        {"code": "P", "shares": 100, "price": 30, "value": 3_000, "reporting_owner_cik": "1"},
+    ]
+    adj, reason = ie.score_insider_signal_by_direction(txns, "TEST")
+    assert "1 insider" not in reason.replace("insiders", "")  # sanity: just checking it's not miscounted as cluster
+    assert adj != 8, "3 line items from ONE insider must not score as a 2+-insider cluster"
+
+
+def test_known_ciks_match_sec_official_mapping_for_spot_checked_tickers():
+    """Regression lock for the 12-ticker CIK bug found 2026-08-09 (verified
+    live against SEC's own company_tickers.json) -- these hardcoded values
+    must not silently drift back to the wrong CIKs. Not a live network
+    check (would make this test flaky/slow) -- just locks in the specific
+    corrected values found and fixed."""
+    import insider_engine as ie
+    expected = {
+        "MDT": "0001613103", "DXCM": "0001093557", "AFRM": "0001820953",
+        "MDB": "0001441816", "AMGN": "0000318154", "BIIB": "0000875045",
+        "GILD": "0000882095", "O": "0000726728", "VICI": "0001705696",
+        "MAIN": "0001396440", "STAG": "0001479094", "BLK": "0002012383",
+    }
+    for ticker, cik in expected.items():
+        assert ie.KNOWN_CIKS.get(ticker) == cik, (
+            f"{ticker}: expected corrected CIK {cik}, got {ie.KNOWN_CIKS.get(ticker)!r}"
+        )
+
+
+def test_fetch_recent_form4_distinguishes_fetch_failure_from_empty_result(monkeypatch):
+    """None (fetch failed) vs [] (fetched fine, genuinely nothing found)
+    must stay distinguishable -- run_insider_engine's fallback logic
+    depends on this, same principle as fetch_form4_aggregated's existing
+    None-vs-[] contract."""
+    import insider_engine as ie
+
+    def _raise(*a, **k):
+        raise Exception("network error")
+    monkeypatch.setattr(ie, "_edgar_request", _raise)
+    assert ie.fetch_recent_form4("0000014272", days_back=30) is None
+
+    monkeypatch.setattr(ie, "_edgar_request", lambda url, timeout=10: {
+        "name": "TEST CO",
+        "filings": {"recent": {"form": ["10-K"], "filingDate": ["2026-08-01"],
+                                "accessionNumber": ["0001-26-000001"], "primaryDocument": ["doc.htm"]}},
+    })
+    result = ie.fetch_recent_form4("0000014272", days_back=30)
+    assert result == [], "no Form 4s in the window -- must be [] (success, nothing found), not None"
