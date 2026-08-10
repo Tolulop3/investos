@@ -1499,14 +1499,18 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
 
 
 def render_allocations(target_weights, account, market_regime,
-                        current_drawdown=0.0, min_position=250.0, verbose=True):
+                        current_drawdown=0.0, min_position=250.0, verbose=True,
+                        sharpe_multiplier=1.0):
     """
     Convert weight fractions to dollar amounts for one account.
-    Applies: universe filter, regime equity%, drawdown reduction, min_position floor.
+    Applies: universe filter, regime equity%, drawdown reduction, min_position floor,
+    Sharpe advisory multiplier (added 2026-08-10 -- see run_daily.py's early
+    rolling-Sharpe computation before this is ever called).
 
     Returns list of {ticker, weight_pct, dollar_amt, ml_prob, kelly_wt, vol_adj, score}.
-    When universe is ALL and no picks are filtered, dollar_amt == deployable * weight
-    to the cent — matching the legacy calculate_position_sizes output exactly.
+    When universe is ALL and no picks are filtered and sharpe_multiplier is 1.0,
+    dollar_amt == deployable * weight to the cent — matching the legacy
+    calculate_position_sizes output exactly.
     """
     capital = float(account.get("capital", 0))
     if capital <= 0:
@@ -1541,7 +1545,7 @@ def render_allocations(target_weights, account, market_regime,
         if verbose:
             print(f"   ⚠️ [{acct_name}] Drawdown {current_drawdown*100:.1f}% — reducing by 30%")
 
-    deployable = capital * regime_equity_pct * dd_multiplier
+    deployable = capital * regime_equity_pct * dd_multiplier * sharpe_multiplier
 
     # Weight scaling: re-normalize only when universe filter removed some picks.
     # When universe=ALL, use raw fractions so the cash from CONC_CAP is preserved.
@@ -1580,7 +1584,7 @@ def render_allocations(target_weights, account, market_regime,
         _regime_pct_uncapped = 1.0 - market_regime.get("cash_pct", 0.0)
         _regime_bound         = min(_regime_pct_uncapped, max_equity)
         _binding              = "max_equity_cap" if max_equity < _regime_pct_uncapped else "regime_equity_pct"
-        _post_regime_dd_pct   = _regime_bound * dd_multiplier
+        _post_regime_dd_pct   = _regime_bound * dd_multiplier * sharpe_multiplier
         _final_deployable_pct = _post_regime_dd_pct * min(1.0, _eff_wt)
 
         print(f"\n   ━━━ SIZING STACK [{acct_name}] — % of capital, portfolio-size-agnostic ━━━")
@@ -1593,12 +1597,16 @@ def render_allocations(target_weights, account, market_regime,
             print(f"   × drawdown_multiplier:      {dd_multiplier*100:5.1f}%   (drawdown {current_drawdown*100:.1f}% > trigger)")
         else:
             print(f"   × drawdown_multiplier:      100.0%   (not triggered)")
-        print(f"   ── deployable_pct:           {_post_regime_dd_pct*100:5.1f}%   (bound × drawdown_multiplier)")
+        if sharpe_multiplier < 1.0:
+            print(f"   × sharpe_multiplier:        {sharpe_multiplier*100:5.1f}%   (rolling Sharpe advisory — see run_daily.py Step 5 log)")
+        else:
+            print(f"   × sharpe_multiplier:        100.0%   (rolling Sharpe ≥ 0.3, no adjustment)")
+        print(f"   ── deployable_pct:           {_post_regime_dd_pct*100:5.1f}%   (bound × drawdown_multiplier × sharpe_multiplier)")
         print(f"   × effective_weight_pct:     {min(1.0,_eff_wt)*100:5.1f}%   "
               f"(Kelly floor + concentration cap + probation, combined — remainder held as cash)")
         print(f"   = final_deployable_pct:     {_final_deployable_pct*100:5.1f}%   of total account capital"
               + ("  (before min-deploy floor override)" if _floor_applied else ""))
-        print(f"   composition rule: min(regime_equity_pct, max_equity_cap) × drawdown_multiplier × effective_weight_pct"
+        print(f"   composition rule: min(regime_equity_pct, max_equity_cap) × drawdown_multiplier × sharpe_multiplier × effective_weight_pct"
               + (" , then min-deploy floor override (dollar-denominated, see below)" if _floor_applied else ""))
 
         _header = (f"\n   💰 Example render [{acct_name}] @ this account's capital (${capital:,.0f}"
@@ -1749,10 +1757,13 @@ def run_backtest_summary(regime, ml_predictor, verbose=True):
 # ============================================================
 
 def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
-                  sector_sentiment=None, win_rate_data=None):
+                  sector_sentiment=None, win_rate_data=None, sharpe_multiplier=1.0):
     """
     Full ML engine run with score smoothing + Kelly sizing.
     win_rate_data: pass brief['win_rate'] from outcome_tracker for live Kelly calibration.
+    sharpe_multiplier: rolling-Sharpe advisory multiplier on deployable capital
+      (added 2026-08-10) -- see run_daily.py's early rolling-Sharpe computation,
+      run before this so the multiplier is known before sizing happens.
     """
     if verbose:
         print("\n" + "="*55)
@@ -2163,6 +2174,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
                 target_weights, _acct_def, regime,
                 current_drawdown=0.0,
                 verbose=(acct_capital > 0 and verbose),
+                sharpe_multiplier=sharpe_multiplier,
             )
             if alloc:
                 account_allocations[acct_name] = alloc
@@ -2182,6 +2194,7 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         sized = render_allocations(
             target_weights, _legacy_acct, regime,
             current_drawdown=0.0, verbose=verbose,
+            sharpe_multiplier=sharpe_multiplier,
         )
 
     backtest = run_backtest_summary(regime, predictor, verbose=verbose)

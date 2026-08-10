@@ -1012,10 +1012,34 @@ def run_daily(test_mode=False, dry_run=False):
             _wr_for_kelly = json.load(_wrf).get("win_rate", {})
     except Exception:
         pass  # First run or missing — Kelly uses embedded defaults
+
+    # FIX (2026-08-10): Sharpe advisory wiring, Phase 2. rolling_sharpe was
+    # previously only known at Step 11 (RISK AUDIT), well after position
+    # sizing (this step) already finished -- the advisory printed there was
+    # genuinely informational-only, it had nothing to scale. compute_rolling_
+    # sharpe() only needs score_history.json (verified standalone -- no
+    # dependency on anything Step 5+ produces), so it can run here instead.
+    # Same multiplier bands the advisory already displayed at Step 11 (now
+    # removed there in favor of this real one): <0.0 -> 0.75x, 0.0-0.3 ->
+    # 0.90x, >=0.3 -> no adjustment. Reused later in Step 11 for the advisory
+    # print so the displayed number always matches what sizing actually used.
+    sharpe_multiplier = 1.0
+    rolling_sharpe_early = 0.0
+    try:
+        from risk_engine import compute_rolling_sharpe
+        _rs_data = compute_rolling_sharpe(load_score_history(), days=90)
+        rolling_sharpe_early = _rs_data.get("sharpe", 0) or 0
+        if rolling_sharpe_early < 0.0:
+            sharpe_multiplier = 0.75
+        elif rolling_sharpe_early < 0.3:
+            sharpe_multiplier = 0.90
+    except Exception as _rse:
+        print(f"  ⚠️  Early rolling Sharpe unavailable, sizing multiplier defaults to 1.0: {_rse}")
+
     try:
         ml_results = run_ml_engine(screener, rs_for_ml, verbose=True, max_equity=ml_max_equity,
                        sector_sentiment=news.get("sector_sentiment", {}),
-                       win_rate_data=_wr_for_kelly)
+                       win_rate_data=_wr_for_kelly, sharpe_multiplier=sharpe_multiplier)
     except Exception as _ml_err:
         import traceback as _tb
         print(f"\n⚠️  ML ENGINE CRASHED: {_ml_err}")
@@ -1406,34 +1430,26 @@ def run_daily(test_mode=False, dry_run=False):
     if high_risk_count >= 3:
         system_exposure = min(system_exposure, 0.50)
 
-    # NOTE: `system_exposure` computed below is informational only (stored in the
-    # brief for display and does not gate `allowed_styles`/`blocked_styles`, which
-    # were already fixed above). It is NOT passed into ml_engine.py and never
-    # scales any dollar or percentage sizing figure — position sizing already
-    # finished in Step 5, several steps before this block runs. See the "SIZING
-    # STACK" log printed during Step 5 (ML ENGINE) for what was actually applied;
-    # see Phase 2 analysis for a proposal to wire this into real sizing.
-    sharpe_guard_active = False
-    if rolling_sharpe < 0.3 and rolling_sharpe >= 0.0:
-        system_exposure = min(system_exposure, system_exposure * 0.6)
-        sharpe_guard_active = True
-        print(f"  📊 SHARPE ADVISORY (informational only — does not affect sizing):")
-        print(f"     Rolling Sharpe {rolling_sharpe:.2f} is below the 0.3 caution threshold.")
-        print(f"     This advisory is not currently wired into position sizing — actual sizing "
-              f"was already finalized in Step 5 (ML Engine). See the SIZING STACK log there for "
-              f"the % of capital actually deployed (regime_equity_pct × max_equity_cap × "
-              f"drawdown_multiplier × effective_weight_pct). See Phase 2 analysis for a proposal "
-              f"to wire this advisory into real sizing.")
-    elif rolling_sharpe < 0.0:
-        system_exposure = min(system_exposure, system_exposure * 0.4)
-        sharpe_guard_active = True
-        print(f"  📊 SHARPE ADVISORY (informational only — does not affect sizing):")
-        print(f"     Rolling Sharpe {rolling_sharpe:.2f} is negative.")
-        print(f"     This advisory is not currently wired into position sizing — actual sizing "
-              f"was already finalized in Step 5 (ML Engine). See the SIZING STACK log there for "
-              f"the % of capital actually deployed (regime_equity_pct × max_equity_cap × "
-              f"drawdown_multiplier × effective_weight_pct). See Phase 2 analysis for a proposal "
-              f"to wire this advisory into real sizing.")
+    # NOTE: `system_exposure` computed above/below is informational only (stored
+    # in the brief for display and does not gate `allowed_styles`/`blocked_
+    # styles`, which were already fixed above). It is NOT passed into
+    # ml_engine.py and never scales any dollar or percentage sizing figure.
+    #
+    # FIX (2026-08-10): Sharpe advisory wiring, Phase 2. The advisory used to
+    # apply a system_exposure*0.6/0.4 reduction here -- a *second*,
+    # unused-downstream computation of the same idea the real fix below now
+    # implements, sitting dead next to it. Removed rather than left as a
+    # second unwired answer to "what should Sharpe do to sizing". The real
+    # sharpe_multiplier (0.75x/0.90x, computed once before Step 5 from the
+    # exact same rolling_sharpe basis, reused here rather than recomputed)
+    # already scaled every account's `deployable` dollars in Step 5's SIZING
+    # STACK -- see that log for the applied number.
+    sharpe_guard_active = sharpe_multiplier < 1.0
+    if sharpe_guard_active:
+        print(f"  📊 SHARPE ADVISORY: Rolling Sharpe {rolling_sharpe_early:.2f} "
+              f"{'is negative' if rolling_sharpe_early < 0.0 else 'is below the 0.3 caution threshold'} "
+              f"-- applied {sharpe_multiplier:.2f}x to deployable capital in Step 5's SIZING STACK "
+              f"(see 'ML ENGINE' log above for the per-account dollar effect).")
 
     breadth_pct = screener.get("breadth", {}).get("pct_above_200ma", 60)
     if rolling_sharpe < 0.0 and neg_alpha_days >= 30 and breadth_pct < 50:
@@ -1631,6 +1647,7 @@ def run_daily(test_mode=False, dry_run=False):
                    screener.get("TFSA_swing_top3",[])),
         fx_signals=fx_signals, crypto_signals=crypto_signals,
         regime=regime.get("regime","NORMAL"),
+        sharpe_multiplier=sharpe_multiplier,
     )
 
     all_picks_flat = (screener.get("FHSA_top5",[]) + screener.get("TFSA_growth_top5",[]) +

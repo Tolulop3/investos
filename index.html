@@ -3428,10 +3428,22 @@ function updateDeployPlan(rawAmount) {
     return;
   }
 
+  // Build execution plan from baked deployment_plan or compute inline
+  const dp      = BRIEF?.deployment_plan;
+  const picks   = BRIEF?.conviction_picks || [];
+
   // Regime from loaded brief
   const regime    = BRIEF?.market_regime?.regime || 'NORMAL';
   const regScale  = {BULL:1.0, NORMAL:0.85, CAUTION:0.65, BEAR:0.40}[regime] || 0.85;
-  const regNote   = {BULL:'100% deployed', NORMAL:'85% deployed', CAUTION:'65% deployed', BEAR:'40% deployed'}[regime] || '85% deployed';
+  // FIX (2026-08-10): this calculator used to compute its split from regScale
+  // alone, silently disagreeing with the real ML-driven sizing (ml_engine.py's
+  // SIZING STACK) whenever a rolling-Sharpe advisory was active there. Same
+  // sharpe_multiplier value, baked into deployment_plan by the same run_daily.py
+  // computation ml_engine.py's real sizing uses -- not recomputed here.
+  const sharpeMult = dp?.sharpe_multiplier ?? 1.0;
+  const effScale   = regScale * sharpeMult;
+  const regNote    = `${Math.round(effScale*100)}% deployed`
+                    + (sharpeMult < 1 ? ` (incl. ${Math.round(sharpeMult*100)}% Sharpe advisory)` : '');
   document.getElementById('deployRegime').textContent     = regime;
   document.getElementById('deployRegimeNote').textContent = regNote;
   const col = {BULL:'var(--g)',NORMAL:'var(--a)',CAUTION:'var(--a)',BEAR:'var(--r)'}[regime]||'var(--a)';
@@ -3441,7 +3453,7 @@ function updateDeployPlan(rawAmount) {
   const buckets = {floor:50, model_picks:30, swing:15, crypto:5};
   const splits  = {};
   Object.entries(buckets).forEach(([k,pct]) => {
-    splits[k] = Math.round(amount * pct/100 * (k==='crypto'?1:regScale) * 100)/100;
+    splits[k] = Math.round(amount * pct/100 * (k==='crypto'?1:effScale) * 100)/100;
   });
 
   // Update bucket bars
@@ -3449,10 +3461,6 @@ function updateDeployPlan(rawAmount) {
   document.getElementById('db-model').textContent  = '$'+splits.model_picks.toFixed(2);
   document.getElementById('db-swing').textContent  = '$'+splits.swing.toFixed(2);
   document.getElementById('db-crypto').textContent = '$'+splits.crypto.toFixed(2);
-
-  // Build execution plan from baked deployment_plan or compute inline
-  const dp      = BRIEF?.deployment_plan;
-  const picks   = BRIEF?.conviction_picks || [];
   const fxTop   = FX?.top_call;
   const cryptoA = CRYPTO?.assets;
 

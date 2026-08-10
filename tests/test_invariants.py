@@ -886,31 +886,49 @@ def test_sizing_stack_log_present():
     assert "portfolio-size-agnostic" in out
 
 
-def test_sharpe_guard_no_sizing_parameter():
+def test_sharpe_guard_wired_into_sizing_parameter():
     """
-    Locks the architectural fact behind the Sharpe Guard fix: render_allocations
-    (Step 5 sizing) accepts no Sharpe-related input, so Sharpe Guard (computed
-    later, in Step 11) cannot affect it. If Phase 2 wires Sharpe Guard into real
-    sizing, this test must be updated deliberately, not broken by accident.
+    Phase 2 (2026-08-10): render_allocations (Step 5 sizing) now accepts
+    sharpe_multiplier and applies it to `deployable` before any dollar amount
+    is computed -- rolling Sharpe is computed once, early, in run_daily.py
+    (before Step 5 runs) specifically so this is possible. Supersedes the old
+    test_sharpe_guard_no_sizing_parameter, which locked the pre-fix fact that
+    no such parameter existed; this locks the post-fix fact that it does and
+    that it actually scales dollars, not just that the parameter exists.
     """
     import inspect
     from ml_engine import render_allocations
-    params = " ".join(inspect.signature(render_allocations).parameters.keys()).lower()
-    assert "sharpe" not in params
+    params = inspect.signature(render_allocations).parameters
+    assert "sharpe_multiplier" in params
+    assert params["sharpe_multiplier"].default == 1.0   # no-op unless explicitly reduced
+
+    regime = {"regime": "BULL", "cash_pct": 0.0}
+    weights = [{"ticker": "AAA", "weight": 1.0, "score": 80, "ml_prob": 0.6, "kelly_wt": 1.0}]
+    account = {"name": "TEST", "capital": 100_000, "universe": "ALL", "max_equity": 1.0}
+
+    full = render_allocations(weights, account, regime, verbose=False, sharpe_multiplier=1.0)
+    reduced = render_allocations(weights, account, regime, verbose=False, sharpe_multiplier=0.75)
+    assert full and reduced
+    assert reduced[0]["dollar_amt"] == round(full[0]["dollar_amt"] * 0.75, 2)
 
 
-def test_sharpe_guard_message_not_false_claim():
+def test_sharpe_guard_message_reflects_real_sizing_effect():
     """
-    run_daily.py's Sharpe Guard message must not claim to have changed position
-    sizes (it can't — Step 11 runs after Step 5 sizing is already finalized).
-    Guards against reintroducing the "auto-reduced to X% of normal" false claim.
+    run_daily.py's Sharpe advisory message must accurately describe Phase 2
+    behavior: it now DOES affect sizing (applied in Step 5, before this Step
+    11 block ever prints), so it must not claim otherwise. Supersedes the old
+    test_sharpe_guard_message_not_false_claim, which guarded the pre-fix
+    "does not affect sizing" claim; this guards against the message drifting
+    back to that now-false claim, and against reintroducing the earlier,
+    different false claim ("auto-reduced to X% of normal") this replaced.
     """
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     with open(os.path.join(root, "run_daily.py")) as f:
         src = f.read()
     assert "position sizes auto-reduced" not in src
     assert "SHARPE ADVISORY" in src
-    assert "does not affect sizing" in src
+    assert "does not affect sizing" not in src
+    assert "sharpe_multiplier" in src
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -284,17 +284,27 @@ def compute_bucket_allocation(account_balance):
 
 
 def compute_deployment_plan(deploy_amount, account_balance=None, top_picks=None,
-                             fx_signals=None, crypto_signals=None, regime="NORMAL"):
+                             fx_signals=None, crypto_signals=None, regime="NORMAL",
+                             sharpe_multiplier=1.0):
+    """
+    sharpe_multiplier: rolling-Sharpe advisory multiplier (added 2026-08-10,
+    same value/basis as ml_engine.render_allocations()'s sharpe_multiplier --
+    pass run_daily.py's early-computed sharpe_multiplier here too so this
+    plan doesn't silently disagree with the real ML-driven sizing it sits
+    next to in the brief).
+    """
     balance  = account_balance or CONFIG["accounts"]["TFSA"]["balance"] or deploy_amount
     buckets  = compute_bucket_allocation(balance)
     stops    = CONFIG["risk_rules"]["stop_loss_pct"]
-    regime_scale = {"BULL":1.0,"NORMAL":0.85,"CAUTION":0.65,"BEAR":0.40}.get(regime,0.85)
+    regime_scale   = {"BULL":1.0,"NORMAL":0.85,"CAUTION":0.65,"BEAR":0.40}.get(regime,0.85)
+    effective_scale = regime_scale * sharpe_multiplier
     plan = {"deploy_amount":deploy_amount,"regime":regime,"regime_scale":regime_scale,
+            "sharpe_multiplier":sharpe_multiplier,"effective_scale":effective_scale,
             "splits":{},"skip_buckets":[],"uninvested":0,"venue_map":{},
             "generated_at":datetime.now().isoformat()}
     remaining = deploy_amount
 
-    floor_dollars = round(deploy_amount*buckets["floor"]["pct"]/100*regime_scale,2)
+    floor_dollars = round(deploy_amount*buckets["floor"]["pct"]/100*effective_scale,2)
     floor_pick = None
     if top_picks:
         for p in top_picks:
@@ -318,7 +328,7 @@ def compute_deployment_plan(deploy_amount, account_balance=None, top_picks=None,
     else:
         plan["skip_buckets"].append("floor"); plan["uninvested"] += floor_dollars
 
-    model_dollars = round(deploy_amount*buckets["model_picks"]["pct"]/100*regime_scale,2)
+    model_dollars = round(deploy_amount*buckets["model_picks"]["pct"]/100*effective_scale,2)
     model_pick = None
     if top_picks:
         for p in top_picks:
@@ -339,7 +349,7 @@ def compute_deployment_plan(deploy_amount, account_balance=None, top_picks=None,
     else:
         plan["skip_buckets"].append("model_picks"); plan["uninvested"] += model_dollars
 
-    swing_dollars = round(deploy_amount*buckets["swing"]["pct"]/100*regime_scale,2)
+    swing_dollars = round(deploy_amount*buckets["swing"]["pct"]/100*effective_scale,2)
     swing_pick = None; fx_swing = None
     if fx_signals and fx_signals.get("top_call"):
         top_fx = fx_signals["top_call"]
