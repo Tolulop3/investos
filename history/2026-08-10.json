@@ -11,14 +11,14 @@
     "full_exposure_pct": 100.0
   },
   "sharpe": {
-    "sharpe": -0.208,
-    "avg_ret_pct": -0.17,
+    "sharpe": -0.21,
+    "avg_ret_pct": -0.18,
     "std_ret_pct": 6.02,
-    "picks_used": 1630,
+    "picks_used": 1642,
     "date_from": "2026-05-12",
-    "date_to": "2026-08-07",
+    "date_to": "2026-08-10",
     "source": "resolved_returns",
-    "note": "Sharpe from 1630 resolved picks (2026-05-12 \u2192 2026-08-07) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+    "note": "Sharpe from 1642 resolved picks (2026-05-12 \u2192 2026-08-10) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
   },
   "win_rate_30d": 46.5,
   "win_rate_overall": null,
@@ -32,25 +32,15 @@
     "note": "Rally is broad \u2014 most stocks above 200MA",
     "momentum_breadth": "EXPANDING",
     "sector_breadth": {
-      "": {
-        "pct_above_50": 94,
+      "Technology": {
+        "pct_above_50": 63,
         "pct_above_200": 90,
-        "count": 48
-      },
-      "Healthcare": {
-        "pct_above_50": 78,
-        "pct_above_200": 91,
-        "count": 32
+        "count": 41
       },
       "Utilities": {
         "pct_above_50": 10,
         "pct_above_200": 80,
         "count": 10
-      },
-      "Technology": {
-        "pct_above_50": 63,
-        "pct_above_200": 90,
-        "count": 41
       },
       "Financial Services": {
         "pct_above_50": 84,
@@ -62,18 +52,38 @@
         "pct_above_200": 50,
         "count": 10
       },
+      "Energy": {
+        "pct_above_50": 50,
+        "pct_above_200": 88,
+        "count": 16
+      },
+      "Healthcare": {
+        "pct_above_50": 78,
+        "pct_above_200": 91,
+        "count": 32
+      },
+      "Basic Materials": {
+        "pct_above_50": 88,
+        "pct_above_200": 50,
+        "count": 8
+      },
       "Consumer Defensive": {
         "pct_above_50": 45,
         "pct_above_200": 64,
         "count": 11
+      },
+      "": {
+        "pct_above_50": 94,
+        "pct_above_200": 90,
+        "count": 48
       },
       "Consumer Cyclical": {
         "pct_above_50": 72,
         "pct_above_200": 56,
         "count": 18
       },
-      "Energy": {
-        "pct_above_50": 50,
+      "Industrials": {
+        "pct_above_50": 94,
         "pct_above_200": 88,
         "count": 16
       },
@@ -81,16 +91,6 @@
         "pct_above_50": 29,
         "pct_above_200": 43,
         "count": 7
-      },
-      "Industrials": {
-        "pct_above_50": 94,
-        "pct_above_200": 88,
-        "count": 16
-      },
-      "Basic Materials": {
-        "pct_above_50": 88,
-        "pct_above_200": 50,
-        "count": 8
       }
     }
   },
@@ -132,13 +132,18 @@
       ]
     },
     "DEFENSE": {
-      "bullish_score": 200,
+      "bullish_score": 350.0,
       "bearish_score": 150.0,
-      "net_score": 50.0,
-      "sentiment": "NEUTRAL",
+      "net_score": 200.0,
+      "sentiment": "BULLISH",
       "signals": [
         {
           "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        },
+        {
+          "name": "russia_ukraine",
           "direction": "bullish",
           "confidence": 100
         },
@@ -150,13 +155,18 @@
       ]
     },
     "GOLD": {
-      "bullish_score": 200,
+      "bullish_score": 350.0,
       "bearish_score": 150.0,
-      "net_score": 50.0,
-      "sentiment": "NEUTRAL",
+      "net_score": 200.0,
+      "sentiment": "BULLISH",
       "signals": [
         {
           "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        },
+        {
+          "name": "russia_ukraine",
           "direction": "bullish",
           "confidence": 100
         },
@@ -169,8 +179,8 @@
     },
     "AIRLINES": {
       "bullish_score": 0,
-      "bearish_score": 504,
-      "net_score": -504,
+      "bearish_score": 502,
+      "net_score": -502,
       "sentiment": "BEARISH",
       "signals": [
         {
@@ -179,14 +189,14 @@
           "confidence": 100
         },
         {
-          "name": "health_outbreak",
-          "direction": "bearish",
-          "confidence": 52
-        },
-        {
           "name": "oil_price_spike",
           "direction": "bearish",
           "confidence": 100
+        },
+        {
+          "name": "health_outbreak",
+          "direction": "bearish",
+          "confidence": 51
         }
       ]
     },
@@ -255,6 +265,115 @@
         }
       ]
     },
+    "EUROPEAN_ENERGY": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "AGRICULTURE": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "EUROPEAN_STOCKS": {
+      "bullish_score": 0,
+      "bearish_score": 150.0,
+      "net_score": -150.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "NATURAL_GAS": {
+      "bullish_score": 0,
+      "bearish_score": 150.0,
+      "net_score": -150.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "OIL_PRODUCERS": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "PIPELINES": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 150.0,
+      "bearish_score": 200,
+      "net_score": -50.0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "TRANSPORT": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "oil_price_spike",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
     "REPORTING_SECTOR": {
       "bullish_score": 0,
       "bearish_score": 75.0,
@@ -270,8 +389,8 @@
     },
     "TRAVEL": {
       "bullish_score": 150.0,
-      "bearish_score": 104,
-      "net_score": 46.0,
+      "bearish_score": 102,
+      "net_score": 48.0,
       "sentiment": "NEUTRAL",
       "signals": [
         {
@@ -282,25 +401,7 @@
         {
           "name": "health_outbreak",
           "direction": "bearish",
-          "confidence": 52
-        }
-      ]
-    },
-    "CONSUMER": {
-      "bullish_score": 150.0,
-      "bearish_score": 200,
-      "net_score": -50.0,
-      "sentiment": "NEUTRAL",
-      "signals": [
-        {
-          "name": "peace_deal",
-          "direction": "bullish",
-          "confidence": 100
-        },
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
-          "confidence": 100
+          "confidence": 51
         }
       ]
     },
@@ -331,145 +432,106 @@
       ]
     },
     "PHARMA": {
-      "bullish_score": 104,
+      "bullish_score": 102,
       "bearish_score": 0,
-      "net_score": 104,
+      "net_score": 102,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "health_outbreak",
           "direction": "bullish",
-          "confidence": 52
+          "confidence": 51
         }
       ]
     },
     "BIOTECH": {
-      "bullish_score": 104,
+      "bullish_score": 102,
       "bearish_score": 0,
-      "net_score": 104,
+      "net_score": 102,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "health_outbreak",
           "direction": "bullish",
-          "confidence": 52
+          "confidence": 51
         }
       ]
     },
     "HEALTHCARE": {
-      "bullish_score": 104,
+      "bullish_score": 102,
       "bearish_score": 0,
-      "net_score": 104,
+      "net_score": 102,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "health_outbreak",
           "direction": "bullish",
-          "confidence": 52
+          "confidence": 51
         }
       ]
     },
     "CONSUMER_STAPLES": {
-      "bullish_score": 104,
+      "bullish_score": 102,
       "bearish_score": 0,
-      "net_score": 104,
+      "net_score": 102,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "health_outbreak",
           "direction": "bullish",
-          "confidence": 52
+          "confidence": 51
         }
       ]
     },
     "ECOMMERCE": {
-      "bullish_score": 104,
+      "bullish_score": 102,
       "bearish_score": 0,
-      "net_score": 104,
+      "net_score": 102,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "health_outbreak",
           "direction": "bullish",
-          "confidence": 52
+          "confidence": 51
         }
       ]
     },
     "HOSPITALITY": {
       "bullish_score": 0,
-      "bearish_score": 104,
-      "net_score": -104,
+      "bearish_score": 102,
+      "net_score": -102,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "health_outbreak",
           "direction": "bearish",
-          "confidence": 52
+          "confidence": 51
         }
       ]
     },
     "RESTAURANTS": {
       "bullish_score": 0,
-      "bearish_score": 104,
-      "net_score": -104,
+      "bearish_score": 102,
+      "net_score": -102,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "health_outbreak",
           "direction": "bearish",
-          "confidence": 52
+          "confidence": 51
         }
       ]
     },
     "REITs_RETAIL": {
       "bullish_score": 0,
-      "bearish_score": 104,
-      "net_score": -104,
+      "bearish_score": 102,
+      "net_score": -102,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "health_outbreak",
           "direction": "bearish",
-          "confidence": 52
-        }
-      ]
-    },
-    "OIL_PRODUCERS": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "PIPELINES": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "TRANSPORT": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "oil_price_spike",
-          "direction": "bearish",
-          "confidence": 100
+          "confidence": 51
         }
       ]
     }
@@ -590,8 +652,8 @@
         "\ud83d\udcca Good liquidity",
         "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
         "\u2705 Analyst consensus: buy",
-        "\ud83d\udcf0 News +6.9pts: \ud83d\udcc8 BIOTECH (BULLISH)",
-        "\ud83d\udcf0 News +6.9pts: \ud83d\udcc8 BIOTECH (BULLISH)",
+        "\ud83d\udcf0 News +6.8pts: \ud83d\udcc8 BIOTECH (BULLISH)",
+        "\ud83d\udcf0 News +6.8pts: \ud83d\udcc8 BIOTECH (BULLISH)",
         "\ud83d\udcaa RS Rating: 87 \u2014 \u2705 STRONG"
       ],
       "flags": [
@@ -619,8 +681,8 @@
         "next_earnings": "N/A"
       },
       "sector": "HEALTHCARE",
-      "news_adjustment": 6.9,
-      "news_original": 6.9,
+      "news_adjustment": 6.8,
+      "news_original": 6.8,
       "news_sentiment": "BULLISH",
       "news_reasons": [
         "\ud83d\udcc8 BIOTECH (BULLISH)"
@@ -634,27 +696,27 @@
         "scoring_source": "direction"
       },
       "sector_canonical": "HEALTHCARE",
-      "ml_prob": 0.7848,
+      "ml_prob": 0.7869,
       "ml_prob_raw": 0.7901199999999999,
       "ml_prob_xgb": 0.7901199999999999,
       "ml_prob_source": "rules_based",
       "scored_by_model_trained_at": null,
       "ml_signal": "\ud83d\udd25 STRONG BUY",
       "evidence": {
-        "count": 1148,
-        "regime_count": 1140,
-        "win_rate": 43.7,
+        "count": 1152,
+        "regime_count": 1144,
+        "win_rate": 43.8,
         "regime_win_rate": 43.8,
-        "avg_return": -0.3,
-        "regime_avg_return": -0.29,
+        "avg_return": -0.29,
+        "regime_avg_return": -0.28,
         "median_return": -0.01,
         "max_drawdown": -38.42,
         "regime_match_pct": 99.3,
-        "expected_alpha": -10.33,
+        "expected_alpha": -10.32,
         "confidence": "HIGH",
         "score_band": "88-100",
-        "evidence_text": "1148 similar setups (1140 in same regime) | WR: 43.8% | Avg: -0.3% | Expected alpha: -10.3% vs SPX",
-        "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 1148 historical setups at this score level produced only 43.8% WR. ML confirmation required before BUY."
+        "evidence_text": "1152 similar setups (1144 in same regime) | WR: 43.8% | Avg: -0.3% | Expected alpha: -10.3% vs SPX",
+        "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 1152 historical setups at this score level produced only 43.8% WR. ML confirmation required before BUY."
       },
       "rs_rating": 87,
       "rs_signal": "\u2705 STRONG",
@@ -668,7 +730,7 @@
       "conviction_signals": [
         "\ud83d\udcf0 Positive News Macro",
         "\ud83d\udcaa RS 87 \u2014 Top Performer",
-        "\ud83e\udd16 ML Score 78%"
+        "\ud83e\udd16 ML Score 79%"
       ],
       "conviction_boost": 20,
       "conviction_count": 3,
@@ -802,27 +864,27 @@
       },
       "sector": "FINANCIALS",
       "sector_canonical": "FINANCIALS",
-      "ml_prob": 0.7382,
+      "ml_prob": 0.7388,
       "ml_prob_raw": 0.739715,
       "ml_prob_xgb": 0.739715,
       "ml_prob_source": "rules_based",
       "scored_by_model_trained_at": null,
       "ml_signal": "\ud83d\udd25 STRONG BUY",
       "evidence": {
-        "count": 1148,
-        "regime_count": 1140,
-        "win_rate": 43.7,
+        "count": 1152,
+        "regime_count": 1144,
+        "win_rate": 43.8,
         "regime_win_rate": 43.8,
-        "avg_return": -0.3,
-        "regime_avg_return": -0.29,
+        "avg_return": -0.29,
+        "regime_avg_return": -0.28,
         "median_return": -0.01,
         "max_drawdown": -38.42,
         "regime_match_pct": 99.3,
-        "expected_alpha": -10.33,
+        "expected_alpha": -10.32,
         "confidence": "HIGH",
         "score_band": "88-100",
-        "evidence_text": "1148 similar setups (1140 in same regime) | WR: 43.8% | Avg: -0.3% | Expected alpha: -10.3% vs SPX",
-        "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 1148 historical setups at this score level produced only 43.8% WR. ML confirmation required before BUY."
+        "evidence_text": "1152 similar setups (1144 in same regime) | WR: 43.8% | Avg: -0.3% | Expected alpha: -10.3% vs SPX",
+        "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 1152 historical setups at this score level produced only 43.8% WR. ML confirmation required before BUY."
       },
       "rs_rating": 76,
       "rs_signal": "\u2705 STRONG",
@@ -970,20 +1032,20 @@
       "scored_by_model_trained_at": null,
       "ml_signal": "\ud83d\udd25 STRONG BUY",
       "evidence": {
-        "count": 1148,
-        "regime_count": 1140,
-        "win_rate": 43.7,
+        "count": 1152,
+        "regime_count": 1144,
+        "win_rate": 43.8,
         "regime_win_rate": 43.8,
-        "avg_return": -0.3,
-        "regime_avg_return": -0.29,
+        "avg_return": -0.29,
+        "regime_avg_return": -0.28,
         "median_return": -0.01,
         "max_drawdown": -38.42,
         "regime_match_pct": 99.3,
-        "expected_alpha": -10.33,
+        "expected_alpha": -10.32,
         "confidence": "HIGH",
         "score_band": "88-100",
-        "evidence_text": "1148 similar setups (1140 in same regime) | WR: 43.8% | Avg: -0.3% | Expected alpha: -10.3% vs SPX",
-        "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 1148 historical setups at this score level produced only 43.8% WR. ML confirmation required before BUY."
+        "evidence_text": "1152 similar setups (1144 in same regime) | WR: 43.8% | Avg: -0.3% | Expected alpha: -10.3% vs SPX",
+        "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 1152 historical setups at this score level produced only 43.8% WR. ML confirmation required before BUY."
       },
       "rs_rating": 73,
       "rs_signal": "\ud83d\udcca ABOVE AVERAGE",
@@ -1023,7 +1085,7 @@
     },
     {
       "ticker": "UMBF",
-      "score": 76.1,
+      "score": 77.1,
       "category": "WATCH"
     },
     {
@@ -1074,19 +1136,19 @@
       "ret_90": -5.5
     },
     {
+      "ticker": "ZGD.TO",
+      "score": 72.0,
+      "ret_90": 1.7
+    },
+    {
       "ticker": "ARKG",
       "score": 67.6,
       "ret_90": 62.9
     },
     {
-      "ticker": "VFV.TO",
-      "score": 60.8,
-      "ret_90": 19.4
-    },
-    {
-      "ticker": "VOO",
-      "score": 60.8,
-      "ret_90": 19.3
+      "ticker": "PPA",
+      "score": 63.4,
+      "ret_90": 11.0
     }
   ],
   "macro_signals": []
