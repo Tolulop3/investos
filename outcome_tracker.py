@@ -351,6 +351,8 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None,
       - news_adjustment from news_analyzer
       - regime, spx_vs_ma200 from market regime at signal time
       - unified_regime, macro_regime, market_breadth_50ma (added 2026-07-04)
+      - insider_adjustment, insider_form4_count, insider_scoring_source
+        from insider_engine.py (added 2026-08-09)
 
     These unlock ML training on real data instead of zeros.
 
@@ -438,6 +440,19 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None,
             # news_adjustment = raw points added/removed (capped at ±8)
             "news_boost":    float(pick.get("news_adjustment", 0) or
                                    pick.get("news_original", 0) or 0),
+
+            # ── ML features: insider signal applied ─────────────────────────
+            # FIX (2026-08-09): insider_engine.py moves pick["score"] by up to
+            # ±10pts on Form 4 cluster activity and sets pick["insider_signal"],
+            # but this snapshot never captured it -- the adjustment was live and
+            # moving real scores with no way to ever measure whether it predicts
+            # outcome. insider_signal is only set when a nonzero adjustment was
+            # found (see insider_engine.run_insider_engine), so 0/"" defaults
+            # here mean "no signal found", not "not checked" -- that
+            # checked-vs-unchecked distinction isn't captured upstream either.
+            "insider_adjustment":     float((pick.get("insider_signal") or {}).get("adjustment", 0) or 0),
+            "insider_form4_count":    int((pick.get("insider_signal") or {}).get("form4_count", 0) or 0),
+            "insider_scoring_source": (pick.get("insider_signal") or {}).get("scoring_source", ""),
 
             # ── ML features: market context at signal time ─────────────────
             "regime":              regime_str,

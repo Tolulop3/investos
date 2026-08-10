@@ -801,6 +801,20 @@ def train_category_model(category, min_rows=None, verbose=True):
 
     report = {
         "trained_at":   datetime.now().isoformat(),
+        "model_type":   "LogisticRegression (penalty=l2, C=1.0, class_weight=balanced)",
+        # FIX (2026-08-09): report had no way to judge whether holdout_auc was
+        # good without knowing what it's an AUC of -- what the model predicts,
+        # over what horizon, trained on what features/split. Added so the
+        # report is self-describing.
+        "description":  (
+            f"Binary WIN/LOSS classifier for the {category} category, trained "
+            f"on true {horizon_days}-day-horizon outcomes (not the legacy "
+            f"7-day proxy -- see CATEGORY_HORIZONS in outcome_tracker.py). "
+            f"80/20 chronological train/holdout split, no shuffling. "
+            f"holdout_auc is this model's AUC on the held-out 20%, gated at "
+            f"{MIN_HOLDOUT_AUC_TO_DEPLOY} before deploy (see 'deployed' field)."
+        ),
+        "features_used": FEATURES,
         "n_rows":       n,
         "n_train":      split,
         "n_val":        n - split,
