@@ -7,15 +7,14 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 80.2%  (-0.16%/day)
-- Sharpe: -0.265  (-0.011/day)
+- Breadth (200MA): 80.5%  (-0.11%/day)
+- Sharpe: -0.264  (-0.010/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **AMGN** — 9d streak, avg score 100.0
 - **BAC** — 7d streak, avg score 100.0
-- **CFR** — 5d streak, avg score 100.0
+- **CFR** — 6d streak, avg score 100.0
 - **ABBV** — 4d streak, avg score 100.0
-- **JPM** — 3d streak, avg score 98.9
 - **BMY** — 3d streak, avg score 100.0
 
 ## Score Velocity (rising/falling fast)
@@ -40,10 +39,10 @@ tags: [investos, patterns, weekly]
 | GE | 🔴 AVOID | 0d | -16.6 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
 | BAC | 🟡 WATCH | 7d | — | 11.69 |
-| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
-| SBUX | 🔴 AVOID | 0d | -10.7 | — |
+| CFR | 🟡 WATCH | 6d | — | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
