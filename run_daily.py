@@ -221,7 +221,15 @@ def apply_regime_filter(screener_results, early_regime, category_blocks):
     return filtered
 
 
-def build_conviction_picks(screener_results, x_signals, trends, news_analysis, ml_results, early_regime="RISK_ON", options_signals=None, cooldown_set=None):
+def build_conviction_picks(screener_results, x_signals, trends, news_analysis, ml_results, early_regime="RISK_ON", options_signals=None, cooldown_set=None, deduped_top_picks=None):
+    """
+    deduped_top_picks: optional pre-deduped 4-bucket union (added 2026-08-11,
+    see run_daily.py's canonical_top_picks FIX comment). When provided, skips
+    rebuilding + re-deduping the union here -- callers that already have the
+    canonical list (run_daily.py's real pipeline) should pass it. Standalone
+    callers (tests, or any future caller without one handy) can omit it and
+    get the original self-contained behavior, unchanged.
+    """
     x_tickers          = set()
     trending_tickers   = {t["ticker"] for t in trends.get("trending_up", [])}
     breakout_tickers   = {t["ticker"] for t in trends.get("breakouts", [])}
@@ -232,21 +240,24 @@ def build_conviction_picks(screener_results, x_signals, trends, news_analysis, m
         for t in s.get("tickers", []):
             x_tickers.add(t.upper())
 
-    all_picks = (
-        screener_results.get("FHSA_top5", []) +
-        screener_results.get("TFSA_growth_top5", []) +
-        screener_results.get("TFSA_income_top5", []) +
-        screener_results.get("TFSA_swing_top3", [])
-    )
-    # FIX (2026-08-08): a ticker eligible for both FHSA and TFSA gets two
-    # independent dict objects here (see pick_utils.py's module docstring).
-    # The old plain "seen" set below kept whichever copy came first in
-    # concat order (FHSA always beats TFSA) regardless of which one was
-    # actually ML-scored -- same wrong-copy failure mode as the top_flat
-    # incident, just surfacing as silently-wrong conviction pick data
-    # instead of a duplicate. Dedupe with priority for the ML-scored copy
-    # before the seen-set loop below (which still guards ml_sized adds).
-    all_picks = dedupe_picks_by_ticker(all_picks, verbose=True, label="conviction_input")
+    if deduped_top_picks is not None:
+        all_picks = deduped_top_picks
+    else:
+        all_picks = (
+            screener_results.get("FHSA_top5", []) +
+            screener_results.get("TFSA_growth_top5", []) +
+            screener_results.get("TFSA_income_top5", []) +
+            screener_results.get("TFSA_swing_top3", [])
+        )
+        # FIX (2026-08-08): a ticker eligible for both FHSA and TFSA gets two
+        # independent dict objects here (see pick_utils.py's module docstring).
+        # The old plain "seen" set below kept whichever copy came first in
+        # concat order (FHSA always beats TFSA) regardless of which one was
+        # actually ML-scored -- same wrong-copy failure mode as the top_flat
+        # incident, just surfacing as silently-wrong conviction pick data
+        # instead of a duplicate. Dedupe with priority for the ML-scored copy
+        # before the seen-set loop below (which still guards ml_sized adds).
+        all_picks = dedupe_picks_by_ticker(all_picks, verbose=True, label="conviction_input")
     # Also include ML sizing picks — these may have been sector-capped from screener
     # but still scored by ML. Avoids AFRM-type gaps where ML sees the pick but conviction doesn't.
     ml_sized = ml_results.get("position_sizing", []) if ml_results else []
@@ -1057,6 +1068,30 @@ def run_daily(test_mode=False, dry_run=False):
                        "spx_price":0,"ma200":0,"pct_diff":0,"full_exposure_pct":100},
         }
 
+    # FIX (2026-08-11): top_flat / conviction_input / signal_accuracy /
+    # outcome_log_input / the evidence-engine block below all independently
+    # rebuilt this identical 4-bucket union and re-ran dedupe_picks_by_ticker()
+    # on it -- 5 separate O(n) scans (and 5 sets of duplicate warnings) doing
+    # literally the same computation on the same object references every run.
+    # Safe to collapse to one: list membership doesn't change after this point
+    # (nothing reassigns screener["FHSA_top5"] etc. downstream -- only
+    # individual pick dict fields get mutated in place, which stays visible
+    # through these same object references regardless of when the union is
+    # built), and the ml_prob-presence tiebreak that decides which duplicate
+    # copy wins is permanent once ML scoring above has finished. So computing
+    # this once, here, and reusing the same list (same objects, same order)
+    # everywhere below is behavior-identical to recomputing it at each site.
+    # stress_baseline (risk_engine.py) and sector_cap_reserve (ml_engine.py)
+    # are deliberately NOT folded in here -- they dedupe a different shape
+    # (fresh summary dicts that never carry ml_prob) and a different,
+    # pre-filtered 5-source union respectively; merging those would change
+    # what they compute, not just when.
+    canonical_top_picks = dedupe_picks_by_ticker(
+        screener.get("FHSA_top5", []) + screener.get("TFSA_growth_top5", []) +
+        screener.get("TFSA_income_top5", []) + screener.get("TFSA_swing_top3", []),
+        verbose=True, label="top_picks_canonical",
+    )
+
     # ── 6. Intelligence Layers ───────────────────────────────
     # ── EVIDENCE ENGINE — enrich picks with historical backing ──────────────
     # FIX (2026-08-09): three compounding bugs made this a no-op since
@@ -1078,13 +1113,9 @@ def run_daily(test_mode=False, dry_run=False):
     try:
         from evidence_engine import enrich_picks_with_evidence, get_tier_evidence_summary
         _spx_ret = regime.get("pct_above_ma", 0) if regime else 0
-        _all_for_evidence = (
-            screener.get("FHSA_top5", []) + screener.get("TFSA_growth_top5", []) +
-            screener.get("TFSA_income_top5", []) + screener.get("TFSA_swing_top3", [])
-        )
         _sized_for_evidence = ml_results.get("sized_positions", []) if ml_results else []
-        if _all_for_evidence or _sized_for_evidence:
-            enrich_picks_with_evidence(_all_for_evidence + _sized_for_evidence, unified_regime,
+        if canonical_top_picks or _sized_for_evidence:
+            enrich_picks_with_evidence(canonical_top_picks + _sized_for_evidence, unified_regime,
                                        spx_90d_return=_spx_ret, verbose=True)
         _evidence_summary = get_tier_evidence_summary()
     except Exception as _ee:
@@ -1100,9 +1131,9 @@ def run_daily(test_mode=False, dry_run=False):
         p["data"] for bucket in ["FHSA_all","TFSA_core_all","TFSA_income_all","TFSA_swing_all"]
         for p in screener.get(bucket,[]) if p.get("data")
     ])
-    _top_flat_raw = (screener.get("FHSA_top5",[]) + screener.get("TFSA_growth_top5",[]) +
-                screener.get("TFSA_income_top5",[]) + screener.get("TFSA_swing_top3",[]))
-    top_flat = dedupe_top_flat_picks(_top_flat_raw, verbose=True)
+    # FIX (2026-08-11): was its own rebuild-the-4-bucket-union + dedupe_top_flat_
+    # picks() call -- now reuses canonical_top_picks (see its FIX comment above).
+    top_flat = canonical_top_picks
     intel = run_all_intelligence_layers(all_raw, top_flat, verbose=True)
 
     # ── 6b. Post-intelligence sizing cap for exit watch tickers ─
@@ -1222,7 +1253,7 @@ def run_daily(test_mode=False, dry_run=False):
     apply_score_decay(all_picks_for_decay, score_history_for_decay)
 
     try:
-        conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results, early_regime=early_regime, options_signals=options_signals, cooldown_set=cooldown_set)
+        conviction = build_conviction_picks(screener, x_signals, trends, news, ml_results, early_regime=early_regime, options_signals=options_signals, cooldown_set=cooldown_set, deduped_top_picks=canonical_top_picks)
     except Exception as _e:
         print(f"  ⚠️  Conviction engine error: {_e}")
         conviction = []
@@ -1650,10 +1681,12 @@ def run_daily(test_mode=False, dry_run=False):
         sharpe_multiplier=sharpe_multiplier,
     )
 
-    all_picks_flat = (screener.get("FHSA_top5",[]) + screener.get("TFSA_growth_top5",[]) +
-                      screener.get("TFSA_income_top5",[]) + screener.get("TFSA_swing_top3",[]))
+    # FIX (2026-08-11): was its own rebuild of the same 4-bucket union -- now
+    # reuses canonical_top_picks (see its FIX comment above run_ml_engine()).
+    # track_signal_accuracy() still runs its own dedupe_picks_by_ticker() pass
+    # internally as a safety net; fed an already-deduped list it's a fast no-op.
     score_hist_for_acc = intel.get("history", {})
-    signal_accuracy = track_signal_accuracy(all_picks_flat, score_hist_for_acc)
+    signal_accuracy = track_signal_accuracy(canonical_top_picks, score_hist_for_acc)
 
     for pick in conviction[:5]:
         acc_sum  = signal_accuracy if signal_accuracy.get("resolved",0) > 0 else None
@@ -1810,21 +1843,21 @@ def run_daily(test_mode=False, dry_run=False):
         # FIX (2026-08-09): TFSA_income_top5 was missing from this concat --
         # income/dividend-category picks were never logged to
         # outcomes_log.json at all, invisible to win-rate tracking and ML
-        # training regardless of how they performed.
-        all_picks_to_log = (
-            screener.get("FHSA_top5", []) +
-            screener.get("TFSA_growth_top5", []) +
-            screener.get("TFSA_income_top5", []) +
-            screener.get("TFSA_swing_top3", [])
-        )
+        # training regardless of how they performed. (Still true of
+        # canonical_top_picks below -- it includes all four buckets.)
+        #
         # FIX (2026-08-08): a ticker eligible for both FHSA and TFSA gets two
         # independent dict objects here. log_picks() already guards against
         # double-logging via its own logged_today set, so this was never a
         # duplication bug -- but that guard is first-wins (whichever copy
         # this concat orders first gets permanently written into training
-        # data), not ML-scored-copy-wins. Dedupe here so the copy that
-        # actually carries ml_prob is what gets logged.
-        all_picks_to_log = dedupe_picks_by_ticker(all_picks_to_log, verbose=True, label="outcome_log_input")
+        # data), not ML-scored-copy-wins. Dedupe so the copy that actually
+        # carries ml_prob is what gets logged.
+        #
+        # FIX (2026-08-11): was its own rebuild-and-dedupe of this same
+        # 4-bucket union -- now reuses canonical_top_picks (see its FIX
+        # comment above run_ml_engine()).
+        all_picks_to_log = list(canonical_top_picks)
         # Strip cooldown tickers and hard-excluded picks — they must not appear
         # in the outcome log (would skew WR and inflate logged-pick count).
         _log_cd = cooldown_set if isinstance(cooldown_set, set) else set()
