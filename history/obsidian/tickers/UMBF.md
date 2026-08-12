@@ -2,7 +2,7 @@
 ticker: UMBF
 updated: 2026-08-12
 streak_days: 3
-score_now: 79.0
+score_now: 79.3
 velocity: 0
 pf_30d: 0.1
 picks_30d: 9
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **3 of last 7 days**.
-Avg score: 79.0
+Avg score: 79.3
 Dates: 2026-08-10, 2026-08-11, 2026-08-12
 
 ## Recent Performance (last 30d)
