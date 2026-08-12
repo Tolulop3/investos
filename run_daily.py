@@ -1908,8 +1908,14 @@ def run_daily(test_mode=False, dry_run=False):
         brief["win_rate"] = None
 
     # ── DAILY SHORTLIST ───────────────────────────────────────
+    # FIX (2026-08-12): see pick_best_tweet_situation()'s matching FIX comment
+    # in content_engine.py -- conviction_picks can include picks the sector/ML
+    # gate already excluded from sized_positions. Restrict to picks that
+    # actually got capital allocated before choosing a primary/backup.
     try:
-        all_conv = brief.get("conviction_picks", [])
+        all_conv = [p for p in brief.get("conviction_picks", [])
+                    if p.get("ticker") in
+                    {sp.get("ticker") for sp in brief.get("sized_positions", []) if sp.get("ticker")}]
         primary = None
         for p in all_conv[:5]:
             if p.get("score", 0) >= 70:

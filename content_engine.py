@@ -102,9 +102,22 @@ def pick_best_tweet_situation(brief):
     """
     Decide what today's tweet is about based on the brief data.
     Priority: RISK_OFF/danger > strong conviction pick > FX signal > calm > dividend reminder
-    
+
     Philosophy: A dividend reminder is the LEAST interesting tweet when there are
     macro signals firing. Lead with what's actually moving markets.
+
+    FIX (2026-08-12): conviction_picks is built independently of ml_engine.py's
+    sector-gate/ML-gate logic (raw screener scores + signal-counting only), so
+    a pick could top conviction_picks while the gate has already excluded it
+    from sized_positions -- confirmed live: ABBV was conviction_picks[0] and
+    got tweeted as "the system's clearest setup" the same run the sector gate
+    removed it ("Gate removed ['GD', 'RCL', 'ABBV'] (no replacements)") for
+    exactly the reason the evidence engine flagged on that same pick (42.6%
+    WR at that score band). Every selection below now only considers
+    conviction picks that are also in sized_positions -- i.e. actually got
+    real capital allocated -- falling through to the next priority (or the
+    no-pick fallback) when none qualify, rather than presenting an idea the
+    system itself declined to act on as if it were the day's actionable one.
     """
     macro    = brief.get("macro", {})
     regime   = macro.get("regime", "NORMAL")
@@ -113,17 +126,20 @@ def pick_best_tweet_situation(brief):
     conv     = brief.get("conviction_picks", [])
     fx       = brief.get("fx_signals", {})
 
+    sized_tickers = {p.get("ticker") for p in brief.get("sized_positions", []) if p.get("ticker")}
+    sized_conv    = [p for p in conv if p.get("ticker") in sized_tickers]
+
     # Priority 1: Risk-off / danger macro (most important — what followers NEED to know)
     if regime in ("RISK_OFF", "BEAR") or sigs >= 4:
         # If we also have a strong conviction pick in this environment, lead with that
         # since it gives actionable context on top of the macro warning
-        strong_picks = [p for p in conv if p.get("conviction_count", 0) >= 2]
+        strong_picks = [p for p in sized_conv if p.get("conviction_count", 0) >= 2]
         if strong_picks:
             return "risk_off_with_pick", {"macro": macro, "pick": strong_picks[0]}
         return "risk_off_macro", macro
 
     # Priority 2: High conviction pick (3+ signals)
-    strong_picks = [p for p in conv if p.get("conviction_count", 0) >= 3]
+    strong_picks = [p for p in sized_conv if p.get("conviction_count", 0) >= 3]
     if strong_picks:
         return "strong_signal", strong_picks[0]
 
@@ -140,8 +156,8 @@ def pick_best_tweet_situation(brief):
         return "risk_off_macro", macro
 
     # Priority 5: Any conviction pick
-    if conv:
-        return "strong_signal", conv[0]
+    if sized_conv:
+        return "strong_signal", sized_conv[0]
 
     # Priority 6: Regime note
     if regime in ("RECOVERY",):
@@ -157,7 +173,7 @@ def pick_best_tweet_situation(brief):
             return "earnings_watch", item
 
     # Default: calm observational
-    top_pick = conv[0] if conv else None
+    top_pick = sized_conv[0] if sized_conv else None
     return "calm_day", top_pick
 
 
