@@ -2064,8 +2064,18 @@ def run_daily(test_mode=False, dry_run=False):
     print(f"  📡 X feeds:    {online_feeds}/{len(CONFIG['x_accounts'])} online")
     print(f"  📅 Calendar:   {len(calendar)} action items")
 
-    if conviction:
-        top = conviction[0]
+    # FIX (2026-08-13): same gap as the DAILY SHORTLIST block and content_
+    # engine.py's pick_best_tweet_situation() (see their matching FIX
+    # comments) -- conviction[0] can be a pick the sector/ML gate already
+    # excluded from sized_positions. Confirmed live: this line printed
+    # "#1 CONVICTION: ABBV" the same run the gate removed ABBV with no
+    # replacement. Restrict to sized/tradeable picks before taking [0];
+    # the "🎯 Conviction: N picks" count line above is left alone since it
+    # reports a count, not a specific-ticker claim.
+    _summary_sized_tickers = {p.get("ticker") for p in brief.get("sized_positions", []) if p.get("ticker")}
+    _summary_sized_conviction = [p for p in conviction if p.get("ticker") in _summary_sized_tickers]
+    if _summary_sized_conviction:
+        top = _summary_sized_conviction[0]
         print(f"\n  🏆 #1 CONVICTION: {top['ticker']} — Score {top['score']}/100 | "
               f"{top['conviction_count']} signals | ML {top.get('ml_prob',0.5):.0%}")
 
