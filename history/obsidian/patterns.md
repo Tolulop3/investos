@@ -7,19 +7,18 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 81.7%  (+0.11%/day)
+- Breadth (200MA): 80.9%  (+0.00%/day)
 - Sharpe: -0.297  (-0.012/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **AMGN** — 12d streak, avg score 100.0
-- **BAC** — 11d streak, avg score 100.0
+- **BAC** — 11d streak, avg score 99.3
 - **ABBV** — 8d streak, avg score 100.0
-- **NMIH** — 6d streak, avg score 100.0
 - **CFR** — 5d streak, avg score 100.0
 - **BMY** — 4d streak, avg score 100.0
-- **UMBF** — 4d streak, avg score 84.2
-- **GD** — 3d streak, avg score 100.0
-- **RCL** — 3d streak, avg score 87.4
+- **UMBF** — 4d streak, avg score 89.0
+- **NMIH** — 4d streak, avg score 100.0
+- **JPM** — 3d streak, avg score 89.9
 
 ## Score Velocity (rising/falling fast)
 - 📉 **VLO** -22.2 pts/day  (94.4 → 50.0)
@@ -32,7 +31,7 @@ tags: [investos, patterns, weekly]
 - 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 68.3% of recent picks (28 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 69.2% of recent picks (27 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -44,8 +43,8 @@ tags: [investos, patterns, weekly]
 | GE | 🔴 AVOID | 0d | -16.6 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
 | ABBV | 🟡 WATCH | 8d | — | — |
-| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
