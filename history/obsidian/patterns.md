@@ -7,18 +7,18 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 80.9%  (+0.00%/day)
+- Breadth (200MA): 82.1%  (+0.17%/day)
 - Sharpe: -0.297  (-0.012/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **AMGN** — 12d streak, avg score 100.0
-- **BAC** — 11d streak, avg score 99.3
+- **BAC** — 11d streak, avg score 100.0
 - **ABBV** — 8d streak, avg score 100.0
 - **CFR** — 5d streak, avg score 100.0
 - **BMY** — 4d streak, avg score 100.0
 - **UMBF** — 4d streak, avg score 89.0
 - **NMIH** — 4d streak, avg score 100.0
-- **JPM** — 3d streak, avg score 89.9
+- **JPM** — 3d streak, avg score 90.9
 
 ## Score Velocity (rising/falling fast)
 - 📉 **VLO** -22.2 pts/day  (94.4 → 50.0)
@@ -31,13 +31,13 @@ tags: [investos, patterns, weekly]
 - 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 69.2% of recent picks (27 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 68.3% of recent picks (28 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| AMGN | 🟡 WATCH | 12d | — | — |
 | BAC | 🟡 WATCH | 11d | — | 10.43 |
+| AMGN | 🟡 WATCH | 12d | — | — |
 | VLO | 🔴 AVOID | 0d | -22.2 | 0.82 |
 | TOST | 🔴 AVOID | 0d | -18.3 | — |
 | GE | 🔴 AVOID | 0d | -16.6 | — |
