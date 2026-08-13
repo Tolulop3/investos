@@ -26,8 +26,12 @@ import pathlib
 from datetime import datetime, timezone
 from collections import defaultdict
 
-
-OOS_START = "2026-06-26"   # v4.1 freeze date — out-of-sample Day 0
+# FIX (2026-08-12): OOS_START was independently hardcoded as "2026-06-26" in
+# three places (here, outcome_tracker.py, strategy_version.py's OOS_START_DATE)
+# -- a real risk of silent drift if one is ever updated and the others aren't.
+# strategy_version.py is the natural single source of truth (it's the module
+# that actually versions the v4.1 rule-freeze this date marks).
+from strategy_version import OOS_START_DATE as OOS_START
 
 
 # ─────────────────────────────────────────────────────────────────────────────

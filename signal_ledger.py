@@ -51,6 +51,7 @@ from datetime import datetime, date
 
 import outcome_tracker
 from pick_utils import get_pick_data, get_pick_category
+from strategy_version import OOS_START_DATE
 
 LEDGER_FILE        = "signal_ledger.json"
 AUDIT_HTML         = "signal_ledger.html"
@@ -367,6 +368,17 @@ def compute_audit_stats():
         except Exception:
             pass
 
+    # FIX (2026-08-12): this all-time win_rate above and outcome_tracker.py's
+    # OOS-scoped win_rate look like they disagree ("two resolvers") when
+    # they're actually the exact same resolver over two different windows --
+    # the ledger has logged since 2026-06-14, 12 days before the formal
+    # v4.1 OOS_START_DATE (2026-06-26). Confirmed byte-for-byte: filtering
+    # outcomes_log.json to signal_date >= the ledger's own start date
+    # reproduces the ledger's exact entry set and win rate. Adding the same
+    # OOS-scoped cut here, labeled, so both numbers can be read side by side
+    # instead of looking like a data-integrity problem.
+    oos_resolved_entries = [e for e in resolved if e.get("signal_date","") >= OOS_START_DATE]
+
     def _wr(lst):
         if not lst: return None
         return round(sum(1 for e in lst if e["outcome"]=="WIN") / len(lst) * 100, 1)
@@ -430,6 +442,14 @@ def compute_audit_stats():
         "worst_return":    round(min(returns), 2), "sharpe_estimate": sharpe,
         "tw_win_rate":     tw_wr, "win_rate_30d": _wr(w30), "count_30d": len(w30),
         "win_rate_90d":    _wr(w90), "count_90d": len(w90),
+        # See FIX comment above oos_resolved_entries -- this is the same
+        # resolver as "win_rate" above, just scoped to the formal OOS window
+        # instead of the ledger's full history since inception.
+        "oos": {
+            "start_date": OOS_START_DATE,
+            "resolved":   len(oos_resolved_entries),
+            "win_rate":   _wr(oos_resolved_entries),
+        },
         "by_score_tier":   tiers, "by_attribution": attrib,
         "ml_win_rate":     _wr([e for e in resolved if any("ML:" in a for a in e.get("attribution",[]))]),
         "ca_win_rate":     _wr([e for e in resolved if e.get("market")=="CA"]),

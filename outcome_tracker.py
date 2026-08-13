@@ -21,6 +21,10 @@ import json
 import os
 from datetime import datetime, timedelta
 from pick_utils import get_pick_category, get_pick_field
+# FIX (2026-08-12): see history_analyzer.py's matching FIX comment -- OOS_START
+# was independently hardcoded here too; strategy_version.py is now the single
+# source of truth.
+from strategy_version import OOS_START_DATE
 
 OUTCOMES_FILE = "outcomes_log.json"
 WIN_RATE_FILE = "win_rate.json"
@@ -1036,7 +1040,7 @@ def compute_win_rate():
         pass
 
     # ── OOS performance block (signal_date >= OOS start) ────────────────
-    OOS_START = "2026-06-26"
+    OOS_START = OOS_START_DATE   # see module-level import FIX comment
     oos_all      = [o for o in outcomes if (o.get("signal_date") or "") >= OOS_START]
     oos_resolved = [o for o in oos_all if o.get("resolved") and o.get("outcome") in ("WIN","LOSS","FLAT")]
     oos_wins     = [o for o in oos_resolved if o["outcome"] == "WIN"]
