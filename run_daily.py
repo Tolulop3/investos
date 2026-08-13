@@ -1731,19 +1731,36 @@ def run_daily(test_mode=False, dry_run=False):
             "high_risk_count": high_risk_count,
         },
 
+        # FIX (2026-08-12): these four lists used to alias the raw screener
+        # buckets directly -- rendered on the dashboard with actionable-looking
+        # UI (suggested $ amount, stop loss, target) despite never passing
+        # through the cooldown filter applied everywhere else (conviction,
+        # sized_positions, the outcome log). Confirmed live: MPC was actively
+        # on a loss-streak cooldown (cooldown_flags.json, flagged 2026-08-10,
+        # expires 2026-08-17) and still showed as a $100 suggested SWING pick.
+        # cooldown_set is already fully consolidated by this point in the run
+        # (Step 8 -- base rolling cooldowns + loss-streak flags + long-cooldowns
+        # + news hard-exclusions), so this reuses the same trusted set the rest
+        # of the pipeline already gates on, rather than inventing a new one.
+        # No backfill -- a filtered-out slot just means a shorter list, same as
+        # every other "top N" list in this codebase already tolerates.
         "accounts": {
             "FHSA": {
                 "balance":         CONFIG["accounts"]["FHSA"]["balance"],
                 "max_loss_buffer": round(CONFIG["accounts"]["FHSA"]["balance"]*0.16,2),
-                "top_picks":       screener.get("FHSA_top5",[]),
+                "top_picks":       [p for p in screener.get("FHSA_top5",[])
+                                     if p.get("ticker") not in cooldown_set],
                 "projection":      fhsa_proj,
             },
             "TFSA": {
                 "balance":      CONFIG["accounts"]["TFSA"]["balance"],
                 "buckets":      compute_bucket_allocation(CONFIG["accounts"]["TFSA"]["balance"]),
-                "growth_picks": screener.get("TFSA_growth_top5",[]),
-                "income_picks": screener.get("TFSA_income_top5",[]),
-                "swing_picks":  screener.get("TFSA_swing_top3",[]),
+                "growth_picks": [p for p in screener.get("TFSA_growth_top5",[])
+                                  if p.get("ticker") not in cooldown_set],
+                "income_picks": [p for p in screener.get("TFSA_income_top5",[])
+                                  if p.get("ticker") not in cooldown_set],
+                "swing_picks":  [p for p in screener.get("TFSA_swing_top3",[])
+                                  if p.get("ticker") not in cooldown_set],
                 "projection":   tfsa_proj,
             }
         },
