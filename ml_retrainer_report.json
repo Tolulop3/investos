@@ -1,61 +1,58 @@
 {
-  "retrained_at": "2026-08-06T01:42:05.203624",
-  "n_rows": 2436,
+  "retrained_at": "2026-08-13T02:33:09.671643",
+  "n_rows": 2502,
   "n_train": 1827,
-  "n_val": 609,
+  "n_val": 675,
   "holdout_cutoff_date": "2026-06-19",
-  "holdout_auc": 0.5133,
-  "cv_auc_mean": 0.6157,
-  "cv_auc_std": 0.069,
+  "holdout_auc": 0.5279,
+  "cv_auc_mean": 0.5942,
+  "cv_auc_std": 0.0699,
   "feature_importance": {
-    "rs_rating": 0.3802,
-    "momentum_6m": 0.2304,
-    "vol_adj_momentum": 0.1318,
-    "div_yield": 0.0869,
-    "momentum_12m": 0.0566,
-    "fcf_yield": 0.0378,
-    "profit_margin": 0.0231,
-    "rev_growth": 0.0227,
-    "earn_growth": 0.0183,
-    "roe": 0.0121,
+    "rs_rating": 0.288,
+    "momentum_12m": 0.2326,
+    "momentum_6m": 0.1899,
+    "vol_adj_momentum": 0.1887,
+    "roe": 0.0208,
+    "profit_margin": 0.0203,
+    "rev_growth": 0.0198,
+    "fcf_yield": 0.0175,
+    "earn_growth": 0.0115,
+    "div_yield": 0.0109,
     "earnings_yield": 0.0,
     "volatility_90d": 0.0,
     "beta": 0.0,
     "debt_equity": 0.0,
-    "sector_momentum": 0.0,
-    "market_regime": 0.0,
     "spx_vs_ma200": 0.0,
     "news_boost": 0.0,
-    "close_to_ema20_ratio": 0.0,
     "unified_regime_enc": 0.0,
     "macro_regime_enc": 0.0,
     "market_breadth_50ma": 0.0
   },
   "calibration_check": {
     "Q1": {
-      "mean_pred_prob": 0.322,
-      "actual_win_rate": 0.334,
-      "count": 488
+      "mean_pred_prob": 0.326,
+      "actual_win_rate": 0.339,
+      "count": 501
     },
     "Q2": {
-      "mean_pred_prob": 0.464,
-      "actual_win_rate": 0.466,
-      "count": 487
+      "mean_pred_prob": 0.467,
+      "actual_win_rate": 0.49,
+      "count": 500
     },
     "Q3": {
-      "mean_pred_prob": 0.512,
-      "actual_win_rate": 0.458,
-      "count": 487
+      "mean_pred_prob": 0.515,
+      "actual_win_rate": 0.432,
+      "count": 500
     },
     "Q4": {
-      "mean_pred_prob": 0.565,
-      "actual_win_rate": 0.517,
-      "count": 487
+      "mean_pred_prob": 0.636,
+      "actual_win_rate": 0.5,
+      "count": 500
     },
     "Q5": {
-      "mean_pred_prob": 0.733,
-      "actual_win_rate": 0.719,
-      "count": 487
+      "mean_pred_prob": 0.778,
+      "actual_win_rate": 0.739,
+      "count": 501
     }
   },
   "features_used": [
@@ -73,14 +70,13 @@
     "div_yield",
     "debt_equity",
     "rs_rating",
-    "sector_momentum",
-    "market_regime",
     "spx_vs_ma200",
     "news_boost",
-    "close_to_ema20_ratio",
     "unified_regime_enc",
     "macro_regime_enc",
     "market_breadth_50ma"
   ],
-  "label_definition": "actual_return > median(actual_return)"
+  "label_definition": "actual_return > median(actual_return)",
+  "deployed": false,
+  "rejected_reason": "holdout_auc 0.5279 < minimum 0.53"
 }
