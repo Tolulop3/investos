@@ -1,6 +1,6 @@
 ---
 ticker: CFR
-updated: 2026-08-13
+updated: 2026-08-14
 streak_days: 5
 score_now: 100.0
 velocity: 0
