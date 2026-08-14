@@ -3,7 +3,7 @@ ticker: UMBF
 updated: 2026-08-14
 streak_days: 4
 score_now: 89.0
-velocity: 0
+velocity: -7.0
 pf_30d: 0.05
 picks_30d: 7
 tags: [investos, ticker, pattern]
@@ -15,6 +15,10 @@ tags: [investos, ticker, pattern]
 Appeared in picks **4 of last 7 days**.
 Avg score: 89.0
 Dates: 2026-08-10, 2026-08-11, 2026-08-12, 2026-08-13
+
+## Score Velocity
+📉 **FALLING** at -7.0 pts/day
+Score: 99.0 → 85.0 (Δ -14.0 over 3 days)
 
 ## Recent Performance (last 30d)
 Profit Factor: **0.05** 🔴  |  n=7 picks
