@@ -791,6 +791,23 @@ def run_daily(test_mode=False, dry_run=False):
     start = datetime.now()
     sep   = "="*60
 
+    # FIX (2026-08-14): run duration has fluctuated 159-370s across recent
+    # runs with no clean single-commit cause; auditing it found stdout is
+    # fully buffered in CI (13 sequential "Fetched N/262" screening lines
+    # showed as 0.6ms apart in the log -- not real), so almost the entire
+    # pipeline's real timing was invisible, collapsed into a couple of
+    # buffer-flush bursts. PYTHONUNBUFFERED=1 (workflow env) fixes the
+    # buffering; _mark() below reports actual per-stage cost so the next
+    # slowdown is diagnosable from the log instead of requiring this kind
+    # of after-the-fact reconstruction.
+    _checkpoint = [start]
+    def _mark(prev_stage_label):
+        now = datetime.now()
+        stage_s = (now - _checkpoint[0]).total_seconds()
+        total_s = (now - start).total_seconds()
+        print(f"   ⏱  {prev_stage_label}: {stage_s:.1f}s | {total_s:.1f}s cumulative")
+        _checkpoint[0] = now
+
     print(f"\n{sep}")
     print(f"  INVESTOS — DAILY RUN v4.0")
     print(f"  {start.strftime('%B %d, %Y at %I:%M %p')}")
@@ -811,6 +828,7 @@ def run_daily(test_mode=False, dry_run=False):
     print(f"\n  🌍 Regime: {macro_regime} — {news.get('regime_note','')}")
 
     # ── 2. Market Regime ─────────────────────────────────────
+    _mark("News & Macro")
     print(f"\n[2/10] 📊 MARKET REGIME FILTER")
     regime = get_market_regime(verbose=True)
     # Sentinel: overwritten by 3-layer engine at step [11/12].
@@ -840,6 +858,7 @@ def run_daily(test_mode=False, dry_run=False):
         strategy_name, strategy_profile = "RISK_ON", None
 
     # ── 3. Stock Screen ──────────────────────────────────────────
+    _mark("Market Regime Filter")
     print(f"\n[3/10] 🔍 STOCK SCREEN (500+ universe)")
     try:
         screener = run_full_screen(max_tickers=30 if test_mode else None, verbose=True, strategy_profile=strategy_profile)
@@ -915,6 +934,7 @@ def run_daily(test_mode=False, dry_run=False):
         print(f"  ⚠️  Earnings filter skipped: {_ef_err}")
 
     # ── 4. News Adjustment ───────────────────────────────────
+    _mark("Stock Screen")
     print(f"\n[4/10] 🔗 APPLYING NEWS TO SCORES")
     screener = apply_news_to_screener(screener, news)
 
@@ -951,6 +971,7 @@ def run_daily(test_mode=False, dry_run=False):
     print(f"  🎯 Early regime: {early_regime} | Blocks: {category_blocks or 'none'}")
 
     # ── 5. ML Engine ─────────────────────────────────────────
+    _mark("Applying News to Scores")
     print(f"\n[5/10] 🤖 ML ENGINE (XGBoost + Position Sizing)")
     rs_for_ml = {}
     REGIME_MAX_EQUITY = {
@@ -1121,6 +1142,7 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception as _ee:
         print(f"  ⚠️  Evidence engine skipped: {_ee}")
 
+    _mark("ML Engine + Evidence Engine")
     print(f"\n[6/10] 🧠 INTELLIGENCE LAYERS (RS + History + Analyst)")
     # FIX (2026-08-08): see pick_utils.dedupe_raw_data_by_ticker's docstring
     # -- a ticker eligible for both FHSA and TFSA appears in both "_all"
@@ -1171,6 +1193,7 @@ def run_daily(test_mode=False, dry_run=False):
         ml_results["position_sizing"] = capped_iv
 
     # ── 7. X Signal Feeds ────────────────────────────────────
+    _mark("Intelligence Layers")
     print(f"\n[7/10] 📡 X SIGNAL FEEDS")
     x_feeds = []
     for account in CONFIG["x_accounts"]:
@@ -1182,6 +1205,7 @@ def run_daily(test_mode=False, dry_run=False):
     online_feeds = sum(1 for f in x_feeds if f["status"]=="ok")
 
     # ── 8. Conviction Engine ─────────────────────────────────
+    _mark("X Signal Feeds")
     print(f"\n[8/10] 🎯 CONVICTION ENGINE")
     trends = intel.get("trends", {})
     # Compute cooldown set here — tickers on cooldown are invisible to conviction AND sizing
@@ -1328,6 +1352,7 @@ def run_daily(test_mode=False, dry_run=False):
         print(f"  {p['ticker']:<12} Score:{p['score']}  Signals:{p['conviction_count']}  ML:{p.get('ml_prob',0.5):.0%}")
 
     # ── 9. FX & Gold ─────────────────────────────────────────
+    _mark("Conviction Engine")
     print(f"\n[9/12] 💱 FX & GOLD SIGNALS")
     try:
         fx_signals = run_fx_engine(news_analysis=news, verbose=True)
@@ -1352,6 +1377,7 @@ def run_daily(test_mode=False, dry_run=False):
         print(f"  ⚠️  FX outcome tracking skipped: {_fxe}")
 
     # ── 10. Crypto Signals ───────────────────────────────────
+    _mark("FX & Gold Signals")
     print(f"\n[10/12] 🪙 CRYPTO SIGNALS (BTC + SOL)")
     tfsa_bal = CONFIG["accounts"]["TFSA"]["balance"]
     crypto_signals = run_crypto_engine(news_analysis=news, portfolio_value=10000, verbose=True)  # hardcoded same as ML engine
@@ -1368,6 +1394,7 @@ def run_daily(test_mode=False, dry_run=False):
         print(f"  ⚠️  Crypto outcome tracking skipped: {_cte}")
 
     # ── 11. Risk Audit ───────────────────────────────────────
+    _mark("Crypto Signals")
     print(f"\n[11/12] 🛡  RISK AUDIT (Stress Test + Decay Monitor)")
     score_history = intel.get("history", {})
     breadth       = screener.get("breadth")
@@ -1637,6 +1664,7 @@ def run_daily(test_mode=False, dry_run=False):
         print(f"  ⚠️  Regime predictor error: {_rpe}")
 
     # ── 11b. ETF Signal Engine ────────────────────────────────
+    _mark("Risk Audit")
     print(f"\n[ETF] 📊 ETF SIGNAL ENGINE")
     etf_signals = {}
     try:
@@ -1662,6 +1690,7 @@ def run_daily(test_mode=False, dry_run=False):
         _etb.print_exc()
 
     # ── 12. Content Engine ───────────────────────────────────
+    _mark("ETF Signal Engine")
     print(f"\n[12/12] ✍️  SOCIAL CONTENT ENGINE")
 
     tfsa_bal  = CONFIG["accounts"]["TFSA"]["balance"]
@@ -2046,6 +2075,7 @@ def run_daily(test_mode=False, dry_run=False):
     rotate_brief_history(brief)
 
     # ── FINAL SUMMARY ─────────────────────────────────────────
+    _mark("Social Content Engine + Outcome Tracking")
     elapsed    = round((datetime.now()-start).total_seconds(), 1)
     fx_calls   = fx_signals.get("total_signals", 0)
     regime_spx = regime.get("regime","?")

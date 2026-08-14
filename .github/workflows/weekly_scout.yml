@@ -30,6 +30,7 @@ jobs:
         run: python scout_agent.py
         env:
           NGN_MARKETS_KEY: ${{ secrets.NGN_MARKETS_KEY }}
+          PYTHONUNBUFFERED: "1"   # see daily_run.yml's matching comment
 
       - name: Commit updated universe
         run: |

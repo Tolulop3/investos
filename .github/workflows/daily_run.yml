@@ -7,6 +7,8 @@ on:
   workflow_dispatch:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # suppress Node.js 20 deprecation warning
+  PYTHONUNBUFFERED: "1"   # unbuffered stdout -- log timestamps otherwise all clump at
+                          # the next buffer flush instead of reflecting when work happened
 jobs:
   daily-analysis:
     runs-on: ubuntu-latest
