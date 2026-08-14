@@ -42,7 +42,18 @@ jobs:
           git config --global user.email "investos-bot@users.noreply.github.com"
           git add -A
           git diff --staged --quiet || git commit -m "Patterns $(date +'%Y-%m-%d %H:%M') UTC"
-          git pull --rebase origin main
-          git push origin main
+          # Retry on push rejection -- see daily_run.yml's matching comment.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin main; then
+              break
+            fi
+            echo "Push rejected (attempt $i/5) — retrying after rebase..."
+            sleep $((RANDOM % 10 + 5))
+            if [ "$i" -eq 5 ]; then
+              echo "::error::Push failed after 5 attempts"
+              exit 1
+            fi
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
