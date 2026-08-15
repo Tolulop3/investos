@@ -1771,25 +1771,41 @@ def run_daily(test_mode=False, dry_run=False):
         # (Step 8 -- base rolling cooldowns + loss-streak flags + long-cooldowns
         # + news hard-exclusions), so this reuses the same trusted set the rest
         # of the pipeline already gates on, rather than inventing a new one.
-        # No backfill -- a filtered-out slot just means a shorter list, same as
-        # every other "top N" list in this codebase already tolerates.
+        #
+        # FIX (2026-08-14): these buckets are an unconditional top-N slice in
+        # stock_screener.py ("TFSA_growth_top5": tfsa_core_cands[:5]) -- no
+        # minimum score anywhere. Confirmed live: K.TO (score 49.5, "below-60"
+        # tier -- the tier every win-rate/PF cut this session has shown is
+        # marginal at best) filled TFSA_growth_top5's 4th slot because the
+        # eligible pool was thin that day (30pt cliff from the 3rd-place
+        # pick at 79.9), not cooldown or sector-gate related -- neither
+        # applied to it. Added the same 60 floor used elsewhere in the
+        # pipeline (e.g. the below-60 tier boundary itself).
+        #
+        # No backfill in either fix -- a filtered-out slot just means a
+        # shorter list, same as every other "top N" list in this codebase
+        # already tolerates.
         "accounts": {
             "FHSA": {
                 "balance":         CONFIG["accounts"]["FHSA"]["balance"],
                 "max_loss_buffer": round(CONFIG["accounts"]["FHSA"]["balance"]*0.16,2),
                 "top_picks":       [p for p in screener.get("FHSA_top5",[])
-                                     if p.get("ticker") not in cooldown_set],
+                                     if p.get("ticker") not in cooldown_set
+                                     and (p.get("score",0) or 0) >= 60],
                 "projection":      fhsa_proj,
             },
             "TFSA": {
                 "balance":      CONFIG["accounts"]["TFSA"]["balance"],
                 "buckets":      compute_bucket_allocation(CONFIG["accounts"]["TFSA"]["balance"]),
                 "growth_picks": [p for p in screener.get("TFSA_growth_top5",[])
-                                  if p.get("ticker") not in cooldown_set],
+                                  if p.get("ticker") not in cooldown_set
+                                  and (p.get("score",0) or 0) >= 60],
                 "income_picks": [p for p in screener.get("TFSA_income_top5",[])
-                                  if p.get("ticker") not in cooldown_set],
+                                  if p.get("ticker") not in cooldown_set
+                                  and (p.get("score",0) or 0) >= 60],
                 "swing_picks":  [p for p in screener.get("TFSA_swing_top3",[])
-                                  if p.get("ticker") not in cooldown_set],
+                                  if p.get("ticker") not in cooldown_set
+                                  and (p.get("score",0) or 0) >= 60],
                 "projection":   tfsa_proj,
             }
         },
