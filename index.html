@@ -1226,8 +1226,6 @@ body::after {
 </div><!-- /pane-brief -->
 
 
-  <div id="intelContent" style="display:none"><div class="empty">Loading system intelligence...</div></div>
-
 <!-- ════════════════════════════════════════ -->
 <!-- PANE 2 — FX & GOLD                     -->
 <!-- ════════════════════════════════════════ -->
@@ -2244,7 +2242,6 @@ function switchTab(name) {
   if (name === 'today')     { renderToday(); }
   if (name === 'portfolio') { renderPortfolio(); syncFromGitHub(); }
   if (name === 'breadth')   { renderBreadth(); }
-  if (name === 'intel')     { renderIntel(); }
   if (name === 'etf')       { renderETF(); }
   if (name === 'ngx')       { renderNGX(); }
   if (name === 'system')    { renderBreadth(); }
@@ -2297,7 +2294,6 @@ function renderAll() {
   if(BRIEF)   safe(() => renderSystem(BRIEF),         'renderSystem');
   safe(() => renderToday(),                'renderToday');
   safe(() => renderBreadth(),              'renderBreadth');
-  safe(() => renderIntel(),                'renderIntel');
   safe(() => renderETF(),                  'renderETF');
   safe(() => renderNGX(),              'renderNGX');  // always run — shows diagnostic if no data
 
@@ -7052,6 +7048,20 @@ document.addEventListener('DOMContentLoaded', function() {
   function refreshFromFetch(data) {
     try {
       if (!data || typeof data !== 'object') return; // nothing to update
+      // FIX (2026-08-15): this used to re-render unconditionally on every
+      // page load, even when the fetched latest_brief.json is the exact
+      // same snapshot already showing from BAKED -- the common case, since
+      // BAKED is baked from the same file moments after it's written. That
+      // meant every load did a full second renderAll() pass for no reason.
+      // Skip it when the fetched data isn't actually newer than what's
+      // already on screen; still fetch (cheap, and the only way to detect
+      // a CDN serving a stale index.html against a fresher latest_brief.json)
+      // but only pay for the render when it would actually change something.
+      if (BRIEF && BRIEF.generated_at && data.generated_at &&
+          data.generated_at <= BRIEF.generated_at) {
+        console.log('[InvestOS] Fetch returned no newer data (baked already current) — skipping re-render');
+        return;
+      }
       // Preserve NGX from BAKED if latest_brief.json doesn't have it yet
       // (latest_brief.json is written before NGX runs, BAKED is written after)
       if (!data.ngx && BRIEF && BRIEF.ngx) data.ngx = BRIEF.ngx;
