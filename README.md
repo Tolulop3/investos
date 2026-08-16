@@ -23,65 +23,68 @@ Goal: open the dashboard, know what the market is doing, know what to do, trust 
 
 **Bigger goal: InvestOS is the IP engine. Every product below reads from it.**
 
+**Project started: March 1, 2026.** 1,500+ commits since. Full history is in git log —
+this doc tracks state and major milestones, not every change. See SESSION LOG below for
+the milestone-level arc from day 1, and CURRENT SYSTEM STATE above for where things
+stand right now.
+
 ---
 
-## CURRENT SYSTEM STATE (as of July 4, 2026)
+## CURRENT SYSTEM STATE (as of August 15, 2026)
+
+> Rule version: **v4.1 ran continuously from Jun 26 → Aug 15, 2026.** v4.2 (pillar
+> rebalance) shipped Aug 15 — this is Day 0. Numbers below marked "OOS (v4.1)" are the
+> closed v4.1 window; v4.2 has no resolved picks yet. See `strategy_version.py` for the
+> versioning history — a July 4 sector-gate change was informally called "v4.2" in an
+> earlier draft of this doc before that label was ever actually logged; that was wrong
+> and has been corrected everywhere in this file. Don't reuse "v4.2" for anything else.
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| Sharpe (90d rolling) | **0.416** (1,654 picks, Apr 6 → Jul 4) | ✅ Recovering |
-| Win rate overall | **49.5%** (ex-NGX, ex-dupes, N=2,019) | ⚠️ Pre-sector-gate era picks drag |
-| PF overall | **1.05** | ⚠️ Near break-even (chronic losers removed) |
-| Avg return/pick | +0.02% (OOS period) | ⚠️ Compressed — early OOS |
-| Unified regime | DEFENSIVE | 🔴 Guard at 0.25× |
-| Macro regime | RISK_OFF | 🔴 6 active signals (tariff + ME tension + health) |
-| Robustness | 50/100 | ⚠️ Recovering (was 25) |
-| Risk multiplier | 0.25× | 🔴 RISK_OFF + DEFENSIVE |
-| Neg alpha streak | **12 calendar days** | ⚠️ Clearing — SPX +2.17% vs OOS +0.02% |
-| Universe | 153 tickers (all_scores.json) | ✅ |
-| OOS | Day 8 — v4.2 | ⏳ 174 logged / 52 resolved / WR 50.0% |
-| NGX phase | RESTRICTED Day 48 | ⏳ Tier 1 ≥80 only — tracked separately |
-| NGX win rate | tracked in ngx_outcomes.json (excl. from main metrics) | ⚠️ |
+| Rolling Sharpe (90d) | **-0.32** (1,611 picks, May 17 → Aug 15) | 🔴 WARNING — below 0.3 minimum, guard firing |
+| Alpha vs SPX | **-4.18** | 🔴 |
+| Win rate overall | **47.2%** (N=2,546 resolved) | ⚠️ |
+| PF overall | **1.05** | ⚠️ Near break-even |
+| Avg return/pick | +0.09% | ⚠️ |
+| Unified regime | NEUTRAL (+0.16) | ⚠️ market +1.0 / macro -0.3 / health -0.5 |
+| Macro regime | RISK_OFF | 🔴 |
+| Robustness | 25/100 | 🔴 (was 50 on Jul 4 — declined) |
+| Risk multiplier / exposure | 0.5× / 75% | ⚠️ NEUTRAL band |
+| Neg alpha streak | **50 calendar days** | 🔴 |
+| Universe | 262 tickers (static + dynamic scout) | ✅ |
+| OOS (v4.1, closed Aug 15) | 689 logged / 579 resolved / WR 47.2% | Active return -3.25% vs SPX +3.34% |
+| OOS (v4.2, started Aug 15) | 0 resolved yet | ⏳ Target read: ~Nov 15, 2026 |
+| NGX | tracked separately in `ngx_outcomes.json` | excluded from main metrics |
 | Runtime | ~90s | ✅ |
-| Last audit | July 4, 2026 | Post-sector-gate + long-cooldown system |
+| Last audit | Aug 15, 2026 (this refresh) | |
 
-**Score tier performance (N=2,019 resolved picks, July 4, 2026):**
+**Target goal (unchanged, not yet met — Architecture Decision #5):** Sharpe > 1.0
+sustained, before any product launch. Current: -0.32. Trend since Jul 4 is down, not up
+(Sharpe 0.42→-0.32, robustness 50→25) — the system needs more work before v4.2's real
+payoff can even register, let alone close this gap.
+
+**Score tier performance (N=2,546 resolved picks, Aug 15, 2026 — this is the exact
+pattern v4.2 was built to fix; see `strategy_version.py`'s v4.2 note for the full
+root-cause and the honest limits of what was and wasn't confirmed):**
 | Tier | n | WR | Avg Return | PF | Notes |
 |------|---|----|------------|-----|-------|
-| 90-100 | 927 | 46.1% | -0.24% | 0.88 🔴 | Sector gate now blocks chronic losers |
-| 75-89 | 533 | 53.3% | +0.05% | 1.03 ⚠️ | Marginal — monitor |
-| 60-74 | 380 | 55.8% | +0.89% | 1.71 ✅ | Sweet spot — strong edge |
-| below-60 | 167 | 42.5% | +0.01% | 1.00 ⚠️ | Weak |
+| 90-100 | 1,103 | 43.6% | -0.29% | 0.85 🔴 | Worst tier — the inversion v4.2 targets |
+| 75-89 | 693 | 50.8% | +0.11% | 1.07 ⚠️ | |
+| 60-74 | 509 | 52.3% | +0.87% | 1.72 ✅ | Sweet spot — strong edge |
+| below-60 | 216 | 42.1% | -0.04% | 0.98 ⚠️ | |
 
-**OOS performance (since 2026-06-26, v4.2):**
-| Metric | Value | Note |
-|--------|-------|------|
-| Picks logged | 174 | 8 days into OOS |
-| Resolved | 52 | ~14-day horizon resolving |
-| OOS WR | 50.0% | Neutral — too early to signal |
-| OOS avg return | +0.02% | Compressed by DEFENSIVE regime |
-| SPX (same period) | +2.17% | Benchmark |
-| Active return | -2.15% | Expected under 0.25× deployment |
-
-**ML calibration (post-audit, by ml_prob bucket):**
+**ML calibration (by ml_prob bucket, Aug 15, 2026):**
 | ml_prob | N | WR | PF | Signal |
 |---------|---|----|----|--------|
-| 60-69% | 103 | 62.1% | 2.89 | ✅ Sweet spot |
-| 70-79% | 180 | 55.6% | 3.48 | ✅ Sweet spot |
-| 80-89% | 318 | 49.7% | 1.17 | ⚠️ Neutral |
-| 90-99% | 166 | 39.2% | 0.33 | 🔴 Overconfidence — Kelly penalised 0.30× |
+| 0.0-0.2 | 908 | 45.8% | 1.00 | ⚠️ Neutral — this is the ML-gate-excluded band |
+| 0.2-0.4 | 423 | 46.6% | 0.94 | ⚠️ |
+| 0.4-0.5 | 246 | 48.0% | 1.15 | ⚠️ |
+| 0.5-0.6 | 163 | 50.9% | 1.24 | ⚠️ |
+| 0.6-0.8 | 322 | 54.7% | 2.96 | ✅ Sweet spot |
+| 0.8-1.0 | 484 | 43.8% | 0.64 | 🔴 Overconfidence band |
 
-**PF Baseline (locked June 25, 2026 — re-anchored post-audit July 2, 2026):**
-| Tier | Pre-audit PF | Post-audit PF | Delta |
-|------|------------|---------|--------|
-| 90-100 (all) | 0.90 | 0.89 | -0.01 |
-| 90-100 (ex-losers) | — | 1.43 | +0.54 new |
-| 60-74 | 1.90 | 1.76 | -0.14 |
-| Overall | 1.06 | 1.05 | -0.01 |
-| Overall (ex-losers) | — | 1.37 | new |
-
-> NGX excluded from all main metrics. Figures are ex-NGX, ex-dupes unless stated.
-> Chronic losers (10 tickers) now permanently excluded via permanent_exclusions.json.
+> NGX excluded from all main metrics. Chronic losers (10 tickers) permanently excluded
+> via `long_cooldowns.json` (90-day rolling block, auto-renew if WR < 35% on expiry).
 
 ---
 
@@ -228,26 +231,34 @@ history/obsidian/
 | `pattern_agent.py` | 595 | 9:45am: detects patterns, writes signals, closes loop |
 | `strategist_agent.py` | 356 | 10:00am: Claude reasons about data, writes research note |
 | `history_analyzer.py` | 488 | Silent daily: generates history_analysis.json |
-| `strategy_version.py` | — | OOS anchor — logs 41 rule params per run |
-| `congressional_engine.py` | — | SEC EDGAR Form 4. HTTP 403 = DATA UNAVAILABLE |
+| `strategy_version.py` | — | OOS anchor — logs rule params per run, now on v4.2 |
+| `strategy_engine.py` | 247 | Regime-aware dynamic factor weights (RISK_ON/CAUTIOUS/DEFENSIVE/CAPITAL_PRESERVATION) |
+| `gate_engine.py` | 187 | Hysteresis-aware ML gate (score≥90, ml_prob<20% → excluded), built Jul 9 |
+| `pick_utils.py` | 145 | Shared pick-dict accessors — sector/category/hold_days live nested, not top-level; this is the fix for that class of bug |
+| `evidence_engine.py` | 266 | Historical backing enrichment for picks — revived Aug 9 after being silently broken since inception |
+| `insider_engine.py` | 745 | SEC EDGAR Form 4 insider trading signals — logged as an ML feature |
 | `ngx_screener.py` | ~360 | Nigerian Exchange macro-driven signals |
 | `crypto_engine.py` | ~357 | BTC + SOL signals |
 | `index.html` | ~7148 | Full dashboard — baked daily |
-| `.github/workflows/daily_analysis.yml` | ~30 | 9:30am ET weekdays |
-| `.github/workflows/pattern_agent.yml` | ~30 | 9:45am ET weekdays |
-| `.github/workflows/strategist_agent.yml` | ~30 | 10:00am ET weekdays |
-| `.github/workflows/weekly_scout.yml` | ~30 | Sunday 6AM ET |
+| `.github/workflows/daily_run.yml` | — | 9:30am ET weekdays — main pipeline |
+| `.github/workflows/pattern_agent.yml` | — | 9:45am ET weekdays |
+| `.github/workflows/strategist_agent.yml` | — | 10:00am ET weekdays |
+| `.github/workflows/weekly_scout.yml` | — | Sunday 6AM ET |
+| `.github/workflows/tests.yml` | — | CI test suite |
+
+> `congressional_engine.py` was removed Aug 9, 2026 (dead code — SEC EDGAR Form 4 now
+> handled by `insider_engine.py`).
 
 **Persistent data files (never delete):**
 | File | Contents |
 |------|----------|
-| `outcomes_log.json` | Every pick — 2,020 total (1,850 resolved) |
-| `cooldown_flags.json` | Permanent exclusions + loss-streak cooldowns |
-| `pf_baseline.json` | PF baseline locked June 25 |
+| `outcomes_log.json` | Every pick — 2,656 total (2,546 resolved) |
+| `cooldown_flags.json` / `long_cooldowns.json` | Permanent exclusions + 90-day rolling cooldowns |
+| `pf_baseline.json` | PF baseline, locked June 25 |
 | `pattern_signals.json` | Pattern agent score boosts — updated 9:45am |
 | `history_analysis.json` | Weekly structured analysis |
-| `strategy_version.json` | OOS audit trail — v4.1 from June 26 |
-| `universe_current.json` | Current universe (static + dynamic scout) |
+| `strategy_version.json` | Rule-state audit trail — v4.1 Jun 26 → Aug 15, v4.2 from Aug 15 |
+| `universe_current.json` | Current universe (static + dynamic scout, 262 tickers) |
 | `history/YYYY-MM-DD.json` | Daily snapshots — started June 6, 2026 |
 | `history/obsidian/` | All Obsidian notes — synced to Mac vault |
 
@@ -262,8 +273,9 @@ history/obsidian/
         [2]  MARKET REGIME   → risk_engine.py
         [3]  STOCK SCREEN    → stock_screener.py (reads pattern_signals.json)
         [4]  APPLY NEWS      → run_daily.py
-        [4c] CONGRESSIONAL   → congressional_engine.py
-        [5]  ML ENGINE       → ml_engine.py
+        [4c] INSIDER SIGNALS → insider_engine.py (SEC EDGAR Form 4 — replaces the
+                                removed congressional_engine.py)
+        [5]  ML ENGINE       → ml_engine.py (sector-first gate + ML gate — gate_engine.py)
         [6]  INTELLIGENCE    → intelligence_layers.py
         [7]  X FEEDS         → run_daily.py
         [8]  CONVICTION      → run_daily.py
@@ -287,31 +299,46 @@ history/obsidian/
         → writes research note
 ```
 
-### Score Compression (v4.1 — June 26 2026)
+### Score Compression (v4.1 — June 26 2026, unchanged by v4.2)
 ```python
 # Above 85: each raw point = 0.4 calibrated points (was 0.6)
 # Raw 100 → 91. Raw 94 → 88.6 (shifts to 75-89 tier)
 adjusted = 85 + (excess * 0.4)
+```
+This compresses the *final* 0-100 total and is independent of how pillars are weighted.
+v4.2 (below) changes the pillar weighting that feeds into this — the two are complementary,
+not overlapping.
+
+### Pillar Rebalance (v4.2 — August 15 2026)
+```python
+# Momentum cap 35 -> 22, growth 15 -> 20, value 12 -> 16, safety 13 -> 15
+# (dividend_income, volume_liquidity unchanged). Bonus layer capped at +/-15 (was
+# unbounded). Root cause: momentum was overweighted since 2026-05-03 based on a
+# self-referential health check that never validated momentum against future win/loss.
+# Full root-cause + validation methodology + the honest limits of what got confirmed:
+# strategy_version.py's v4.2 OVERRIDE NOTE and DOWNSTREAM GAP INVESTIGATION note.
 ```
 
 ### Three-Layer Unified Regime Engine
 ```
 market_score  = +1.0   (SPX vs 200MA)
 macro_score   = -0.3   (news signals)
-health_score  = -1.0   (Sharpe — currently negative)
+health_score  = -0.5   (Sharpe -0.32, currently negative — see CURRENT SYSTEM STATE)
 unified_score = (0.40 × market) + (0.30 × macro) + (0.30 × health)
-→ DEFENSIVE (12% exposure, 0.25× risk multiplier)
+→ current: NEUTRAL (75% exposure, 0.5× risk multiplier) — re-derive from live brief,
+  this example is illustrative, not a fixed constant
 ```
 
 ### Safety Gates (in order)
 1. Long cooldowns — `long_cooldowns.json` — 90-day rolling block, 10 chronic losers, auto-renew WR<35%
 2. Loss-streak cooldown — 2+ losses in 7d → 3d block; 3+ in 14d → 7d block
-3. Materials≥75 block — Materials sector picks at score≥75 → pre-emptive exclusion
-4. Sector diversity cap — max 2 picks per normalized sector
-5. Sector-first gate (July 2026) — score≥90: ENERGY/BANKS/FINANCIALS pass without ML gate.
+3. Materials≥75 block (Jul 4, expanded to MATERIALS/HEALTHCARE/REIT/TELECOM Jul 8) — pre-emptive exclusion before the sector-first gate below
+4. Sector diversity cap — max 2 picks per normalized sector (TFSA basket only)
+5. Sector-first gate (`ml_engine.py`, added Jul 4, hysteresis via `gate_engine.py` since Jul 9) — score≥90:
+   ENERGY/FINANCIALS pass without ML gate (BANKS is a dead alias — normalizes to FINANCIALS).
    MATERIALS/TELECOM/HEALTHCARE/REIT/CONSUMER blocked regardless of ML.
    All other sectors → ML gate (ml_prob ≥ 20% required).
-6. Sharpe guard — Sharpe negative → 12% of normal sizing
+6. Sharpe guard — Sharpe negative → sizing cut (currently 0.5×, was 12% under DEFENSIVE — scales with regime)
 
 ### Pattern Signal Boost (new — June 27)
 ```python
@@ -340,29 +367,56 @@ F, DXCM, WPM.TO, FM.TO, ABX.TO, AEM.TO, AGI.TO, MDB, MSFT
 
 ## KNOWN ISSUES (open)
 
-**Fixed since June 27 audit:**
-- ✅ JPM duplicate in conviction picks — fixed
-- ✅ Neg alpha streak double-count (49 runs → 12 calendar days) — fixed
-- ✅ ML gate cooldown bypass — permanent exclusions now in get_cooldown_set()
-- ✅ Permanent block too aggressive — replaced with 90-day rolling cooldown (long_cooldowns.json)
-- ✅ Sector-first gate (July 4) — ENERGY/BANKS/FINANCIALS bypass ML gate; MATERIALS/TELECOM/HEALTHCARE/REIT/CONSUMER blocked at score≥90
-- ✅ Materials≥75 block — pre-emptive filter before sector gate
-- ✅ Permanent exclusion display bug — now shows all 10 tickers, not just newly-added
-- ✅ Dashboard stale metrics — gate_status + OOS block now baked dynamically
+**Fixed since July 4 audit (75 substantive commits — categorized, not exhaustive):**
+- ✅ v4.2 pillar rebalance (Aug 15) — momentum cap 35→22, growth/value/safety raised back
+  toward pre-V2 levels, bonus capped ±15 — root cause of the 90-100 tier inversion, see
+  `strategy_version.py`
+- ✅ FHSA/TFSA duplicate-pick dedup unified into shared `pick_utils.py` — several picks
+  were silently double-counted or mis-routed across accounts
+- ✅ Category routing bug — read the wrong dict key, was always None
+- ✅ ML train/holdout split — was leaky (positional), now date-based
+- ✅ Evidence Engine — was silently broken since inception (3 compounding bugs), now revived
+- ✅ calibration_check qcut crash + ETF ZLB.TO duplicate category bug
+- ✅ Insider engine (SEC EDGAR) — 403 fixed (User-Agent), Form4 direction parsing completed,
+   now logged as an ML feature
+- ✅ Sharpe advisory wired into real position sizing (Phase 2)
+- ✅ ticker.js gated at the edge — was allowing unauthorized billing
+- ✅ Dashboard: gated-out picks no longer surface as "#1 CONVICTION" or the day's tweet;
+   cooldown-flagged tickers filtered from the accounts dashboard
+- ✅ ANTHROPIC_API_KEY added — strategist agent live, producing daily research notes
+- ✅ NGX expanded to 56 candidate tickers with per-ticker validation clock (was single
+   global phase gate)
 
 **Open issues:**
 | Priority | Issue | Detail | Fix |
 |----------|-------|--------|-----|
-| ⚠️ MEDIUM | ML retrain imminent | Coverage gate approaching — watch for auto-fire | Auto-fires |
-| ⚠️ MEDIUM | OOS 0 confirmed alpha | 52 resolved, WR=50%, active=-2.15% — too early; first checkpoint Jul 15-20 | Wait |
-| ⚠️ MEDIUM | 60-74 tier PF drifting | Was 1.76-1.92, now 1.71 — monitor trend | Monitor |
-| ⚠️ MEDIUM | pattern_agent needs 30d data | Boosts are noise until patterns accumulate | Wait (Jul 27) |
-| ⚠️ MEDIUM | strategist needs ANTHROPIC_API_KEY | Add to GitHub Secrets | One-time setup |
-| ⚠️ MEDIUM | unified_regime historical coverage low | Historical picks lack unified_regime tag | Auto-improves |
-| ℹ️ INFO | 75-89 tier Kelly oscillating near zero | avg_ret compressed during DEFENSIVE regime → Kelly ~0.000-0.027 per run. Expected. | Wait |
+| 🔴 HIGH | Rolling Sharpe negative | -0.32, below the 0.3 guard threshold — sizing cut to 0.5× | Guard is firing; needs sustained recovery, not a code fix |
+| 🔴 HIGH | 90-100 tier still worst-performing | 43.6% WR / PF 0.85, the exact pattern v4.2 targets | v4.2 shipped Aug 15 — no resolved picks yet, watch OOS |
+| ⚠️ MEDIUM | Residual score-tier gap, cause unidentified | Even after modeling every known downstream filter (ML gate, sector gate, materials≥75 block) correctly scoped to when each was actually live, ~12-15pt of the 90-100 tier's WR gap has no confirmed cause. Full explanation logged in `strategy_version.py`'s "DOWNSTREAM GAP INVESTIGATION" note (2026-08-15) — includes a negative result (an earlier gate-based explanation didn't hold up under era-correct re-analysis) so it isn't re-investigated the same way. | See "Per-date code reconstruction — scoped" below |
+| ⚠️ MEDIUM | ML retrain coverage gate | Watch for auto-fire | Auto-fires |
+| ⚠️ MEDIUM | 60-74 tier PF drifting | Was 1.71-1.92 in July, now 1.72 — stable, keep monitoring | Monitor |
 | ℹ️ LOW | BoC feed 0 articles | No recent items in RSS | Not a code issue |
 | ℹ️ LOW | Reuters/AP/Investopedia ❌ | GitHub Actions DNS — 12/15 stable ceiling | Architecture decision |
 | ℹ️ INFO | Congressional 403 | S3 endpoints gone. api.congress.gov is clean path | Add CONGRESS_API_KEY |
+
+**Per-date code reconstruction — scoped (not started):**
+The residual score-tier gap above can't be fully explained from current data. Closing it
+would need per-historical-date reconstruction of exactly what the pipeline did, not just
+today's code applied retroactively. Scoped into two halves:
+- **Reconstructable (tedious, not blocked):** `stock_screener.py` / `ml_engine.py` changed
+  22 and 56 times respectively between 2026-06-14 and 2026-08-08 — pinning the exact
+  commit active at each historical `signal_date` and replaying `score_stock()` against
+  it is mechanical git-log work, just a lot of it.
+- **Not reconstructable from git history at all:** the reserve/substitution pool (which
+  candidate got swapped in when another was gated out) was never persisted —
+  `screener_results.json` is an ephemeral runtime file, never committed. `gate_engine.py`
+  hysteresis (day-over-day memory in `gate.decide()`) also isn't captured by point-in-time
+  snapshots — it needs sequential replay of state that was never logged either.
+- **Recommended path, if this gets picked up:** instrument the pipeline to persist gate
+  decisions and reserve-pool composition going forward (small, real code change), then
+  revisit with real forward data instead of trying to reconstruct history that was never
+  captured. Reconstructing the past is the expensive, possibly-incomplete option; logging
+  the future properly is cheap and conclusive.
 
 ---
 
@@ -370,13 +424,12 @@ F, DXCM, WPM.TO, FM.TO, ABX.TO, AEM.TO, AGI.TO, MDB, MSFT
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Sharpe recovery | ⏳ June 28-30 | March picks rolling off — auto-recovers |
-| ML retrain | ⏳ ~3 weeks | ~143 more featured picks needed |
-| OOS validation | ⏳ Sept 2026 | 90 days needed for meaningful evidence |
-| Walk-forward | ⏳ Aug 2026 | 60+ days history required |
-| Pattern agent data | ⏳ 30 days | Boosts meaningful after July 27 |
-| NGX FTSE catalyst | ⏳ Sept 2026 | $840M-$1B+ inflows — 3 months away |
-| AGI.TO | ⚠️ Watch | 18 picks, 33% WR — approaching exclusion threshold |
+| Sharpe recovery | 🔴 Not recovering | -0.32 and declining since Jul 4 (was 0.42) — needs real attention, not just time |
+| v4.2 OOS read | ⏳ ~Nov 15, 2026 | Day 0 = Aug 15, 2026. #4 (RISK_ON momentum multiplier) deferred until this read |
+| ML retrain | ⏳ Auto-fires on coverage gate | |
+| Walk-forward validation | ⏳ Aug 2026 target (README says "60+ days history required" — check if this has quietly become feasible) | |
+| NGX FTSE catalyst | ⏳ Sept 2026 | Institutional reclassification window — universe already expanded ahead of it |
+| AGI.TO | Check current status | Was "18 picks, 33% WR, approaching exclusion" as of Jul 4 — verify against current `long_cooldowns.json` before assuming still true |
 
 ---
 
@@ -404,7 +457,7 @@ F, DXCM, WPM.TO, FM.TO, ABX.TO, AEM.TO, AGI.TO, MDB, MSFT
 |------|--------|
 | Hardcoded secrets | ✅ None — all via os.environ / GitHub Secrets |
 | trades.csv | ✅ Gitignored |
-| ANTHROPIC_API_KEY | ⚠️ Add to GitHub Secrets for strategist agent |
+| ANTHROPIC_API_KEY | ✅ Set — strategist agent producing daily research notes |
 | Netlify function auth | ✅ x-investos-key header required |
 | ML model cache (.pkl) | ✅ Gitignored |
 | __pycache__ | ✅ Gitignored (fixed June 27) |
@@ -461,8 +514,12 @@ GTCO(~₦135), MTNN(~₦820), SEPLAT(~₦11,363) — primary targets for passive
 ## IMMEDIATE NEXT BUILDS (in order)
 
 ```
-1. Add ANTHROPIC_API_KEY to GitHub Secrets
-   → unlocks strategist_agent.py daily research notes
+0. [DONE] ANTHROPIC_API_KEY — strategist agent live since ~July 2026
+
+1. Sharpe recovery — the actual blocker before anything else on this list matters.
+   -0.32 and declining since Jul 4 (was 0.42). v4.2 (Aug 15) targets one real
+   contributor (90-100 tier PF 0.85) but has zero resolved picks yet — watch,
+   don't assume fixed.
 
 2. UI — search overlay (⌘K)
    → ticker search → full research card
@@ -483,6 +540,9 @@ GTCO(~₦135), MTNN(~₦820), SEPLAT(~₦11,363) — primary targets for passive
    → email capture before FTSE catalyst
 ```
 
+Per Architecture Decision #5, none of 2-6 should ship as a public product before Sharpe
+recovers — they can still be *built* (personal use), just not launched.
+
 ---
 
 ## HOW TO CONTINUE A SESSION
@@ -502,6 +562,21 @@ The AI should:
 ---
 
 ## SESSION LOG
+
+**Early history (Mar 1 – Jun 21, 2026) — condensed.** ~1,100 commits in this window,
+mostly manual "Add files via upload" cycles (bulk re-uploads, not incremental diffs) and
+bot-generated daily briefs, before commit-message discipline (`fix:`/`feat:` prefixes)
+started Jul 3. Not itemized here — full detail is in `git log`. Milestones worth knowing:
+
+| Date | Change | Notes |
+|------|--------|-------|
+| Mar 1, 2026 | **Project started.** Core engine bootstrapped essentially whole | `stock_screener.py`, `ml_engine.py`, `risk_engine.py`, `news_analyzer.py`, `run_daily.py`, `daily_run.yml` all first appear same day |
+| Mar 1-2 | Rapid upload/delete/re-upload churn | Early bootstrapping via GitHub web UI, not local dev — 382 commits in March alone |
+| Mar 2 | `outcome_tracker.py` added | Win rate / outcome tracking begins |
+| May 3, 2026 | **Momentum pillar cap raised 20→35 ("V2")** | Based on a flawed self-referential health check (score-vs-price correlation, not future win/loss) — this is the root cause the Aug 15 v4.2 fix reverses. See `strategy_version.py`'s v4.2 note |
+| Jun 25-26 | v4.1 rule freeze declared, OOS tracking begins | Day 0 = Jun 26. First disciplined "frozen rule set" commitment in the project |
+
+Detailed log resumes below from Jun 22 onward (dedup/baseline work that preceded the v4.1 freeze).
 
 | Date | Change | File(s) | Notes |
 |------|--------|---------|-------|
@@ -526,20 +601,36 @@ The AI should:
 | Jun 27 | strategist_agent.py built | strategist_agent.py | Claude API, daily research note |
 | Jun 27 | strategist_agent.yml workflow | .github/workflows/ | 10:00am ET weekdays |
 | Jun 27 | README updated | README.md | Full platform state captured |
+| Jul 4 | Sector-first gate + Materials≥75 block | ml_engine.py | ENERGY/FINANCIALS bypass ML gate; MATERIALS/TELECOM/HEALTHCARE/REIT/CONSUMER blocked at score≥90 |
+| Jul 8 | Materials≥75 block expanded | ml_engine.py | Now covers MATERIALS/HEALTHCARE/REIT/TELECOM, not materials-only |
+| Jul 9 | gate_engine.py built | gate_engine.py | Hysteresis-aware ML gate, replaces flat threshold |
+| Jul 23 | ML train/holdout split fixed | ml_engine.py | Was leaky (positional), now date-based by signal_date |
+| Aug 6 | score-tier inversion — first pass | stock_screener.py | Flattened rs_adj curve, split SWING category cap |
+| Aug 8-9 | FHSA/TFSA dedup unified | pick_utils.py (new) | Several picks were silently double-counted/mis-routed; congressional_engine.py removed (dead), Evidence Engine revived |
+| Aug 9 | Insider engine completed | insider_engine.py | SEC EDGAR Form4, 403 fixed, logged as ML feature |
+| Aug 10 | Sharpe advisory wired into sizing | ml_engine.py | Phase 2 |
+| Aug 15 | v4.2 — pillar rebalance (root cause) | stock_screener.py, strategy_version.py | Momentum cap 35→22, bonus capped ±15 — see strategy_version.py for full root-cause + validation + the downstream-gate investigation's negative result |
+| Aug 15 | README refreshed | README.md | Was stale since Jul 4 (6 weeks, 75+ unlogged commits) — this refresh |
 
 ---
 
 ## CONVERSATION CONTEXT
 
 - "Uncle" = Claude
-- OOS start: June 26 2026 (v4.1 — curve fix confirmed in code)
-- $5,000 hero number = deployable capital at current 0.25× multiplier
-- Score ceiling decision: curve 0.4 (NOT hard cap at 89) — ordinal ordering preserved
-- Pattern agent: boosts are noise for ~30 days — meaningful after July 27
-- Strategist agent: needs ANTHROPIC_API_KEY in GitHub Secrets
+- Rule versioning: v4.1 ran Jun 26 → Aug 15, 2026. v4.2 (pillar rebalance) started
+  Aug 15 — see strategy_version.py, not this doc, for the authoritative version history
+- Deployable capital scales with the current risk multiplier (0.5× as of Aug 15) — see
+  the live dashboard for actual account figures, not this doc
+- Score ceiling decision: curve 0.4 (NOT hard cap at 89) — ordinal ordering preserved.
+  Independent of and complementary to v4.2's pillar rebalance — don't conflate the two
+- Strategist agent: ANTHROPIC_API_KEY is set, live since ~July 2026
 - Obsidian sync: check Git plugin pull interval if notes not appearing on Mac
-- AllocOS: next product build after Telegram bot setup
-- NGX FTSE: September 2026 catalyst — 3 months to institutional window
+- AllocOS: next product build after Telegram bot setup — still not started as of Aug 15
+- NGX FTSE: September 2026 catalyst — universe already expanded to 56 candidates ahead of it
+- Downstream-gate investigation (Aug 15): tested whether ML/sector gates explain the
+  score-tier inversion gap. Came back negative under correct era-scoping. Don't
+  re-run the same naive "apply today's rules to all history" test — see
+  strategy_version.py's DOWNSTREAM GAP INVESTIGATION note for why it's wrong
 
 ---
 
