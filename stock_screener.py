@@ -217,12 +217,16 @@ PROFILE = {
     "income": 58000,
     "risk_tolerance": "high_calculated",
 
-    # What matters to you — weights sum to 100
+    # What matters to you — mirrors the real pillar caps in score_stock()
+    # (v4.2, 2026-08-15). NOTE: this dict is currently unused by
+    # score_stock() -- `w = PROFILE["weights"]` is assigned but never
+    # referenced. Kept in sync anyway as the documented statement of
+    # intent, in case that changes.
     "weights": {
-        "momentum":         20,   # Price trending up
-        "dividend_income":  20,   # Yield + consistency
+        "momentum":         22,   # Price trending up
+        "dividend_income":  15,   # Yield + consistency
         "growth":           20,   # Revenue/earnings growth
-        "value":            15,   # Not overvalued
+        "value":            16,   # Not overvalued
         "safety":           15,   # Low drawdown, stability
         "volume_liquidity": 10,   # Can actually trade it
     },
@@ -471,24 +475,39 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
     flags   = []
     w       = PROFILE["weights"]
 
-    # ── 1. MOMENTUM (35 pts) — PRIMARY DRIVER ───────────
-    # V2: Raised from 20→35pts. Momentum is the confirmed working
-    # factor. Data shows momentum factor HEALTHY every run while
-    # high-score picks underperform. Weight it accordingly.
-    # 90D momentum (primary — 22pts max)
+    # ── 1. MOMENTUM (22 pts) ─────────────────────────────
+    # FIX (2026-08-15, v4.2): reverted most of the V2 (2026-05-03) change
+    # that raised this cap 20->35 -- that revision's own comment cited
+    # "momentum factor HEALTHY every run" as justification, but that check
+    # (check_momentum_factor_health) only measures whether rising SCORES
+    # correlate with rising PRICES, near-tautological since score already
+    # includes momentum -- not whether momentum predicts FUTURE win/loss.
+    # Measured directly against 1,103 resolved 90-100-tier picks: within
+    # that tier, WINNERS averaged LOWER perf_90d (26.15 vs 29.87), lower
+    # perf_30d (7.76 vs 10.00), and lower rs_rating (76.18 vs 81.60) than
+    # LOSERS -- momentum is inversely predictive at the extreme end this
+    # pillar was weighted to chase. 35pts let it dominate the composite
+    # score (vs growth/value/safety capped at 15/12/13) and, combined with
+    # uncapped bonus stacking below, put 56% of the entire 90-100 tier at
+    # score=100 exactly -- a tier where score no longer differentiates
+    # winners from losers at all (97.31 vs 97.89 average, on a 10-point
+    # tier). Tiers/sub-values below rescaled proportionally (22/35), not
+    # just the outer cap, so 30D confirmation still has real headroom to
+    # matter rather than being swallowed by an already-maxed 90D score.
+    # 90D momentum (primary — 14pts max)
     mom = 0
-    if data["perf_90d"] > 20:    mom = 22; reasons.append(f"🚀 Strong 90d: +{data['perf_90d']}%")
-    elif data["perf_90d"] > 10:  mom = 17; reasons.append(f"📈 Good 90d: +{data['perf_90d']}%")
-    elif data["perf_90d"] > 5:   mom = 11; reasons.append(f"📈 Positive 90d: +{data['perf_90d']}%")
-    elif data["perf_90d"] > 0:   mom = 6
-    elif data["perf_90d"] > -10: mom = 2
+    if data["perf_90d"] > 20:    mom = 14; reasons.append(f"🚀 Strong 90d: +{data['perf_90d']}%")
+    elif data["perf_90d"] > 10:  mom = 11; reasons.append(f"📈 Good 90d: +{data['perf_90d']}%")
+    elif data["perf_90d"] > 5:   mom = 7;  reasons.append(f"📈 Positive 90d: +{data['perf_90d']}%")
+    elif data["perf_90d"] > 0:   mom = 4
+    elif data["perf_90d"] > -10: mom = 1
     else: mom = 0; flags.append(f"⚠️ Negative 90d trend: {data['perf_90d']}%")
 
-    # 30D confirmation (13pts max)
-    if data["perf_30d"] > 5:    mom = min(35, round(mom + 13, 1)); reasons.append(f"📈 30d momentum: +{data['perf_30d']}%")
-    elif data["perf_30d"] > 2:  mom = min(35, round(mom + 8, 1))
-    elif data["perf_30d"] > 0:  mom = min(35, round(mom + 4, 1))
-    elif data["perf_30d"] < -5: mom = max(0,  round(mom - 5, 1));  flags.append(f"⚠️ 30d pullback: {data['perf_30d']}%")
+    # 30D confirmation (8pts max)
+    if data["perf_30d"] > 5:    mom = min(22, round(mom + 8, 1)); reasons.append(f"📈 30d momentum: +{data['perf_30d']}%")
+    elif data["perf_30d"] > 2:  mom = min(22, round(mom + 5, 1))
+    elif data["perf_30d"] > 0:  mom = min(22, round(mom + 3, 1))
+    elif data["perf_30d"] < -5: mom = max(0,  round(mom - 3, 1));  flags.append(f"⚠️ 30d pullback: {data['perf_30d']}%")
     pillars["momentum"] = round(mom, 1)
 
     # ── PULLBACK BONUS: Strong trend + short-term pullback ───────
@@ -496,6 +515,12 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
     # A stock in a strong trend that has pulled back slightly to MA support
     # = early entry, not crowded = higher forward return probability.
     # Doc 22/23: "strong_trend + pullback = actual edge"
+    # Kept at the same absolute +6/-4 as before the momentum cap shrank --
+    # unlike the cap itself, these were never shown to be miscalibrated,
+    # and against a smaller 22pt base they now carry proportionally more
+    # weight (27%/18% of the pillar vs 17%/11% before), which is the
+    # right direction: strengthening the anti-chasing correction rather
+    # than diluting it further.
     pct_from_high = data.get("pct_from_20d_high", 0)
     above_ma50    = data.get("above_ma50", True)
     above_ma200   = data.get("above_ma200", True)
@@ -505,7 +530,7 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
     if strong_trend and pullback_zone:
         pullback_bonus = 6
         reasons.append(f"📉 Pullback entry: {pct_from_high:.1f}% from 20d high (trend intact)")
-        pillars["momentum"] = min(35, mom + pullback_bonus)
+        pillars["momentum"] = min(22, mom + pullback_bonus)
     elif pct_from_high < -12:
         flags.append(f"⚠️ Deep pullback: {pct_from_high:.1f}% from 20d high")
 
@@ -550,9 +575,27 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
 
     if data["roe"] > 20:  grow = min(20, grow + 3); reasons.append(f"💪 Strong ROE: {data['roe']}%")
     elif data["roe"] > 12: grow = min(20, grow + 1)
-    pillars["growth"] = min(15, grow)  # V2: cap 15 (was 20)
+    # FIX (2026-08-15, v4.2): restored to 20 (V2's cut to 15 reverted --
+    # see MOMENTUM's FIX comment above). earn_growth showed a 97.45-point
+    # winner/loser gap within the 90-100 tier (217.15 vs 119.71 avg) --
+    # the strongest real differentiator measured, yet was capped below
+    # momentum's inverted-predictive-power pillar. Internal buildup above
+    # (rev_growth max 10 + earn_growth max 10 + ROE bonus, intermediate-
+    # capped at 20) was already sized for this cap -- V2 only lowered the
+    # final clamp, so no other rescaling needed here.
+    pillars["growth"] = min(20, grow)
 
-    # ── 4. VALUE (15 pts) ────────────────────────────────
+    # ── 4. VALUE (16 pts) ────────────────────────────────
+    # FIX (2026-08-15, v4.2): raised to 16 -- above even the pre-V2 cap of
+    # 15 (V2 had cut it to 12). pe_ratio showed the 2nd-strongest winner/
+    # loser gap measured within the 90-100 tier (24.07 vs 31.55 avg, a
+    # 7.48pt spread) after earn_growth, yet was the most-cut pillar in the
+    # V2 revision that overweighted momentum. Also fixes a real bug found
+    # while doing this: the PEG and upside bonuses below used their own
+    # premature `min(12, ...)` clamps -- for a cheap stock already at
+    # val=15 (pe<12), adding a PEG bonus computed `min(12, 15+3)=12`,
+    # silently *reducing* its score for having an additional good signal.
+    # Bonuses now accumulate freely; only the single final clamp applies.
     val = 8  # Start at mid — not all stocks have PE
     pe = data["pe_ratio"]
     peg = data["peg_ratio"]
@@ -565,13 +608,15 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
         elif pe < 45: val = 4
         elif pe > 80: val = 1; flags.append(f"⚠️ Expensive: P/E {pe}")
 
-    if peg and peg < 1.0: val = min(12, val + 3); reasons.append(f"💎 PEG < 1: {peg} (undervalued vs growth)")
-    if upside > 20: val = min(12, val + 3); reasons.append(f"🎯 Analyst upside: +{upside}%")
-    elif upside > 10: val = min(12, val + 1)
-    pillars["value"] = min(12, val)  # V2: cap 12 (was 15)
+    if peg and peg < 1.0: val = val + 3; reasons.append(f"💎 PEG < 1: {peg} (undervalued vs growth)")
+    if upside > 20: val = val + 3; reasons.append(f"🎯 Analyst upside: +{upside}%")
+    elif upside > 10: val = val + 1
+    pillars["value"] = min(16, val)
 
     # ── 5. SAFETY (15 pts) ───────────────────────────────
-    safe_score = 13  # V2: cap 13 (was 15) — rebalanced to weight momentum higher
+    # FIX (2026-08-15, v4.2): restored to 15 (V2's cut to 13 reverted --
+    # see MOMENTUM's FIX comment above).
+    safe_score = 15
     dd = abs(data["drawdown_high"])
     vol = data["volatility"]
     de = data["debt_equity"]
@@ -667,6 +712,15 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
             _earn_adj = 0
         bonus += max(-6, min(6, _earn_adj))
 
+    # FIX (2026-08-15, v4.2): bonus was previously unbounded upward --
+    # stacked news/earnings/analyst/etc bonuses could push an already
+    # near-maxed pillar sum straight through the 100 ceiling, which is
+    # part of how 56% of the 90-100 tier ended up saturated at exactly
+    # score=100 (see MOMENTUM's FIX comment above). Capped here, before
+    # it feeds into total, so it constrains the actual lever rather than
+    # just the symptom downstream.
+    bonus = max(-15, min(15, bonus))
+
     # ── STRATEGY ENGINE: Dynamic factor weights ─────────────────────────────
     if strategy_profile and _STRATEGY_ENGINE:
         # Approximate momentum percentile from perf_90d
@@ -706,9 +760,15 @@ def score_stock(data, account_type="TFSA_core", strategy_profile=None):
     # When 3+ signals aligned, additive stacking inflates scores.
     # Research: geometric mean is more conservative and better calibrated.
     # Score 90-100 wins only 48% — this addresses the root cause.
+    # FIX (2026-08-15, v4.2): "strong momentum" threshold rescaled 20->13.
+    # It was calibrated as 20/35 (57%) of the pre-v4.2 momentum cap; left
+    # at 20 against the new 22pt cap it would mean 91% of max, which would
+    # have silently made this signal fire far less often -- neutering part
+    # of this mechanism as an unreviewed side effect of MOMENTUM's cap cut
+    # above. 13/22 preserves the original ~57% relative meaning.
     active_signals = sum([
-        1 if pillars.get("momentum", 0) > 20       else 0,  # strong momentum
-        1 if pillars.get("fundamentals", 0) > 20   else 0,  # strong fundamentals
+        1 if pillars.get("momentum", 0) > 13       else 0,  # strong momentum
+        1 if pillars.get("fundamentals", 0) > 20   else 0,  # strong fundamentals (note: "fundamentals" is not a pillar key set elsewhere -- pre-existing, always 0)
         1 if bonus > 8                              else 0,  # news/analyst boost
         1 if data.get("rs_rating", 0) > 80         else 0,  # strong RS
     ])

@@ -6,9 +6,68 @@ Written to strategy_version.json in the repo root.
 
 PURPOSE: Out-of-sample validation anchor.
   - Jun 25 2026 = v4.1 = Day 0 of frozen rule set
+  - Aug 15 2026 = v4.2 = Day 0 of a NEW frozen rule set (freeze reset — see
+    "v4.2 OVERRIDE" note below; the Sep 25 2026 v4.1 freeze target was not honored)
   - Any change to a constant below = new version = new section
-  - Never tune these in response to live performance until Sep 2026 at earliest
+  - Never tune these in response to live performance until ~90 days after
+    the current version's Day 0 (v4.2: Day 0 = Aug 15 2026, target ~Nov 2026)
   - future changes increment VERSION and log a new entry
+
+# ── v4.2 OVERRIDE NOTE (2026-08-15) ──────────────────────────────────────────
+# The v4.1 freeze committed to no rule changes before Sep 25 2026. This
+# version breaks that commitment early. Documenting why rather than doing
+# it silently:
+#   Root-caused a "score-tier inversion" (90-100 tier picks underperforming
+#   60-74 tier). Traced to the momentum pillar cap having been raised
+#   20->35 on 2026-05-03 ("V2") on the strength of check_momentum_factor_health()
+#   reporting "healthy" — but that check only measures whether SCORE
+#   correlates with PRICE, which is near-tautological (score already
+#   includes momentum) and never validated momentum against future
+#   win/loss. Measured directly against 1,103 resolved 90-100-tier picks:
+#   within that tier, WINNERS averaged LOWER perf_90d/perf_30d/rs_rating
+#   than LOSERS — momentum was inversely predictive exactly where V2
+#   weighted it hardest. Combined with an uncapped bonus layer, this put
+#   56% of the entire 90-100 tier at score=100 exactly, where score had
+#   no ranking power left (winners 97.31 vs losers 97.89 avg).
+#   This is a correction of a flawed original diagnosis, not a tune
+#   chasing live-performance noise — but it IS a rule change inside the
+#   freeze window, so the freeze clock resets from today rather than
+#   pretending Sep 25 2026 still applies to the old (now-superseded) rules.
+
+# ── DOWNSTREAM GAP INVESTIGATION (2026-08-15) — NEGATIVE RESULT, DO NOT
+#    RE-INVESTIGATE THE SAME WAY ────────────────────────────────────────────
+#   Before shipping v4.2, checked whether the residual 90-100 tier
+#   underperformance (~42% WR vs ~57% for 75-89/60-74, on real historical
+#   score_stock() replays that stayed monotonic) was explained by downstream
+#   filters: ML gate (score>=90 AND ml_prob<0.20), sector-first gate
+#   (ml_engine.py SECTOR_ALLOW/SECTOR_BLOCK), and the >=75 sector block.
+#   Naive test (applying today's gate rules retroactively to ALL historical
+#   dates) suggested they explained a real chunk (42.2%->45.3% WR). WRONG —
+#   these mechanisms didn't exist for the whole window: no gate at all
+#   before 2026-06-21, ML-prob-only gate 2026-06-21 to 07-03, sector gate +
+#   materials-only >=75 block 07-04 to 07-07, full 4-sector >=75 block from
+#   07-08 on (gate_engine.py itself didn't exist until 07-09). Re-run
+#   properly scoped to each rule's actual active window: 90-100 tier WR
+#   corrects to ~41.5% — statistically indistinguishable from the raw,
+#   ungated 42.2%. Isolating to era 4 (07-08 on, the only period where
+#   "today's rules" are valid to apply) showed the gate's own EXCLUSIONS
+#   (n=32, 59.4% WR, mostly HEALTHCARE) outperformed what it KEPT (n=88,
+#   40.9% WR, 66% FINANCIALS) — the opposite of what the gate's own PF
+#   evidence would predict. Most likely small-sample noise (single-digit
+#   per-sector sub-buckets), not a real miscalibration — but either way,
+#   the downstream-gate hypothesis does not explain the residual gap.
+#   CONCLUSION: the ~12-15pt residual 90-100-tier gap (after v4.2's pillar
+#   fix, and net of everything the ML/sector gates already catch) has NO
+#   identified cause as of this writing. Candidates not yet ruled out:
+#   sector cap (max 2/sector, diversification-driven not quality-driven,
+#   scoped to TFSA only and hard to isolate from outcomes_log's account-
+#   ambiguous category field), reserve/substitution pool specifics, and
+#   gate_engine.py hysteresis (day-over-day memory beyond a flat ml_prob
+#   threshold). Closing further requires full per-date code+state
+#   reconstruction across stock_screener.py/ml_engine.py/gate_engine.py,
+#   not just point-in-time snapshots — a materially bigger project than
+#   this session's dig. Revisit at the Nov 2026 OOS read with real v4.2
+#   forward data before re-attempting this backward-looking archaeology.
 
 HOW TO USE:
   Call log_strategy_version() near the end of run_daily.py (after factor report)
@@ -24,12 +83,15 @@ from datetime import datetime, timezone
 # DO NOT CHANGE THESE VALUES without incrementing VERSION and adding a change note.
 # These are the exact thresholds active at the out-of-sample start date.
 
-VERSION = "4.1"
-OOS_START_DATE = "2026-06-26"   # Out-of-sample Day 0 — curve fix confirmed in code
+VERSION = "4.2"
+OOS_START_DATE = "2026-08-15"   # Out-of-sample Day 0 — v4.2 pillar rebalance live
 # HISTORY: Jun 25 was tagged v4.1 but the curve fix (0.6→0.4) had NOT shipped.
 # BAC scored 94.2 on Jun 26 — confirmed old curve still active.
 # Reset to Jun 26: the actual first run with 0.4 multiplier live.
 # Jun 25 picks (2 logged) excluded from OOS count — correct baseline.
+# v4.1 OOS window (Jun 26 - Aug 15 2026) closed early — superseded by v4.2
+# (see "v4.2 OVERRIDE NOTE" above). Prior VERSION = "4.1".
+PRIOR_VERSION = "4.1"
 
 RULES = {
 
@@ -46,6 +108,19 @@ RULES = {
         "Preserves ordinal ordering and ML gate diagnostic unlike hard ceiling."
     ),
     "news_adjustment_cap_pts": 8,
+
+    # ── Pillar caps (v4.2, 2026-08-15) ───────────────────────────────────────
+    # Rebalanced from V2 (2026-05-03: momentum 20->35, growth 20->15,
+    # value 15->12, safety 15->13) back toward pre-V2 values, plus a new
+    # bonus cap. See "v4.2 OVERRIDE NOTE" above for the empirical basis.
+    "pillar_cap_momentum_pts":         22,   # was 35 (V2), pre-V2 was 20
+    "pillar_cap_growth_pts":           20,   # was 15 (V2), restored to pre-V2
+    "pillar_cap_value_pts":            16,   # was 12 (V2), above pre-V2's 15
+    "pillar_cap_safety_pts":           15,   # was 13 (V2), restored to pre-V2
+    "pillar_cap_dividend_income_pts":  15,   # unchanged — V2's cut here wasn't contradicted by the data
+    "pillar_cap_volume_liquidity_pts": 10,   # unchanged
+    "bonus_cap_pts":                   15,   # new — bonus was previously unbounded upward
+    "geometric_mean_momentum_signal_threshold_pts": 13,  # was 20 — rescaled proportionally (20/35 -> 13/22) so ITEM 6's "strong momentum" signal keeps firing at the same relative rate against the new, smaller momentum cap
 
     # ── ML gate ─────────────────────────────────────────────────────────────
     "ml_gate_score_threshold": 90,
@@ -128,10 +203,13 @@ RULES = {
 
     # ── OOS validation commitment ─────────────────────────────────────────────
     "oos_commitment": (
-        "Rules frozen at v4.1 from Jun 25 2026. "
-        "No rule changes in response to live performance until Sep 25 2026 minimum. "
-        "First OOS reading: Sep 25 2026 (~90 days, ~60-70 new resolved picks). "
-        "Bug fixes and non-strategy changes (UI, security, logging) are exempt."
+        "Rules frozen at v4.2 from Aug 15 2026 (freeze reset — v4.1's Jun 25 -> "
+        "Sep 25 2026 commitment was broken early; see 'v4.2 OVERRIDE NOTE'). "
+        "No rule changes in response to live performance until ~Nov 15 2026 minimum. "
+        "First OOS reading: ~Nov 15 2026 (~90 days). "
+        "Bug fixes and non-strategy changes (UI, security, logging) are exempt. "
+        "#4 (RISK_ON momentum weight multiplier in strategy_engine.py) explicitly "
+        "deferred — do not tune it in response to v4.2 results before the OOS read."
     ),
 
     # ── OOS Period attribution boundaries ────────────────────────────────────
@@ -164,11 +242,23 @@ RULES = {
             "period": 4,
             "label": "OOS — post-gate",
             "start": "2026-07-01",
-            "end":   None,   # open-ended — current period
+            "end":   "2026-08-15",   # closed — superseded by v4.2 pillar rebalance
             "note":  (
                 "ML gate activated (score≥90 AND ml_prob<0.20 → removed from sizing+conviction). "
                 "Sector diversity cap added. Reserve pool integrity fix live. "
                 "First attributable gate-era picks from this date forward."
+            ),
+        },
+        {
+            "period": 5,
+            "label": "OOS — v4.2 pillar rebalance",
+            "start": "2026-08-15",
+            "end":   None,   # open-ended — current period
+            "note":  (
+                "Momentum/growth/value/safety pillar caps rebalanced (22/20/16/15, "
+                "was 35/15/12/13) and bonus capped at ±15 (was unbounded) — see "
+                "'v4.2 OVERRIDE NOTE'. #4 (RISK_ON momentum multiplier) deferred "
+                "pending this period's results."
             ),
         },
     ],
