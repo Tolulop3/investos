@@ -41,27 +41,43 @@ stand right now.
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| Rolling Sharpe (90d) | **-0.32** (1,611 picks, May 17 → Aug 15) | 🔴 WARNING — below 0.3 minimum, guard firing |
-| Alpha vs SPX | **-4.18** | 🔴 |
+| Rolling Sharpe (90d) | **-0.32** (1,611 picks, May 17 → Aug 15) | 🔴 WARNING, guard firing — but see note below, this is a rolling-window artifact of a known event, not new degradation |
+| Alpha vs SPX | **-4.18** | 🔴 same caveat |
 | Win rate overall | **47.2%** (N=2,546 resolved) | ⚠️ |
 | PF overall | **1.05** | ⚠️ Near break-even |
 | Avg return/pick | +0.09% | ⚠️ |
 | Unified regime | NEUTRAL (+0.16) | ⚠️ market +1.0 / macro -0.3 / health -0.5 |
 | Macro regime | RISK_OFF | 🔴 |
-| Robustness | 25/100 | 🔴 (was 50 on Jul 4 — declined) |
+| Robustness | 25/100 | 🔴 (was 50 on Jul 4 — mechanically tracks Sharpe, see note below) |
 | Risk multiplier / exposure | 0.5× / 75% | ⚠️ NEUTRAL band |
 | Neg alpha streak | **50 calendar days** | 🔴 |
 | Universe | 262 tickers (static + dynamic scout) | ✅ |
 | OOS (v4.1, closed Aug 15) | 689 logged / 579 resolved / WR 47.2% | Active return -3.25% vs SPX +3.34% |
-| OOS (v4.2, started Aug 15) | 0 resolved yet | ⏳ Target read: ~Nov 15, 2026 |
+| OOS (v4.2, started Aug 15) | 0 resolved yet | ⏳ Real read: ~Nov 15, 2026. Informal interim look ~Oct 15 — NOT a decision point |
 | NGX | tracked separately in `ngx_outcomes.json` | excluded from main metrics |
 | Runtime | ~90s | ✅ |
 | Last audit | Aug 15, 2026 (this refresh) | |
 
+> **Why Sharpe looks like it's declining (checked 2026-08-15, see
+> `strategy_version.py`'s SHARPE SLIDE EXPLAINED note):** it's a rolling-90-day-window
+> artifact, not ongoing degradation. One outsized bad week (Jun 22-28, n=341 resolved,
+> avg return -3.72%) — which lines up exactly with a real, already-documented SPX
+> drawdown, not a stock-picking failure — stays anchored in the window while the
+> strong early-May weeks roll off the back. Last 14 days alone (clean of that event):
+> +0.86% avg return, 48.1% WR — actually fine. This reading should mechanically
+> self-correct around **Sep 20-26** as that cohort rolls out, independent of v4.2. If
+> Sharpe does NOT recover by then, that's a genuine new signal worth investigating —
+> not yet done, this only explains the past 23 days.
+
 **Target goal (unchanged, not yet met — Architecture Decision #5):** Sharpe > 1.0
-sustained, before any product launch. Current: -0.32. Trend since Jul 4 is down, not up
-(Sharpe 0.42→-0.32, robustness 50→25) — the system needs more work before v4.2's real
-payoff can even register, let alone close this gap.
+sustained, before any product launch. Current: -0.32, but see the rolling-window note
+above before reading that as things getting worse — it isn't, yet. Still a real
+1.32-point gap regardless of the mechanical explanation. Robustness (`risk_engine.py::
+compute_robustness_score()`) dropping 50→25 on Aug 3 is not a separate signal — it's a
+deterministic formula built directly from rolling Sharpe, alpha-vs-SPX, and
+neg-alpha-days, so it mechanically tracks the same explained rolling-window artifact
+above, not an independent problem. v4.2's real payoff won't be measurable until the
+Nov 15 read either way.
 
 **Score tier performance (N=2,546 resolved picks, Aug 15, 2026 — this is the exact
 pattern v4.2 was built to fix; see `strategy_version.py`'s v4.2 note for the full
@@ -425,7 +441,9 @@ today's code applied retroactively. Scoped into two halves:
 | Item | Status | Notes |
 |------|--------|-------|
 | Sharpe recovery | 🔴 Not recovering | -0.32 and declining since Jul 4 (was 0.42) — needs real attention, not just time |
-| v4.2 OOS read | ⏳ ~Nov 15, 2026 | Day 0 = Aug 15, 2026. #4 (RISK_ON momentum multiplier) deferred until this read |
+| v4.2 OOS read (real) | ⏳ ~Nov 15, 2026 | Day 0 = Aug 15, 2026. #4 (RISK_ON momentum multiplier) deferred until this read |
+| v4.2 interim checkpoint | ⏳ ~Oct 15, 2026 | Informal, directional only — NOT a decision point, don't tune anything off it |
+| Sharpe rolling-window recovery | ⏳ ~Sep 20-26, 2026 | Mechanical — Jun 22-28 cohort rolls out of the 90d window. If Sharpe doesn't recover by then, that's a genuine new signal, not yet investigated |
 | ML retrain | ⏳ Auto-fires on coverage gate | |
 | Walk-forward validation | ⏳ Aug 2026 target (README says "60+ days history required" — check if this has quietly become feasible) | |
 | NGX FTSE catalyst | ⏳ Sept 2026 | Institutional reclassification window — universe already expanded ahead of it |

@@ -69,6 +69,33 @@ PURPOSE: Out-of-sample validation anchor.
 #   this session's dig. Revisit at the Nov 2026 OOS read with real v4.2
 #   forward data before re-attempting this backward-looking archaeology.
 
+# ── SHARPE SLIDE EXPLAINED (2026-08-15) — MECHANICAL, NOT ONGOING DEGRADATION ──
+#   Rolling Sharpe fell from +0.12 (Jul 23) to -0.32 (Aug 15), 23 straight days
+#   of decline. Before reading this as the system currently getting worse:
+#   it's a rolling-90-day-window artifact of ONE already-known event, not new
+#   or ongoing. Trailing-window avg return by "as of" date: Jul23 +0.11% ->
+#   Jul31 +0.04% -> Aug3 -0.02% -> Aug8 -0.17% -> Aug15 -0.27%. Mechanism:
+#   strongly positive early-May weeks (WR 63-69%) are rolling OFF the back of
+#   the window as it advances, while the week of Jun 22-28 (n=341 resolved,
+#   ~3x normal weekly volume, avg return -3.72%, WR 29.6%) stays anchored
+#   inside the window the whole time. That week traces to signals from Jun
+#   12-21, broad across every sector (not a category or stock-picking
+#   failure) and lines up exactly with a real SPX drawdown (7d return
+#   +3.21% on Jun18-21 -> -2.60% Jun24 -> -2.05% Jun25, staying negative
+#   through Jun29) — the SAME event already in this file's PERFORMANCE
+#   HISTORY / the README's ("Jun 26 — Guard re-engaged, DEFENSIVE 0.25x").
+#   Confirmed independently: win_rate.json's trailing windows show the last
+#   14 days alone (clean of the Jun event) at +0.86% avg return, 48.1% WR —
+#   fine. It's only the 60d window still carrying the Jun 22-28 tail that's
+#   negative. CONCLUSION: this reading will mechanically self-correct as
+#   the Jun 22-28 cohort rolls out of the 90-day window around Sep 20-26,
+#   independent of anything v4.2 does. Do not treat the Aug 15 Sharpe
+#   reading as evidence v4.2 (or anything else) is failing — it predates
+#   v4.2 entirely. Do re-check this after Sep 26: if Sharpe does NOT
+#   recover once this cohort rolls off, that would be a genuine new signal
+#   worth investigating (not yet done — this note only explains the past
+#   23 days, not what happens next).
+
 HOW TO USE:
   Call log_strategy_version() near the end of run_daily.py (after factor report)
   Compare strategy_version.json entries over time to know exactly what rules
@@ -206,10 +233,16 @@ RULES = {
         "Rules frozen at v4.2 from Aug 15 2026 (freeze reset — v4.1's Jun 25 -> "
         "Sep 25 2026 commitment was broken early; see 'v4.2 OVERRIDE NOTE'). "
         "No rule changes in response to live performance until ~Nov 15 2026 minimum. "
-        "First OOS reading: ~Nov 15 2026 (~90 days). "
+        "REAL OOS reading (statistically meaningful, ~90 days, ~60-70 resolved picks): "
+        "~Nov 15 2026. Do not shorten this — it's sized for sample size, not a calendar "
+        "preference. Interim checkpoint (directional only, informal, NOT a decision "
+        "point) at ~Oct 15 2026 (~61 days, ~2/3 the sample) — added 2026-08-15 per "
+        "explicit request for earlier visibility. If a future session is tempted to "
+        "treat the Oct 15 checkpoint as the real read, it isn't — see this note. "
         "Bug fixes and non-strategy changes (UI, security, logging) are exempt. "
         "#4 (RISK_ON momentum weight multiplier in strategy_engine.py) explicitly "
-        "deferred — do not tune it in response to v4.2 results before the OOS read."
+        "deferred — do not tune it in response to v4.2 results before the REAL "
+        "(Nov 15) read."
     ),
 
     # ── OOS Period attribution boundaries ────────────────────────────────────
