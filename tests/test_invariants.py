@@ -3804,6 +3804,97 @@ def test_apply_sector_cap_never_duplicates_a_ticker_in_final_basket():
     assert len(tickers) == len(set(tickers)), f"final basket has duplicate tickers: {tickers}"
 
 
+def test_run_ml_engine_never_double_allocates_capital_to_straddling_ticker(monkeypatch, tmp_path):
+    """End-to-end tripwire, one level past the sector-cap test above: drives
+    the REAL run_ml_engine() from raw, un-deduped screener_picks (a ticker
+    in both FHSA_top5 and TFSA_growth_top5 -- today's actual root cause,
+    see pick_utils.py's docstring) all the way through to
+    result["target_weights"], the capital-agnostic weight list every real
+    dollar allocation is computed from (ml_engine.py:2166,
+    compute_target_weights() itself does NOT dedupe -- it trusts its input).
+
+    This isn't testing a fix for a known bug; it's a permanent guard against
+    a FUTURE change silently reintroducing double capital allocation --
+    exactly the failure mode of the confirmed 2026-08-08 production
+    incident (pick_utils.py's docstring) but one stage further downstream
+    than any existing test currently checks."""
+    import ml_engine as me
+    from unittest.mock import MagicMock
+    import numpy as np
+
+    monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
+    monkeypatch.setattr(
+        me, "build_features_for_stock",
+        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+    )
+    monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
+        "regime": "BULL", "signal": "FULL_EXPOSURE", "cash_pct": 0.0,
+        "spx_price": 5500, "ma200": 5100, "pct_above_ma": 7.8,
+    })
+    monkeypatch.setattr("outcome_tracker.load_model_health", lambda *a, **k: {})
+
+    def fake_train(self, verbose=True):
+        self.trained = True
+        self.model = MagicMock()
+        self.model.predict_proba.return_value = np.array([[0.3, 0.7]])
+        self.calibrator = None
+        self.swing_model, self.swing_scaler = None, None
+        return True
+    monkeypatch.setattr(me.StockMLPredictor, "train", fake_train)
+
+    def _pick(ticker, score, category, sector, ml_prob=None):
+        p = {"ticker": ticker, "score": score, "data": {"price": 100.0, "sector": sector,
+             "volatility_90d": 0.2}, "pick": {"category": category}}
+        if ml_prob is not None:
+            p["ml_prob"] = ml_prob
+        return p
+
+    # AMGN straddles FHSA and TFSA -- two independent dict objects, one with
+    # ml_prob already set (as if a prior pass had scored it), one without --
+    # matching the exact shape of the confirmed 2026-08-08 incident. Sector
+    # is "Energy" (SECTOR_ALLOW, ml_engine.py:2038), not "Healthcare"
+    # (SECTOR_BLOCK) -- deliberately so AMGN reaches target_weights
+    # regardless of ML-gate/sector-block behavior, isolating the dedup
+    # guarantee this test exists to check. First draft used Healthcare and
+    # AMGN silently vanished from target_weights entirely (correctly
+    # sector-blocked) -- the assertions below passed anyway with nothing
+    # real being exercised; caught by explicitly checking AMGN was actually
+    # present before trusting the "at most one" assertion.
+    screener_picks = {
+        "FHSA_top5": [
+            _pick("AMGN", 96, "FHSA Conservative Growth", "Energy"),
+        ],
+        "TFSA_growth_top5": [
+            _pick("AMGN", 100, "GROWTH CORE", "Energy", ml_prob=0.68),
+            _pick("BAC",  90,  "GROWTH CORE", "Financial Services"),
+        ],
+        "TFSA_income_top5": [
+            _pick("V",    85, "INCOME", "Financial Services"),
+        ],
+        "TFSA_swing_top3": [],
+    }
+
+    result = me.run_ml_engine(screener_picks, {}, verbose=False)
+
+    weights = result.get("target_weights") or []
+    tickers = [w["ticker"] for w in weights]
+    # Must actually be present -- otherwise every assertion below passes
+    # vacuously without exercising the dedup path at all (see comment above).
+    assert "AMGN" in tickers, (
+        f"AMGN must survive to target_weights for this test to mean anything, got: {weights}"
+    )
+    assert tickers.count("AMGN") <= 1, (
+        f"AMGN must not receive two separate capital allocations, got target_weights: {weights}"
+    )
+    assert len(tickers) == len(set(tickers)), (
+        f"target_weights has duplicate tickers -- double capital allocation risk: {tickers}"
+    )
+    total_weight = sum(w.get("weight", 0) for w in weights)
+    assert total_weight <= 1.001, (
+        f"target_weights sum to {total_weight:.4f} > 100% of deployable capital: {weights}"
+    )
+
+
 def test_track_signal_accuracy_does_not_double_log_duplicate_ticker(monkeypatch, tmp_path):
     """A straddling ticker must generate exactly one set of pending
     accuracy-check entries (one per check_window), not two."""
