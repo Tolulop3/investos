@@ -1,5 +1,5 @@
 {
-  "date": "August 16, 2026",
+  "date": "August 17, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-08-16T03:38:45.776302",
+    "run_at": "2026-08-17T11:36:17.841331",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,57 +32,57 @@
         "normal_count": 13,
         "survived": 11,
         "survival_pct": 84.6,
-        "avg_score_change": 3.1,
+        "avg_score_change": 3.2,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.1 pts with 10% noise"
+        "note": "Avg score change: \u00b13.2 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 78.8,
-        "stressed_avg": 66.2,
-        "score_drop": 12.6,
+        "normal_avg": 82.2,
+        "stressed_avg": 72.3,
+        "score_drop": 9.9,
         "removed": [
-          "PSX",
-          "C",
-          "MAIN",
           "FBP",
-          "BAC"
+          "MAIN",
+          "BAC",
+          "C",
+          "MFC.TO"
         ],
-        "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 12.6 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 9.9 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 13,
         "survived": 11,
         "survival_pct": 84.6,
-        "avg_score_drop": 2.6,
+        "avg_score_drop": 2.2,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.6 pts"
+        "note": "If momentum stops working: avg score drops 2.2 pts"
       }
     },
     "summary": {
       "normal_picks": 13,
-      "normal_avg_score": 78.8,
+      "normal_avg_score": 82.2,
       "scenarios_robust": 4,
-      "scenarios_fragile": 0,
-      "scenarios_broken": 1,
-      "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
+      "scenarios_fragile": 1,
+      "scenarios_broken": 0,
+      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
     },
-    "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
+    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
   },
   "decay_monitor": {
-    "date": "August 16, 2026",
+    "date": "August 17, 2026",
     "robustness_score": 25,
     "rolling_sharpe": {
-      "sharpe": -0.331,
-      "avg_ret_pct": -0.28,
-      "std_ret_pct": 6.02,
-      "picks_used": 1608,
-      "date_from": "2026-05-18",
-      "date_to": "2026-08-15",
+      "sharpe": -0.316,
+      "avg_ret_pct": -0.26,
+      "std_ret_pct": 6.03,
+      "picks_used": 1613,
+      "date_from": "2026-05-19",
+      "date_to": "2026-08-16",
       "source": "resolved_returns",
-      "note": "Sharpe from 1608 resolved picks (2026-05-18 \u2192 2026-08-15) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 1613 resolved picks (2026-05-19 \u2192 2026-08-16) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": 0.98,
@@ -93,19 +93,19 @@
       "sharpe": 3.12,
       "symbol": "^GSPC"
     },
-    "alpha": -3.451,
-    "neg_alpha_days": 50,
+    "alpha": -3.436,
+    "neg_alpha_days": 51,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 80.0,
-      "momentum_picks": 20,
-      "note": "16/20 rising-score picks also rose in price"
+      "alignment_pct": 82.6,
+      "momentum_picks": 23,
+      "note": "19/23 rising-score picks also rose in price"
     },
     "alerts": [
       {
         "level": "\u26a0\ufe0f WARNING",
-        "message": "Rolling Sharpe -0.33 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        "message": "Rolling Sharpe -0.32 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
       }
     ],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
