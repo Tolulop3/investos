@@ -1402,6 +1402,17 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
     for i in range(n_picks):
         if picks[i]["ticker"] in sector_blocked:
             final_wts.append(0.0)
+        elif kelly_wts[i] == 0.0 and picks[i].get("ml_prob") is None:
+            # No ml_prob logged at all -- not "computed zero edge", just no
+            # signal to size on. The base_wt*0.50 floor below exists to stop
+            # a concentration cascade among picks that DO have a (bad)
+            # measured edge (2026-06-18 decision); it was never justified for
+            # picks with no data whatsoever, and defaulting them into 50% of
+            # base weight let a no-signal pick (e.g. CVX, 2026-08-17: Kelly
+            # 0.000, no ml_prob logged) draw real capital. Exclude outright;
+            # the all-picks-zero fallback below still covers the case where
+            # nothing in the basket has data.
+            final_wts.append(0.0)
         elif kelly_wts[i] == 0.0:
             final_wts.append(base_wt * 0.50)
         else:

@@ -1079,6 +1079,75 @@ def test_kelly_no_ml_prob_floors_to_zero():
     assert result[0]["kelly_wt"] == 0.0
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# No-ml_prob picks excluded from allocation, not floored to 50% (FIX, 2026-08-17)
+# Confirmed live 2026-08-17: CVX had Kelly=0.000 (no ml_prob logged that day)
+# but still drew $976 (17.4% weight) in a 3-pick basket via the base_wt*0.50
+# floor at ml_engine.py's final_wts construction. That floor exists to stop a
+# concentration cascade among picks that DO have a (bad) MEASURED edge
+# (2026-06-18 decision, see test_kelly_floor_deploys_50pct above) -- it was
+# never justified for picks with no data whatsoever. Fix: a pick with
+# kelly_wt==0.0 AND no ml_prob logged gets weight=0.0 (excluded), while a
+# pick with kelly_wt==0.0 but a real ml_prob (computed zero/negative edge)
+# keeps the existing base_wt*0.50 floor unchanged.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_kelly_no_ml_prob_excluded_not_floored_when_other_picks_have_edge():
+    """In a mixed basket, a pick with no ml_prob logged (e.g. CVX,
+    2026-08-17) gets weight=0.0 -- excluded from allocation entirely --
+    while picks with real ml_prob/Kelly in the same basket are unaffected."""
+    from ml_engine import compute_target_weights
+
+    market_regime = {"regime": "BULL", "cash_pct": 0.0}
+    wr_data = _kelly_wr_data_mlprob("0.6-0.8", 61.7, 5.41, 2.70, count=269)
+
+    picks = [
+        {"ticker": "FBP", "score": 97, "ml_prob": 0.78,
+         "data": {"price": 30.0, "volatility_90d": 0.20}},
+        {"ticker": "MFC.TO", "score": 94, "ml_prob": 0.63,
+         "data": {"price": 45.0, "volatility_90d": 0.18}},
+        {"ticker": "CVX", "score": 93,   # no ml_prob key -- matches 2026-08-17 live case
+         "data": {"price": 150.0, "volatility_90d": 0.22}},
+    ]
+    result = compute_target_weights(picks, market_regime, win_rate_data=wr_data, verbose=False)
+    by_ticker = {r["ticker"]: r for r in result}
+
+    assert by_ticker["CVX"]["kelly_wt"] == 0.0
+    assert by_ticker["CVX"]["weight"] == 0.0, \
+        "no-ml_prob pick must be excluded (0.0), not floored to base_wt*0.50"
+    assert by_ticker["FBP"]["weight"] > 0.0
+    assert by_ticker["MFC.TO"]["weight"] > 0.0
+
+
+def test_kelly_zero_edge_with_ml_prob_still_gets_floor():
+    """Contrast case: a pick WITH a real ml_prob whose Kelly computes to
+    zero/negative edge still gets the base_wt*0.50 floor (unchanged
+    2026-06-18 behavior) -- only the no-ml_prob case was excluded by the
+    2026-08-17 fix, not every kelly_wt==0.0 pick."""
+    from ml_engine import compute_target_weights
+
+    market_regime = {"regime": "BULL", "cash_pct": 0.0}
+    # 0.8-1.0 bucket: real measured negative edge (win_rate 50.2%, avg_win < avg_loss)
+    wr_data = _kelly_wr_data_mlprob("0.8-1.0", 50.2, 3.52, 5.53, count=444)
+
+    picks = [
+        {"ticker": "WINNER", "score": 80, "ml_prob": 0.65,
+         "data": {"price": 50.0, "volatility_90d": 0.2}},
+        {"ticker": "LOSER", "score": 80, "ml_prob": 0.90,   # real ml_prob, negative edge
+         "data": {"price": 50.0, "volatility_90d": 0.2}},
+    ]
+    # Give WINNER its own positive-edge bucket so the basket isn't all-zero-Kelly
+    wr_data["by_ml_prob_bucket"]["0.6-0.8"] = {
+        "win_rate": 61.7, "avg_win": 5.41, "avg_loss": 2.70, "count": 269,
+    }
+    result = compute_target_weights(picks, market_regime, win_rate_data=wr_data, verbose=False)
+    by_ticker = {r["ticker"]: r for r in result}
+
+    assert by_ticker["LOSER"]["kelly_wt"] == 0.0
+    assert by_ticker["LOSER"]["weight"] > 0.0, \
+        "a pick WITH ml_prob but zero computed edge should keep the base_wt*0.50 floor"
+
+
 def test_ml_prob_bucket_table_matches_recomputation():
     """win_rate.json's by_ml_prob_bucket table — what score_to_kelly_wt reads
     at runtime as Kelly's live p/b — must match an independent recomputation
