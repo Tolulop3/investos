@@ -3060,7 +3060,19 @@ function renderWinRate(wr) {
         ${o.resolved===0?`<div style="font-size:8px;color:var(--t3);margin-top:6px;font-style:italic">First checkpoint expected Jul 15-20 as early picks resolve.</div>`:''}
       </div>
     </div>`;
-  })() : ''}`;
+  })() : ''}
+
+  <!-- Walk-Forward Performance (multi-window, cross-version — Phase 2, 2026-08-17) -->
+  ${(typeof BAKED !== 'undefined' && BAKED && BAKED.walkforward && BAKED.walkforward.length >= 2) ? `<div style="margin-top:14px;border:1px solid var(--border);border-radius:5px;overflow:hidden">
+    <div style="background:var(--bg3);padding:7px 14px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:8px;color:var(--t3);letter-spacing:1px">WALK-FORWARD PERFORMANCE — daily, by version</div>
+      <div style="font-size:8px;color:var(--t3)">${BAKED.walkforward.length} days tracked</div>
+    </div>
+    <div style="padding:10px 14px;background:var(--bg2)">
+      ${buildWalkforwardChart(BAKED.walkforward)}
+      <div style="font-size:7px;color:var(--t3);margin-top:6px;font-style:italic">Dot color = alpha vs SPX that day (green = beating SPX, red = trailing). Dashed vertical line = strategy version change. Hover a dot for exact numbers.</div>
+    </div>
+  </div>` : ''}`;
 }
 
 
@@ -6854,6 +6866,88 @@ function buildSparkline(closes) {
     <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:48px;display:block" preserveAspectRatio="none">
       <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
     </svg>`;
+}
+
+// ── Walk-forward performance chart (Phase 2, 2026-08-17) ────────────────────
+// Reads BAKED.walkforward: [{date, version, oos_performance:{win_rate,
+// avg_return, spx_return, active_return, resolved, tiers, backfilled?}}, ...]
+// -- see run_daily.py::bake_dashboard() and strategy_version.py::
+// log_strategy_version(). Text labels (version summary row, date range) are
+// kept OUTSIDE the <svg> deliberately -- this chart, like buildSparkline
+// above, uses preserveAspectRatio="none" to stretch to the container width,
+// which distorts any text drawn inside the viewBox non-uniformly. Only
+// straight lines/dots go inside the SVG.
+function buildWalkforwardChart(entries) {
+  const pts = (entries || []).filter(e => e.oos_performance && e.oos_performance.win_rate != null);
+  if (pts.length < 2) {
+    return `<div style="padding:10px 0;text-align:center;font-size:8px;color:var(--t3);font-style:italic">
+      Walk-forward history builds up as more days resolve — check back soon.
+    </div>`;
+  }
+
+  const w = 600, h = 90, padL = 4, padR = 4, padT = 8, padB = 4;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const n = pts.length;
+  const xAt = i => padL + (n === 1 ? 0 : (i / (n - 1)) * plotW);
+  const yAt = wr => padT + plotH - (Math.max(0, Math.min(100, wr)) / 100) * plotH;
+  const y50 = yAt(50);
+
+  const linePts = pts.map((e, i) => `${xAt(i).toFixed(1)},${yAt(e.oos_performance.win_rate).toFixed(1)}`).join(' ');
+
+  const versionChangeX = [];
+  for (let i = 1; i < n; i++) {
+    if (pts[i].version !== pts[i - 1].version) versionChangeX.push(xAt(i));
+  }
+  const markers = versionChangeX.map(x =>
+    `<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${padT + plotH}" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,2"/>`
+  ).join('');
+
+  const dots = pts.map((e, i) => {
+    const perf = e.oos_performance;
+    const x = xAt(i), y = yAt(perf.win_rate);
+    const col = perf.active_return == null ? 'var(--t3)' : perf.active_return >= 0 ? '#00f5a0' : '#ff4d4d';
+    const alphaTxt = perf.active_return != null ? (perf.active_return >= 0 ? '+' : '') + perf.active_return + '%' : '—';
+    const tag = perf.backfilled ? ' [reconstructed]' : '';
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="${col}"><title>${e.date} (v${e.version})${tag} — WR ${perf.win_rate}% (n=${perf.resolved}), alpha vs SPX ${alphaTxt}</title></circle>`;
+  }).join('');
+
+  // Per-version summary strip — outside the SVG, see comment above.
+  const versions = [];
+  let curV = null, curEntries = [];
+  pts.forEach(e => {
+    if (e.version !== curV) {
+      if (curV !== null) versions.push({ v: curV, entries: curEntries });
+      curV = e.version; curEntries = [];
+    }
+    curEntries.push(e);
+  });
+  versions.push({ v: curV, entries: curEntries });
+
+  const summaryRow = versions.map(({ v, entries }) => {
+    const last = entries[entries.length - 1].oos_performance;
+    const first = entries[0].date, lastDate = entries[entries.length - 1].date;
+    const wrTxt = last.win_rate != null ? last.win_rate + '%' : 'pending';
+    const alphaTxt = last.active_return != null ? (last.active_return >= 0 ? '+' : '') + last.active_return + '%' : '—';
+    const alphaCol = last.active_return == null ? 'var(--t3)' : last.active_return >= 0 ? 'var(--g)' : 'var(--r)';
+    return `<div style="flex:1;min-width:120px">
+      <div style="font-size:7px;color:var(--t3);font-family:var(--mono)">v${v} · ${first} → ${lastDate}</div>
+      <div style="font-size:11px;font-weight:700">WR ${wrTxt} <span style="font-size:9px;font-weight:400;color:${alphaCol}">(α ${alphaTxt})</span></div>
+    </div>`;
+  }).join('');
+
+  return `
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:70px;display:block" preserveAspectRatio="none">
+      <line x1="${padL}" y1="${y50.toFixed(1)}" x2="${w - padR}" y2="${y50.toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2,3"/>
+      ${markers}
+      <polyline points="${linePts}" fill="none" stroke="#00f5a0" stroke-width="1.5" stroke-linejoin="round"/>
+      ${dots}
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--t3);margin:2px 0 8px">
+      <span>${pts[0].date}</span><span>dashed line = 50% WR, gap = version change</span><span>${pts[n - 1].date}</span>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--border)">
+      ${summaryRow}
+    </div>`;
 }
 
 // ═══════════════════════════════════════════

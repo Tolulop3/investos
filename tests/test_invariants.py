@@ -288,6 +288,105 @@ def test_core_module_imports():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Walk-forward dashboard Phase 1 (FIX, 2026-08-17): log_strategy_version()
+# persists oos_performance from compute_win_rate()'s output
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_log_strategy_version_persists_oos_performance(monkeypatch, tmp_path):
+    """log_strategy_version() must persist the oos_performance snapshot from
+    a passed win_rate dict. Previously this data was computed by
+    compute_win_rate() every run and discarded (win_rate.json is overwritten,
+    not appended) -- strategy_version.json's existing per-day/per-version
+    history had resolved-pick COUNTS but no performance numbers to actually
+    see whether a version added alpha over time."""
+    import json as _json
+    import strategy_version as sv
+    monkeypatch.chdir(tmp_path)
+
+    outcomes_path = tmp_path / "outcomes_log.json"
+    outcomes_path.write_text(_json.dumps([
+        {"ticker": "AAA", "signal_date": "2026-08-01", "outcome": "WIN"},
+    ]))
+
+    win_rate = {"oos": {
+        "win_rate": 55.0, "avg_return": 1.23, "spx_return": 0.5,
+        "active_return": 0.73, "resolved": 40,
+        "tiers": {"90-100": {"n": 5, "wr": 40.0}},
+    }}
+
+    entry = sv.log_strategy_version(outcomes_path=str(outcomes_path), win_rate=win_rate)
+
+    assert entry["oos_performance"] == {
+        "win_rate": 55.0, "avg_return": 1.23, "spx_return": 0.5,
+        "active_return": 0.73, "resolved": 40,
+        "tiers": {"90-100": {"n": 5, "wr": 40.0}},
+    }
+
+    written = _json.loads((tmp_path / "strategy_version.json").read_text())
+    assert written[-1]["oos_performance"]["win_rate"] == 55.0
+
+
+def test_log_strategy_version_handles_missing_win_rate(monkeypatch, tmp_path):
+    """No win_rate passed (or an empty dict) -- oos_performance must be
+    None, not raise. Matches run_daily.py's real call site, which can pass
+    brief.get("win_rate") == None on an outcome-tracker failure."""
+    import json as _json
+    import strategy_version as sv
+    monkeypatch.chdir(tmp_path)
+
+    outcomes_path = tmp_path / "outcomes_log.json"
+    outcomes_path.write_text("[]")
+
+    entry = sv.log_strategy_version(outcomes_path=str(outcomes_path), win_rate=None)
+    assert entry["oos_performance"] is None
+
+    entry2 = sv.log_strategy_version(outcomes_path=str(outcomes_path), win_rate={})
+    assert entry2["oos_performance"] is None
+
+
+def test_bake_dashboard_includes_trimmed_walkforward_ledger(monkeypatch, tmp_path):
+    """bake_dashboard() must inject a walkforward key sourced from
+    strategy_version.json (Phase 2, 2026-08-17), trimmed to date/version/
+    oos_performance -- dropping the bulky per-day RULES dict (not needed
+    client-side; keeping it would materially bloat the baked payload).
+    Missing this means the dashboard's walk-forward chart silently gets no
+    data with no error anywhere in the pipeline."""
+    import json as _json
+    import re as _re
+    import run_daily
+    monkeypatch.chdir(tmp_path)
+
+    sv_history = [{
+        "date": "2026-06-25", "version": "4.1", "oos_start": "2026-06-25",
+        "oos_days": 0, "oos_resolved_picks": 27,
+        "oos_performance": {"win_rate": 44.4, "avg_return": -0.27,
+                             "active_return": -0.27, "resolved": 27, "tiers": {}},
+        "rules": {"score_cap_74": ["F"], "bulky_note": "x" * 500},
+        "logged_at": "2026-06-25T00:00:00",
+    }]
+    (tmp_path / "strategy_version.json").write_text(_json.dumps(sv_history))
+    (tmp_path / "index.html").write_text(
+        "<html><body>\n<script>\n// INVESTOS_DATA_START\n// INVESTOS_DATA_END\n</script>\n</body></html>\n"
+    )
+
+    ok = run_daily.bake_dashboard(brief={"date": "2026-08-17"}, fx_signals={}, crypto_signals={})
+    assert ok is True
+
+    baked_html = (tmp_path / "index.html").read_text()
+    m = _re.search(r"const BAKED = (\{.*?\});", baked_html, _re.DOTALL)
+    assert m, "BAKED assignment not injected into index.html"
+    payload = _json.loads(m.group(1))
+
+    assert "walkforward" in payload
+    assert len(payload["walkforward"]) == 1
+    wf = payload["walkforward"][0]
+    assert wf["date"] == "2026-06-25"
+    assert wf["version"] == "4.1"
+    assert wf["oos_performance"]["win_rate"] == 44.4
+    assert "rules" not in wf   # bulky per-day dict must be dropped
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Counter NameError — FIX 1, 2026-07-12
 # Bug: final basket sector count block imported Counter as _C but called Counter()
 #      → NameError: name 'Counter' is not defined (3 consecutive runs dark).
@@ -1146,6 +1245,108 @@ def test_kelly_zero_edge_with_ml_prob_still_gets_floor():
     assert by_ticker["LOSER"]["kelly_wt"] == 0.0
     assert by_ticker["LOSER"]["weight"] > 0.0, \
         "a pick WITH ml_prob but zero computed edge should keep the base_wt*0.50 floor"
+
+
+def test_score_tier_buckets_are_gapless_for_fractional_scores():
+    """FIX (2026-08-17): by_score_tier and the OOS tier breakdown used
+    integer bucket bounds (90-100/75-89/60-74/0-59) against float scores --
+    59.9, 74.3-74.8, 89.2-89.9 landed in none of the four buckets (the gaps
+    between adjacent integer bounds), silently dropping picks from the tier
+    breakdown while total counts stayed correct. Confirmed live: by_score
+    tier counts summed to 2558 against 2584 total resolved. Every synthetic
+    score below is chosen to sit exactly in one of those three gaps, plus
+    one clean mid-bucket score per tier as a control."""
+    import tempfile
+    from unittest.mock import patch
+    from outcome_tracker import compute_win_rate
+
+    def _o(ticker, score, signal_date="2026-08-16"):
+        return {"ticker": ticker, "signal_date": signal_date, "score": score,
+                "ml_prob": 0.5, "resolved": True, "outcome": "WIN", "actual_return": 1.0}
+
+    synthetic = [
+        _o("GAP_59_9", 59.9),   # old bug: neither 0-59 nor 60-74 caught this
+        _o("GAP_74_5", 74.5),   # old bug: neither 60-74 nor 75-89 caught this
+        _o("GAP_89_7", 89.7),   # old bug: neither 75-89 nor 90-100 caught this
+        _o("MID_30",   30.0),
+        _o("MID_65",   65.0),
+        _o("MID_80",   80.0),
+        _o("MID_95",   95.0),
+    ]
+    scratch_win_rate = tempfile.mktemp(suffix=".json")
+
+    with patch("outcome_tracker.load_outcomes", lambda: synthetic), \
+         patch("outcome_tracker.WIN_RATE_FILE", scratch_win_rate), \
+         patch("outcome_tracker.OOS_START_DATE", "2026-01-01"):
+        wr = compute_win_rate()
+
+    by_score_total = sum(t["count"] for t in wr["by_score_tier"].values())
+    assert by_score_total == len(synthetic), (
+        f"by_score_tier undercounts: {by_score_total} != {len(synthetic)} "
+        f"({wr['by_score_tier']})"
+    )
+
+    oos_tiers = wr["oos"]["tiers"]
+    oos_total = sum(t["n"] for t in oos_tiers.values())
+    assert oos_total == len(synthetic), (
+        f"OOS tier breakdown undercounts: {oos_total} != {len(synthetic)} ({oos_tiers})"
+    )
+
+    # Each gap score lands in exactly one bucket, per its half-open bound:
+    # 0-59: 30.0, 59.9 (< 60) | 60-74: 65.0, 74.5 (< 75) |
+    # 75-89: 80.0, 89.7 (< 90) | 90-100: 95.0 (>= 90)
+    assert oos_tiers["0-59"]["n"]   == 2
+    assert oos_tiers["60-74"]["n"]  == 2
+    assert oos_tiers["75-89"]["n"]  == 2
+    assert oos_tiers["90-100"]["n"] == 1
+
+
+def test_top_level_avg_win_loss_is_portfolio_wide_not_last_tier():
+    """FIX (2026-08-17): the by_score_tier loop reused the outer-scope
+    avg_win/avg_loss variable names, so by the time it finished, those names
+    held whatever the LAST-iterated tier ("below-60") computed -- and
+    result["avg_win"]/["avg_loss"] read that shadowed value instead of the
+    true portfolio-wide average computed earlier. Confirmed live: today's
+    baked dashboard had top-level avg_win/avg_loss (4.75/4.06) exactly
+    matching by_score_tier["below-60"]'s (4.75/4.06). Constructed so the
+    below-60 tier's win/loss averages are deliberately far from the true
+    portfolio average -- if the shadow bug were still present, this would
+    assert the wrong (below-60-tier) numbers and fail."""
+    import tempfile
+    from unittest.mock import patch
+    from outcome_tracker import compute_win_rate
+
+    def _o(ticker, score, outcome, actual_return):
+        return {"ticker": ticker, "signal_date": "2026-08-16", "score": score,
+                "ml_prob": 0.5, "resolved": True, "outcome": outcome,
+                "actual_return": actual_return}
+
+    synthetic = [
+        _o("HI_WIN",  95, "WIN",  10.0),
+        _o("HI_LOSS", 95, "LOSS", -8.0),
+        _o("LO_WIN",  30, "WIN",   1.0),   # below-60 tier: much smaller win/loss
+        _o("LO_LOSS", 30, "LOSS", -1.0),
+    ]
+    scratch_win_rate = tempfile.mktemp(suffix=".json")
+
+    with patch("outcome_tracker.load_outcomes", lambda: synthetic), \
+         patch("outcome_tracker.WIN_RATE_FILE", scratch_win_rate), \
+         patch("outcome_tracker.OOS_START_DATE", "2026-01-01"):
+        wr = compute_win_rate()
+
+    # True portfolio-wide average across ALL wins/losses, not just below-60's.
+    # (avg_win/avg_loss are plain signed averages at the portfolio level --
+    # see outcome_tracker.py line ~831 -- unlike the tier-level fields below,
+    # which average abs(loss); that's a separate, pre-existing sign-convention
+    # difference between the two, not part of this fix.)
+    assert wr["avg_win"]  == round((10.0 + 1.0) / 2, 2)
+    assert wr["avg_loss"] == round((-8.0 + -1.0) / 2, 2)
+
+    # Sanity: below-60 tier's own numbers are indeed the smaller, distinct values
+    assert wr["by_score_tier"]["below-60"]["avg_win"]  == 1.0
+    assert wr["by_score_tier"]["below-60"]["avg_loss"] == 1.0
+    assert wr["avg_win"]  != wr["by_score_tier"]["below-60"]["avg_win"]
+    assert wr["avg_loss"] != wr["by_score_tier"]["below-60"]["avg_loss"]
 
 
 def test_ml_prob_bucket_table_matches_recomputation():

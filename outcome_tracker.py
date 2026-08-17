@@ -867,25 +867,45 @@ def compute_win_rate():
             }
 
     # By score tier
+    # FIX (2026-08-17): integer boundaries (90-100/75-89/60-74/0-59) silently
+    # dropped any float score landing in the gaps between them -- e.g. 74.3,
+    # 89.7 matched neither adjacent bucket. Confirmed live: by_score tier
+    # counts summed to 2558 against 2584 total resolved (26 picks dropped).
+    # Half-open bounds below are gapless and non-overlapping; labels unchanged.
     by_score = {}
-    for tier, min_s, max_s in [("90-100",90,100),("75-89",75,89),("60-74",60,74),("below-60",0,59)]:
-        tp = [o for o in resolved if min_s <= o.get("score",0) <= max_s]
+    for tier, in_tier in [
+        ("90-100",   lambda s: s >= 90),
+        ("75-89",    lambda s: 75 <= s < 90),
+        ("60-74",    lambda s: 60 <= s < 75),
+        ("below-60", lambda s: s < 60),
+    ]:
+        tp = [o for o in resolved if in_tier(o.get("score", 0) or 0)]
         if tp:
             tw       = len([o for o in tp if o["outcome"]=="WIN"])
             rets     = [o["actual_return"] for o in tp]
             wins_abs = [r for r in rets if r > 0]
             loss_abs = [abs(r) for r in rets if r < 0]
-            pf       = round(sum(wins_abs)/sum(loss_abs), 2) if loss_abs else 0
-            avg_win  = round(sum(wins_abs)/len(wins_abs), 2) if wins_abs else 0
-            avg_loss = round(sum(loss_abs)/len(loss_abs), 2) if loss_abs else 0
+            pf         = round(sum(wins_abs)/sum(loss_abs), 2) if loss_abs else 0
+            # FIX (2026-08-17): was avg_win/avg_loss, shadowing the portfolio-
+            # wide values computed above (line ~831) -- by the time this loop
+            # finished, those outer names held whatever the LAST tier
+            # iterated ("below-60") computed, and result["avg_win"]/
+            # ["avg_loss"] below used the corrupted shadowed value instead of
+            # the true portfolio average. Confirmed live in today's baked
+            # dashboard: top-level avg_win/avg_loss (4.75/4.06) exactly
+            # matched by_score_tier["below-60"]'s (4.75/4.06). _s_ prefix
+            # matches the _b_/_m_ convention the sibling loops below already
+            # use specifically to avoid this (see their own FIX comments).
+            _s_avg_win  = round(sum(wins_abs)/len(wins_abs), 2) if wins_abs else 0
+            _s_avg_loss = round(sum(loss_abs)/len(loss_abs), 2) if loss_abs else 0
             by_score[tier] = {
                 "win_rate":      round(tw/len(tp)*100, 1),
                 "count":         len(tp),
                 "avg_ret":       round(sum(rets)/len(rets), 2),
                 "avg_return":    round(sum(rets)/len(rets), 2),
                 "profit_factor": pf,
-                "avg_win":       avg_win,
-                "avg_loss":      avg_loss,
+                "avg_win":       _s_avg_win,
+                "avg_loss":      _s_avg_loss,
             }
 
     # By ml_prob bucket — feeds Kelly's live p/b directly (see ml_engine.py
@@ -893,14 +913,10 @@ def compute_win_rate():
     # on ml_prob instead of score.
     #
     # NOTE: deliberately named _b_avg_win/_b_avg_loss here, NOT avg_win/
-    # avg_loss — the by_score loop above reuses the outer-scope avg_win/
-    # avg_loss names, which silently shadows the portfolio-wide values
-    # computed earlier and corrupts result["avg_win"]/["avg_loss"] to
-    # whatever the LAST-iterated score tier happened to be (confirmed
-    # pre-existing in production win_rate.json: top-level avg_win/avg_loss
-    # exactly matched by_score_tier["below-60"], not the true portfolio
-    # average). That bug predates this change and is out of scope here
-    # (flagged separately) — this loop just avoids adding to it.
+    # avg_loss, to avoid shadowing the portfolio-wide values computed above
+    # (line ~831) the way the by_score loop used to before its 2026-08-17
+    # fix (see that loop's own FIX comment) — result["avg_win"]/["avg_loss"]
+    # below reads the outer names directly.
     by_ml_prob = {}
     for lo, hi, label in ML_PROB_BUCKETS:
         bp = [o for o in resolved
@@ -1069,9 +1085,16 @@ def compute_win_rate():
         pass
 
     # OOS tier breakdown
+    # FIX (2026-08-17): same gap bug as by_score above -- half-open bounds,
+    # labels unchanged (kept as "lo-hi" text, not remapped to "below-60").
     oos_tiers = {}
-    for lo, hi in [(90, 100), (75, 89), (60, 74), (0, 59)]:
-        bucket = [o for o in oos_resolved if lo <= (o.get("score") or 0) <= hi]
+    for lo, hi, in_tier in [
+        (90, 100, lambda s: s >= 90),
+        (75, 89,  lambda s: 75 <= s < 90),
+        (60, 74,  lambda s: 60 <= s < 75),
+        (0, 59,   lambda s: s < 60),
+    ]:
+        bucket = [o for o in oos_resolved if in_tier(o.get("score") or 0)]
         label  = f"{lo}-{hi}"
         oos_tiers[label] = {
             "n":       len(bucket),

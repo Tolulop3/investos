@@ -2224,11 +2224,33 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
                 return [_sanitize_floats(i, _depth+1) for i in obj]
             return obj
 
+        # Walk-forward ledger (Phase 2, 2026-08-17): strategy_version.json already
+        # accumulates one version-tagged entry per day (see
+        # strategy_version.py::log_strategy_version) and, as of Phase 1, carries
+        # an oos_performance snapshot on each entry. Trim to what the dashboard
+        # chart needs -- drop the bulky per-day RULES dict (not needed
+        # client-side, and would roughly double the baked payload size).
+        walkforward = []
+        try:
+            with open("strategy_version.json") as f:
+                _sv_history = json.load(f)
+            walkforward = [
+                {
+                    "date":    e.get("date"),
+                    "version": e.get("version"),
+                    "oos_performance": e.get("oos_performance"),
+                }
+                for e in _sv_history
+            ]
+        except Exception as _wfe:
+            print(f"  ⚠️  Walk-forward ledger skipped: {_wfe}")
+
         baked_payload = _sanitize_floats({
-            "brief":    slim_brief,
-            "fx":       fx_signals  or {},
-            "crypto":   crypto_signals or {},
-            "baked_at": datetime.now().isoformat(),
+            "brief":       slim_brief,
+            "fx":          fx_signals  or {},
+            "crypto":      crypto_signals or {},
+            "walkforward": walkforward,
+            "baked_at":    datetime.now().isoformat(),
         })
         baked = json.dumps(baked_payload, default=str, ensure_ascii=True)
         baked = baked.replace("</script>", r"<\/script>").replace("</", r"<\/")
@@ -2637,7 +2659,8 @@ if __name__ == "__main__":
         # ── Strategy version snapshot (OOS anchor) ──────────────────────────
         try:
             import strategy_version as _sv
-            _sv.log_strategy_version(outcomes_path="outcomes_log.json")
+            _sv.log_strategy_version(outcomes_path="outcomes_log.json",
+                                      win_rate=brief.get("win_rate"))
         except Exception as _sve:
             print(f"  ⚠️ strategy_version log failed: {_sve}")
 

@@ -314,10 +314,20 @@ RULES = {
 }
 
 
-def log_strategy_version(outcomes_path="outcomes_log.json"):
+def log_strategy_version(outcomes_path="outcomes_log.json", win_rate=None):
     """
     Appends today's rule snapshot to strategy_version.json.
     Safe to call every run — deduplicates by date.
+
+    win_rate: the dict returned by outcome_tracker.compute_win_rate() for
+    today's run (already computed by the time run_daily.py calls this — see
+    its "oos" block). Persisting oos_performance here (FIX, 2026-08-17) turns
+    this file's existing daily/per-version history into a walk-forward
+    ledger: compute_win_rate()'s own output is otherwise discarded every run
+    (win_rate.json is overwritten, not appended), so without this the
+    version-tagged daily rows this file already accumulates carry a resolved-
+    pick COUNT but no performance numbers to actually see whether a version
+    added alpha over time.
     """
     sv_path = "strategy_version.json"
 
@@ -345,6 +355,19 @@ def log_strategy_version(outcomes_path="outcomes_log.json"):
     except Exception:
         pass
 
+    oos_performance = None
+    if win_rate:
+        oos = win_rate.get("oos") or {}
+        if oos:
+            oos_performance = {
+                "win_rate":      oos.get("win_rate"),
+                "avg_return":    oos.get("avg_return"),
+                "spx_return":    oos.get("spx_return"),
+                "active_return": oos.get("active_return"),
+                "resolved":      oos.get("resolved"),
+                "tiers":         oos.get("tiers"),
+            }
+
     entry = {
         "date":         today,
         "version":      VERSION,
@@ -352,6 +375,7 @@ def log_strategy_version(outcomes_path="outcomes_log.json"):
         "oos_days":     (datetime.now(timezone.utc).date() -
                          datetime.fromisoformat(OOS_START_DATE).date()).days,
         "oos_resolved_picks": oos_resolved,
+        "oos_performance": oos_performance,
         "rules":        RULES,
         "logged_at":    datetime.now(timezone.utc).isoformat(),
     }
