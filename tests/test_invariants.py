@@ -4017,10 +4017,22 @@ def test_train_and_save_preserves_previous_model_on_rejection(monkeypatch, tmp_p
 
 def test_train_and_save_deploys_when_auc_clears_bar(monkeypatch, tmp_path):
     """A model with a real, learnable signal must clear the bar and deploy
-    -- confirms the gate doesn't just reject everything."""
+    -- confirms the gate doesn't just reject everything.
+
+    n=150, not the usual 90 (FIX, 2026-08-17): at n=90 this fixture sits on a
+    knife's edge -- xgboost's hist tree builder isn't bit-reproducible across
+    runs even with a fixed random_state (floating-point summation order
+    varies with thread scheduling), and combined with the 90-day recency-decay
+    sample weighting vs. min_child_weight=4's Hessian-mass threshold (see
+    _synthetic_resolved_rows' docstring), that's enough to occasionally
+    collapse the model to a degenerate 0.5-AUC/zero-importance stump -- CI run
+    32069838547 hit exactly that with seed=1. Empirically probed n=90..250
+    across 10 seeds each: n=90 degenerated on 1/10 seeds (down to 0.5), n>=120
+    never dropped below 0.87 in the same sweep. n=150 keeps real margin over
+    the 0.53 bar without materially slowing the test."""
     import ml_retrainer as mr
 
-    resolved = _synthetic_resolved_rows(n=90, informative=True, seed=1)
+    resolved = _synthetic_resolved_rows(n=150, informative=True, seed=1)
     X, y, w, dates = mr.build_feature_matrix(resolved)
     if X is None:
         pytest.skip("Coverage gate blocked")
