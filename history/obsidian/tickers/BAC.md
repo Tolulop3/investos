@@ -1,9 +1,9 @@
 ---
 ticker: BAC
 updated: 2026-08-18
-streak_days: 12
+streak_days: 14
 score_now: 100.0
-velocity: -25.0
+velocity: 0
 pf_30d: 12.73
 picks_30d: 15
 tags: [investos, ticker, pattern]
@@ -12,13 +12,9 @@ tags: [investos, ticker, pattern]
 # BAC — Pattern Log
 
 ## Streak
-Appeared in picks **12 of last 7 days**.
+Appeared in picks **14 of last 7 days**.
 Avg score: 100.0
-Dates: 2026-08-12, 2026-08-12, 2026-08-13, 2026-08-13, 2026-08-14, 2026-08-14, 2026-08-15, 2026-08-15, 2026-08-16, 2026-08-16, 2026-08-17, 2026-08-17
-
-## Score Velocity
-📉 **FALLING** at -25.0 pts/day
-Score: 100.0 → 50.0 (Δ -50.0 over 3 days)
+Dates: 2026-08-12, 2026-08-12, 2026-08-13, 2026-08-13, 2026-08-14, 2026-08-14, 2026-08-15, 2026-08-15, 2026-08-16, 2026-08-16, 2026-08-17, 2026-08-17, 2026-08-18, 2026-08-18
 
 ## Recent Performance (last 30d)
 Profit Factor: **12.73** ✅  |  n=15 picks

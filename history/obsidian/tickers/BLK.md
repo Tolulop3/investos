@@ -2,7 +2,7 @@
 ticker: BLK
 updated: 2026-08-18
 streak_days: 5
-score_now: 74.6
+score_now: 79.1
 velocity: 0
 pf_30d: None
 picks_30d: 0
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **5 of last 7 days**.
-Avg score: 74.6
+Avg score: 79.1
 Dates: 2026-08-13, 2026-08-14, 2026-08-15, 2026-08-17, 2026-08-18
 
 ---

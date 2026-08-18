@@ -7,23 +7,23 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 82.4%  (+0.16%/day)
+- Breadth (200MA): 81.2%  (-0.01%/day)
 - Sharpe: -0.321  (-0.003/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **BAC** — 12d streak, avg score 100.0
+- **BAC** — 14d streak, avg score 100.0
 - **AMGN** — 8d streak, avg score 100.0
-- **C** — 6d streak, avg score 91.1
+- **C** — 6d streak, avg score 91.3
 - **ABBV** — 5d streak, avg score 98.0
 - **BAM.TO** — 5d streak, avg score 99.4
-- **BLK** — 5d streak, avg score 74.6
+- **BLK** — 5d streak, avg score 79.1
 - **NU** — 4d streak, avg score 100.0
 - **FBP** — 4d streak, avg score 100.0
-- **UMBF** — 3d streak, avg score 89.6
-- **JPM** — 3d streak, avg score 91.2
+- **UMBF** — 3d streak, avg score 94.7
+- **RCI-B.TO** — 3d streak, avg score 83.3
 
 ## Score Velocity (rising/falling fast)
-- 📉 **BAC** -25.0 pts/day  (100.0 → 50.0)
+- 📉 **VLO** -20.0 pts/day  (90.0 → 50.0)
 - 📉 **TOST** -18.3 pts/day  (86.6 → 50.0)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
@@ -33,21 +33,21 @@ tags: [investos, patterns, weekly]
 - 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 67.7% of recent picks (21 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 70.0% of recent picks (21 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| BAC | 🟡 WATCH | 12d | -25.0 | 12.73 |
+| BAC | 🟡 WATCH | 14d | — | 12.73 |
+| VLO | 🟡 WATCH | 0d | -20.0 | 1.07 |
 | TOST | 🔴 AVOID | 0d | -18.3 | — |
 | GE | 🔴 AVOID | 0d | -16.6 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
+| BAM.TO | 🔴 AVOID | 5d | -6.0 | — |
 | AMGN | 🟡 WATCH | 8d | — | — |
-| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
-| UMBF | 🟡 WATCH | 3d | -7.2 | 1.3 |
-| MMM | 🔴 AVOID | 0d | -12.2 | — |
-| C | 🟡 WATCH | 6d | — | — |
+| UNP | 🔴 AVOID | 0d | -15.0 | — |
+| UMBF | 🟡 WATCH | 3d | -6.5 | 1.3 |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
