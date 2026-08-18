@@ -21,7 +21,7 @@ tags: [investos, weekly, performance]
 ## Regime Timeline (recent)
 | Regime | Period | Duration | Avg Sharpe |
 |--------|--------|----------|------------|
-| FULL_EXPOSURE | 2026-06-17 → 2026-08-18 | 59d | -0.091 |
+| FULL_EXPOSURE | 2026-06-17 → 2026-08-18 | 59d | -0.092 |
 
 ## Sharpe Trajectory (last 7 days)
 | Date | Sharpe | 7d Avg | Direction |
@@ -32,7 +32,7 @@ tags: [investos, weekly, performance]
 | 2026-08-15 | -0.323 | -0.275 | declining |
 | 2026-08-16 | -0.331 | -0.292 | declining |
 | 2026-08-17 | -0.29 | -0.303 | improving |
-| 2026-08-18 | -0.316 | -0.311 | improving |
+| 2026-08-18 | -0.321 | -0.312 | improving |
 
 ## Pick Quality by Macro Signal (min 5 picks)
 | Signal | n | WR | PF | Status |
