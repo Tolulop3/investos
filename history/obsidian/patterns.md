@@ -7,23 +7,22 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 79.4%  (-0.39%/day)
-- Sharpe: -0.350  (-0.008/day)
+- Breadth (200MA): 82.7%  (+0.09%/day)
+- Sharpe: -0.346  (-0.007/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **BAC** — 13d streak, avg score 100.0
-- **C** — 7d streak, avg score 91.8
+- **BAC** — 13d streak, avg score 99.7
+- **C** — 7d streak, avg score 92.2
 - **AMGN** — 6d streak, avg score 100.0
-- **BLK** — 6d streak, avg score 79.9
 - **BAM.TO** — 5d streak, avg score 99.4
+- **BLK** — 5d streak, avg score 78.8
 - **NU** — 4d streak, avg score 100.0
 - **FBP** — 4d streak, avg score 100.0
 - **ABBV** — 3d streak, avg score 96.7
-- **JPM** — 3d streak, avg score 84.5
-- **RCI-B.TO** — 3d streak, avg score 83.3
+- **JPM** — 3d streak, avg score 92.0
+- **UMBF** — 3d streak, avg score 91.3
 
 ## Score Velocity (rising/falling fast)
-- 📉 **VLO** -20.0 pts/day  (90.0 → 50.0)
 - 📉 **TOST** -18.3 pts/day  (86.6 → 50.0)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
@@ -31,22 +30,23 @@ tags: [investos, patterns, weekly]
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
 - 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
+- 📉 **AAPL** -10.7 pts/day  (100.0 → 78.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 82.8% of recent picks (24 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 80.6% of recent picks (25 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | BAC | 🟡 WATCH | 13d | — | 11.46 |
-| VLO | 🟡 WATCH | 0d | -20.0 | 1.23 |
 | TOST | 🔴 AVOID | 0d | -18.3 | — |
 | GE | 🔴 AVOID | 0d | -16.6 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
 | BAM.TO | 🔴 AVOID | 5d | -6.0 | — |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | C | 🟡 WATCH | 7d | — | — |
+| JPM | 🟢 CONSIDER | 3d | +5.0 | 4.09 |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
