@@ -2,7 +2,7 @@
 ticker: C
 updated: 2026-08-19
 streak_days: 7
-score_now: 92.2
+score_now: 91.5
 velocity: 0
 pf_30d: None
 picks_30d: 0
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **7 of last 7 days**.
-Avg score: 92.2
+Avg score: 91.5
 Dates: 2026-08-13, 2026-08-14, 2026-08-15, 2026-08-16, 2026-08-17, 2026-08-18, 2026-08-19
 
 ---
