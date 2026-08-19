@@ -1,11 +1,11 @@
 ---
 ticker: BAM.TO
-updated: 2026-08-18
+updated: 2026-08-19
 streak_days: 5
 score_now: 99.4
 velocity: -6.05
 pf_30d: None
-picks_30d: 2
+picks_30d: 3
 tags: [investos, ticker, pattern]
 ---
 

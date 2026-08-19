@@ -1,6 +1,6 @@
 ---
 ticker: FBP
-updated: 2026-08-18
+updated: 2026-08-19
 streak_days: 4
 score_now: 100.0
 velocity: 0
