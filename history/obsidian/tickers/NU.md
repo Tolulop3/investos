@@ -1,6 +1,6 @@
 ---
 ticker: NU
-updated: 2026-08-19
+updated: 2026-08-20
 streak_days: 4
 score_now: 100.0
 velocity: 0
