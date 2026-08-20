@@ -2,7 +2,7 @@
 ticker: RCI-B.TO
 updated: 2026-08-20
 streak_days: 4
-score_now: 83.7
+score_now: 83.8
 velocity: 0
 pf_30d: None
 picks_30d: 0
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **4 of last 7 days**.
-Avg score: 83.7
+Avg score: 83.8
 Dates: 2026-08-15, 2026-08-16, 2026-08-17, 2026-08-20
 
 ---
