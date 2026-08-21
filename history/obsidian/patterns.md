@@ -7,14 +7,14 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 80.5%  (-0.27%/day)
+- Breadth (200MA): 79.4%  (-0.43%/day)
 - Sharpe: -0.390  (-0.010/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **BAC** — 12d streak, avg score 99.3
-- **CVE.TO** — 6d streak, avg score 94.4
+- **CVE.TO** — 6d streak, avg score 95.4
 - **C** — 5d streak, avg score 90.9
-- **RCI-B.TO** — 5d streak, avg score 81.9
+- **RCI-B.TO** — 5d streak, avg score 81.8
 - **FBP** — 5d streak, avg score 97.2
 - **K.TO** — 5d streak, avg score 91.8
 - **CVX** — 5d streak, avg score 93.9
@@ -42,11 +42,11 @@ tags: [investos, patterns, weekly]
 | TOST | 🔴 AVOID | 0d | -18.3 | — |
 | GE | 🔴 AVOID | 0d | -16.6 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
 | CVE.TO | 🟡 WATCH | 6d | — | — |
-| AAPL | 🔴 AVOID | 0d | -10.7 | — |
+| SBUX | 🔴 AVOID | 0d | -10.7 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
