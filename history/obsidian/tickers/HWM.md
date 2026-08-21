@@ -1,8 +1,8 @@
 ---
 ticker: HWM
-updated: 2026-08-20
+updated: 2026-08-21
 streak_days: 3
-score_now: 81.7
+score_now: 81.2
 velocity: 0
 pf_30d: 2.36
 picks_30d: 5
@@ -13,8 +13,8 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **3 of last 7 days**.
-Avg score: 81.7
-Dates: 2026-08-18, 2026-08-19, 2026-08-20
+Avg score: 81.2
+Dates: 2026-08-18, 2026-08-19, 2026-08-21
 
 ## Recent Performance (last 30d)
 Profit Factor: **2.36** ✅  |  n=5 picks

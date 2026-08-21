@@ -1,11 +1,11 @@
 ---
 ticker: RCI-B.TO
-updated: 2026-08-20
+updated: 2026-08-21
 streak_days: 4
 score_now: 83.8
 velocity: 0
 pf_30d: None
-picks_30d: 0
+picks_30d: 1
 tags: [investos, ticker, pattern]
 ---
 
