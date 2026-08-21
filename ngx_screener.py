@@ -405,6 +405,27 @@ def compute_ngx_basket_regime(scored):
     return "BULLISH" if pct >= 0.60 else "NEUTRAL" if pct >= 0.40 else "WEAK"
 
 
+# ── NGX sector block (2026-08-21) ──────────────────────────────────────────
+# Mirrors ml_engine.py's stock-side SECTOR_BLOCK: a sector with a proven,
+# statistically significant zero win rate is excluded from BUY/WATCH
+# regardless of score, rather than waiting for more picks to "prove" what
+# the data already shows.
+#
+# oil: 0/16 resolved on OOS data (clean since 2026-07-20) -- p ≈ 0.0018
+# against NGX's own 32.6% baseline win rate (not a generic 50% null, since
+# NGX doesn't perform at par -- see Architecture Decision #3). Genuinely
+# significant at any conventional threshold.
+#
+# consumer (0/5) was evaluated and deliberately NOT included: against the
+# same 32.6% baseline, p ≈ 0.139 -- not significant at n=5. Five trials is
+# too small to conclude anything; revisit once more consumer picks resolve.
+# financial (0/2) is even thinner and wasn't considered for the same reason.
+#
+# Re-evaluate this set once each blocked/considered sector has materially
+# more OOS-resolved picks -- this is a data-driven snapshot, not permanent.
+NGX_SECTOR_BLOCK = {"oil"}
+
+
 def apply_macro_bridge(all_scored, investos_macro, brent_trend, basket_regime):
     """
     v2.1: RISK_OFF no longer silences WATCH signals.
@@ -420,6 +441,15 @@ def apply_macro_bridge(all_scored, investos_macro, brent_trend, basket_regime):
     for s in all_scored:
         score  = s["score"]
         tier   = s["tier"]
+
+        # ── SECTOR BLOCK: takes precedence over score/regime, same as the
+        # stock-side sector-first gate. See NGX_SECTOR_BLOCK's own comment
+        # for the data justifying which sectors are (and aren't) in it.
+        if s.get("sector") in NGX_SECTOR_BLOCK:
+            s["action"]     = "WAIT"
+            s["size_label"] = f"BLOCKED — {s['sector']} sector, proven 0% OOS win rate"
+            s["actionable"] = False
+            continue
 
         # ── WAIT: score below watch floor ────────────────────────────────────
         if score < 45:
@@ -707,8 +737,13 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
 
     eligible_signals = [s for s in signals if s.get("eligible", True)]
 
-    if verbose:
-        gate_label = f"Gate {_gate}: {get_gate_status_label(_gate)}" if _NGX_PRICE_ENGINE else "Gate 0: macro-only"
+    # FIX (2026-08-21): gate_label was only assigned inside `if verbose:`, but
+    # the print below it is unconditional -- run_ngx_screen(verbose=False)
+    # crashed with UnboundLocalError every time. Production always calls with
+    # verbose=True (run_daily.py:2515), so this never fired there; found while
+    # testing the NGX sector block change with verbose=False. Hoisted out so
+    # it's always defined; the print's own verbosity is unchanged.
+    gate_label = f"Gate {_gate}: {get_gate_status_label(_gate)}" if _NGX_PRICE_ENGINE else "Gate 0: macro-only"
     print(f"\n  NGX Basket: {basket_regime} | {gate_label}")
     if _prices:
         ok = sum(1 for t in NGX_ALL if t in _prices)

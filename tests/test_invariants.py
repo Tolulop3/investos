@@ -1781,6 +1781,76 @@ def test_ngx_validation_phase_independent_per_ticker(monkeypatch):
     assert p1 != p2
 
 
+def _ngx_pick(ticker, score, tier, sector):
+    return {"ticker": ticker, "score": score, "tier": tier, "sector": sector,
+            "action": "WAIT", "size_label": "—", "actionable": False, "persistence": "—"}
+
+
+def test_ngx_sector_block_excludes_oil_regardless_of_score():
+    """FIX (2026-08-21): oil has a proven, statistically significant 0% OOS
+    win rate (0/16, p~0.0018 against NGX's own 32.6% baseline -- see
+    NGX_SECTOR_BLOCK's own comment). A blocked sector must never reach BUY
+    or WATCH no matter how high its score is or how favorable the regime
+    is -- mirrors the stock-side sector-first gate taking precedence over
+    score."""
+    import ngx_screener as ns
+
+    scored = [_ngx_pick("OANDO.LG", 95, 1, "oil")]  # would otherwise be an easy Tier-1 BUY
+
+    signals, watch, gate_status = ns.apply_macro_bridge(scored, "RISK_ON", "UP", "BULLISH")
+
+    assert signals == []
+    assert watch == []
+    assert scored[0]["action"] == "WAIT"
+    assert scored[0]["actionable"] is False
+    assert "oil" in scored[0]["size_label"].lower()
+
+
+def test_ngx_sector_block_does_not_affect_other_sectors():
+    """Sanity check the block is scoped to oil only -- a non-blocked sector
+    at the same score/regime must still reach BUY normally."""
+    import ngx_screener as ns
+
+    scored = [_ngx_pick("GTCO.LG", 95, 1, "banking")]
+
+    signals, watch, gate_status = ns.apply_macro_bridge(scored, "RISK_ON", "UP", "BULLISH")
+
+    assert len(signals) == 1
+    assert signals[0]["ticker"] == "GTCO.LG"
+    assert signals[0]["action"] == "BUY"
+
+
+def test_ngx_sector_block_consumer_not_included():
+    """consumer (0/5 OOS) was evaluated and deliberately excluded from the
+    block -- not statistically significant at that sample size (p~0.139).
+    Locks in the current, intentionally narrow scope so a future change
+    can't silently widen it without the same rigor."""
+    import ngx_screener as ns
+    assert ns.NGX_SECTOR_BLOCK == {"oil"}
+
+
+def test_ngx_run_screen_does_not_crash_when_not_verbose(monkeypatch, tmp_path):
+    """FIX (2026-08-21): gate_label was only assigned inside `if verbose:`,
+    but the print using it was unconditional -- run_ngx_screen(verbose=False)
+    raised UnboundLocalError every time. Production always calls with
+    verbose=True (run_daily.py), so this never fired live; found while
+    testing the NGX sector block change with verbose=False. Network calls
+    mocked out so this runs fast and deterministically in CI."""
+    import ngx_screener as ns
+
+    monkeypatch.setattr(ns, "compute_em_regime",
+                         lambda: ("NEUTRAL", 0.0, 0.0, "FLAT", {}))
+    monkeypatch.setattr(ns, "fetch_macro_asset", lambda *a, **k: None)
+    monkeypatch.setattr(ns, "gate_level", lambda: 0)
+    monkeypatch.setattr(ns, "_load_ticker_start_dates", lambda: {})
+    monkeypatch.setattr(ns, "_save_ticker_start_dates", lambda d: None)
+    monkeypatch.chdir(tmp_path)
+
+    result = ns.run_ngx_screen(investos_macro="NEUTRAL", verbose=False)
+    assert result is not None
+    assert "signals" in result and "watch" in result
+
+
 def test_ngx_backfilled_tickers_match_old_global_clock():
     """The 29 existing tickers, after backfill, must reproduce EXACTLY the
     same phase/day math the old single global clock would have given them.
