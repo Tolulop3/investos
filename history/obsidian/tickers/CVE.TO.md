@@ -2,7 +2,7 @@
 ticker: CVE.TO
 updated: 2026-08-21
 streak_days: 6
-score_now: 94.9
+score_now: 94.4
 velocity: 0
 pf_30d: None
 picks_30d: 0
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **6 of last 7 days**.
-Avg score: 94.9
+Avg score: 94.4
 Dates: 2026-08-18, 2026-08-19, 2026-08-19, 2026-08-20, 2026-08-20, 2026-08-21
 
 ---
