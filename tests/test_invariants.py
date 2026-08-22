@@ -3360,7 +3360,11 @@ def test_gate_ticker_edge_function_auth_matrix():
     script = r"""
 import gateTicker from '../netlify/edge-functions/gate-ticker.js';
 
-globalThis.Netlify = { env: { get: (k) => k === 'INVESTOS_API_KEY' ? 'real-secret-key' : undefined } };
+globalThis.Netlify = { env: { get: (k) => {
+  if (k === 'INVESTOS_API_KEY') return 'real-secret-key';
+  if (k === 'INVESTOS_API_KEY_VETT') return 'vett-secret-key';
+  return undefined;
+} } };
 
 const ORIGIN = 'https://investos-proxy.netlify.app';
 const mockContext = { next: async () => new Response('PASSED_THROUGH', { status: 200 }) };
@@ -3381,6 +3385,10 @@ results.valid_origin_no_key = await run(
 results.wrong_origin_correct_key = await run(
   new Request('https://x/api/ticker?s=AAPL', {
     headers: { origin: 'https://evil.example.com', 'x-investos-key': 'real-secret-key' } }));
+
+results.wrong_origin_correct_vett_key = await run(
+  new Request('https://x/api/ticker?s=AAPL', {
+    headers: { origin: 'https://evil.example.com', 'x-investos-key': 'vett-secret-key' } }));
 
 results.wrong_origin_wrong_key = await run(
   new Request('https://x/api/ticker?s=AAPL', {
@@ -3411,8 +3419,99 @@ console.log(JSON.stringify(results));
     assert results["options_no_auth"] == 200, "OPTIONS preflight must always pass through"
     assert results["valid_origin_no_key"] == 200, "valid ALLOWED_ORIGIN must be authorised"
     assert results["wrong_origin_correct_key"] == 200, "correct INVESTOS_API_KEY must authorise even with wrong origin"
+    assert results["wrong_origin_correct_vett_key"] == 200, "correct INVESTOS_API_KEY_VETT must authorise even with wrong origin -- VETT's key is independent of the dashboard's"
     assert results["wrong_origin_wrong_key"] == 401, "wrong origin + wrong key must be rejected pre-invocation"
     assert results["no_origin_no_key"] == 401, "no origin + no key must be rejected pre-invocation"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX (2026-08-21): ticker.js's rate limit was a plain in-memory counter
+# (`let _rateCount`) that reset on every cold start and wasn't shared across
+# concurrent Lambda instances -- the advertised "30 calls / 10 min" was never
+# a real distributed limit. netlify/functions/_rateLimiter.js replaces it
+# with a Netlify-Blobs-backed, per-identity counter (separate buckets for
+# 'dashboard' and 'vett' so one caller's burst can't 429 the other).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_rate_limiter_isolates_identities_and_enforces_limits():
+    """Exercises the real _rateLimiter.js against a fake in-memory Blobs
+    store (get/set only, matching the subset of the real Netlify Blobs API
+    _rateLimiter.js uses) via Node -- not a source-text inspection. Verifies:
+    each identity gets its own bucket (a 'vett' burst doesn't consume
+    'dashboard' quota or vice versa), the configured limit is enforced per
+    identity, and an unknown identity falls back to the 'dashboard' limit
+    rather than silently getting unlimited calls."""
+    import shutil, subprocess, json as _json
+
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node not available in this environment")
+
+    script = r"""
+import { checkRateLimit, RATE_LIMITS } from '../netlify/functions/_rateLimiter.js';
+
+function makeFakeStore() {
+  const data = new Map();
+  return {
+    async get(key) { return data.has(key) ? JSON.parse(data.get(key)) : null; },
+    async set(key, value) { data.set(key, value); },
+  };
+}
+
+const results = {};
+const now = Date.now();
+
+// Each identity enforces its own configured limit, independently.
+for (const identity of ['dashboard', 'vett']) {
+  const store = makeFakeStore();
+  const limit = RATE_LIMITS[identity];
+  let allowedCount = 0;
+  for (let i = 0; i < limit + 5; i++) {
+    if (await checkRateLimit(store, identity, now)) allowedCount++;
+  }
+  results[identity + '_allowed_of_' + (limit + 5)] = allowedCount;
+}
+
+// A burst on 'vett' must not consume 'dashboard' quota in the same store.
+{
+  const store = makeFakeStore();
+  for (let i = 0; i < RATE_LIMITS.vett; i++) await checkRateLimit(store, 'vett', now);
+  results.dashboard_after_vett_burst = await checkRateLimit(store, 'dashboard', now);
+}
+
+// Unknown identity falls back to the dashboard limit, not unlimited.
+{
+  const store = makeFakeStore();
+  let allowedCount = 0;
+  for (let i = 0; i < RATE_LIMITS.dashboard + 5; i++) {
+    if (await checkRateLimit(store, 'nonexistent-identity', now)) allowedCount++;
+  }
+  results.unknown_identity_allowed = allowedCount;
+}
+
+console.log(JSON.stringify(results));
+"""
+    script_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "_rate_limiter_probe.mjs"
+    )
+    with open(script_path, "w") as f:
+        f.write(script)
+    try:
+        proc = subprocess.run(
+            [node, script_path],
+            cwd=os.path.dirname(script_path),
+            capture_output=True, text=True, timeout=15,
+        )
+    finally:
+        os.remove(script_path)
+
+    assert proc.returncode == 0, f"probe script failed: {proc.stderr}"
+    results = _json.loads(proc.stdout.strip().splitlines()[-1])
+
+    assert results["dashboard_allowed_of_35"] == 30, "dashboard identity must be capped at its configured limit (30)"
+    assert results["vett_allowed_of_65"] == 60, "vett identity must be capped at its configured limit (60), independent of dashboard's"
+    assert results["dashboard_after_vett_burst"] is True, "a vett burst must not consume the dashboard identity's quota in the same store"
+    assert results["unknown_identity_allowed"] == 30, "an unrecognised identity must fall back to the dashboard limit, not unlimited calls"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -2,32 +2,33 @@
 // InvestOS Yahoo Finance proxy — server-side fetch bypasses CORS + crumb requirement
 //
 // SECURITY:
-//   - Requires x-investos-key header matching INVESTOS_API_KEY env var
+//   - Requires x-investos-key header matching INVESTOS_API_KEY (dashboard) or
+//     INVESTOS_API_KEY_VETT (VETT extension) env var — or a valid Origin
 //   - CORS restricted to investos-proxy.netlify.app only
 //   - Input sanitized: uppercase, whitespace stripped, length capped
 //   - No stack traces in error responses
-//   - Set INVESTOS_API_KEY in Netlify → Site Settings → Environment Variables
+//   - Set INVESTOS_API_KEY / INVESTOS_API_KEY_VETT in Netlify → Site
+//     Settings → Environment Variables
+//
+// NOTE ON THE KEY'S ACTUAL SECURITY VALUE (2026-08-21): neither key is a
+// real secret once a caller ships in a distributed client. INVESTOS_API_KEY
+// was hardcoded directly in index.html for ~3 weeks in June 2026 and is
+// permanently visible in this (public) repo's git history regardless of
+// later rotation. INVESTOS_API_KEY_VETT will ship inside VETT's packaged
+// Chrome extension (config.js), readable by anyone who unpacks the .crx
+// once VETT is installed by other people. Both keys are treated as soft
+// "which caller is this" tags for rate-limit bucketing, not as access
+// control against a determined extractor — the data behind this proxy is
+// public market quotes, not InvestOS's proprietary scoring, so that's an
+// acceptable tradeoff. Real protection against abuse is the durable,
+// per-identity rate limiter below (see _rateLimiter.js), not the key.
 
 const https = require('https');
+const { getStore } = require('@netlify/blobs');
+const { checkRateLimit } = require('./_rateLimiter');
 
 // ── Allowed origin (your Netlify site only) ──────────────────────────────────
 const ALLOWED_ORIGIN = 'https://investos-proxy.netlify.app';
-
-// ── Rate limiting — stops bots burning your Netlify quota ────────────────────
-const RATE_WINDOW_MS   = 10 * 60 * 1000;  // 10 minutes
-const RATE_LIMIT       = 30;              // max calls per window
-let   _rateCount       = 0;
-let   _rateWindowStart = Date.now();
-
-function checkRateLimit() {
-  const now = Date.now();
-  if (now - _rateWindowStart > RATE_WINDOW_MS) {
-    _rateCount = 0;
-    _rateWindowStart = now;
-  }
-  _rateCount++;
-  return _rateCount <= RATE_LIMIT;
-}
 
 function httpsGet(url, headers) {
   return new Promise((resolve, reject) => {
@@ -59,23 +60,25 @@ exports.handler = async function(event) {
     return { statusCode: 204, headers: cors, body: '' };
   }
 
-  // ── AUTH CHECK: require secret key header ────────────────────────────────
-  // Set INVESTOS_API_KEY in Netlify → Site Settings → Environment Variables
-  // Dashboard must send: fetch(url, { headers: { 'x-investos-key': 'YOUR_KEY' } })
-  const expectedKey = process.env.INVESTOS_API_KEY;
+  // ── AUTH CHECK: require secret key header, or valid origin ───────────────
+  // Set INVESTOS_API_KEY / INVESTOS_API_KEY_VETT in Netlify → Site Settings
+  // → Environment Variables. Dashboard sends an empty key and relies on
+  // origin; VETT sends its own key (see ticker.js's top-of-file note on why
+  // neither key is treated as a real secret).
+  const expectedDashboardKey = process.env.INVESTOS_API_KEY;
+  const expectedVettKey      = process.env.INVESTOS_API_KEY_VETT;
   const providedKey = event.headers && (
     event.headers['x-investos-key'] ||
     event.headers['X-Investos-Key']
   );
 
-  // Auth strategy: prefer key-based auth, fall back to origin-only auth
-  // This allows the dashboard to work without exposing the key in client JS
-  // (Netlify secrets scanner blocks builds if key appears in index.html)
   const originIsValid = (corsOrigin === ALLOWED_ORIGIN);
+  const vettKeyMatch      = !!providedKey && !!expectedVettKey && providedKey === expectedVettKey;
+  const dashboardKeyMatch = !!providedKey && !!expectedDashboardKey && providedKey === expectedDashboardKey;
 
-  if (expectedKey) {
-    // Key configured — require it OR valid origin (dashboard sends empty key now)
-    if (!originIsValid && (!providedKey || providedKey !== expectedKey)) {
+  if (expectedDashboardKey || expectedVettKey) {
+    // At least one key configured — require a key match OR valid origin
+    if (!originIsValid && !dashboardKeyMatch && !vettKeyMatch) {
       return {
         statusCode: 401,
         headers: cors,
@@ -83,7 +86,7 @@ exports.handler = async function(event) {
       };
     }
   } else {
-    // No key configured — require valid origin only
+    // No key configured at all — require valid origin only (legacy path)
     if (!originIsValid) {
       return {
         statusCode: 401,
@@ -93,8 +96,14 @@ exports.handler = async function(event) {
     }
   }
 
-  // ── Rate limit check ─────────────────────────────────────────────────────
-  if (!checkRateLimit()) {
+  // ── Rate limit check — durable, per-identity (see _rateLimiter.js) ───────
+  // Identity: whichever credential matched. Origin-only callers (the
+  // dashboard, which sends no real key) bucket under 'dashboard' same as a
+  // dashboard-key match would.
+  const rateIdentity = vettKeyMatch ? 'vett' : 'dashboard';
+  const rateStore = getStore('ticker-ratelimit');
+  const allowed = await checkRateLimit(rateStore, rateIdentity, Date.now());
+  if (!allowed) {
     return {
       statusCode: 429,
       headers: cors,

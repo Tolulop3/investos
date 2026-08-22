@@ -26,6 +26,18 @@
 // ticker.js's own log lines appearing for it -- proving the edge gate
 // itself is what rejects it, before the billed origin function is ever
 // invoked.
+//
+// UPDATE (2026-08-21): added INVESTOS_API_KEY_VETT as a second accepted
+// key (VETT gets its own, independently revocable, so leaking or rotating
+// one key never touches the other), extending the same matrix -- see the
+// same test, now covering both keys. Rate limiting (previously an
+// in-memory counter in ticker.js, now a durable Netlify Blobs-backed one
+// in _rateLimiter.js) deliberately stays at the origin function, not here
+// -- Blobs' behavior from this Deno edge runtime vs. the Node function
+// runtime hasn't been verified, so it isn't worth the risk of a silent
+// failure in the pre-invocation gate. This means over-limit requests still
+// bill one invocation before being rejected; only unauthorised ones are
+// free. Revisit if Blobs-from-edge is confirmed to work the same way.
 // ─────────────────────────────────────────────────────────────────────────
 
 const ALLOWED_ORIGIN = 'https://investos-proxy.netlify.app';
@@ -41,13 +53,19 @@ export default async (request, context) => {
   const origin = request.headers.get('origin');
   const originIsValid = origin === ALLOWED_ORIGIN;
 
-  const expectedKey = Netlify.env.get('INVESTOS_API_KEY');
+  const expectedDashboardKey = Netlify.env.get('INVESTOS_API_KEY');
+  const expectedVettKey      = Netlify.env.get('INVESTOS_API_KEY_VETT');
   const providedKey = request.headers.get('x-investos-key');
 
+  const keyMatch = !!providedKey && (
+    (!!expectedDashboardKey && providedKey === expectedDashboardKey) ||
+    (!!expectedVettKey && providedKey === expectedVettKey)
+  );
+
   let authorised;
-  if (expectedKey) {
-    // Key configured — require it OR a valid origin, same as ticker.js.
-    authorised = originIsValid || (!!providedKey && providedKey === expectedKey);
+  if (expectedDashboardKey || expectedVettKey) {
+    // At least one key configured — require a match OR a valid origin, same as ticker.js.
+    authorised = originIsValid || keyMatch;
   } else {
     // No key configured — require a valid origin only, same as ticker.js.
     authorised = originIsValid;
