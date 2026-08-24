@@ -7,15 +7,15 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 78.9%  (-0.50%/day)
+- Breadth (200MA): 79.3%  (-0.44%/day)
 - Sharpe: -0.440  (-0.016/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **BAC** — 10d streak, avg score 99.2
-- **K.TO** — 7d streak, avg score 91.9
 - **CVE.TO** — 7d streak, avg score 95.2
 - **CVX** — 6d streak, avg score 93.4
 - **FBP** — 5d streak, avg score 97.0
+- **K.TO** — 5d streak, avg score 92.2
 - **C** — 4d streak, avg score 89.9
 - **RCI-B.TO** — 4d streak, avg score 81.3
 - **MAIN** — 3d streak, avg score 100.0
@@ -33,21 +33,21 @@ tags: [investos, patterns, weekly]
 - 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 74.1% of recent picks (20 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 76.0% of recent picks (19 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | BAC | 🟡 WATCH | 10d | — | 0.76 |
 | GE | 🔴 AVOID | 0d | -16.6 | — |
-| SO | 🔴 AVOID | 0d | -16.5 | — |
 | BKNG | 🔴 AVOID | 0d | -16.5 | — |
+| SO | 🔴 AVOID | 0d | -16.5 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | 5.59 |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | CVE.TO | 🟡 WATCH | 7d | — | — |
-| K.TO | 🟡 WATCH | 7d | — | — |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
+| CVX | 🟡 WATCH | 6d | — | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
