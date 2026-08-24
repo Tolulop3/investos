@@ -6,21 +6,21 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-08-24
 
 ## Regime Drift
-- ⚠️ Breadth declining -0.7%/day — watch for regime shift if sustained
-- Breadth (200MA): 77.2%  (-0.74%/day)
-- Sharpe: -0.433  (-0.015/day)
+- ✅ Regime stable — no drift signals
+- Breadth (200MA): 78.9%  (-0.50%/day)
+- Sharpe: -0.440  (-0.016/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **BAC** — 10d streak, avg score 99.2
-- **CVE.TO** — 7d streak, avg score 96.0
-- **FBP** — 6d streak, avg score 94.8
+- **K.TO** — 7d streak, avg score 91.9
+- **CVE.TO** — 7d streak, avg score 95.2
 - **CVX** — 6d streak, avg score 93.4
-- **RCI-B.TO** — 5d streak, avg score 82.1
-- **K.TO** — 5d streak, avg score 92.2
-- **MAIN** — 4d streak, avg score 99.0
+- **FBP** — 5d streak, avg score 97.0
 - **C** — 4d streak, avg score 89.9
+- **RCI-B.TO** — 4d streak, avg score 81.3
+- **MAIN** — 3d streak, avg score 100.0
 - **BLK** — 3d streak, avg score 85.1
-- **WCP.TO** — 3d streak, avg score 96.2
+- **WCP.TO** — 3d streak, avg score 94.3
 
 ## Score Velocity (rising/falling fast)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
@@ -30,7 +30,7 @@ tags: [investos, patterns, weekly]
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 - 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
-- 📈 **K.TO** +10.8 pts/day  (48.8 → 70.4)
+- 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
 
 ## ⚠️ Sector Concentration Risk
 - **UNKNOWN**: 74.1% of recent picks (20 picks) — HIGH_CONCENTRATION
@@ -38,15 +38,15 @@ tags: [investos, patterns, weekly]
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| K.TO | 🟢 CONSIDER | 5d | +10.8 | — |
 | BAC | 🟡 WATCH | 10d | — | 0.76 |
 | GE | 🔴 AVOID | 0d | -16.6 | — |
-| BKNG | 🔴 AVOID | 0d | -16.5 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
+| BKNG | 🔴 AVOID | 0d | -16.5 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | 5.59 |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | CVE.TO | 🟡 WATCH | 7d | — | — |
+| K.TO | 🟡 WATCH | 7d | — | — |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)

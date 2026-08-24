@@ -1,8 +1,8 @@
 ---
 ticker: FBP
 updated: 2026-08-24
-streak_days: 6
-score_now: 94.8
+streak_days: 5
+score_now: 97.0
 velocity: 0
 pf_30d: 0.65
 picks_30d: 8
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # FBP — Pattern Log
 
 ## Streak
-Appeared in picks **6 of last 7 days**.
-Avg score: 94.8
-Dates: 2026-08-16, 2026-08-16, 2026-08-17, 2026-08-17, 2026-08-21, 2026-08-24
+Appeared in picks **5 of last 7 days**.
+Avg score: 97.0
+Dates: 2026-08-16, 2026-08-16, 2026-08-17, 2026-08-17, 2026-08-21
 
 ## Recent Performance (last 30d)
 Profit Factor: **0.65** 🔴  |  n=8 picks
