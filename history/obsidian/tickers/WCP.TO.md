@@ -2,7 +2,7 @@
 ticker: WCP.TO
 updated: 2026-08-25
 streak_days: 4
-score_now: 93.0
+score_now: 94.5
 velocity: 0
 pf_30d: None
 picks_30d: 1
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **4 of last 7 days**.
-Avg score: 93.0
+Avg score: 94.5
 Dates: 2026-08-19, 2026-08-21, 2026-08-24, 2026-08-25
 
 ---
