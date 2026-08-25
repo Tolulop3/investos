@@ -1,11 +1,11 @@
 ---
 ticker: K.TO
-updated: 2026-08-24
+updated: 2026-08-25
 streak_days: 5
 score_now: 92.2
 velocity: 0
 pf_30d: None
-picks_30d: 4
+picks_30d: 5
 tags: [investos, ticker, pattern]
 ---
 
