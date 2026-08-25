@@ -32,18 +32,18 @@ tags: [investos, patterns, weekly]
 - 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 88.2% of recent picks (15 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 88.9% of recent picks (16 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | GE | 🔴 AVOID | 0d | -16.6 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
-| BAC | 🟡 WATCH | 8d | — | 0.68 |
 | CVE.TO | 🟡 WATCH | 8d | — | — |
+| BAC | 🟡 WATCH | 8d | — | 0.68 |
 | RTX | 🟡 WATCH | 0d | +13.1 | 5.59 |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | CVX | 🟡 WATCH | 7d | — | — |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
 | BKNG | 🔴 AVOID | 0d | -11.5 | — |
