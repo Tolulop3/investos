@@ -2,7 +2,7 @@
 ticker: CVX
 updated: 2026-08-26
 streak_days: 7
-score_now: 92.0
+score_now: 93.6
 velocity: 0
 pf_30d: None
 picks_30d: 3
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **7 of last 7 days**.
-Avg score: 92.0
+Avg score: 93.6
 Dates: 2026-08-18, 2026-08-19, 2026-08-20, 2026-08-21, 2026-08-24, 2026-08-25, 2026-08-26
 
 ---
