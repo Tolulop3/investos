@@ -41,9 +41,9 @@ tags: [investos, patterns, weekly]
 | RTX | 🟡 WATCH | 0d | +13.1 | 7.22 |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
-| CVX | 🟡 WATCH | 7d | — | — |
 | CVE.TO | 🟡 WATCH | 7d | — | — |
 | WCP.TO | 🟡 WATCH | 7d | — | — |
+| CVX | 🟡 WATCH | 7d | — | — |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
 | AAPL | 🔴 AVOID | 0d | -10.7 | — |
 
