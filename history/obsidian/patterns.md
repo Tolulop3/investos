@@ -6,13 +6,13 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-08-28
 
 ## Regime Drift
-- ⚠️ Sharpe deteriorating -0.050/day — monitor position sizing
+- ✅ Regime stable — no drift signals
 - Breadth (200MA): 78.5%  (-0.29%/day)
-- Sharpe: -0.717  (-0.050/day)
+- Sharpe: -0.715  (-0.050/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **WCP.TO** — 9d streak, avg score 98.2
 - **K.TO** — 7d streak, avg score 93.0
+- **WCP.TO** — 7d streak, avg score 97.7
 - **CVE.TO** — 5d streak, avg score 97.6
 - **CVX** — 5d streak, avg score 93.3
 - **CNQ.TO** — 4d streak, avg score 85.4
@@ -29,12 +29,11 @@ tags: [investos, patterns, weekly]
 - 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 77.8% of recent picks (14 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 82.4% of recent picks (14 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| WCP.TO | 🟡 WATCH | 9d | — | — |
 | BKNG | 🟡 WATCH | 0d | +17.5 | — |
 | GE | 🔴 AVOID | 0d | -16.6 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
@@ -42,6 +41,7 @@ tags: [investos, patterns, weekly]
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
 | K.TO | 🟡 WATCH | 7d | — | — |
+| WCP.TO | 🟡 WATCH | 7d | — | — |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
 | AAPL | 🔴 AVOID | 0d | -10.7 | — |
 
