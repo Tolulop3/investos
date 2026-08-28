@@ -38,12 +38,12 @@ tags: [investos, patterns, weekly]
 | GE | 🔴 AVOID | 0d | -16.6 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | 12.5 |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🔴 AVOID | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | K.TO | 🟡 WATCH | 7d | — | — |
 | WCP.TO | 🟡 WATCH | 7d | — | — |
 | MMM | 🔴 AVOID | 0d | -12.2 | — |
-| AAPL | 🔴 AVOID | 0d | -10.7 | — |
+| SBUX | 🔴 AVOID | 0d | -10.7 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
