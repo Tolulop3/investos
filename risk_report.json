@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-08-28T00:45:00.347206",
+    "run_at": "2026-08-28T05:12:39.594243",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -38,32 +38,32 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 75.0,
-        "stressed_avg": 68.4,
-        "score_drop": 6.6,
+        "normal_avg": 75.7,
+        "stressed_avg": 69.3,
+        "score_drop": 6.4,
         "removed": [
-          "CVX",
-          "WCP.TO",
-          "K.TO",
           "CVE.TO",
+          "CVX",
+          "UBER",
+          "WCP.TO",
           "BAC"
         ],
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 6.6 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 6.4 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 13,
         "survived": 13,
         "survival_pct": 100.0,
-        "avg_score_drop": 3.3,
+        "avg_score_drop": 3.0,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 3.3 pts"
+        "note": "If momentum stops working: avg score drops 3.0 pts"
       }
     },
     "summary": {
       "normal_picks": 13,
-      "normal_avg_score": 75.0,
+      "normal_avg_score": 75.7,
       "scenarios_robust": 4,
       "scenarios_fragile": 1,
       "scenarios_broken": 0,
@@ -73,16 +73,16 @@
   },
   "decay_monitor": {
     "date": "August 28, 2026",
-    "robustness_score": 25,
+    "robustness_score": 15,
     "rolling_sharpe": {
-      "sharpe": -0.717,
+      "sharpe": -0.715,
       "avg_ret_pct": -0.59,
-      "std_ret_pct": 5.98,
-      "picks_used": 1587,
+      "std_ret_pct": 5.95,
+      "picks_used": 1602,
       "date_from": "2026-06-01",
-      "date_to": "2026-08-27",
+      "date_to": "2026-08-28",
       "source": "resolved_returns",
-      "note": "Sharpe from 1587 resolved picks (2026-06-01 \u2192 2026-08-27) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 1602 resolved picks (2026-06-01 \u2192 2026-08-28) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": 0.3,
@@ -93,8 +93,8 @@
       "sharpe": 2.11,
       "symbol": "^GSPC"
     },
-    "alpha": -2.827,
-    "neg_alpha_days": 60,
+    "alpha": -2.825,
+    "neg_alpha_days": 61,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
@@ -105,7 +105,7 @@
     "alerts": [
       {
         "level": "\u26a0\ufe0f WARNING",
-        "message": "Rolling Sharpe -0.72 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        "message": "Rolling Sharpe -0.71 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
       }
     ],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
