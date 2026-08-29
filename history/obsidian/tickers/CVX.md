@@ -1,8 +1,8 @@
 ---
 ticker: CVX
-updated: 2026-08-28
-streak_days: 5
-score_now: 93.3
+updated: 2026-08-29
+streak_days: 4
+score_now: 93.5
 velocity: 0
 pf_30d: 0.26
 picks_30d: 5
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # CVX — Pattern Log
 
 ## Streak
-Appeared in picks **5 of last 7 days**.
-Avg score: 93.3
-Dates: 2026-08-20, 2026-08-21, 2026-08-24, 2026-08-25, 2026-08-26
+Appeared in picks **4 of last 7 days**.
+Avg score: 93.5
+Dates: 2026-08-21, 2026-08-24, 2026-08-25, 2026-08-26
 
 ## Recent Performance (last 30d)
 Profit Factor: **0.26** 🔴  |  n=5 picks

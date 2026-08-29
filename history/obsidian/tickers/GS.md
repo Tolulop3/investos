@@ -1,7 +1,7 @@
 ---
 ticker: GS
-updated: 2026-08-27
-streak_days: 3
+updated: 2026-08-29
+streak_days: 4
 score_now: 92.0
 velocity: 0
 pf_30d: 0.61
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # GS — Pattern Log
 
 ## Streak
-Appeared in picks **3 of last 7 days**.
+Appeared in picks **4 of last 7 days**.
 Avg score: 92.0
-Dates: 2026-08-25, 2026-08-26, 2026-08-27
+Dates: 2026-08-25, 2026-08-26, 2026-08-28, 2026-08-29
 
 ## Recent Performance (last 30d)
 Profit Factor: **0.61** 🔴  |  n=8 picks

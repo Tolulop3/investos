@@ -1,6 +1,6 @@
 ---
 ticker: NMIH
-updated: 2026-08-28
+updated: 2026-08-29
 streak_days: 3
 score_now: 89.0
 velocity: 0
