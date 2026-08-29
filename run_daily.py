@@ -186,7 +186,9 @@ def compute_early_regime(macro_regime_str, market_regime_dict):
     elif score >= -0.3: regime = "DEFENSIVE";            blocks = ["SWING"]
     else:               regime = "CAPITAL_PRESERVATION"; blocks = ["SWING", "GROWTH CORE"]
 
-    return regime, blocks
+    # score returned for regime_debug instrumentation (2026-08-29 audit, item 0.2):
+    # early_regime sits on a knife-edge (0.40 == RISK_ON boundary at present), worth logging.
+    return regime, blocks, round(score, 4)
 
 
 def apply_regime_filter(screener_results, early_regime, category_blocks):
@@ -838,6 +840,8 @@ def run_daily(test_mode=False, dry_run=False):
     # ── 2b. Strategy Engine ─────────────────────────────────
     # early_regime isn't computed until step 4.5 (after news + market combine)
     # Use market regime + macro regime directly here — same inputs, no dependency
+    _unified = None   # preliminary regime fed to strategy_engine; stays None if the
+                      # block below raises (except sets strategy_name/profile, not this)
     try:
         from strategy_engine import get_strategy as _gs, log_strategy as _ls
         _macro_r  = news.get("macro_regime") if news else None
@@ -966,7 +970,7 @@ def run_daily(test_mode=False, dry_run=False):
         print(f"  ⚠️  Options engine error: {_oe} — continuing without")
 
     # ── 4.5 Regime Authority Filter ──────────────────────────
-    early_regime, category_blocks = compute_early_regime(macro_regime, regime)
+    early_regime, category_blocks, early_regime_score = compute_early_regime(macro_regime, regime)
     screener = apply_regime_filter(screener, early_regime, category_blocks)
     print(f"  🎯 Early regime: {early_regime} | Blocks: {category_blocks or 'none'}")
 
@@ -985,34 +989,47 @@ def run_daily(test_mode=False, dry_run=False):
     except Exception as _rte:
         print(f"  ⚠️  ML retrain skipped: {_rte}")
 
-    # Dedicated SWING model — retrains every run (LR is cheap, unlike the
-    # weekly-gated XGBoost retrain above), on true-30-day-horizon SWING
-    # data only. See CATEGORY_HORIZONS in outcome_tracker.py.
+    # Dedicated SWING model (+ category models) — retrain on real
+    # true-30-day-horizon data. LR is cheap, but this used to run on ALL
+    # THREE scheduled slots per day (6am/11am/4pm) against the same day's
+    # data, rewriting swing_model_report.json each time (2026-08-29 audit,
+    # item 4.2). Gate to once per calendar day, mirroring ml_retrainer's
+    # RETRAIN_LOCK. swing_last_train.txt is git-tracked so the guard holds
+    # across the day's separate Actions runs (like ml_last_retrain.txt).
+    _SWING_TRAIN_LOCK = "swing_last_train.txt"
+    _today_str = datetime.now().strftime("%Y-%m-%d")
+    _swing_trained_today = False
     try:
-        train_swing_model(verbose=True)
-    except Exception as _ste:
-        print(f"  ⚠️  SWING model retrain skipped: {_ste}")
+        _swing_trained_today = (open(_SWING_TRAIN_LOCK).read().strip() == _today_str)
+    except Exception:
+        pass
 
-    # FIX (2026-08-09): auto-promotion trigger -- the training path
-    # category_is_data_ready() implies is needed once it turns true for a
-    # category. Runs every daily call (cheap: category_is_data_ready() is
-    # a fast count/coverage check over outcomes_log.json; train_category_
-    # model() only does real work -- and only for categories that pass
-    # that check -- so this is a no-op today for all of them, earliest
-    # real trigger is WATCH on 2026-09-12). No human has to notice
-    # readiness and go edit RULES_BASED_CATEGORIES/wire a new model by
-    # hand -- ml_engine.py's routing already picks up a newly-deployed
-    # category model automatically (see its RULES_BASED_CATEGORIES branch).
-    try:
-        from outcome_tracker import CATEGORY_HORIZONS, category_is_data_ready
-        from ml_retrainer import train_category_model
-        for _cat in CATEGORY_HORIZONS:
-            if _cat == "SWING":
-                continue  # already trained above, on its own established path
-            if category_is_data_ready(_cat):
-                train_category_model(_cat, verbose=True)
-    except Exception as _cte:
-        print(f"  ⚠️  Category model auto-promotion skipped: {_cte}")
+    if _swing_trained_today:
+        print("  ⏭  SWING / category model training already ran today — skipping")
+    else:
+        try:
+            train_swing_model(verbose=True)
+        except Exception as _ste:
+            print(f"  ⚠️  SWING model retrain skipped: {_ste}")
+        # Auto-promotion (FIX 2026-08-09): once category_is_data_ready() turns
+        # true for a category it needs its OWN model (earliest real trigger:
+        # WATCH on 2026-09-12); no-op for every category until then. Routing
+        # in ml_engine.py picks up a newly-deployed category model automatically.
+        try:
+            from outcome_tracker import CATEGORY_HORIZONS, category_is_data_ready
+            from ml_retrainer import train_category_model
+            for _cat in CATEGORY_HORIZONS:
+                if _cat == "SWING":
+                    continue  # already trained above, on its own established path
+                if category_is_data_ready(_cat):
+                    train_category_model(_cat, verbose=True)
+        except Exception as _cte:
+            print(f"  ⚠️  Category model auto-promotion skipped: {_cte}")
+        try:
+            with open(_SWING_TRAIN_LOCK, "w") as _f:
+                _f.write(_today_str)
+        except Exception:
+            pass
 
     # FIX (2026-08-09): auto-demotion signal, computed once per run so
     # ml_engine.py's scoring loop can read a fresh verdict without
@@ -1758,6 +1775,23 @@ def run_daily(test_mode=False, dry_run=False):
             "macro_score":    round(macro_score, 1),
             "health_score":   round(health_score, 1),
             "high_risk_count": high_risk_count,
+        },
+
+        # ── REGIME INSTRUMENTATION (2026-08-29 audit, item 0.2) ──────────────
+        # Behaviour-neutral: nothing reads this back. Findings 2/3 — the pipeline
+        # makes 4 separate regime determinations from the same two inputs
+        # (market + macro), they can disagree, and the strategy profile the
+        # screener actually used was recorded nowhere but stdout.
+        "regime_debug": {
+            "market_regime":            regime.get("regime") if isinstance(regime, dict) else None,
+            "market_signal":            regime.get("signal") if isinstance(regime, dict) else None,
+            "early_regime":             early_regime,           # compute_early_regime(): 0.70*mkt + 0.30*macro
+            "early_regime_score":       early_regime_score,     # knife-edge: 0.40 == RISK_ON boundary
+            "strategy_prelim_unified":  _unified,               # 4-branch guess fed into strategy_engine
+            "strategy_name":            strategy_name,          # STRATEGY_PROFILES key the screener scored with
+            "strategy_profile_source":  "exception_fallback" if strategy_profile is None else "normal",
+            "unified_regime":           unified_regime,         # 3-layer engine (40/30/30); drives _risk_multiplier
+            "macro_regime":             macro_regime,
         },
 
         # FIX (2026-08-12): these four lists used to alias the raw screener

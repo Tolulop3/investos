@@ -17,11 +17,17 @@ trades.csv
 positions.json
 my_positions.json
 accounts.json
-gate_state.json
 crypto_signal_state.json
 global_scores.json
 universe_failure_log.json
-run_manifest.json
+
+# gate_state.json un-ignored (2026-08-29 audit, finding 29): it is the ONLY store
+# MLGate._load_yesterday() reads for hysteresis, and being ignored it was never
+# committed — every CI run started with no prior state, so the ±0.02 hysteresis
+# band has never engaged in production. It holds only {date, status, threshold,
+# spread, {ticker: bool}} — no private data; the same gate info is already in the
+# committed latest_brief.json. run_manifest.json entry also removed here: it was
+# tracked-but-ignored (committed anyway), so the entry was just dead/confusing.
 
 # ── ML model cache — binary, not needed in repo ────────────
 *.pkl

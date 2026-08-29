@@ -26,6 +26,15 @@ from pick_utils import get_pick_category, get_pick_field
 # source of truth.
 from strategy_version import OOS_START_DATE
 
+# "Current rule era" window for the reconciled headline (finding 23).
+# OOS_START_DATE tracks the LATEST rule version (v4.2, 2026-08-15) and is far
+# too recent to have resolved 7-day picks -- using it for a headline gives n=0.
+# This is the start of the first disciplined frozen-rule window (v4.1 Day 0,
+# 2026-06-26); v4.2 is a small tweak on top with no resolved data yet, so
+# "since v4.1 freeze, unbounded" is the honest "what the system does now"
+# number. Roughly matches signal_ledger.py's ledger-inception window (2026-06-14).
+CURRENT_ERA_START = "2026-06-26"
+
 OUTCOMES_FILE = "outcomes_log.json"
 WIN_RATE_FILE = "win_rate.json"
 
@@ -99,6 +108,73 @@ def true_horizon_resolved_count(category, outcomes=None):
         outcomes = load_outcomes()
     return sum(1 for o in outcomes
                if o.get("category") == category and o.get("true_horizon_resolved"))
+
+
+def compute_true_horizon_summary(outcomes=None):
+    """
+    Parallel to compute_win_rate() but on TRUE-HORIZON outcomes
+    (CATEGORY_HORIZONS: SWING 30d, WATCH 90d, GROWTH CORE / FHSA 180d,
+    income 365d) instead of the uniform 7-day proxy.
+
+    Finding 22 (2026-08-29 audit): the 7-day headline WR grades ~67% of
+    picks -- FHSA Conservative Growth (1,420), GROWTH CORE (368), the
+    income categories -- on a horizon unrelated to how they are actually
+    held. This is ADDITIVE: compute_win_rate()'s existing output is
+    unchanged; this is exposed alongside it as result["true_horizon"].
+
+    Returns {"overall": {...}, "by_category": {cat: {...}}, "coverage":
+    {cat: {total_picks, true_horizon_resolved, horizon_days}}}. `coverage`
+    makes a thin/zero cell visible rather than reporting a number off n=3.
+    """
+    if outcomes is None:
+        outcomes = load_outcomes()
+
+    def _stats(rows):
+        n = len(rows)
+        if n == 0:
+            return None
+        rets   = [o.get("true_horizon_return", 0) or 0 for o in rows]
+        wins   = [o for o in rows if o.get("true_horizon_outcome") == "WIN"]
+        losses = [o for o in rows if o.get("true_horizon_outcome") == "LOSS"]
+        win_sum  = sum(r for r in rets if r > 0)
+        loss_sum = sum(-r for r in rets if r < 0)
+        wr = len(wins) / n * 100
+        aw = (sum(o["true_horizon_return"] for o in wins)   / len(wins))   if wins   else 0.0
+        al = (sum(o["true_horizon_return"] for o in losses) / len(losses)) if losses else 0.0
+        lr = len(losses) / n
+        return {
+            "n":             n,
+            "win_rate":      round(wr, 1),
+            "avg_return":    round(sum(rets) / n, 3),
+            "profit_factor": round(win_sum / loss_sum, 2) if loss_sum else 0.0,
+            "expectancy":    round((wr / 100 * aw) - (lr * abs(al)), 3),
+        }
+
+    th_rows     = [o for o in outcomes if o.get("true_horizon_resolved")]
+    by_category = {}
+    coverage    = {}
+    for cat in sorted({o.get("category") for o in outcomes if o.get("category")}):
+        cat_all = [o for o in outcomes if o.get("category") == cat]
+        cat_th  = [o for o in cat_all if o.get("true_horizon_resolved")]
+        coverage[cat] = {
+            "total_picks":            len(cat_all),
+            "true_horizon_resolved":  len(cat_th),
+            "horizon_days":           CATEGORY_HORIZONS.get(cat, DEFAULT_HORIZON_DAYS),
+        }
+        s = _stats(cat_th)
+        if s:
+            by_category[cat] = s
+
+    overall = _stats(th_rows) or {
+        "n": 0, "win_rate": None, "avg_return": None,
+        "profit_factor": None, "expectancy": None,
+    }
+    overall["note"] = (
+        "True-horizon outcomes only. Coverage is category-skewed: long-hold "
+        "categories (FHSA / GROWTH CORE 180d, income 365d) stay at ~0 resolved "
+        "until late 2026+, so the 7-day headline remains a proxy for most picks."
+    )
+    return {"overall": overall, "by_category": by_category, "coverage": coverage}
 
 
 def category_is_data_ready(category, min_rows=MIN_TRUE_HORIZON_ROWS_FOR_ML, outcomes=None):
@@ -820,6 +896,7 @@ def compute_win_rate():
             "message": f"Building... ({len(resolved)} outcomes tracked so far)",
             "by_score_tier": {}, "by_ml_prob_bucket": {}, "by_category": {}, "recent_10": [],
             "streak": 0, "streak_type": None, "time_weighted": None,
+            "true_horizon": compute_true_horizon_summary(outcomes),
         }
 
     wins   = [o for o in resolved if o["outcome"] == "WIN"]
@@ -1063,6 +1140,16 @@ def compute_win_rate():
     oos_losses   = [o for o in oos_resolved if o["outcome"] == "LOSS"]
     oos_wr       = round(100 * len(oos_wins) / len(oos_resolved), 1) if oos_resolved else None
     oos_avg_ret  = round(sum(o["actual_return"] for o in oos_resolved) / len(oos_resolved), 2) if oos_resolved else None
+    # expectancy + PF on the OOS window (2026-08-29 audit, finding 23) — the
+    # "current rule era" read, so it can be stated next to the all-time headline
+    # instead of the two looking like a data-integrity conflict.
+    _oos_aw  = (sum(o["actual_return"] for o in oos_wins)   / len(oos_wins))   if oos_wins   else 0.0
+    _oos_al  = (sum(o["actual_return"] for o in oos_losses) / len(oos_losses)) if oos_losses else 0.0
+    _oos_lr  = (len(oos_losses) / len(oos_resolved)) if oos_resolved else 0.0
+    oos_expectancy = round((oos_wr / 100 * _oos_aw) - (_oos_lr * abs(_oos_al)), 3) if oos_wr is not None else None
+    _oos_wsum = sum(o["actual_return"] for o in oos_resolved if o["actual_return"] > 0)
+    _oos_lsum = sum(-o["actual_return"] for o in oos_resolved if o["actual_return"] < 0)
+    oos_pf   = round(_oos_wsum / _oos_lsum, 2) if _oos_lsum else 0.0
 
     # SPY return over OOS period
     oos_spx_return = None
@@ -1109,9 +1196,64 @@ def compute_win_rate():
         "losses":       len(oos_losses),
         "win_rate":     oos_wr,
         "avg_return":   oos_avg_ret,
+        "expectancy":   oos_expectancy,
+        "profit_factor": oos_pf,
         "spx_return":   oos_spx_return,
         "active_return": round(oos_avg_ret - oos_spx_return, 2) if (oos_avg_ret is not None and oos_spx_return is not None) else None,
         "tiers":        oos_tiers,
+    }
+
+    # ── HEADLINE RECONCILIATION (2026-08-29 audit, finding 23) ─────────────
+    # win_rate.json's top-level win_rate is ALL-TIME (since ~2026-03-02, when
+    # the system had a strong Mar-May run). signal_ledger.py's
+    # pitch_deck_stats.json reports the current-rule-era window and looked
+    # like it disagreed (47% vs 43.8%). It doesn't — different windows. This
+    # block states both explicitly, in one place, with the window on each.
+    _all_time_since = min((o.get("signal_date") for o in resolved if o.get("signal_date")), default=None)
+
+    _era_res  = [o for o in resolved if (o.get("signal_date") or "") >= CURRENT_ERA_START]
+    _era_w    = [o for o in _era_res if o["outcome"] == "WIN"]
+    _era_l    = [o for o in _era_res if o["outcome"] == "LOSS"]
+    _era_n    = len(_era_res)
+    _era_wr   = round(100 * len(_era_w) / _era_n, 1) if _era_n else None
+    _era_avg  = round(sum(o["actual_return"] for o in _era_res) / _era_n, 2) if _era_n else None
+    _era_aw   = (sum(o["actual_return"] for o in _era_w) / len(_era_w)) if _era_w else 0.0
+    _era_al   = (sum(o["actual_return"] for o in _era_l) / len(_era_l)) if _era_l else 0.0
+    _era_exp  = round((_era_wr / 100 * _era_aw) - ((len(_era_l) / _era_n) * abs(_era_al)), 3) if _era_n else None
+    _era_wsum = sum(o["actual_return"] for o in _era_res if o["actual_return"] > 0)
+    _era_lsum = sum(-o["actual_return"] for o in _era_res if o["actual_return"] < 0)
+    _era_pf   = round(_era_wsum / _era_lsum, 2) if _era_lsum else 0.0
+
+    headline = {
+        "current_era": {
+            "since":         CURRENT_ERA_START,
+            "n":             _era_n,
+            "win_rate":      _era_wr,
+            "avg_return":    _era_avg,
+            "expectancy":    _era_exp,
+            "profit_factor": _era_pf,
+        },
+        "latest_ruleset_oos": {   # v4.2 window — usually n~0 until it ages
+            "since":         OOS_START,
+            "n":             len(oos_resolved),
+            "win_rate":      oos_wr,
+            "expectancy":    oos_expectancy,
+        },
+        "all_time": {
+            "since":         _all_time_since,
+            "n":             len(resolved),
+            "win_rate":      round(win_rate, 1),
+            "avg_return":    round(avg_return, 2),
+            "expectancy":    expectancy,
+            "profit_factor": profit_factor,
+        },
+        "true_horizon_n": sum(1 for o in outcomes if o.get("true_horizon_resolved")),
+        "note": ("All numbers are the 7-day proxy. 'current_era' (since the "
+                 "v4.1 freeze) is the read that represents the system as it "
+                 "runs now; 'all_time' is inflated by the Mar-May 2026 period; "
+                 "'latest_ruleset_oos' is v4.2-only and usually too new to have "
+                 "resolved picks. See result['true_horizon'] for the "
+                 "real-holding-period read where coverage exists."),
     }
 
     result = {
@@ -1139,7 +1281,14 @@ def compute_win_rate():
         "windows":        windows,
         "feature_coverage": feature_coverage,
         "oos":            oos_block,
-        "message":        f"{win_rate:.0f}% win rate | Expectancy: {expectancy:+.3f}% per pick",
+        "headline":       headline,
+        # Finding 22 (2026-08-29 audit): the headline above is a 7-day proxy;
+        # this is the parallel read on real CATEGORY_HORIZONS. Additive only.
+        "true_horizon":   compute_true_horizon_summary(outcomes),
+        "message":        (f"7d proxy — current era (since {CURRENT_ERA_START}): "
+                           f"{_era_wr if _era_wr is not None else '—'}% WR, "
+                           f"exp {_era_exp if _era_exp is not None else '—'}%, n={_era_n}  |  "
+                           f"all-time: {win_rate:.0f}% WR, exp {expectancy:+.3f}%"),
     }
 
     with open(WIN_RATE_FILE, "w") as f:
@@ -1156,7 +1305,11 @@ def print_win_rate_report(wr):
         print(f"  {wr['message']}"); return
 
     print(f"  Total resolved:  {wr['total_resolved']} picks (ex-NGX, ex-dupes)")
-    print(f"  ✅ CORRECTED WR: {wr['win_rate']}%  | PF: {wr.get('profit_factor', 0):.2f}")
+    print(f"  ✅ ALL-TIME WR:  {wr['win_rate']}%  | PF: {wr.get('profit_factor', 0):.2f}   (since ~2026-03; Mar-May run inflates this)")
+    _ce = (wr.get("headline") or {}).get("current_era") or {}
+    if _ce.get("win_rate") is not None:
+        print(f"  ➡️  CURRENT ERA: {_ce['win_rate']}%  | PF: {_ce.get('profit_factor', 0):.2f}   "
+              f"(since {_ce['since']}, n={_ce['n']}, expectancy {_ce['expectancy']:+.3f}%) — the number that represents the system now")
     print(f"  NGX:             tracked separately — UNRESOLVED (paid API needed)")
     print(f"  Avg return/pick: {wr['avg_return']:+.2f}%")
     print(f"  Best:  {wr['best_return']:+.2f}%   Worst: {wr['worst_return']:+.2f}%")
@@ -1184,6 +1337,27 @@ def print_win_rate_report(wr):
                     print(f"      {tier_label}: {n} picks | WR {wr_t}")
         else:
             print(f"    No resolved OOS picks yet — check back in a few days")
+
+    th = wr.get("true_horizon")
+    if th:
+        ov = th.get("overall", {})
+        print(f"\n  TRUE-HORIZON WIN RATE (real CATEGORY_HORIZONS, not the 7d proxy):")
+        if ov.get("n"):
+            print(f"  n={ov['n']} resolved | WR {ov['win_rate']}% | "
+                  f"avg {ov['avg_return']:+.2f}% | PF {ov['profit_factor']:.2f} | "
+                  f"expectancy {ov['expectancy']:+.3f}%")
+        else:
+            print(f"  n=0 — nothing has reached its true horizon yet")
+        for cat, cov in sorted(th.get("coverage", {}).items()):
+            s = th.get("by_category", {}).get(cat)
+            res = cov["true_horizon_resolved"]
+            tot = cov["total_picks"]
+            if s:
+                print(f"    {cat:<26} {res:>4}/{tot:<5} @ {cov['horizon_days']}d  "
+                      f"WR {s['win_rate']}%  avg {s['avg_return']:+.2f}%  PF {s['profit_factor']:.2f}")
+            else:
+                print(f"    {cat:<26} {res:>4}/{tot:<5} @ {cov['horizon_days']}d  "
+                      f"— still on 7d proxy")
 
     tw = wr.get("time_weighted")
     if tw and tw.get("tw_win_rate") is not None:

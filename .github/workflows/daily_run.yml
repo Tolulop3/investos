@@ -5,6 +5,16 @@ on:
     - cron: '0 16 * * 1-5'   # 11am Toronto (mid-session)
     - cron: '0 21 * * 1-5'   # 4pm Toronto (after close)
   workflow_dispatch:
+
+# All three repo-committing workflows (this, pattern_agent.yml, strategist_agent.yml)
+# share ONE concurrency group so GitHub serialises them instead of letting their
+# `git pull --rebase` / `git push` steps race. cancel-in-progress:false = queue,
+# don't kill a run mid-flight. The push retry loop below is now a backup, not the
+# primary guard. (Finding 24, 2026-08-29 audit.)
+concurrency:
+  group: investos-main-commit
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # suppress Node.js 20 deprecation warning
   PYTHONUNBUFFERED: "1"   # unbuffered stdout -- log timestamps otherwise all clump at

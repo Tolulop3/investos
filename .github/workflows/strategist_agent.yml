@@ -8,6 +8,12 @@ on:
     - cron: '30 21 * * 1-5'
   workflow_dispatch:
 
+# Shared with daily_run.yml and pattern_agent.yml — serialises repo commits
+# across all three so their push steps don't race. (Finding 24, 2026-08-29 audit.)
+concurrency:
+  group: investos-main-commit
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PYTHONUNBUFFERED: "1"   # see daily_run.yml's matching comment
