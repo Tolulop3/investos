@@ -6,8 +6,13 @@ Scores 32 ETFs (+ XOM/CVX as energy confirmation signals).
 v2.1: Score cap by category — prevents RISK_ON multiplier from inflating
 thematic ETFs to 100 regardless of actual quality difference.
   THEMATIC (ARKG, BOTZ, CIBR etc.): capped at 85
-  SECTOR commodity (XLE, XEG, GLD): capped at 88
-  CORE, DEFENSIVE: uncapped
+  SECTOR_COMMODITY (XLE, XEG.TO, GLD, ZGD.TO): capped at 88
+  SECTOR_EARNINGS (ZEB.TO, XRE.TO), CORE, DEFENSIVE, INTL: uncapped
+
+2026-08-29: the old single "SECTOR" category was split into SECTOR_COMMODITY
+and SECTOR_EARNINGS (commodity names move ~5-6x more than bank/REIT names;
+one threshold + one cap could not fit both). Score/pick-neutral — regime
+weights for both new categories match the old SECTOR row.
 """
 
 import yfinance as yf
@@ -22,12 +27,20 @@ ETF_UNIVERSE = [
     ("QQQ",     "NASDAQ 100",             "CORE",      "core",     "RRSP", "TECH",            0.20, "index",     "nasdaq"),
     ("XEF.TO",  "Intl Developed",         "CORE",      "core",     "TFSA", None,              0.22, "index",     "intl_dev"),
     ("VWO",     "Emerging Markets",       "CORE",      "core",     "RRSP", None,              0.08, "index",     "em"),
-    ("XEG.TO",  "Canadian Energy",        "SECTOR",    "core",     "TFSA", "CANADIAN_ENERGY", 0.61, "commodity", "cdn_energy"),
-    ("XLE",     "US Energy",              "SECTOR",    "core",     "RRSP", "OIL_PRODUCERS",   0.09, "commodity", "us_energy"),
-    ("ZEB.TO",  "Canadian Banks",         "SECTOR",    "core",     "FHSA", "CANADIAN_BANKS",  0.28, "earnings",  "cdn_banks"),
-    ("ZGD.TO",  "Canadian Gold Miners",   "SECTOR",    "core",     "TFSA", "GOLD",            0.61, "commodity", "gold"),
-    ("GLD",     "Gold",                   "SECTOR",    "core",     "RRSP", "GOLD",            0.40, "commodity", "gold"),
-    ("XRE.TO",  "Canadian REITs",         "SECTOR",    "core",     "TFSA", "CANADIAN_REITS",  0.61, "earnings",  "cdn_reit"),
+    # SECTOR split into SECTOR_COMMODITY / SECTOR_EARNINGS (2026-08-29): 70 days
+    # of etf_signals history + reconstructed forward-30d returns showed commodity
+    # names (XEG/XLE/GLD/ZGD) move ~5-6x more than earnings names (ZEB/XRE) --
+    # forward-30d mean|return| ~15% vs ~2.7%, the latter behaving like CORE.
+    # One lumped threshold (1.0) and one 88 cap could not fit both. Regime
+    # weights are held identical to the old SECTOR row for both new categories
+    # so this split changes no score and no pick -- only the resolution
+    # threshold (see CATEGORY_THRESHOLDS in etf_outcome_tracker.py).
+    ("XEG.TO",  "Canadian Energy",        "SECTOR_COMMODITY", "core", "TFSA", "CANADIAN_ENERGY", 0.61, "commodity", "cdn_energy"),
+    ("XLE",     "US Energy",              "SECTOR_COMMODITY", "core", "RRSP", "OIL_PRODUCERS",   0.09, "commodity", "us_energy"),
+    ("ZEB.TO",  "Canadian Banks",         "SECTOR_EARNINGS",  "core", "FHSA", "CANADIAN_BANKS",  0.28, "earnings",  "cdn_banks"),
+    ("ZGD.TO",  "Canadian Gold Miners",   "SECTOR_COMMODITY", "core", "TFSA", "GOLD",            0.61, "commodity", "gold"),
+    ("GLD",     "Gold",                   "SECTOR_COMMODITY", "core", "RRSP", "GOLD",            0.40, "commodity", "gold"),
+    ("XRE.TO",  "Canadian REITs",         "SECTOR_EARNINGS",  "core", "TFSA", "CANADIAN_REITS",  0.61, "earnings",  "cdn_reit"),
     ("BOTZ",    "Robotics & AI",          "THEMATIC",  "thematic", "RRSP", "TECH",            0.69, "theme",     "ai_tech"),
     ("SMH",     "Semiconductors",         "THEMATIC",  "thematic", "RRSP", "TECH",            0.35, "earnings",  "semis"),
     ("SKYY",    "Cloud Computing",        "THEMATIC",  "thematic", "RRSP", "TECH",            0.68, "theme",     "cloud"),
@@ -71,10 +84,14 @@ SECTOR_ETF_BOOST = {
     "AIRLINES":        [("ITA",-10)],
 }
 
+# SECTOR_COMMODITY and SECTOR_EARNINGS deliberately carry the SAME weights the
+# single "SECTOR" row used, so the 2026-08-29 category split is score- and
+# pick-neutral. Re-weighting SECTOR_EARNINGS toward CORE (it moves like CORE)
+# would move picks and belongs in a separate, shadow-tested change.
 REGIME_WEIGHTS = {
-    "RISK_ON":  {"CORE":1.0,"SECTOR":1.0,"THEMATIC":1.0,"DEFENSIVE":0.3,"INTL":1.0,"SIGNAL":1.0},
-    "NEUTRAL":  {"CORE":0.8,"SECTOR":0.7,"THEMATIC":0.6,"DEFENSIVE":0.8,"INTL":0.7,"SIGNAL":0.8},
-    "RISK_OFF": {"CORE":0.5,"SECTOR":0.4,"THEMATIC":0.3,"DEFENSIVE":1.2,"INTL":0.4,"SIGNAL":0.4},
+    "RISK_ON":  {"CORE":1.0,"SECTOR_COMMODITY":1.0,"SECTOR_EARNINGS":1.0,"THEMATIC":1.0,"DEFENSIVE":0.3,"INTL":1.0,"SIGNAL":1.0},
+    "NEUTRAL":  {"CORE":0.8,"SECTOR_COMMODITY":0.7,"SECTOR_EARNINGS":0.7,"THEMATIC":0.6,"DEFENSIVE":0.8,"INTL":0.7,"SIGNAL":0.8},
+    "RISK_OFF": {"CORE":0.5,"SECTOR_COMMODITY":0.4,"SECTOR_EARNINGS":0.4,"THEMATIC":0.3,"DEFENSIVE":1.2,"INTL":0.4,"SIGNAL":0.4},
 }
 
 ACCOUNT_ALLOCATION = {
@@ -191,15 +208,12 @@ def _score_etf(ticker, name, category, track, sector_signal,
     # thematic ETFs to 100, making them indistinguishable from each other.
     # Caps force meaningful ranking within each category.
     #   THEMATIC: max 85 — ARKG, ITA, CIBR, SKYY, BOTZ, SHLD, QTUM, BLOK
-    #   SECTOR commodity: max 88 — XLE, XEG.TO, GLD, ZGD.TO
-    #   CORE, DEFENSIVE, INTL: uncapped — anchor positions, let them score freely
+    #   SECTOR_COMMODITY: max 88 — XLE, XEG.TO, GLD, ZGD.TO
+    #   SECTOR_EARNINGS (ZEB.TO, XRE.TO), CORE, DEFENSIVE, INTL: uncapped
     if category == "THEMATIC":
         score = min(score, 85)
-    elif category == "SECTOR" and track == "core":
-        # Only cap commodity sector ETFs, not earnings-driven sector ETFs
-        thesis_map = {t[0]: t[7] for t in ETF_UNIVERSE}
-        if thesis_map.get(ticker) == "commodity":
-            score = min(score, 88)
+    elif category == "SECTOR_COMMODITY" and track == "core":
+        score = min(score, 88)
 
     return {
         "score":      min(100, max(0, round(score, 1))),
@@ -266,7 +280,7 @@ def run_etf_engine(sector_sentiment, unified_regime, breadth, verbose=True):
         # Re-apply cap after boost (boost can push capped scores over limit)
         if category == "THEMATIC":
             final_score = min(final_score, 85)
-        elif category == "SECTOR" and thesis == "commodity":
+        elif category == "SECTOR_COMMODITY" and thesis == "commodity":
             final_score = min(final_score, 88)
 
         pd_data = price_data or {}
