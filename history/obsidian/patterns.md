@@ -16,7 +16,6 @@ tags: [investos, patterns, weekly]
 - **K.TO** — 4d streak, avg score 93.1
 - **CVX** — 4d streak, avg score 93.5
 - **GS** — 4d streak, avg score 92.0
-- **MAIN** — 3d streak, avg score 96.7
 - **CVE.TO** — 3d streak, avg score 95.9
 - **NMIH** — 3d streak, avg score 89.0
 - **SU.TO** — 3d streak, avg score 81.3
@@ -24,29 +23,29 @@ tags: [investos, patterns, weekly]
 ## Score Velocity (rising/falling fast)
 - 📉 **VEEV** -21.9 pts/day  (93.7 → 50.0)
 - 📉 **BKNG** -17.5 pts/day  (85.0 → 50.0)
+- 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
 - 📈 **META** +15.0 pts/day  (62.0 → 92.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
-- 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 73.3% of recent picks (11 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 78.6% of recent picks (11 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
+| NMIH | 🔴 AVOID | 3d | -17.5 | — |
 | VEEV | 🔴 AVOID | 0d | -21.9 | — |
 | BKNG | 🔴 AVOID | 0d | -17.5 | — |
 | GE | 🔴 AVOID | 0d | -16.6 | — |
 | SO | 🔴 AVOID | 0d | -16.5 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | 12.5 |
-| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🔴 AVOID | 0d | -15.0 | — |
 | WCP.TO | 🟡 WATCH | 7d | — | — |
 | SU.TO | 🟢 CONSIDER | 3d | +7.5 | — |
-| MMM | 🔴 AVOID | 0d | -12.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
