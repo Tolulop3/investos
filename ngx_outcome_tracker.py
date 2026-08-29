@@ -159,13 +159,18 @@ def log_ngx_signals(ngx_result, run_time=None):
         if o.get("signal_date") == today_str and o.get("resolved") is False
     }
 
-    # Capture macro context at signal time
+    # Capture macro context at signal time.
+    # `regime` here is NGX's OWN compute_em_regime() output. `investos_macro`
+    # is the InvestOS main-engine macro label routed through the bridge
+    # (macro_gate) — logged since 2026-08-29 so the size-haircut coupling
+    # (ngx_screener v2.2.1) can be tuned against realised outcomes later.
     macro_at_signal = {
-        "regime":       ngx_result.get("macro_regime", "NEUTRAL"),
-        "macro_score":  ngx_result.get("macro_score", 0),
-        "fx_stress":    ngx_result.get("fx_stress", 0),
-        "brent_trend":  ngx_result.get("brent_trend", "FLAT"),
-        "basket":       ngx_result.get("basket_regime", "UNKNOWN"),
+        "regime":         ngx_result.get("macro_regime", "NEUTRAL"),
+        "macro_score":    ngx_result.get("macro_score", 0),
+        "fx_stress":      ngx_result.get("fx_stress", 0),
+        "brent_trend":    ngx_result.get("brent_trend", "FLAT"),
+        "basket":         ngx_result.get("basket_regime", "UNKNOWN"),
+        "investos_macro": ngx_result.get("macro_gate", "NORMAL"),
     }
 
     prices = fetch_companies_prices(verbose=True)
@@ -184,6 +189,8 @@ def log_ngx_signals(ngx_result, run_time=None):
             "signal_date":      today_str,
             "signal_time":      now,
             "score_at_signal":  sig.get("score", 0),
+            "size_label":       sig.get("size_label", ""),
+            "size_mult":        sig.get("size_mult", 1.0),
             "persistence":      sig.get("persistence", ""),
             # Per-ticker phase (ngx_screener.py's per-ticker validation clock,
             # Session B) — read from the signal itself, NOT the ngx_result
