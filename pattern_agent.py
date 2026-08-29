@@ -371,7 +371,13 @@ def write_watchlist(streaks, velocity, outcomes):
         action = "WATCH"
         if s.get("days", 0) >= STREAK_THRESHOLD and direction == "RISING":
             action = "CONSIDER"
-        elif direction == "FALLING" and (pf or 0) < 1.0:
+        # AVOID needs a REAL measured PF below 1.0 — not the absence of one.
+        # (2026-08-29 audit, finding 21) `(pf or 0) < 1.0` treated pf=None
+        # (too few resolved picks to compute a PF) as 0 -> every FALLING ticker
+        # with no track record got -5, systematically penalising under-sampled
+        # names (NVDA/AAPL/GE/... on 2026-08-21). ticker_pf() already returns
+        # None for "n/a"; honour that here instead of coercing it to a fail.
+        elif direction == "FALLING" and pf is not None and pf < 1.0:
             action = "AVOID"
 
         scored.append({

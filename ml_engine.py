@@ -1497,6 +1497,12 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
             "score":      pick.get("score", 70),
             "price":      float(pick.get("data", {}).get("price", 0) or 0),
             "probation":  pick["ticker"] in _probation_applied,
+            # provenance (2026-08-29 audit, item 0.3): which scoring path produced
+            # this ml_prob, whether a real model was involved, and which category
+            # bucket the pick came from — so sizing inputs are traceable per pick.
+            "ml_prob_source":            pick.get("ml_prob_source", "unknown"),
+            "scored_by_model_trained_at": pick.get("scored_by_model_trained_at"),
+            "category":                  get_pick_category(pick),
         })
 
     if verbose:
@@ -1968,6 +1974,43 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
 
     # Save updated smooth cache
     _save_smooth_cache()
+
+    # ── PROPAGATE ML SCORING TO SIBLING OBJECTS (2026-08-29 audit, item 0.4) ──
+    # Finding 20: a ticker eligible for >1 account appears as separate dicts in
+    # separate screener buckets. all_picks (above) dedupes to ONE object per
+    # ticker and only THAT object gets ml_prob / ml_signal / the ml_score_adj.
+    # Downstream, sizing reads tfsa_picks (bucket objects), so a ticker whose
+    # dedup winner came from a different bucket arrives at sizing with no
+    # ml_prob -> p.get("ml_prob", 0.5) -> Kelly 0 -> zeroed on a value the
+    # engine never actually produced for it (confirmed live 2026-08-21: CVX
+    # scored 0.6439 on the FHSA object, sized off the TFSA object at 0.5).
+    #
+    # ml_prob and its derived fields are account-agnostic (features are
+    # momentum/vol/fundamentals, no account_type input) -> safe to copy
+    # verbatim. The BASE score from score_stock IS account-specific and is
+    # left untouched; only the ml_score_adj (a pure function of ml_prob) is
+    # re-applied to any sibling that never received it, so the ml adjustment
+    # is consistent without overwriting account context.
+    _scored_by_ticker = {p["ticker"]: p for p in all_picks}
+    _ml_fields = ("ml_prob", "ml_prob_raw", "ml_prob_xgb",
+                  "ml_prob_source", "scored_by_model_trained_at", "ml_signal")
+    _propagated = 0
+    for _grp in ("FHSA_top5", "TFSA_growth_top5", "TFSA_income_top5", "TFSA_swing_top3"):
+        for _sib in screener_picks.get(_grp, []):
+            _src = _scored_by_ticker.get(_sib.get("ticker"))
+            if _src is None or _src is _sib:
+                continue                       # not scored, or IS the scored object
+            if _sib.get("ml_prob_source") not in (None, "unknown"):
+                continue                       # already carries a real ml_prob — leave it
+            for _f in _ml_fields:
+                if _f in _src:
+                    _sib[_f] = _src[_f]
+            _adj = round((_src.get("ml_prob", 0.5) - 0.5) * 20)
+            _sib["score"] = round(max(0, min(100, (_sib.get("score", 0) or 0) + _adj)), 1)
+            _propagated += 1
+    if verbose and _propagated:
+        print(f"   🔗 ML propagation: copied ml_prob to {_propagated} sibling "
+              f"pick object(s) in other account buckets (finding 20)")
 
     # ── ML GATE (single instance, shared with conviction path via ml_results) ──
     # Build gate from ALL scored picks (not just TFSA — full distribution matters).

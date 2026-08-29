@@ -482,15 +482,25 @@ def bake_audit_page():
     stats = compute_audit_stats()
 
     # Pitch JSON
+    _since = stats.get("date_range","").split("→")[0].strip() if stats.get("date_range") else ""
+    _oos   = stats.get("oos", {}) or {}
     pitch = {
         "InvestOS Track Record": {
             "as_of":               stats.get("generated_at",""),
-            "track_record_since":  stats.get("date_range","").split("→")[0].strip() if stats.get("date_range") else "",
+            "track_record_since":  _since,
+            # finding 23 (2026-08-29 audit): every WR/return figure below is
+            # the 7-DAY-PROXY outcome over the window [track_record_since ..
+            # now], NOT the true holding horizon and NOT all-time-since-March.
+            # win_rate.json's top-level 47% is all-time (Mar 2026+) and is
+            # NOT the same number as win_rate_flat here — different windows,
+            # not a data conflict. See win_rate.json result["headline"].
+            "window":              f"{_since} .. present (7-day proxy)",
             "total_signals":       stats.get("total_signals"),
             "resolved_signals":    stats.get("resolved"),
             "win_rate_flat":       f"{stats.get('win_rate','N/A')}%",
             "win_rate_30d":        f"{stats.get('win_rate_30d','N/A')}%",
             "win_rate_time_wtd":   f"{stats.get('tw_win_rate','N/A')}%",
+            "win_rate_v41_oos":    (f"{_oos.get('win_rate')}%" if _oos.get('win_rate') is not None else "N/A"),
             "avg_return_per_pick": f"{stats.get('avg_return','N/A')}%",
             "expectancy_per_pick": f"{stats.get('expectancy','N/A')}%",
             "sharpe_estimate":     stats.get("sharpe_estimate"),
@@ -501,7 +511,8 @@ def bake_audit_page():
             "universe_size":       "177+ tickers screened daily",
             "signal_layers":       ["ML/XGBoost", "Relative Strength", "News/Macro",
                                     "Insider (SEC EDGAR)", "52W Breakout", "Earnings Quality"],
-            "note":                "NFA — educational signal system. Past performance ≠ future results.",
+            "note":                "NFA — educational signal system. Past performance ≠ future results. "
+                                   "All figures are a 7-day-proxy outcome over the stated window.",
         }
     }
     with open(PITCH_JSON, "w") as f:

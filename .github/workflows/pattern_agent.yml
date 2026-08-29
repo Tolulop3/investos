@@ -8,6 +8,12 @@ on:
     - cron: '15 21 * * 1-5'   # 4:15pm Toronto
   workflow_dispatch:           # manual trigger anytime
 
+# Shared with daily_run.yml and strategist_agent.yml — serialises repo commits
+# across all three so their push steps don't race. (Finding 24, 2026-08-29 audit.)
+concurrency:
+  group: investos-main-commit
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PYTHONUNBUFFERED: "1"   # see daily_run.yml's matching comment
