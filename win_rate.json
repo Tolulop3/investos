@@ -162,33 +162,33 @@
     }
   },
   "by_category": {
-    "SWING": {
-      "win_rate": 36.5,
-      "count": 351
-    },
     "INCOME": {
       "win_rate": 75.0,
       "count": 4
-    },
-    "WATCH": {
-      "win_rate": 46.1,
-      "count": 558
-    },
-    "DIVIDEND GROWTH": {
-      "win_rate": 23.5,
-      "count": 17
     },
     "GROWTH CORE": {
       "win_rate": 49.7,
       "count": 368
     },
+    "INCOME + GROWTH": {
+      "win_rate": 37.8,
+      "count": 37
+    },
     "FHSA Conservative Growth": {
       "win_rate": 47.8,
       "count": 1420
     },
-    "INCOME + GROWTH": {
-      "win_rate": 37.8,
-      "count": 37
+    "SWING": {
+      "win_rate": 36.5,
+      "count": 351
+    },
+    "DIVIDEND GROWTH": {
+      "win_rate": 23.5,
+      "count": 17
+    },
+    "WATCH": {
+      "win_rate": 46.1,
+      "count": 558
     }
   },
   "recent_10": [
@@ -411,33 +411,35 @@
     },
     "ALL_unified_regime": {
       "pct": 100.0,
-      "filled": 2813,
-      "total": 2813
+      "filled": 2815,
+      "total": 2815
     },
     "ALL_macro_regime": {
       "pct": 23.9,
-      "filled": 672,
-      "total": 2813
+      "filled": 674,
+      "total": 2815
     },
     "ALL_market_breadth_50ma": {
-      "pct": 37.0,
-      "filled": 1042,
-      "total": 2813
+      "pct": 37.1,
+      "filled": 1044,
+      "total": 2815
     },
     "ALL_sector": {
       "pct": 100.0,
-      "filled": 2813,
-      "total": 2813
+      "filled": 2815,
+      "total": 2815
     }
   },
   "oos": {
     "start_date": "2026-08-15",
-    "logged": 168,
+    "logged": 170,
     "resolved": 110,
     "wins": 25,
     "losses": 71,
     "win_rate": 22.7,
     "avg_return": -1.09,
+    "expectancy": -1.102,
+    "profit_factor": 0.48,
     "spx_return": -0.43,
     "active_return": -0.66,
     "tiers": {
@@ -459,5 +461,108 @@
       }
     }
   },
-  "message": "46% win rate | Expectancy: +0.048% per pick"
+  "headline": {
+    "current_era": {
+      "since": "2026-06-26",
+      "n": 788,
+      "win_rate": 43.0,
+      "avg_return": -0.06,
+      "expectancy": -0.06,
+      "profit_factor": 0.96
+    },
+    "latest_ruleset_oos": {
+      "since": "2026-08-15",
+      "n": 110,
+      "win_rate": 22.7,
+      "expectancy": -1.102
+    },
+    "all_time": {
+      "since": "2026-03-02",
+      "n": 2755,
+      "win_rate": 46.0,
+      "avg_return": 0.05,
+      "expectancy": 0.048,
+      "profit_factor": 1.03
+    },
+    "true_horizon_n": 657,
+    "note": "All numbers are the 7-day proxy. 'current_era' (since the v4.1 freeze) is the read that represents the system as it runs now; 'all_time' is inflated by the Mar-May 2026 period; 'latest_ruleset_oos' is v4.2-only and usually too new to have resolved picks. See result['true_horizon'] for the real-holding-period read where coverage exists."
+  },
+  "true_horizon": {
+    "overall": {
+      "n": 657,
+      "win_rate": 50.7,
+      "avg_return": 2.763,
+      "profit_factor": 1.61,
+      "expectancy": 2.765,
+      "note": "True-horizon outcomes only. Coverage is category-skewed: long-hold categories (FHSA / GROWTH CORE 180d, income 365d) stay at ~0 resolved until late 2026+, so the 7-day headline remains a proxy for most picks."
+    },
+    "by_category": {
+      "FHSA Conservative Growth": {
+        "n": 18,
+        "win_rate": 72.2,
+        "avg_return": 11.83,
+        "profit_factor": 8.03,
+        "expectancy": 11.83
+      },
+      "GROWTH CORE": {
+        "n": 2,
+        "win_rate": 100.0,
+        "avg_return": 13.215,
+        "profit_factor": 0.0,
+        "expectancy": 13.215
+      },
+      "SWING": {
+        "n": 304,
+        "win_rate": 45.1,
+        "avg_return": 0.609,
+        "profit_factor": 1.12,
+        "expectancy": 0.612
+      },
+      "WATCH": {
+        "n": 333,
+        "win_rate": 54.4,
+        "avg_return": 4.177,
+        "profit_factor": 1.95,
+        "expectancy": 4.179
+      }
+    },
+    "coverage": {
+      "DIVIDEND GROWTH": {
+        "total_picks": 17,
+        "true_horizon_resolved": 0,
+        "horizon_days": 365
+      },
+      "FHSA Conservative Growth": {
+        "total_picks": 1439,
+        "true_horizon_resolved": 18,
+        "horizon_days": 180
+      },
+      "GROWTH CORE": {
+        "total_picks": 371,
+        "true_horizon_resolved": 2,
+        "horizon_days": 180
+      },
+      "INCOME": {
+        "total_picks": 4,
+        "true_horizon_resolved": 0,
+        "horizon_days": 365
+      },
+      "INCOME + GROWTH": {
+        "total_picks": 42,
+        "true_horizon_resolved": 0,
+        "horizon_days": 365
+      },
+      "SWING": {
+        "total_picks": 374,
+        "true_horizon_resolved": 304,
+        "horizon_days": 30
+      },
+      "WATCH": {
+        "total_picks": 568,
+        "true_horizon_resolved": 333,
+        "horizon_days": 90
+      }
+    }
+  },
+  "message": "7d proxy \u2014 current era (since 2026-06-26): 43.0% WR, exp -0.06%, n=788  |  all-time: 46% WR, exp +0.048%"
 }

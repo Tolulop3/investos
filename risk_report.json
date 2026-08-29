@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-08-29T03:09:59.435671",
+    "run_at": "2026-08-29T23:58:46.700403",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,40 +30,40 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 13,
-        "survived": 11,
-        "survival_pct": 84.6,
+        "survived": 12,
+        "survival_pct": 92.3,
         "avg_score_change": 3.2,
         "verdict": "\u2705 ROBUST",
         "note": "Avg score change: \u00b13.2 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 78.7,
-        "stressed_avg": 67.1,
-        "score_drop": 11.6,
+        "normal_avg": 79.4,
+        "stressed_avg": 68.7,
+        "score_drop": 10.7,
         "removed": [
           "CVX",
           "SU.TO",
-          "CNQ.TO",
+          "K.TO",
           "GS",
-          "BLK"
+          "CNQ.TO"
         ],
         "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 11.6 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 10.7 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 13,
-        "survived": 11,
-        "survival_pct": 84.6,
-        "avg_score_drop": 2.3,
+        "survived": 12,
+        "survival_pct": 92.3,
+        "avg_score_drop": 2.1,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.3 pts"
+        "note": "If momentum stops working: avg score drops 2.1 pts"
       }
     },
     "summary": {
       "normal_picks": 13,
-      "normal_avg_score": 78.7,
+      "normal_avg_score": 79.4,
       "scenarios_robust": 4,
       "scenarios_fragile": 0,
       "scenarios_broken": 1,
