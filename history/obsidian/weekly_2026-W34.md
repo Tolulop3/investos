@@ -1,6 +1,6 @@
 ---
 week: 2026-W34
-generated: 2026-08-28
+generated: 2026-08-29
 oos_n: 110
 oos_wr: 22.7
 oos_pf: 0.47
@@ -21,18 +21,18 @@ tags: [investos, weekly, performance]
 ## Regime Timeline (recent)
 | Regime | Period | Duration | Avg Sharpe |
 |--------|--------|----------|------------|
-| FULL_EXPOSURE | 2026-06-17 → 2026-08-28 | 67d | -0.14 |
+| FULL_EXPOSURE | 2026-06-17 → 2026-08-29 | 68d | -0.148 |
 
 ## Sharpe Trajectory (last 7 days)
 | Date | Sharpe | 7d Avg | Direction |
 |------|--------|--------|-----------|
-| 2026-08-20 | -0.365 | -0.328 | declining |
 | 2026-08-21 | -0.39 | -0.338 | declining |
 | 2026-08-24 | -0.44 | -0.355 | declining |
 | 2026-08-25 | -0.522 | -0.382 | declining |
 | 2026-08-26 | -0.572 | -0.422 | declining |
 | 2026-08-27 | -0.63 | -0.466 | declining |
 | 2026-08-28 | -0.715 | -0.519 | declining |
+| 2026-08-29 | -0.715 | -0.569 | declining |
 
 ## Pick Quality by Macro Signal (min 5 picks)
 | Signal | n | WR | PF | Status |
