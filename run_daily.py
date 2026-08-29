@@ -2506,11 +2506,16 @@ if __name__ == "__main__":
         if HAS_NGX:
             try:
                 print(f"\n[NGX] 🇳🇬 NIGERIAN EXCHANGE SIGNALS")
-                _ngx_news = brief.get("regime_note", "NORMAL")
+                # brief["macro_regime"] is the real regime LABEL
+                # (NORMAL / RISK_ON / CONSTRUCTIVE / CAUTIOUS / RISK_OFF).
+                # Was brief.get("regime_note") — a non-existent top-level key
+                # (it's prose under brief["macro"]), so this had silently run
+                # at "NORMAL" since it was added. Fixed 2026-08-29.
+                _ngx_macro_label = brief.get("macro_regime", "NORMAL")
                 _ngx_macro_str = (
-                    "RISK_OFF" if _ngx_news in ("RISK_OFF","BEAR") else
-                    "CAUTIOUS" if _ngx_news == "CAUTIOUS" else
-                    "NORMAL"
+                    "RISK_OFF" if _ngx_macro_label in ("RISK_OFF", "BEAR") else
+                    "CAUTIOUS" if _ngx_macro_label == "CAUTIOUS" else
+                    "NORMAL"  # NORMAL / RISK_ON / CONSTRUCTIVE — NGX runs its own regime model
                 )
                 ngx_result = run_ngx_engine(investos_macro=_ngx_macro_str, verbose=True)
                 brief["ngx"] = ngx_result

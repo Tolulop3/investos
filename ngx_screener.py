@@ -1,20 +1,44 @@
 """
-ngx_screener.py — Nigerian Exchange (NGX) Signal Engine v2.1
+ngx_screener.py — Nigerian Exchange (NGX) Signal Engine v2.2.1
 ===========================================================
 Macro-driven EM desk model. Completely standalone.
 
-v2.1 changes (guardrail fix):
+v2.2.1 changes (macro-bridge fix — 2026-08-29):
+  - run_daily.py:2509 read a non-existent key ("regime_note"), so the
+    InvestOS macro bridge had ALWAYS run at "NORMAL" since it was added.
+    Fixed to read brief["macro_regime"].
+  - `investos_macro` is now a SIZE haircut, not an entry veto. Replaying
+    the clean OOS book (100% of which fell on RISK_OFF/CAUTIOUS days) a
+    naive full-veto wire-up gave 9 entries / −5.7% cum / PF 0.73; the
+    haircut gives 63 entries / +42.5% cum / PF 1.69 on ~40% of the
+    deployed size. See scratchpad/ngx_macro_coupling_dryrun.py.
+  - signals now carry s["size_mult"] (1.0 / 0.75 / 0.5); investos_macro
+    is logged into ngx_outcomes.json's macro_at_signal for future tuning.
+
+v2.2 changes (ENTER threshold revert — 2026-08-29):
+  - ENTER threshold: 65 → 75 for Tier 1 (Tier 2 already 75). The v2.1
+    drop to 65 was a visibility guardrail, not evidence-backed. The clean
+    OOS book (241 resolved, first signal 2026-07-20) now shows the 65–75
+    band has negative expectancy: n=79 non-frozen, 35% WR ex-flat,
+    −0.64% avg, −50% cumulative, PF 0.75. The 75+ band is PF 1.07
+    (75–80 sub-band PF 1.26). See scratchpad/ngx_threshold_dryrun.py.
+  - persistence-gate streak threshold: 65 → 75 (aligned to ENTER, so a
+    ticker oscillating 68–72 no longer builds a streak it can't cash).
+  - RESTRICTED phase threshold: 65 → 75 (aligned to ENTER).
+  - WATCH floor UNCHANGED at 45 — the dashboard strip still populates
+    with 45–74.9 names as informational tracking, which is what the v2.1
+    guardrail was actually for.
+
+v2.1 changes (guardrail fix — superseded in part by v2.2 above):
   - eligible gate: 55 → 40 (stocks always appear in dashboard strip)
   - WATCH floor: 45 (shows in NGX strip even in RISK_OFF — informational)
-  - ENTER threshold: 65 (was 75) + RISK_ON + Tier 1 + 3d persistence
-  - RESTRICTED phase threshold: 80 → 65 (achievable in NEUTRAL/RISK_ON)
   - RISK_OFF no longer silences WATCH signals — they appear as tracking
 
-WHY THIS MATTERS:
-  With macro_score=-9.2 (current), old thresholds produced 0 signals and 0 watch.
-  Nothing appeared in the dashboard NGX strip.
-  New thresholds: telecom (~52), some banking (~40-45) show as WATCH/WAIT,
-  building persistence history so signals fire immediately when macro turns.
+WHY THE WATCH FLOOR MATTERS:
+  When macro_score is deeply negative, the ENTER bar (75) produces 0
+  entries by design. WATCH (45–74.9) still shows telecom/banking names
+  in the dashboard strip and builds persistence history, so signals fire
+  immediately when macro turns — without lowering the bar to act.
 
 WHY MACRO-DRIVEN:
   Yahoo Finance has no reliable NGX (.LG) coverage.
@@ -428,9 +452,14 @@ NGX_SECTOR_BLOCK = {"oil"}
 
 def apply_macro_bridge(all_scored, investos_macro, brent_trend, basket_regime):
     """
-    v2.1: RISK_OFF no longer silences WATCH signals.
-    WATCH = informational tracking (score 45-64), always shown.
-    ENTER = requires RISK_ON + score >= 65 + Tier 1.
+    v2.1:   RISK_OFF no longer silences WATCH signals.
+    v2.2:   ENTER bar raised 65 → 75 (Tier 1). See module docstring.
+    v2.2.1: `investos_macro` is a SIZE modifier, not an entry veto —
+            RISK_OFF/BEAR → Tier 1 only @0.5×, CAUTIOUS → Tier 1 only @0.75×,
+            NORMAL/RISK_ON/CONSTRUCTIVE → Tier 1 @1.0× + Tier 2 @0.5×.
+            Signals carry s["size_mult"]. See ngx_macro_coupling_dryrun.py.
+    WATCH = informational tracking (score < 75), always shown.
+    ENTER = score >= 75 + Tier 1 (Tier 2 only when macro is not RISK_OFF/CAUTIOUS).
     Returns (signals_list, watch_list, gate_status).
     """
     macro = investos_macro or "NORMAL"
@@ -458,60 +487,88 @@ def apply_macro_bridge(all_scored, investos_macro, brent_trend, basket_regime):
             s["actionable"] = False
             continue
 
-        # ── WATCH: score 45-64 OR RISK_OFF (always informational) ────────────
-        if score < 65 or macro in ("RISK_OFF", "BEAR"):
+        # ── WATCH: below the ENTER floor. The InvestOS main-engine macro
+        # regime NO LONGER vetoes here (v2.2.1) — it becomes a SIZE modifier
+        # below. Only the score floor gates entry.
+        if score < 75:
             s["action"]     = "WATCH"
-            s["size_label"] = f"WATCH — tracking ({'RISK_OFF' if macro in ('RISK_OFF','BEAR') else 'score <65'})"
+            s["size_label"] = "WATCH — tracking (score <75)"
             s["actionable"] = False
             watch.append(s)
             continue
 
-        # ── CAUTIOUS: Tier 1 only, smaller size ──────────────────────────────
-        if macro == "CAUTIOUS":
-            if tier == 1 and score >= 65:
-                s["action"]     = "WATCH"
-                s["size_label"] = "CAUTIOUS — Tier 1 watch"
-                s["actionable"] = False
-                watch.append(s)
-            elif tier == 1 and score >= 75:
+        # score >= 75 from here. `investos_macro` sets SIZE, never a hard veto
+        # (v2.2.1 — see scratchpad/ngx_macro_coupling_dryrun.py). The main
+        # news-macro engine has its own known failure mode (can stick RISK_OFF
+        # for weeks); a full veto silenced NGX entirely through those stretches
+        # and lost money in replay (9 entries / −5.7% over the clean OOS book).
+        # Haircut instead: RISK_OFF keeps 81% of the return on 40% of the
+        # deployed size, PF 1.29 → 1.69.
+        #   RISK_OFF / BEAR -> Tier 1 only, half size
+        #   CAUTIOUS        -> Tier 1 only, reduced (0.75) size
+        #   NORMAL / RISK_ON / CONSTRUCTIVE -> Tier 1 full, Tier 2 half
+        if macro in ("RISK_OFF", "BEAR"):
+            if tier == 1:
                 s["action"]     = "BUY"
-                s["size_label"] = "REDUCED SIZE (cautious)"
+                s["size_label"] = "SMALL (macro RISK_OFF — half size)"
+                s["size_mult"]  = 0.5
                 s["actionable"] = True
                 signals.append(s)
             else:
-                s["action"] = "WAIT"; s["actionable"] = False
+                s["action"]     = "WATCH"
+                s["size_label"] = "WATCH — Tier 2 held (macro RISK_OFF)"
+                s["actionable"] = False
+                watch.append(s)
             continue
 
-        # ── ENTER: RISK_ON + score >= 65 + Tier 1 ────────────────────────────
-        if macro not in ("RISK_OFF","BEAR","CAUTIOUS"):
-            if tier == 1 and score >= 65:
+        if macro == "CAUTIOUS":
+            if tier == 1:
                 s["action"]     = "BUY"
-                s["size_label"] = "FULL SIZE" if score >= 75 else "SMALL (watch threshold)"
-                s["actionable"] = True
-                signals.append(s)
-            elif tier == 2 and score >= 75:
-                s["action"]     = "BUY"
-                s["size_label"] = "SMALL (Tier 2)"
+                s["size_label"] = "REDUCED SIZE (cautious)"
+                s["size_mult"]  = 0.75
                 s["actionable"] = True
                 signals.append(s)
             else:
                 s["action"]     = "WATCH"
-                s["size_label"] = "WATCH — Tier 2 or score marginal"
+                s["size_label"] = "WATCH — Tier 2 held (macro CAUTIOUS)"
                 s["actionable"] = False
                 watch.append(s)
+            continue
+
+        # NORMAL / RISK_ON / CONSTRUCTIVE (or any unrecognised label)
+        if tier == 1:
+            s["action"]     = "BUY"
+            s["size_label"] = "FULL SIZE"
+            s["size_mult"]  = 1.0
+            s["actionable"] = True
+            signals.append(s)
+        elif tier == 2:
+            s["action"]     = "BUY"
+            s["size_label"] = "SMALL (Tier 2)"
+            s["size_mult"]  = 0.5
+            s["actionable"] = True
+            signals.append(s)
+        else:
+            s["action"]     = "WATCH"
+            s["size_label"] = "WATCH — score marginal"
+            s["actionable"] = False
+            watch.append(s)
 
     if macro in ("RISK_OFF", "BEAR"):
-        gate_status = "RISK_OFF — WATCH only, no entries"
+        gate_status = "RISK_OFF — Tier 1 ≥75 only, half size (macro haircut)"
     elif macro == "CAUTIOUS":
-        gate_status = f"CAUTIOUS — Tier 1 ≥65 watch, ≥75 enter"
+        gate_status = "CAUTIOUS — Tier 1 ≥75 only, reduced size"
     else:
-        gate_status = "OPEN — Tier 1 ≥65, Tier 2 ≥75 eligible"
+        gate_status = "OPEN — Tier 1 ≥75 full, Tier 2 ≥75 half"
 
     return signals, watch, gate_status
 
 
 def apply_persistence_gate(signals):
-    """Require 3 consecutive scoring days at threshold before ENTER fires."""
+    """Require 3 consecutive scoring days at the ENTER threshold (75, v2.2)
+    before ENTER fires. NOTE: signals reaching here have already passed the
+    score>=75 gate in apply_macro_bridge; this checks the prior days' scores
+    held >=75 too."""
     try:
         history = json.load(open("ngx_persistence.json"))
     except Exception:
@@ -526,7 +583,7 @@ def apply_persistence_gate(signals):
         history[ticker] = streak
         consecutive = 0
         for day in reversed(streak):
-            if day["score"] >= 65:
+            if day["score"] >= 75:
                 consecutive += 1
             else:
                 break
@@ -715,8 +772,9 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
             s["size_label"] = "DO NOT TRADE — PAPER PHASE"
             filtered_signals.append(s)
         elif sig_phase == "RESTRICTED":
-            # v2.1: threshold lowered from 80 → 65 (now achievable in NEUTRAL/RISK_ON)
-            if s["tier"] == 1 and s["score"] >= 65:
+            # v2.2: aligned to the ENTER threshold (75). Was 65 under v2.1,
+            # 80 originally. Tier 1 only during RESTRICTED.
+            if s["tier"] == 1 and s["score"] >= 75:
                 filtered_signals.append(s)
         else:  # FULL
             filtered_signals.append(s)
@@ -791,7 +849,7 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
         "data_mode":       "MACRO",
         "note": (
             "Validation phase — paper trade only." if phase == "PAPER_ONLY" else
-            "Tier 1 + score ≥65 only (RESTRICTED)." if phase == "RESTRICTED" else
+            "Tier 1 + score ≥75 only (RESTRICTED)." if phase == "RESTRICTED" else
             "Full signal mode — macro-driven."
         ),
     }
