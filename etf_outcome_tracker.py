@@ -32,6 +32,11 @@ ETF_OUTCOMES_FILE = "etf_outcomes.json"
 # own scoring already emphasizes (ret_90 as the primary signal, not a
 # 7-day catalyst) better than the stock engine's 7-day or NGX's 14-day
 # windows would.
+#
+# NOTE: this tracker started logging 2026-08-07, so with a 30-day window the
+# first signal only becomes eligible to resolve on 2026-09-06. An all-pending
+# etf_outcomes.json before that date is expected, not a resolution bug --
+# see test_etf_outcome_tracker.py.
 RESOLUTION_DAYS = 30
 
 # Category-tiered WIN/LOSS/FLAT thresholds, calibrated near each
@@ -43,28 +48,50 @@ RESOLUTION_DAYS = 30
 # resolved ETF outcomes accumulate to check these against real data
 # instead of a handful of representative tickers.
 #
-#   CORE       (n=2/7):  VOO, XIC.TO                          -- solid
-#   SECTOR     (n=2-3/7): XLE, GLD (+ZEB.TO at shorter windows) -- PROVISIONAL,
-#                          category itself mixes commodity/earnings/index
-#                          thesis ETFs, see the SECTOR mis-grouping note
-#                          in ETF_UNIVERSE's own comments (etf_engine.py)
+#   CORE             (n=2/7):  VOO, XIC.TO                     -- solid
+#   SECTOR_COMMODITY:          XEG.TO, XLE, GLD, ZGD.TO        -- PROVISIONAL.
+#                          Held at the old lumped SECTOR 1.00 for now. A
+#                          2026-08-29 dry run on 70 days of history put
+#                          |fwd-30d return| p10 at ~1.7 and trailing
+#                          |ret_30| p10 at ~2.7 -- but that window was a
+#                          commodity trend (XLE mean|r| ~15%), too regime-
+#                          specific to recalibrate from. Revisit with real
+#                          resolved outcomes or a proper 2yr recalibration.
+#   SECTOR_EARNINGS:          ZEB.TO, XRE.TO                   -- bank/REIT
+#                          ETFs move like CORE (dry run: fwd-30d mean|r|
+#                          ~2.7% vs commodity ~15%, ~identical to CORE's
+#                          ~2.2%). Threshold set to CORE's 0.75, carved
+#                          down from the lumped 1.00 that was hiding real
+#                          directional moves as FLAT.
 #   THEMATIC   (n=2/10): ARKG, BOTZ                            -- PROVISIONAL,
 #                          most heterogeneous category (genomics vs
 #                          quantum vs defense), least representative pair
 #   DEFENSIVE  (n=2/4):  TLT, ZAG.TO                           -- solid,
-#                          both bond ETFs, consistent low-vol signature
+#                          both bond ETFs, consistent low-vol signature.
+#                          ZLB.TO also sits here (low-vol equity); the dry
+#                          run found its data too thin (1 ticker) to give
+#                          it its own bucket -- left for a separate look.
 #   INTL       (n=1/2):  EEM only (missed EFA, the calmer developed-
 #                          markets half)                        -- PROVISIONAL,
 #                          not even a real distribution, one ticker's own
 #                          time series
 CATEGORY_THRESHOLDS = {
-    "DEFENSIVE": 0.25,
-    "CORE":      0.75,
-    "SECTOR":    1.00,
-    "INTL":      1.00,
-    "THEMATIC":  1.50,
+    "DEFENSIVE":        0.25,
+    "CORE":             0.75,
+    "SECTOR_COMMODITY": 1.00,
+    "SECTOR_EARNINGS":  0.75,
+    "SECTOR":           1.00,   # legacy alias -- pre-2026-08-29 logged entries
+    "INTL":             1.00,
+    "THEMATIC":         1.50,
 }
 DEFAULT_THRESHOLD_PCT = 0.75  # fallback for any category not in the table above
+
+
+def _threshold_for(category):
+    """Single source of truth for a category's WIN/LOSS/FLAT band, so the
+    resolver can record the exact threshold it applied (threshold_used)
+    without re-deriving it."""
+    return CATEGORY_THRESHOLDS.get(category, DEFAULT_THRESHOLD_PCT)
 
 
 def _classify_etf_outcome(actual_return_pct, category):
@@ -72,7 +99,7 @@ def _classify_etf_outcome(actual_return_pct, category):
     duplicate this. Threshold is category-keyed, unlike outcome_tracker.py's
     single OUTCOME_THRESHOLD_PCT, because a flat threshold provably doesn't
     work across this universe (see CATEGORY_THRESHOLDS above)."""
-    threshold = CATEGORY_THRESHOLDS.get(category, DEFAULT_THRESHOLD_PCT)
+    threshold = _threshold_for(category)
     if actual_return_pct > threshold:
         return "WIN"
     elif actual_return_pct < -threshold:
@@ -163,6 +190,7 @@ def log_etf_signals(etf_result, run_time=None):
             "exit_price":        None,
             "actual_return_pct": None,
             "outcome":           None,   # WIN | LOSS | FLAT
+            "threshold_used":    None,   # the +/- band applied at classification
         }
         outcomes.append(entry)
         new_logged += 1
@@ -232,6 +260,7 @@ def resolve_etf_outcomes(current_prices=None):
         o["exit_price"]        = round(exit_price, 4)
         o["actual_return_pct"] = round(actual_return_pct, 2)
         o["outcome"]           = _classify_etf_outcome(actual_return_pct, o.get("category"))
+        o["threshold_used"]    = _threshold_for(o.get("category"))
 
         resolved += 1
 
@@ -325,4 +354,4 @@ def print_etf_outcome_report():
         print(f"\n  BY CATEGORY:")
         for cat, stats in sorted(s["by_category"].items(), key=lambda x: -x[1]["total_resolved"]):
             if stats["total_resolved"] > 0:
-                print(f"    {cat:<12} {stats['win_rate']:>5.1f}%  (n={stats['total_resolved']})")
+                print(f"    {cat:<17} {stats['win_rate']:>5.1f}%  (n={stats['total_resolved']})")
