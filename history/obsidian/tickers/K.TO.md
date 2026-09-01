@@ -1,6 +1,6 @@
 ---
 ticker: K.TO
-updated: 2026-08-31
+updated: 2026-09-01
 streak_days: 4
 score_now: 88.5
 velocity: 0
