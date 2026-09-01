@@ -2,7 +2,7 @@
 ticker: MDLZ
 updated: 2026-09-01
 streak_days: 3
-score_now: 80.4
+score_now: 80.7
 velocity: 0
 pf_30d: None
 picks_30d: 0
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **3 of last 7 days**.
-Avg score: 80.4
+Avg score: 80.7
 Dates: 2026-08-30, 2026-08-31, 2026-09-01
 
 ---
