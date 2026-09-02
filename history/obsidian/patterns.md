@@ -7,45 +7,43 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 77.0%  (-0.33%/day)
-- Sharpe: -0.818  (-0.035/day)
+- Breadth (200MA): 77.0%  (-0.21%/day)
+- Sharpe: -0.847  (-0.031/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CNQ.TO** — 8d streak, avg score 89.7
+- **CNQ.TO** — 9d streak, avg score 90.8
 - **SU.TO** — 5d streak, avg score 86.2
-- **WCP.TO** — 4d streak, avg score 100.0
 - **K.TO** — 4d streak, avg score 88.5
 - **COP** — 4d streak, avg score 100.0
-- **GS** — 3d streak, avg score 92.0
-- **IMO.TO** — 3d streak, avg score 93.3
-- **MDLZ** — 3d streak, avg score 80.7
+- **IMO.TO** — 4d streak, avg score 92.5
+- **MDLZ** — 4d streak, avg score 81.7
 
 ## Score Velocity (rising/falling fast)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
+- 📉 **NU** -16.4 pts/day  (82.8 → 50.0)
 - 📈 **META** +15.0 pts/day  (62.0 → 92.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
-- 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 83.3% of recent picks (15 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 84.2% of recent picks (16 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| NMIH | 🟡 WATCH | 0d | -17.5 | 3.16 |
+| NMIH | 🟡 WATCH | 0d | -17.5 | 2.6 |
+| CNQ.TO | 🟡 WATCH | 9d | — | 1.01 |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| CNQ.TO | 🟡 WATCH | 8d | — | 0.39 |
+| NU | 🟡 WATCH | 0d | -16.4 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | 3.69 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
-| SBUX | 🟡 WATCH | 0d | -10.7 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
@@ -53,7 +51,7 @@ tags: [investos, patterns, weekly]
 - 2026-05: n=215  WR=53%
 - 2026-06: n=136  WR=39% ⚠️
 - 2026-07: n=144  WR=36% ⚠️
-- 2026-08: n=137  WR=42% ⚠️
+- 2026-08: n=139  WR=42% ⚠️
 - 2026-09: n=0  WR=—
 
 ---
