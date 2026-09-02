@@ -7,11 +7,11 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 77.0%  (-0.21%/day)
+- Breadth (200MA): 76.6%  (-0.27%/day)
 - Sharpe: -0.847  (-0.031/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CNQ.TO** — 9d streak, avg score 90.8
+- **CNQ.TO** — 8d streak, avg score 89.4
 - **SU.TO** — 5d streak, avg score 86.2
 - **K.TO** — 4d streak, avg score 88.5
 - **COP** — 4d streak, avg score 100.0
@@ -29,17 +29,17 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 84.2% of recent picks (16 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 88.9% of recent picks (16 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | NMIH | 🟡 WATCH | 0d | -17.5 | 2.6 |
-| CNQ.TO | 🟡 WATCH | 9d | — | 1.01 |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
 | NU | 🟡 WATCH | 0d | -16.4 | — |
+| CNQ.TO | 🟡 WATCH | 8d | — | 1.01 |
 | RTX | 🟡 WATCH | 0d | +13.1 | 3.69 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
