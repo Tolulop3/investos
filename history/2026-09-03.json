@@ -4,10 +4,10 @@
     "regime": "BULL",
     "signal": "FULL_EXPOSURE",
     "cash_pct": 0.0,
-    "spx_price": 7751.26,
-    "ma200": 7136.55,
-    "ma50": 7584.56,
-    "pct_above_ma": 8.61,
+    "spx_price": 7747.71,
+    "ma200": 7136.53,
+    "ma50": 7584.49,
+    "pct_above_ma": 8.56,
     "full_exposure_pct": 100.0
   },
   "sharpe": {
@@ -24,9 +24,9 @@
   "win_rate_overall": null,
   "breadth": {
     "total_stocks": 252,
-    "above_ma50": 160,
+    "above_ma50": 162,
     "above_ma200": 196,
-    "pct_above_50": 63.5,
+    "pct_above_50": 64.3,
     "pct_above_200": 77.8,
     "signal": "BROAD_BULL",
     "note": "Rally is broad \u2014 most stocks above 200MA",
@@ -37,15 +37,25 @@
         "pct_above_200": 88,
         "count": 42
       },
+      "Healthcare": {
+        "pct_above_50": 80,
+        "pct_above_200": 93,
+        "count": 30
+      },
       "": {
-        "pct_above_50": 83,
+        "pct_above_50": 85,
         "pct_above_200": 85,
         "count": 48
       },
-      "Utilities": {
-        "pct_above_50": 0,
-        "pct_above_200": 11,
-        "count": 9
+      "Energy": {
+        "pct_above_50": 83,
+        "pct_above_200": 89,
+        "count": 18
+      },
+      "Communication Services": {
+        "pct_above_50": 67,
+        "pct_above_200": 67,
+        "count": 6
       },
       "Technology": {
         "pct_above_50": 69,
@@ -57,40 +67,30 @@
         "pct_above_200": 45,
         "count": 11
       },
-      "Industrials": {
-        "pct_above_50": 26,
-        "pct_above_200": 68,
-        "count": 19
-      },
-      "Healthcare": {
-        "pct_above_50": 80,
-        "pct_above_200": 93,
-        "count": 30
-      },
-      "Communication Services": {
-        "pct_above_50": 67,
-        "pct_above_200": 67,
-        "count": 6
-      },
-      "Basic Materials": {
-        "pct_above_50": 88,
-        "pct_above_200": 88,
-        "count": 8
-      },
       "Consumer Cyclical": {
         "pct_above_50": 47,
         "pct_above_200": 53,
         "count": 19
       },
-      "Energy": {
-        "pct_above_50": 83,
-        "pct_above_200": 89,
-        "count": 18
-      },
       "Real Estate": {
         "pct_above_50": 10,
         "pct_above_200": 60,
         "count": 10
+      },
+      "Basic Materials": {
+        "pct_above_50": 100,
+        "pct_above_200": 88,
+        "count": 8
+      },
+      "Industrials": {
+        "pct_above_50": 26,
+        "pct_above_200": 68,
+        "count": 19
+      },
+      "Utilities": {
+        "pct_above_50": 0,
+        "pct_above_200": 11,
+        "count": 9
       }
     }
   },
@@ -165,10 +165,23 @@
         }
       ]
     },
-    "OIL": {
-      "bullish_score": 376,
+    "REPORTING_SECTOR": {
+      "bullish_score": 114.0,
       "bearish_score": 0,
-      "net_score": 376,
+      "net_score": 114.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "earnings_beats",
+          "direction": "bullish",
+          "confidence": 76
+        }
+      ]
+    },
+    "OIL": {
+      "bullish_score": 388,
+      "bearish_score": 0,
+      "net_score": 388,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -179,14 +192,14 @@
         {
           "name": "war_escalation",
           "direction": "bullish",
-          "confidence": 88
+          "confidence": 94
         }
       ]
     },
     "DEFENSE": {
-      "bullish_score": 506.0,
-      "bearish_score": 0,
-      "net_score": 506.0,
+      "bullish_score": 529.0,
+      "bearish_score": 129.0,
+      "net_score": 400.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -197,19 +210,24 @@
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 87
+          "confidence": 94
+        },
+        {
+          "name": "peace_deal",
+          "direction": "bearish",
+          "confidence": 86
         },
         {
           "name": "war_escalation",
           "direction": "bullish",
-          "confidence": 88
+          "confidence": 94
         }
       ]
     },
     "GOLD": {
-      "bullish_score": 506.0,
-      "bearish_score": 0,
-      "net_score": 506.0,
+      "bullish_score": 529.0,
+      "bearish_score": 129.0,
+      "net_score": 400.0,
       "sentiment": "BULLISH",
       "signals": [
         {
@@ -220,12 +238,17 @@
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 87
+          "confidence": 94
+        },
+        {
+          "name": "peace_deal",
+          "direction": "bearish",
+          "confidence": 86
         },
         {
           "name": "war_escalation",
           "direction": "bullish",
-          "confidence": 88
+          "confidence": 94
         }
       ]
     },
@@ -261,54 +284,121 @@
       ]
     },
     "EUROPEAN_ENERGY": {
-      "bullish_score": 130.0,
+      "bullish_score": 141.0,
       "bearish_score": 0,
-      "net_score": 130.0,
+      "net_score": 141.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 87
+          "confidence": 94
         }
       ]
     },
     "AGRICULTURE": {
-      "bullish_score": 130.0,
+      "bullish_score": 141.0,
       "bearish_score": 0,
-      "net_score": 130.0,
+      "net_score": 141.0,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bullish",
-          "confidence": 87
+          "confidence": 94
         }
       ]
     },
     "EUROPEAN_STOCKS": {
       "bullish_score": 0,
-      "bearish_score": 130.0,
-      "net_score": -130.0,
+      "bearish_score": 141.0,
+      "net_score": -141.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bearish",
-          "confidence": 87
+          "confidence": 94
         }
       ]
     },
     "NATURAL_GAS": {
       "bullish_score": 0,
-      "bearish_score": 130.0,
-      "net_score": -130.0,
+      "bearish_score": 141.0,
+      "net_score": -141.0,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bearish",
-          "confidence": 87
+          "confidence": 94
+        }
+      ]
+    },
+    "TRAVEL": {
+      "bullish_score": 129.0,
+      "bearish_score": 388,
+      "net_score": -259.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 86
+        },
+        {
+          "name": "health_outbreak",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "war_escalation",
+          "direction": "bearish",
+          "confidence": 94
+        }
+      ]
+    },
+    "CONSUMER": {
+      "bullish_score": 129.0,
+      "bearish_score": 0,
+      "net_score": 129.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 86
+        }
+      ]
+    },
+    "EMERGING_MARKETS": {
+      "bullish_score": 129.0,
+      "bearish_score": 188,
+      "net_score": -59.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 86
+        },
+        {
+          "name": "war_escalation",
+          "direction": "bearish",
+          "confidence": 94
+        }
+      ]
+    },
+    "INDUSTRIALS": {
+      "bullish_score": 129.0,
+      "bearish_score": 0,
+      "net_score": 129.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "peace_deal",
+          "direction": "bullish",
+          "confidence": 86
         }
       ]
     },
@@ -377,24 +467,6 @@
         }
       ]
     },
-    "TRAVEL": {
-      "bullish_score": 0,
-      "bearish_score": 376,
-      "net_score": -376,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "health_outbreak",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "war_escalation",
-          "direction": "bearish",
-          "confidence": 88
-        }
-      ]
-    },
     "HOSPITALITY": {
       "bullish_score": 0,
       "bearish_score": 200,
@@ -435,41 +507,28 @@
       ]
     },
     "CYBERSECURITY": {
-      "bullish_score": 176,
+      "bullish_score": 188,
       "bearish_score": 0,
-      "net_score": 176,
+      "net_score": 188,
       "sentiment": "BULLISH",
       "signals": [
         {
           "name": "war_escalation",
           "direction": "bullish",
-          "confidence": 88
+          "confidence": 94
         }
       ]
     },
     "CONSUMER_DISCRETIONARY": {
       "bullish_score": 0,
-      "bearish_score": 176,
-      "net_score": -176,
+      "bearish_score": 188,
+      "net_score": -188,
       "sentiment": "BEARISH",
       "signals": [
         {
           "name": "war_escalation",
           "direction": "bearish",
-          "confidence": 88
-        }
-      ]
-    },
-    "EMERGING_MARKETS": {
-      "bullish_score": 0,
-      "bearish_score": 176,
-      "net_score": -176,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "war_escalation",
-          "direction": "bearish",
-          "confidence": 88
+          "confidence": 94
         }
       ]
     }
@@ -497,350 +556,7 @@
     "health_score": -0.5,
     "high_risk_count": 3
   },
-  "conviction_picks": [
-    {
-      "ticker": "MDT",
-      "score": 100,
-      "data": {
-        "ticker": "MDT",
-        "price": 92.69,
-        "day_chg_pct": 0.55,
-        "perf_30d": 7.79,
-        "perf_90d": 19.98,
-        "w52_high": 106.33,
-        "w52_low": 73.31,
-        "drawdown_high": -12.83,
-        "recovery_pct": 26.44,
-        "avg_volume": 7639421,
-        "volatility": 0.94,
-        "rsi_approx": 54.4,
-        "div_yield": 3.12,
-        "div_rate": 2.88,
-        "ex_div_date": "Sep 25, 2026",
-        "days_to_ex_div": 21,
-        "pe_ratio": 24.8,
-        "peg_ratio": 1.82,
-        "profit_margin": 13.9,
-        "rev_growth": 13.7,
-        "earn_growth": 40.7,
-        "debt_equity": 58.2,
-        "roe": 0,
-        "current_ratio": null,
-        "target_price": 102.88,
-        "upside_target": 11.0,
-        "analyst_rec": "buy",
-        "sector": "Healthcare",
-        "industry": "Medical Devices",
-        "next_earnings": "N/A",
-        "short_pct_float": 1.1,
-        "vol_accum_score": 10,
-        "earnings_surprise_pct": 4.5,
-        "status": "ok",
-        "closes_30d": [
-          83.21,
-          84.22,
-          86.88,
-          87.54,
-          85.71,
-          85.39,
-          86.68,
-          86.2,
-          85.99,
-          85.92,
-          87.16,
-          89.41,
-          90.68,
-          90.76,
-          90.58,
-          91.27,
-          90.6,
-          92.09,
-          94.13,
-          92.3,
-          93.35,
-          92.9,
-          91.14,
-          92.02,
-          89.97,
-          91.23,
-          90.65,
-          92.04,
-          92.18,
-          92.69
-        ],
-        "pct_from_20d_high": -1.53,
-        "above_ma50": true,
-        "above_ma200": true
-      },
-      "pillars": {
-        "momentum": 3.5,
-        "dividend_income": 19.5,
-        "growth": 11.2,
-        "value": 12.6,
-        "safety": 27.0,
-        "volume_liquidity": 10.0
-      },
-      "reasons": [
-        "\ud83d\udcc8 Good 90d: +19.98%",
-        "\ud83d\udcc8 30d momentum: +7.79%",
-        "\ud83d\udcc9 Pullback entry: -1.5% from 20d high (trend intact)",
-        "\ud83d\udcb0 Good yield: 3.12%",
-        "\ud83d\udcc5 Ex-div in 21 days \u2014 collect soon!",
-        "\ud83d\udcca Earnings growth: +40.7%",
-        "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-        "\u2705 Analyst consensus: buy",
-        "\ud83d\udcca Options: bullish stock PCR (0.04)",
-        "\ud83d\udcaa RS Rating: 79 \u2014 \u2705 STRONG"
-      ],
-      "flags": [],
-      "pick": {
-        "category": "DIVIDEND GROWTH",
-        "venue": "STOCK_ACCOUNT",
-        "tag": "[TFSA]",
-        "hold_days": 365,
-        "risk_label": "MODERATE",
-        "amount": 0.65,
-        "action": "Suggested: $300 | Hold 365 days for income cycle | Buy before Sep 25, 2026 to capture $2.88/share dividend",
-        "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
-        "exp_low": 2.2,
-        "exp_high": 27.4,
-        "exp_prob": 65,
-        "options_eligible": true,
-        "suggested_play": "covered_call",
-        "est_premium_pct": 0.23,
-        "short_interest": 1.1,
-        "next_earnings": "N/A"
-      },
-      "sector": "HEALTHCARE",
-      "options_signal": {
-        "ticker": "MDT",
-        "signal": "BULLISH_PCR",
-        "adjustment": 2,
-        "reason": "\ud83d\udcca Options: bullish stock PCR (0.04)",
-        "call_volume": 31019,
-        "put_volume": 1133,
-        "pcr_stock": 0.037,
-        "atm_iv": 0.3075,
-        "atm_oi": 7928
-      },
-      "sector_canonical": "HEALTHCARE",
-      "ml_prob": 0.4243,
-      "ml_prob_raw": 0.583825,
-      "ml_prob_xgb": 0.583825,
-      "ml_prob_source": "rules_based",
-      "scored_by_model_trained_at": null,
-      "ml_signal": "\u26a0\ufe0f WEAK",
-      "evidence": {
-        "count": 877,
-        "regime_count": 870,
-        "win_rate": 48.5,
-        "regime_win_rate": 48.5,
-        "avg_return": -0.08,
-        "regime_avg_return": -0.07,
-        "median_return": 0.4,
-        "max_drawdown": -35.96,
-        "regime_match_pct": 99.2,
-        "expected_alpha": -8.68,
-        "confidence": "HIGH",
-        "score_band": "82-98",
-        "evidence_text": "877 similar setups (870 in same regime) | WR: 48.5% | Avg: -0.1% | Expected alpha: -8.7% vs SPX",
-        "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 877 historical setups at this score level produced only 48.5% WR. ML confirmation required before BUY."
-      },
-      "rs_rating": 79,
-      "rs_signal": "\u2705 STRONG",
-      "rs_adj": 5,
-      "score_velocity": 0.11805555555555555,
-      "velocity_boost": 0,
-      "signal_age_note": "\ud83d\udd04 FRESH \u2014 score +27.3 pts over 7 days",
-      "conviction_signals": [
-        "\ud83d\udcc8 Score Trending Up",
-        "\ud83d\udcaa RS 79",
-        "\ud83d\udcca Options: Bullish PCR 0.04"
-      ],
-      "conviction_boost": 18,
-      "conviction_count": 3,
-      "expected_value": -0.203,
-      "size_guardrail": {
-        "ticker": "MDT",
-        "category": "DIVIDEND GROWTH",
-        "bucket": "Dividend core. Pays you 5-7%/yr regardless of model quality.",
-        "bucket_pool": 5.0,
-        "max_raw": 1.0,
-        "regime_adj": 1.0,
-        "accuracy_adj": 0.65,
-        "recommended": 0.65,
-        "if_zero_pct": 6.5,
-        "regime": "BULL",
-        "survival_note": "If this goes to zero \u2192 you lose 6.5% of account. \u26a0\ufe0f Consider smaller size"
-      }
-    },
-    {
-      "ticker": "FTI",
-      "score": 100,
-      "data": {
-        "ticker": "FTI",
-        "price": 79.88,
-        "day_chg_pct": 0.26,
-        "perf_30d": 15.39,
-        "perf_90d": 17.65,
-        "w52_high": 80.7,
-        "w52_low": 35.29,
-        "drawdown_high": -1.02,
-        "recovery_pct": 126.35,
-        "avg_volume": 2715556,
-        "volatility": 1.61,
-        "rsi_approx": 55.2,
-        "div_yield": 25.0,
-        "div_rate": 0.2,
-        "ex_div_date": "Aug 18, 2026",
-        "days_to_ex_div": -17,
-        "pe_ratio": 27.5,
-        "peg_ratio": 2.18,
-        "profit_margin": 11.3,
-        "rev_growth": 9.0,
-        "earn_growth": 40.6,
-        "debt_equity": 37.9,
-        "roe": 35.8,
-        "current_ratio": 1.08,
-        "target_price": 75.81,
-        "upside_target": -5.1,
-        "analyst_rec": "buy",
-        "sector": "Energy",
-        "industry": "Oil & Gas Equipment & Services",
-        "next_earnings": "N/A",
-        "short_pct_float": 3.4,
-        "vol_accum_score": 10,
-        "earnings_surprise_pct": 13.4,
-        "status": "ok",
-        "closes_30d": [
-          76.7019,
-          74.993,
-          72.3447,
-          71.6851,
-          68.8768,
-          71.6151,
-          69.1467,
-          69.9761,
-          69.2266,
-          69.5764,
-          69.5764,
-          74.0836,
-          75.2728,
-          75.2228,
-          76.622,
-          78.5608,
-          79.76,
-          78.29,
-          77.02,
-          77.62,
-          77.45,
-          75.85,
-          75.2,
-          75.7,
-          76.32,
-          75.84,
-          78.15,
-          78.31,
-          79.67,
-          79.88
-        ],
-        "pct_from_20d_high": 0.0,
-        "above_ma50": true,
-        "above_ma200": true
-      },
-      "pillars": {
-        "momentum": 2.4,
-        "dividend_income": 19.5,
-        "growth": 13.6,
-        "value": 11.2,
-        "safety": 27.0,
-        "volume_liquidity": 10.0
-      },
-      "reasons": [
-        "\ud83d\udcc8 Good 90d: +17.65%",
-        "\ud83d\udcc8 30d momentum: +15.39%",
-        "\ud83d\udcb0 Exceptional yield: 25.0%",
-        "\ud83d\udcca Earnings growth: +40.6%",
-        "\ud83d\udcaa Strong ROE: 35.8%",
-        "\ud83d\udcca Good liquidity",
-        "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
-        "\u2705 Analyst consensus: buy",
-        "\ud83d\udcc8 Earnings beat: +13.4% vs est. (earnings_beat)",
-        "\ud83d\udcaa RS Rating: 84 \u2014 \u2705 STRONG"
-      ],
-      "flags": [
-        "\u26a0\ufe0f Extended: at 20d high + strong 30d momentum"
-      ],
-      "pick": {
-        "category": "FHSA Conservative Growth",
-        "venue": "STOCK_ACCOUNT",
-        "tag": "[FHSA]",
-        "hold_days": 180,
-        "risk_label": "LOW",
-        "amount": 0.39,
-        "action": "Suggested: $50 | Core hold \u2014 review in 180 days",
-        "exit_note": "FHSA stop: $67.1 (16% rule). Review if drawdown hits 12%.",
-        "exp_low": 14.1,
-        "exp_high": 52.9,
-        "exp_prob": 68,
-        "options_eligible": false,
-        "suggested_play": "none",
-        "est_premium_pct": 0.0,
-        "short_interest": 3.4,
-        "next_earnings": "N/A"
-      },
-      "sector": "Energy",
-      "sector_canonical": "ENERGY",
-      "ml_prob": 0.8185,
-      "ml_prob_raw": 0.812095,
-      "ml_prob_xgb": 0.812095,
-      "ml_prob_source": "rules_based",
-      "scored_by_model_trained_at": null,
-      "ml_signal": "\ud83d\udd25 STRONG BUY",
-      "evidence": {
-        "count": 1275,
-        "regime_count": 1267,
-        "win_rate": 43.3,
-        "regime_win_rate": 43.3,
-        "avg_return": -0.28,
-        "regime_avg_return": -0.27,
-        "median_return": -0.05,
-        "max_drawdown": -38.42,
-        "regime_match_pct": 99.4,
-        "expected_alpha": -8.88,
-        "confidence": "HIGH",
-        "score_band": "88-100",
-        "evidence_text": "1275 similar setups (1267 in same regime) | WR: 43.3% | Avg: -0.3% | Expected alpha: -8.9% vs SPX",
-        "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 1275 historical setups at this score level produced only 43.3% WR. ML confirmation required before BUY."
-      },
-      "rs_rating": 84,
-      "rs_signal": "\u2705 STRONG",
-      "rs_adj": 5,
-      "score_velocity": 1.7666666666666657,
-      "velocity_boost": 0,
-      "signal_age_note": "\ud83d\udd04 FRESH \u2014 score +5.3 pts over 7 days",
-      "conviction_signals": [
-        "\ud83d\udcaa RS 84 \u2014 Top Performer",
-        "\ud83e\udd16 ML Score 82%"
-      ],
-      "conviction_boost": 16,
-      "conviction_count": 2,
-      "expected_value": -0.203,
-      "size_guardrail": {
-        "ticker": "FTI",
-        "category": "FHSA Conservative Growth",
-        "bucket": "ML-assisted growth picks. Max loss if model fails = 30% of TFSA.",
-        "bucket_pool": 3.0,
-        "max_raw": 0.6,
-        "regime_adj": 1.0,
-        "accuracy_adj": 0.65,
-        "recommended": 0.39,
-        "if_zero_pct": 3.9,
-        "regime": "BULL",
-        "survival_note": "If this goes to zero \u2192 you lose 3.9% of account. \u2705 Acceptable"
-      }
-    }
-  ],
+  "conviction_picks": [],
   "top_picks": [
     {
       "ticker": "EOG",
@@ -853,13 +569,13 @@
       "category": "WATCH"
     },
     {
-      "ticker": "MDLZ",
-      "score": 85.2,
+      "ticker": "RCI-B.TO",
+      "score": 90.0,
       "category": "WATCH"
     },
     {
-      "ticker": "FTI",
-      "score": 100,
+      "ticker": "MFC.TO",
+      "score": 98.0,
       "category": "FHSA Conservative Growth"
     },
     {
@@ -871,28 +587,28 @@
   "etf_top": [
     {
       "ticker": "ZGD.TO",
-      "score": 83.2,
-      "ret_90": 14.3
+      "score": 77.6,
+      "ret_90": 14.9
     },
     {
       "ticker": "CIBR",
       "score": 70.1,
-      "ret_90": 41.9
+      "ret_90": 42.1
     },
     {
       "ticker": "ARKG",
       "score": 70.0,
-      "ret_90": 58.6
+      "ret_90": 59.6
     },
     {
       "ticker": "XLE",
       "score": 66.1,
-      "ret_90": 13.2
+      "ret_90": 12.8
     },
     {
       "ticker": "XEG.TO",
       "score": 63.3,
-      "ret_90": 9.0
+      "ret_90": 8.8
     }
   ],
   "macro_signals": []
