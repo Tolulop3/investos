@@ -13,9 +13,10 @@ tags: [investos, patterns, weekly]
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CNQ.TO** — 8d streak, avg score 90.2
 - **SU.TO** — 5d streak, avg score 93.2
-- **MDLZ** — 5d streak, avg score 82.4
 - **COP** — 4d streak, avg score 100.0
 - **IMO.TO** — 4d streak, avg score 92.5
+- **MDLZ** — 4d streak, avg score 81.7
+- **RCI-B.TO** — 3d streak, avg score 79.7
 - **EOG** — 3d streak, avg score 87.3
 
 ## Score Velocity (rising/falling fast)
@@ -29,7 +30,7 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 84.2% of recent picks (16 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 94.1% of recent picks (16 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -41,8 +42,8 @@ tags: [investos, patterns, weekly]
 | SO | 🟡 WATCH | 0d | -16.5 | — |
 | NU | 🟡 WATCH | 0d | -16.4 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | 1.97 |
-| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
