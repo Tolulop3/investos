@@ -1,5 +1,5 @@
 {
-  "trained_at": "2026-09-03T15:01:38.502179",
+  "trained_at": "2026-09-04T14:58:53.576280",
   "model_type": "LogisticRegression (penalty=l2, C=1.0, class_weight=balanced)",
   "description": "Binary WIN/LOSS classifier for the SWING category, trained on true 30-day-horizon outcomes (not the legacy 7-day proxy -- see CATEGORY_HORIZONS in outcome_tracker.py). 80/20 chronological train/holdout split, no shuffling. holdout_auc is this model's AUC on the held-out 20%, gated at 0.53 before deploy (see 'deployed' field).",
   "features_used": [
@@ -23,12 +23,12 @@
     "macro_regime_enc",
     "market_breadth_50ma"
   ],
-  "n_rows": 308,
-  "n_train": 246,
+  "n_rows": 310,
+  "n_train": 248,
   "n_val": 62,
-  "holdout_auc": 0.3941,
+  "holdout_auc": 0.3638,
   "horizon_days": 30,
   "category": "SWING",
   "deployed": false,
-  "rejected_reason": "holdout_auc 0.3941 < minimum 0.53"
+  "rejected_reason": "holdout_auc 0.3638 < minimum 0.53"
 }
