@@ -1,11 +1,11 @@
 ---
 ticker: EOG
-updated: 2026-09-03
+updated: 2026-09-04
 streak_days: 3
 score_now: 87.3
 velocity: 0
 pf_30d: None
-picks_30d: 3
+picks_30d: 2
 tags: [investos, ticker, pattern]
 ---
 

@@ -1,6 +1,6 @@
 ---
 ticker: RCI-B.TO
-updated: 2026-09-03
+updated: 2026-09-04
 streak_days: 3
 score_now: 79.7
 velocity: 0
