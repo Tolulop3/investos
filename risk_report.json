@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-09-04T18:41:17.249078",
+    "run_at": "2026-09-04T22:54:42.243472",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -22,8 +22,8 @@
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 13,
-        "survived": 13,
-        "survival_pct": 100.0,
+        "survived": 12,
+        "survival_pct": 92.3,
         "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
@@ -32,24 +32,24 @@
         "normal_count": 13,
         "survived": 11,
         "survival_pct": 84.6,
-        "avg_score_change": 3.2,
+        "avg_score_change": 3.1,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.2 pts with 10% noise"
+        "note": "Avg score change: \u00b13.1 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 77.7,
-        "stressed_avg": 66.3,
-        "score_drop": 11.4,
+        "normal_avg": 77.9,
+        "stressed_avg": 66.8,
+        "score_drop": 11.1,
         "removed": [
-          "EOG",
-          "SU.TO",
           "MFC.TO",
-          "UMBF",
-          "FTI"
+          "FTI",
+          "CVX",
+          "EOG",
+          "SU.TO"
         ],
         "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 11.4 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 11.1 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -63,7 +63,7 @@
     },
     "summary": {
       "normal_picks": 13,
-      "normal_avg_score": 77.7,
+      "normal_avg_score": 77.9,
       "scenarios_robust": 4,
       "scenarios_fragile": 0,
       "scenarios_broken": 1,
@@ -85,15 +85,15 @@
       "note": "Sharpe from 1557 resolved picks (2026-06-06 \u2192 2026-09-04) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": -0.21,
-      "ret_30d": 4.07,
-      "ret_90d": 8.11,
-      "ann_ret": 22.7,
+      "ret_7d": -0.16,
+      "ret_30d": 4.12,
+      "ret_90d": 8.16,
+      "ann_ret": 22.9,
       "ann_vol": 12.5,
-      "sharpe": 1.82,
+      "sharpe": 1.83,
       "symbol": "^GSPC"
     },
-    "alpha": -2.706,
+    "alpha": -2.716,
     "neg_alpha_days": 68,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
