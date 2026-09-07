@@ -42,8 +42,8 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
 
