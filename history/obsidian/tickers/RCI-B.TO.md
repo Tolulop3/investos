@@ -1,8 +1,8 @@
 ---
 ticker: RCI-B.TO
-updated: 2026-09-04
-streak_days: 4
-score_now: 78.4
+updated: 2026-09-07
+streak_days: 5
+score_now: 77.4
 velocity: 0
 pf_30d: 1.07
 picks_30d: 9
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # RCI-B.TO — Pattern Log
 
 ## Streak
-Appeared in picks **4 of last 7 days**.
-Avg score: 78.4
-Dates: 2026-09-01, 2026-09-02, 2026-09-03, 2026-09-04
+Appeared in picks **5 of last 7 days**.
+Avg score: 77.4
+Dates: 2026-09-01, 2026-09-02, 2026-09-03, 2026-09-04, 2026-09-07
 
 ## Recent Performance (last 30d)
 Profit Factor: **1.07** ⚠️  |  n=9 picks
