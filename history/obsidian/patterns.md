@@ -8,7 +8,7 @@ tags: [investos, patterns, weekly]
 ## Regime Drift
 - ✅ Regime stable — no drift signals
 - Breadth (200MA): 78.3%  (-0.04%/day)
-- Sharpe: -0.970  (-0.036/day)
+- Sharpe: -0.964  (-0.036/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CNQ.TO** — 8d streak, avg score 88.4
@@ -42,8 +42,8 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
 
