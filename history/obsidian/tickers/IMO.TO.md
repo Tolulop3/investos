@@ -1,6 +1,6 @@
 ---
 ticker: IMO.TO
-updated: 2026-09-07
+updated: 2026-09-08
 streak_days: 4
 score_now: 92.5
 velocity: 0
