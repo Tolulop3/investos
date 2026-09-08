@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 76.7%  (-0.21%/day)
+- Breadth (200MA): 76.3%  (-0.27%/day)
 - Sharpe: -0.992  (-0.035/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -31,7 +31,7 @@ tags: [investos, patterns, weekly]
 - 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 76.9% of recent picks (20 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 80.0% of recent picks (20 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
