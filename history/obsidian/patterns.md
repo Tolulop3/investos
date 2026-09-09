@@ -11,12 +11,13 @@ tags: [investos, patterns, weekly]
 - Sharpe: -1.010  (-0.027/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CNQ.TO** — 9d streak, avg score 89.0
+- **CNQ.TO** — 9d streak, avg score 89.1
 - **RCI-B.TO** — 6d streak, avg score 76.6
 - **EOG** — 6d streak, avg score 90.2
 - **CVX** — 6d streak, avg score 97.6
 - **MFC.TO** — 5d streak, avg score 92.8
-- **TSM** — 3d streak, avg score 70.7
+- **CVE.TO** — 4d streak, avg score 99.5
+- **TSM** — 3d streak, avg score 77.2
 - **SU.TO** — 3d streak, avg score 89.3
 
 ## Score Velocity (rising/falling fast)
@@ -30,7 +31,7 @@ tags: [investos, patterns, weekly]
 - 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 82.1% of recent picks (23 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 79.3% of recent picks (23 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -40,11 +41,11 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
+| META | 🟡 WATCH | 0d | +15.0 | — |
 | CVX | 🟡 WATCH | 6d | — | 1.59 |
+| TSM | 🟢 CONSIDER | 3d | +7.3 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
-| MMM | 🟡 WATCH | 0d | -12.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
