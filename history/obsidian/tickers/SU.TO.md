@@ -1,8 +1,8 @@
 ---
 ticker: SU.TO
 updated: 2026-09-09
-streak_days: 4
-score_now: 90.8
+streak_days: 3
+score_now: 89.3
 velocity: 0
 pf_30d: 2.73
 picks_30d: 6
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # SU.TO — Pattern Log
 
 ## Streak
-Appeared in picks **4 of last 7 days**.
-Avg score: 90.8
-Dates: 2026-08-31, 2026-09-03, 2026-09-04, 2026-09-07
+Appeared in picks **3 of last 7 days**.
+Avg score: 89.3
+Dates: 2026-09-03, 2026-09-04, 2026-09-07
 
 ## Recent Performance (last 30d)
 Profit Factor: **2.73** ✅  |  n=6 picks
