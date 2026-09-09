@@ -1,6 +1,6 @@
 ---
 ticker: CNQ.TO
-updated: 2026-09-08
+updated: 2026-09-09
 streak_days: 9
 score_now: 90.9
 velocity: 0

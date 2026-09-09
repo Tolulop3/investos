@@ -1,6 +1,6 @@
 ---
 ticker: MDLZ
-updated: 2026-09-08
+updated: 2026-09-09
 streak_days: 3
 score_now: 82.6
 velocity: 0

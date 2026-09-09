@@ -1,6 +1,6 @@
 ---
 ticker: MFC.TO
-updated: 2026-09-08
+updated: 2026-09-09
 streak_days: 4
 score_now: 93.0
 velocity: 0
