@@ -14,11 +14,11 @@ tags: [investos, patterns, weekly]
 - **CNQ.TO** — 7d streak, avg score 87.4
 - **CVX** — 7d streak, avg score 98.0
 - **EOG** — 6d streak, avg score 88.0
+- **MFC.TO** — 6d streak, avg score 93.7
 - **CVE.TO** — 6d streak, avg score 99.3
 - **RCI-B.TO** — 5d streak, avg score 77.0
-- **MFC.TO** — 5d streak, avg score 92.8
-- **TSM** — 4d streak, avg score 81.4
-- **SU.TO** — 4d streak, avg score 92.0
+- **TSM** — 4d streak, avg score 75.1
+- **SU.TO** — 3d streak, avg score 89.3
 - **TD.TO** — 3d streak, avg score 71.3
 
 ## Score Velocity (rising/falling fast)
@@ -41,10 +41,10 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| CNQ.TO | 🟡 WATCH | 7d | — | 4.06 |
 | CVX | 🟡 WATCH | 7d | — | 1.59 |
-| UNP | 🟡 WATCH | 0d | -15.0 | — |
+| CNQ.TO | 🟡 WATCH | 7d | — | 4.06 |
 | META | 🟡 WATCH | 0d | +15.0 | — |
+| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
 
