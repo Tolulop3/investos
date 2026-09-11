@@ -2,7 +2,7 @@
 ticker: TSM
 updated: 2026-09-11
 streak_days: 4
-score_now: 82.1
+score_now: 76.7
 velocity: 0
 pf_30d: None
 picks_30d: 3
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **4 of last 7 days**.
-Avg score: 82.1
+Avg score: 76.7
 Dates: 2026-09-08, 2026-09-09, 2026-09-10, 2026-09-11
 
 ---

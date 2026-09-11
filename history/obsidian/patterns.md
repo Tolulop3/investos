@@ -7,33 +7,32 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ⚠️ Breadth declining -1.1%/day — watch for regime shift if sustained
-- Breadth (200MA): 69.9%  (-1.13%/day)
+- Breadth (200MA): 70.3%  (-1.07%/day)
 - Sharpe: -1.083  (-0.026/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CVX** — 9d streak, avg score 98.4
 - **CVE.TO** — 8d streak, avg score 99.5
-- **EOG** — 6d streak, avg score 87.7
+- **EOG** — 6d streak, avg score 87.0
 - **MFC.TO** — 6d streak, avg score 93.7
 - **CNQ.TO** — 6d streak, avg score 85.6
 - **SU.TO** — 4d streak, avg score 92.0
 - **RCI-B.TO** — 4d streak, avg score 77.7
-- **TSM** — 4d streak, avg score 82.1
+- **TSM** — 4d streak, avg score 76.7
 - **TD.TO** — 3d streak, avg score 71.3
-- **JPM** — 3d streak, avg score 96.4
 
 ## Score Velocity (rising/falling fast)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
-- 📈 **META** +15.0 pts/day  (62.0 → 92.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 - 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
+- 📉 **SBUX** -10.7 pts/day  (92.0 → 70.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 80.0% of recent picks (24 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 78.1% of recent picks (25 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -44,10 +43,10 @@ tags: [investos, patterns, weekly]
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
 | CVE.TO | 🟡 WATCH | 8d | — | 0.47 |
-| META | 🟡 WATCH | 0d | +15.0 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | CNQ.TO | 🟡 WATCH | 6d | — | 2.89 |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
+| MMM | 🟡 WATCH | 0d | -12.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
