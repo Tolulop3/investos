@@ -1,6 +1,6 @@
 ---
 ticker: TD.TO
-updated: 2026-09-10
+updated: 2026-09-11
 streak_days: 3
 score_now: 71.3
 velocity: 0
