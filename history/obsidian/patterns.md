@@ -6,21 +6,21 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-09-14
 
 ## Regime Drift
-- ⚠️ Breadth declining -0.5%/day — watch for regime shift if sustained
-- Breadth (200MA): 74.2%  (-0.51%/day)
+- ⚠️ Breadth declining -0.6%/day — watch for regime shift if sustained
+- Breadth (200MA): 73.8%  (-0.57%/day)
 - Sharpe: -1.179  (-0.042/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CVX** — 10d streak, avg score 98.0
+- **CVX** — 10d streak, avg score 97.8
 - **CVE.TO** — 10d streak, avg score 99.6
-- **EOG** — 6d streak, avg score 83.4
+- **EOG** — 6d streak, avg score 83.6
 - **MFC.TO** — 5d streak, avg score 92.8
 - **CNQ.TO** — 5d streak, avg score 86.7
 - **SU.TO** — 4d streak, avg score 93.2
 - **TSM** — 4d streak, avg score 76.7
+- **META** — 4d streak, avg score 91.9
 - **RCI-B.TO** — 3d streak, avg score 73.5
 - **TD.TO** — 3d streak, avg score 71.3
-- **AAPL** — 3d streak, avg score 86.8
 
 ## Score Velocity (rising/falling fast)
 - 📈 **NU** +18.9 pts/day  (50.0 → 87.7)
@@ -33,7 +33,7 @@ tags: [investos, patterns, weekly]
 - 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 80.6% of recent picks (25 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 78.8% of recent picks (26 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
