@@ -1,6 +1,6 @@
 ---
 ticker: TSM
-updated: 2026-09-11
+updated: 2026-09-14
 streak_days: 4
 score_now: 76.7
 velocity: 0
