@@ -1,6 +1,6 @@
 ---
 ticker: CVX
-updated: 2026-09-14
+updated: 2026-09-15
 streak_days: 10
 score_now: 97.8
 velocity: 0
