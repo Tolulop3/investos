@@ -7,20 +7,20 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ⚠️ Breadth declining -1.1%/day — watch for regime shift if sustained
-- Breadth (200MA): 68.3%  (-1.14%/day)
+- Breadth (200MA): 68.8%  (-1.07%/day)
 - Sharpe: -1.237  (-0.035/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CVE.TO** — 10d streak, avg score 99.6
 - **CVX** — 10d streak, avg score 98.2
 - **META** — 8d streak, avg score 96.0
-- **TD.TO** — 5d streak, avg score 80.9
+- **SU.TO** — 6d streak, avg score 100.0
 - **EOG** — 5d streak, avg score 82.8
 - **TSM** — 4d streak, avg score 76.7
-- **SU.TO** — 4d streak, avg score 100.0
-- **WCP.TO** — 4d streak, avg score 100.0
+- **TD.TO** — 4d streak, avg score 76.9
 - **ABBV** — 4d streak, avg score 98.0
 - **CNQ.TO** — 3d streak, avg score 90.7
+- **MFC.TO** — 3d streak, avg score 88.7
 
 ## Score Velocity (rising/falling fast)
 - 📉 **CVE.TO** -25.0 pts/day  (100.0 → 50.0)
@@ -47,7 +47,7 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| EOG | 🟢 CONSIDER | 5d | +5.8 | 1.09 |
+| UNP | 🟡 WATCH | 0d | -15.0 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
