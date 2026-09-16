@@ -1,6 +1,6 @@
 ---
 ticker: AAPL
-updated: 2026-09-15
+updated: 2026-09-16
 streak_days: 3
 score_now: 87.1
 velocity: 0
