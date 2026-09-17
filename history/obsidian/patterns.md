@@ -11,9 +11,9 @@ tags: [investos, patterns, weekly]
 - Sharpe: -1.231  (-0.032/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **META** — 10d streak, avg score 96.8
 - **CVX** — 9d streak, avg score 98.5
 - **CVE.TO** — 8d streak, avg score 99.8
+- **META** — 8d streak, avg score 96.0
 - **SU.TO** — 6d streak, avg score 100.0
 - **ABBV** — 6d streak, avg score 98.7
 - **EOG** — 5d streak, avg score 82.8
@@ -33,19 +33,19 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 75.8% of recent picks (25 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 78.1% of recent picks (25 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | FTNT | 🟡 WATCH | 0d | +22.2 | — |
-| META | 🟡 WATCH | 10d | — | — |
 | CVX | 🟡 WATCH | 9d | — | 1.63 |
 | NU | 🟡 WATCH | 0d | +18.9 | — |
 | NMIH | 🔴 AVOID | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
+| META | 🟡 WATCH | 8d | — | — |
 | CVE.TO | 🟡 WATCH | 8d | — | 0.61 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 
