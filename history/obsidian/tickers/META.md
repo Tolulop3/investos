@@ -1,6 +1,6 @@
 ---
 ticker: META
-updated: 2026-09-16
+updated: 2026-09-17
 streak_days: 8
 score_now: 96.0
 velocity: 6.95
