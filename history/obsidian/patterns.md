@@ -7,20 +7,20 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 68.3%  (+0.06%/day)
+- Breadth (200MA): 69.6%  (+0.24%/day)
 - Sharpe: -1.211  (-0.026/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **META** — 10d streak, avg score 96.8
+- **META** — 8d streak, avg score 96.0
 - **CVX** — 7d streak, avg score 98.9
 - **CVE.TO** — 6d streak, avg score 99.7
 - **SU.TO** — 6d streak, avg score 100.0
 - **ABBV** — 6d streak, avg score 98.7
 - **CM.TO** — 5d streak, avg score 67.0
-- **TD.TO** — 4d streak, avg score 90.0
+- **WCP.TO** — 5d streak, avg score 99.4
+- **TD.TO** — 4d streak, avg score 90.7
 - **EOG** — 4d streak, avg score 80.7
 - **AAPL** — 3d streak, avg score 87.1
-- **WCP.TO** — 3d streak, avg score 99.0
 
 ## Score Velocity (rising/falling fast)
 - 📈 **FTNT** +22.2 pts/day  (50.0 → 94.5)
@@ -39,15 +39,15 @@ tags: [investos, patterns, weekly]
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | FTNT | 🟡 WATCH | 0d | +22.2 | — |
-| META | 🟡 WATCH | 10d | — | — |
 | NU | 🟡 WATCH | 0d | +18.9 | — |
 | NMIH | 🔴 AVOID | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
+| META | 🟡 WATCH | 8d | — | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| CVX | 🟡 WATCH | 7d | — | 1.48 |
 | SU.TO | 🟡 WATCH | 6d | — | 4.89 |
+| CVX | 🟡 WATCH | 7d | — | 1.48 |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
