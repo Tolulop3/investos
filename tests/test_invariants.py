@@ -3738,7 +3738,7 @@ def test_run_ml_engine_routes_by_nested_pick_category(monkeypatch, tmp_path):
     monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
     monkeypatch.setattr(
         me, "build_features_for_stock",
-        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+        lambda ticker, stock_data, rs=50, **_kw: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
     )
     monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
         "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
@@ -3869,7 +3869,7 @@ def test_run_ml_engine_scoring_table_shows_category_and_source(monkeypatch, tmp_
     monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
     monkeypatch.setattr(
         me, "build_features_for_stock",
-        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+        lambda ticker, stock_data, rs=50, **_kw: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
     )
     monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
         "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
@@ -3994,7 +3994,7 @@ def test_run_ml_engine_never_double_allocates_capital_to_straddling_ticker(monke
     monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
     monkeypatch.setattr(
         me, "build_features_for_stock",
-        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+        lambda ticker, stock_data, rs=50, **_kw: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
     )
     monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
         "regime": "BULL", "signal": "FULL_EXPOSURE", "cash_pct": 0.0,
@@ -4612,7 +4612,7 @@ def test_ml_engine_falls_back_when_swing_model_marked_degraded(monkeypatch, tmp_
     monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
     monkeypatch.setattr(
         me, "build_features_for_stock",
-        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+        lambda ticker, stock_data, rs=50, **_kw: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
     )
     monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
         "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
@@ -4829,7 +4829,7 @@ def test_scored_by_model_trained_at_tagged_at_scoring_time(monkeypatch, tmp_path
     monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
     monkeypatch.setattr(
         me, "build_features_for_stock",
-        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+        lambda ticker, stock_data, rs=50, **_kw: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
     )
     monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
         "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
@@ -4884,7 +4884,7 @@ def test_ml_engine_falls_back_when_general_model_marked_degraded(monkeypatch, tm
     monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
     monkeypatch.setattr(
         me, "build_features_for_stock",
-        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+        lambda ticker, stock_data, rs=50, **_kw: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
     )
     monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
         "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,
@@ -5033,7 +5033,7 @@ def test_ml_engine_routes_to_category_model_when_ready_and_deployed(monkeypatch,
     monkeypatch.setattr(me, "_SMOOTH_CACHE_FILE", str(tmp_path / "smooth_cache.json"))
     monkeypatch.setattr(
         me, "build_features_for_stock",
-        lambda ticker, stock_data, rs=50: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
+        lambda ticker, stock_data, rs=50, **_kw: {"momentum_6m": 0.05, "roe": 0.1, "rs_rating": 0.6}
     )
     monkeypatch.setattr(me, "get_market_regime", lambda verbose=True: {
         "regime": "UNKNOWN", "signal": "NEUTRAL", "cash_pct": 0.0,

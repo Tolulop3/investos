@@ -265,6 +265,13 @@ def build_feature_matrix(resolved):
         # rs_rating: use 0 as sentinel for missing (not 50 which inflates coverage gate)
         rs_rating   = (o.get("rs_rating") or 0) / 100
 
+        # Real trailing 12mo momentum, captured at signal time by ml_engine.py's
+        # build_features_for_stock() (2026-09 fix) -- fall back to the old
+        # momentum_6m*1.4 fabrication only for legacy rows logged before this
+        # field existed, or where inference itself lacked real price history.
+        _mom_12m_real = o.get("momentum_12m_real")
+        mom_12m = float(_mom_12m_real) if _mom_12m_real is not None else mom_6m * 1.4
+
         vol_adj_mom  = float(np.clip(mom_6m / max(vol_raw, 0.01), -5.0, 5.0))
         earnings_yield = 1.0 / max(pe, 1)
         fcf_yield    = max(pm * 0.8, 0)
@@ -300,7 +307,7 @@ def build_feature_matrix(resolved):
 
         feat = {
             "momentum_6m":          round(mom_6m, 4),
-            "momentum_12m":         round(mom_6m * 1.4, 4),
+            "momentum_12m":         round(mom_12m, 4),
             "vol_adj_momentum":     round(vol_adj_mom, 4),
             "roe":                  round(roe, 4),
             "profit_margin":        round(pm, 4),

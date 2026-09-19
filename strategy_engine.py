@@ -15,9 +15,10 @@ blow-off moves (top 5% momentum = crowded, high mean-reversion risk).
 # Each profile defines pillar weights (must sum to 1.0 across scored pillars)
 # and behavioural rules for the screener.
 #
-# Pillars in stock_screener.py:
-#   momentum (35pts max), dividend_income (15pts), growth (15pts),
-#   value (12pts), safety (13pts), volume_liquidity (10pts)
+# Pillars in stock_screener.py (v4.2 rebalance, 2026-08-15 -- see PILLAR_CAPS
+# below, which apply_strategy_weights() re-enforces after the regime multiplier):
+#   momentum (22pts max), dividend_income (15pts), growth (20pts),
+#   value (16pts), safety (15pts), volume_liquidity (10pts)
 #
 # Weight keys here map to screener pillar names.
 # A weight of 0.0 means that pillar is effectively zeroed (multiplied by 0).
@@ -196,6 +197,24 @@ def get_strategy(unified_regime, breadth_signal=None, macro_regime=None):
     return strategy_name, STRATEGY_PROFILES[strategy_name]
 
 
+
+# Per-pillar caps (v4.2 rebalance, 2026-08-15 -- must match stock_screener.py's
+# score_stock(), which enforces these same caps BEFORE calling
+# apply_strategy_weights() below). A regime multiplier here can otherwise push
+# an already-capped pillar back over its individual cap -- e.g. DEFENSIVE's
+# safety weight 1.80 turning a capped-at-15 safety score into 27, with only a
+# sum-level min(100) on the total ever catching it (2026-09 fix, held item
+# "1.3" -- confirmed live and unpatched before this fix).
+PILLAR_CAPS = {
+    "momentum":         22,
+    "dividend_income":  15,
+    "growth":           20,
+    "value":            16,
+    "safety":           15,
+    "volume_liquidity": 10,
+}
+
+
 def apply_strategy_weights(pillars, strategy_profile, momentum_percentile=None):
     """
     Applies dynamic factor weights to raw pillar scores.
@@ -206,7 +225,9 @@ def apply_strategy_weights(pillars, strategy_profile, momentum_percentile=None):
         momentum_percentile:  0-100 position of this stock's momentum in universe
 
     Returns:
-        dict of {pillar_name: weighted_score}
+        dict of {pillar_name: weighted_score}, each re-clamped to its
+        PILLAR_CAPS ceiling so a regime multiplier can't push a pillar that
+        was already at its cap coming in back over that same cap.
     """
     weights   = strategy_profile["weights"]
     curve     = strategy_profile.get("momentum_curve", "linear")
@@ -220,6 +241,10 @@ def apply_strategy_weights(pillars, strategy_profile, momentum_percentile=None):
             weighted[pillar] = round(adjusted * w, 1)
         else:
             weighted[pillar] = round(raw * w, 1)
+
+        cap = PILLAR_CAPS.get(pillar)
+        if cap is not None and weighted[pillar] > cap:
+            weighted[pillar] = cap
 
     return weighted
 

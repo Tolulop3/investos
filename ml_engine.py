@@ -34,6 +34,9 @@ from collections import defaultdict, Counter
 from gate_engine import MLGate, load_outcomes_ticker_counts, PROBATION_CAP
 from outcome_tracker import ml_prob_bucket, category_is_data_ready
 from pick_utils import dedupe_picks_by_ticker, get_pick_category, get_pick_sector
+# Same ordinal maps ml_retrainer.py trains on — reused here so live inference
+# encodes regime/macro context identically to training (2026-09 feature-skew fix).
+from ml_retrainer import REGIME_ENCODING, MACRO_ENCODING
 
 warnings.filterwarnings('ignore')
 
@@ -364,10 +367,25 @@ def get_market_regime(verbose=True):
 # FEATURE BUILDER
 # ============================================================
 
-def build_features_for_stock(ticker, stock_data, rs_rating=50):
+def build_features_for_stock(ticker, stock_data, rs_rating=50,
+                              regime_label=None, macro_regime_label=None,
+                              spx_pct=None, market_breadth_pct=None,
+                              news_boost_raw=0.0):
+    """
+    regime_label/macro_regime_label/spx_pct/market_breadth_pct/news_boost_raw:
+    live per-run market context (2026-09 feature-skew fix). Previously the five
+    regime-context features below were hardcoded constants for every ticker every
+    day while ml_retrainer.py trained on real, varying values for the same fields
+    -- a genuine train/serve skew, not the "overwritten by run_daily.py" the old
+    comment claimed (traced: nothing ever did). Callers should pass the same
+    live values used elsewhere in that day's run (run_daily.py's early_regime /
+    macro_regime / regime['pct_above_ma'] / screener['breadth']['pct_above_50'] /
+    pick['news_adjustment']) so training and inference finally agree.
+    """
     if not HAS_PANDAS:
         return None
     try:
+        _momentum_12m_source = "fallback_perf90d_proxy"
         try:
             url = (f"https://query1.finance.yahoo.com/v8/finance/chart/"
                    f"{urllib.parse.quote(ticker)}?interval=1mo&range=18mo")
@@ -380,13 +398,19 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
 
         if len(closes) >= 13:
             mom_6m  = (closes[-2] - closes[-8])  / closes[-8]  if len(closes) >= 8  else 0
-            mom_12m = (closes[-2] - closes[-14]) / closes[-14] if len(closes) >= 14 else 0
+            if len(closes) >= 14:
+                mom_12m = (closes[-2] - closes[-14]) / closes[-14]
+                _momentum_12m_source = "real_price_history"
+            else:
+                mom_12m = 0
             daily_rets = [(closes[i] - closes[i-1]) / closes[i-1] for i in range(1, min(91, len(closes)))]
             vol_90d = (sum(r**2 for r in daily_rets) / len(daily_rets)) ** 0.5 * (252 ** 0.5) if daily_rets else 0.2
         else:
             mom_6m  = stock_data.get("perf_90d", 0) / 100
             mom_12m = stock_data.get("perf_90d", 0) / 100 * 1.5
-            vol_90d = stock_data.get("volatility", 2.0) / 100
+            # Floor matches ml_retrainer.py's training-side floor (2026-09 fix) —
+            # this fallback path previously had none, a second train/serve skew.
+            vol_90d = max(stock_data.get("volatility", 2.0) or 2.0, 0.5) / 100
 
         # EMA20 ratio — overextension signal: >1.05 = overbought, <0.95 = oversold
         try:
@@ -424,6 +448,15 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
         _sec_norm  = _SECTOR_NORM_INF.get(raw_sector.lower(), "UNKNOWN")
         print(f"   [sector] {ticker:<12} raw={repr(raw_sector):<28} norm={_sec_norm:<15} enc={sector_enc}")
 
+        unified_regime_enc  = float(REGIME_ENCODING.get((regime_label or "NEUTRAL").upper(), 2))
+        macro_regime_enc    = float(MACRO_ENCODING.get((macro_regime_label or "NORMAL").upper(), 2))
+        # Same normalization ml_retrainer.build_feature_matrix() applies to the
+        # equivalent raw training fields — must match or the encodings mean
+        # different things to the model at train vs. serve time.
+        spx_vs_ma200        = max(-1.0, min(1.0, (spx_pct or 0.0) / 20.0))
+        market_breadth_50ma = (market_breadth_pct / 100.0) if market_breadth_pct is not None else 0.5
+        news_boost          = max(-1.0, min(1.0, (news_boost_raw or 0.0) / 20.0))
+
         return {
             "ticker": ticker,
             "momentum_6m":    round(mom_6m, 4),
@@ -441,13 +474,14 @@ def build_features_for_stock(ticker, stock_data, rs_rating=50):
             "rs_rating":           round(rs_norm, 4),
             "market_regime":       0,
             "sector_momentum":     0,
-            "spx_vs_ma200":        0.0,
-            "news_boost":          0.0,
+            "spx_vs_ma200":        round(spx_vs_ma200, 4),
+            "news_boost":          round(news_boost, 4),
             "close_to_ema20_ratio": close_to_ema20_ratio,
-            "unified_regime_enc":  2.0,  # default NEUTRAL; overwritten by run_daily.py
-            "macro_regime_enc":    2.0,  # default NORMAL
-            "market_breadth_50ma": 0.5,  # default unknown
+            "unified_regime_enc":  unified_regime_enc,
+            "macro_regime_enc":    macro_regime_enc,
+            "market_breadth_50ma": round(market_breadth_50ma, 4),
             "sector_encoded":      sector_enc,
+            "_momentum_12m_source": _momentum_12m_source,
         }
     except Exception:
         return None
@@ -1387,11 +1421,6 @@ def compute_target_weights(picks, market_regime, sector_sentiment=None,
     total_vol = sum(vol_wts)
     norm_vol  = [w / total_vol for w in vol_wts] if total_vol > 0 else [base_wt] * n_picks
 
-    # ── BLEND 40% Kelly + 60% Vol ─────────────────────────────────────────────
-    blended = [0.40 * norm_kelly[i] + 0.60 * norm_vol[i] for i in range(n_picks)]
-    total_b = sum(blended)
-    norm_b  = [w / total_b for w in blended] if total_b > 0 else [base_wt] * n_picks
-
     # ── ML-PROPORTIONAL WEIGHTING ────────────────────────────────────────────
     ml_probs = [p.get("ml_prob", 0.5) for p in picks[:n_picks]]
     total_ml = sum(ml_probs) or 1.0
@@ -1774,13 +1803,19 @@ def run_backtest_summary(regime, ml_predictor, verbose=True):
 # ============================================================
 
 def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
-                  sector_sentiment=None, win_rate_data=None, sharpe_multiplier=1.0):
+                  sector_sentiment=None, win_rate_data=None, sharpe_multiplier=1.0,
+                  regime_label=None, macro_regime_label=None):
     """
     Full ML engine run with score smoothing + Kelly sizing.
     win_rate_data: pass brief['win_rate'] from outcome_tracker for live Kelly calibration.
     sharpe_multiplier: rolling-Sharpe advisory multiplier on deployable capital
       (added 2026-08-10) -- see run_daily.py's early rolling-Sharpe computation,
       run before this so the multiplier is known before sizing happens.
+    regime_label/macro_regime_label: pass run_daily.py's early_regime/macro_regime
+      strings (2026-09 feature-skew fix) -- fed into build_features_for_stock so
+      the model's regime-context features reflect today's actual read instead of
+      a hardcoded constant. spx_vs_ma200 and market_breadth_50ma are derived
+      internally below from this function's own regime fetch and screener_picks.
     """
     if verbose:
         print("\n" + "="*55)
@@ -1816,6 +1851,11 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
               f"-- falling back to rules-based scoring for general-model picks this run")
 
     regime_num = 1 if regime["regime"] in ("BULL", "RECOVERY") else 0
+    # Live regime-context values for build_features_for_stock (2026-09 feature-
+    # skew fix) -- same raw sources outcome_tracker.log_picks() uses to capture
+    # training data, so train and serve finally read the same kind of number.
+    _spx_pct_for_ml     = regime.get("pct_above_ma", 0)
+    _breadth_pct_for_ml = (screener_picks.get("breadth") or {}).get("pct_above_50")
     _raw_picks = (
         screener_picks.get("FHSA_top5", []) +
         screener_picks.get("TFSA_growth_top5", []) +
@@ -1847,7 +1887,21 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         # without this write-back the gate reads "" → falls through to UNKNOWN.
         pick["sector_canonical"] = get_canonical_sector(pick)
 
-        features = build_features_for_stock(ticker, stock_data, rs)
+        features = build_features_for_stock(
+            ticker, stock_data, rs,
+            regime_label=regime_label, macro_regime_label=macro_regime_label,
+            spx_pct=_spx_pct_for_ml, market_breadth_pct=_breadth_pct_for_ml,
+            news_boost_raw=pick.get("news_adjustment", 0),
+        )
+        # Capture a real trailing 12mo momentum onto the pick's data dict so
+        # outcome_tracker.log_picks() (runs later, same pipeline) persists a
+        # real value instead of ml_retrainer.py fabricating momentum_12m as
+        # momentum_6m*1.4 for this pick once it resolves (2026-09 fix). Only
+        # when build_features_for_stock actually had real price history --
+        # its own thin-data fallback isn't "real" either, just a different
+        # fabrication, so it's excluded here rather than compounding it.
+        if features and features.get("_momentum_12m_source") == "real_price_history":
+            stock_data["momentum_12m_real"] = features["momentum_12m"]
         # FIX (2026-08-08): category lives nested under pick["pick"]["category"]
         # (see the {"ticker":..., "data":..., "pick": {...}} shape every
         # screener bucket builds in stock_screener.py's classify_pick() call
@@ -2223,7 +2277,14 @@ def run_ml_engine(screener_picks, rs_ratings, verbose=True, max_equity=1.0,
         for acct in accounts:
             acct_capital = float(acct.get("capital", 0))
             acct_name    = acct.get("name", "ACCOUNT")
-            _acct_def = {**acct, "max_equity": float(acct.get("max_equity", 1.0))}
+            # FIX (2026-09): this used to discard the regime-driven `max_equity`
+            # parameter entirely and use only the account's own static ceiling
+            # from accounts.json -- so early_regime/REGIME_MAX_EQUITY (Phase 2)
+            # never actually capped real dollars for any account listed there
+            # (TFSA's max_equity is a hardcoded 1.0), regardless of regime. The
+            # legacy no-accounts.json branch below already treated max_equity
+            # as an upper bound to combine, not replace -- min() matches that.
+            _acct_def = {**acct, "max_equity": min(float(acct.get("max_equity", 1.0)), max_equity)}
             alloc = render_allocations(
                 target_weights, _acct_def, regime,
                 current_drawdown=0.0,

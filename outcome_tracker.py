@@ -501,6 +501,12 @@ def log_picks(picks, run_time=None, regime=None, unified_regime=None,
             "perf_90d":      d.get("perf_90d", 0) or 0,      # → momentum_6m
             "perf_30d":      d.get("perf_30d", 0) or 0,      # → skip-period check
             "volatility":    d.get("volatility", 2.0) or 2.0,# → vol_adj_momentum
+            # Real trailing 12mo momentum, captured by ml_engine.py's
+            # build_features_for_stock() during this same run's ML scoring pass
+            # (2026-09 fix). None when that pass didn't have real price history
+            # either -- ml_retrainer.py falls back to its own fabricated
+            # momentum_6m*1.4 proxy only in that case, not as the default.
+            "momentum_12m_real": d.get("momentum_12m_real"),
 
             # ── ML features: quality / value ───────────────────────────────
             "roe":           d.get("roe", 0) or 0,
