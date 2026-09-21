@@ -1,6 +1,6 @@
 ---
 ticker: NA.TO
-updated: 2026-09-18
+updated: 2026-09-21
 streak_days: 3
 score_now: 66.0
 velocity: 0
