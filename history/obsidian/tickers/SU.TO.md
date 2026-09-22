@@ -1,6 +1,6 @@
 ---
 ticker: SU.TO
-updated: 2026-09-21
+updated: 2026-09-22
 streak_days: 6
 score_now: 100.0
 velocity: 0

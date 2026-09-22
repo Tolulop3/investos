@@ -1,6 +1,6 @@
 ---
 ticker: CM.TO
-updated: 2026-09-21
+updated: 2026-09-22
 streak_days: 5
 score_now: 70.8
 velocity: 0
