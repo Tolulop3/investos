@@ -44,8 +44,8 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| WCP.TO | 🟡 WATCH | 7d | — | 1.65 |
 | META | 🟡 WATCH | 8d | — | — |
+| WCP.TO | 🟡 WATCH | 7d | — | 1.65 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | GOOGL | 🟡 WATCH | 0d | +12.5 | 2.92 |
 
