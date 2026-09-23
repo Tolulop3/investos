@@ -1,6 +1,6 @@
 ---
 ticker: SLF.TO
-updated: 2026-09-22
+updated: 2026-09-23
 streak_days: 3
 score_now: 66.7
 velocity: 0
