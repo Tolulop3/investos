@@ -7,47 +7,47 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ⚠️ Sharpe improving 0.109/day — guard disengagement approaching
-- Breadth (200MA): 69.6%  (+0.00%/day)
+- Breadth (200MA): 69.2%  (-0.06%/day)
 - Sharpe: -0.465  (+0.109/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CM.TO** — 7d streak, avg score 67.8
 - **WCP.TO** — 7d streak, avg score 97.9
 - **ABBV** — 6d streak, avg score 98.7
-- **TD.TO** — 6d streak, avg score 83.5
-- **NA.TO** — 5d streak, avg score 64.5
+- **TD.TO** — 6d streak, avg score 83.3
+- **CM.TO** — 6d streak, avg score 69.0
 - **META** — 4d streak, avg score 100.0
 - **SU.TO** — 4d streak, avg score 100.0
+- **NA.TO** — 4d streak, avg score 64.8
 - **SLF.TO** — 4d streak, avg score 66.3
 - **CVX** — 3d streak, avg score 100.0
 - **COP** — 3d streak, avg score 93.8
 
 ## Score Velocity (rising/falling fast)
 - 📈 **NU** +18.9 pts/day  (50.0 → 87.7)
+- 📈 **CVE.TO** +17.5 pts/day  (50.0 → 85.0)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
-- 📈 **CVE.TO** +14.8 pts/day  (50.0 → 79.5)
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 86.4% of recent picks (19 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 85.0% of recent picks (17 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | NU | 🟡 WATCH | 0d | +18.9 | — |
 | NMIH | 🔴 AVOID | 0d | -17.5 | — |
+| CVE.TO | 🟡 WATCH | 0d | +17.5 | 0.65 |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| CVE.TO | 🟡 WATCH | 0d | +14.8 | 0.65 |
 | WCP.TO | 🟡 WATCH | 7d | — | 1.16 |
-| CM.TO | 🟡 WATCH | 7d | — | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
+| MMM | 🟡 WATCH | 0d | -12.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
