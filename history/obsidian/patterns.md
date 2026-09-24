@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ⚠️ Sharpe improving 0.114/day — guard disengagement approaching
-- Breadth (200MA): 69.6%  (+0.11%/day)
+- Breadth (200MA): 69.2%  (+0.06%/day)
 - Sharpe: -0.439  (+0.114/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -30,7 +30,7 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 85.7% of recent picks (12 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 81.2% of recent picks (13 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
