@@ -1,6 +1,6 @@
 ---
 ticker: COP
-updated: 2026-09-24
+updated: 2026-09-25
 streak_days: 3
 score_now: 93.8
 velocity: 0
