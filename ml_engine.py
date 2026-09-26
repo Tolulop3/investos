@@ -990,17 +990,19 @@ def get_cooldown_set(verbose=False):
                     blocked.add(_tkr_lc)
                     tiers[_tkr_lc] = "long_cd"
                 elif _entry_lc.get("auto_renew", False):
-                    # Block expired — check rolling WR from last 20 resolved picks
+                    # Block expired — check rolling WR from last 20 true-horizon-resolved
+                    # picks (not the 7-day proxy `resolved`/`outcome` fields — a 7-day
+                    # read is the wrong signal for a 90-day exclusion decision).
                     _threshold_lc = _entry_lc.get("renew_threshold_WR", 0.35)
                     _resolved_lc  = sorted(
                         [o for o in _lc_outcomes
                          if o.get("ticker") == _tkr_lc
-                         and o.get("resolved") is True
-                         and o.get("outcome") in ("WIN", "LOSS", "FLAT")],
-                        key=lambda x: x.get("resolved_date") or x.get("signal_date") or ""
+                         and o.get("true_horizon_resolved") is True
+                         and o.get("true_horizon_outcome") in ("WIN", "LOSS", "FLAT")],
+                        key=lambda x: x.get("true_horizon_date") or x.get("signal_date") or ""
                     )[-20:]
                     _rwr_lc = (
-                        sum(1 for o in _resolved_lc if o["outcome"] == "WIN") / len(_resolved_lc)
+                        sum(1 for o in _resolved_lc if o["true_horizon_outcome"] == "WIN") / len(_resolved_lc)
                         if _resolved_lc else 0.0
                     )
                     if _rwr_lc < _threshold_lc:
@@ -1021,6 +1023,51 @@ def get_cooldown_set(verbose=False):
             for _tkr_rm in _lc_to_remove:
                 del _lc_data[_tkr_rm]
                 _lc_modified = True
+
+            # ── Nominate new chronic losers ─────────────────────────────────
+            # The loop above only renews/clears tickers already present as keys
+            # in long_cooldowns.json -- nothing previously scanned outcomes_log.json
+            # for a ticker that was never added in the first place. Every existing
+            # entry traces back to a manual add during a past session. Close that
+            # gap: apply the same <35% rolling-WR rule to any ticker with enough
+            # true-horizon-resolved history to judge, that isn't already tracked.
+            _lc_min_n = 10  # more conservative than renewal -- no prior human vetting
+            _lc_by_ticker = {}
+            for o in _lc_outcomes:
+                if (o.get("true_horizon_resolved") is True
+                        and o.get("true_horizon_outcome") in ("WIN", "LOSS", "FLAT")
+                        and o.get("ticker")):
+                    _lc_by_ticker.setdefault(o["ticker"], []).append(o)
+
+            for _tkr_new, _picks_new in _lc_by_ticker.items():
+                if _tkr_new in _lc_data:
+                    continue  # already tracked -- handled by the renew/clear loop above
+                _picks_new = sorted(
+                    _picks_new,
+                    key=lambda x: x.get("true_horizon_date") or x.get("signal_date") or ""
+                )[-20:]
+                if len(_picks_new) < _lc_min_n:
+                    continue
+                _wr_new = sum(1 for o in _picks_new if o["true_horizon_outcome"] == "WIN") / len(_picks_new)
+                if _wr_new < 0.35:
+                    _rets_new = [o.get("true_horizon_return", 0) or 0 for o in _picks_new]
+                    _until_new = (_today_lc + _dtlc.timedelta(days=90)).isoformat()
+                    _lc_data[_tkr_new] = {
+                        "blocked_until": _until_new,
+                        "reason": "chronic_loser_auto",
+                        "n": len(_picks_new),
+                        "WR": round(_wr_new * 100, 1),
+                        "avg_return": round(sum(_rets_new) / len(_rets_new), 2),
+                        "auto_renew": True,
+                        "renew_threshold_WR": 0.35,
+                    }
+                    blocked.add(_tkr_new)
+                    tiers[_tkr_new] = "long_cd"
+                    _lc_modified = True
+                    print(f"  🆕 Long cooldown added: {_tkr_new} "
+                          f"(rolling WR {_wr_new:.0%} < 35% threshold over "
+                          f"{len(_picks_new)} true-horizon-resolved picks, "
+                          f"blocked until {_until_new})")
 
             if _lc_modified:
                 with open("long_cooldowns.json", "w") as _lc_f:

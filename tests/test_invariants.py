@@ -5455,3 +5455,116 @@ def test_fetch_recent_form4_distinguishes_fetch_failure_from_empty_result(monkey
     })
     result = ie.fetch_recent_form4("0000014272", days_back=30)
     assert result == [], "no Form 4s in the window -- must be [] (success, nothing found), not None"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Chronic-loser auto-nomination into long_cooldowns.json (FIX, 2026-09-26)
+# Bug: get_cooldown_set() only renewed/cleared tickers already present as keys
+# in long_cooldowns.json -- nothing ever scanned outcomes_log.json for a ticker
+# that was never added in the first place. Every existing entry traced back to
+# a manual add during a past session; chronic losers with real, well-sampled
+# true-horizon track records (RCI-B.TO n=42 WR=0%, BCE.TO n=19 WR=0%, etc.)
+# kept re-entering the universe every day, uncaught. Also: the renewal check
+# itself was reading the 7-day-proxy `resolved`/`outcome` fields instead of
+# `true_horizon_resolved`/`true_horizon_outcome` -- the wrong signal for a
+# 90-day exclusion decision.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _th_pick(ticker, outcome, ret=0.0, date="2026-06-01"):
+    return {
+        "ticker": ticker, "signal_date": date,
+        "resolved": True, "outcome": "WIN",  # proxy fields deliberately WRONG on purpose
+        "true_horizon_resolved": True, "true_horizon_outcome": outcome,
+        "true_horizon_return": ret, "true_horizon_date": date,
+    }
+
+
+def test_cooldown_nominates_chronic_loser_with_enough_sample(monkeypatch, tmp_path):
+    """15 true-horizon-resolved picks, WR=20% (well below 35%) -> auto-nominated."""
+    import ml_engine as mle
+    monkeypatch.chdir(tmp_path)
+    picks = [_th_pick("BADCO", "WIN" if i < 3 else "LOSS", ret=-5.0, date=f"2026-0{6+i//28}-{1+i%28:02d}")
+             for i in range(15)]
+    (tmp_path / "outcomes_log.json").write_text(__import__("json").dumps(picks))
+    (tmp_path / "long_cooldowns.json").write_text("{}")
+
+    blocked, tiers = mle.get_cooldown_set(verbose=False)
+
+    assert "BADCO" in blocked
+    assert tiers["BADCO"] == "long_cd"
+    saved = __import__("json").loads((tmp_path / "long_cooldowns.json").read_text())
+    assert saved["BADCO"]["reason"] == "chronic_loser_auto"
+    assert saved["BADCO"]["n"] == 15
+    assert saved["BADCO"]["auto_renew"] is True
+    assert saved["BADCO"]["renew_threshold_WR"] == 0.35
+
+
+def test_cooldown_does_not_nominate_below_min_sample(monkeypatch, tmp_path):
+    """8 picks, WR=0% -- fails WR bar but below the n=10 minimum, so NOT nominated
+    (an automated process has no prior human vetting behind it, unlike renewal)."""
+    import ml_engine as mle
+    monkeypatch.chdir(tmp_path)
+    picks = [_th_pick("THINCO", "LOSS", ret=-8.0, date=f"2026-06-{1+i:02d}") for i in range(8)]
+    (tmp_path / "outcomes_log.json").write_text(__import__("json").dumps(picks))
+    (tmp_path / "long_cooldowns.json").write_text("{}")
+
+    blocked, tiers = mle.get_cooldown_set(verbose=False)
+
+    assert "THINCO" not in blocked
+    saved = __import__("json").loads((tmp_path / "long_cooldowns.json").read_text())
+    assert "THINCO" not in saved
+
+
+def test_cooldown_does_not_nominate_healthy_ticker(monkeypatch, tmp_path):
+    """15 picks, WR=50% -- clears the bar, must not be nominated."""
+    import ml_engine as mle
+    monkeypatch.chdir(tmp_path)
+    picks = [_th_pick("GOODCO", "WIN" if i % 2 == 0 else "LOSS", ret=1.0, date=f"2026-06-{1+i:02d}")
+             for i in range(15)]
+    (tmp_path / "outcomes_log.json").write_text(__import__("json").dumps(picks))
+    (tmp_path / "long_cooldowns.json").write_text("{}")
+
+    blocked, tiers = mle.get_cooldown_set(verbose=False)
+
+    assert "GOODCO" not in blocked
+    saved = __import__("json").loads((tmp_path / "long_cooldowns.json").read_text())
+    assert "GOODCO" not in saved
+
+
+def test_cooldown_already_tracked_ticker_not_double_processed(monkeypatch, tmp_path):
+    """A ticker already present in long_cooldowns.json must go through the
+    renew/clear path only -- never re-evaluated by the nomination path."""
+    import ml_engine as mle
+    monkeypatch.chdir(tmp_path)
+    picks = [_th_pick("OLDCO", "LOSS", ret=-3.0, date=f"2026-06-{1+i:02d}") for i in range(15)]
+    (tmp_path / "outcomes_log.json").write_text(__import__("json").dumps(picks))
+    (tmp_path / "long_cooldowns.json").write_text(__import__("json").dumps({
+        "OLDCO": {"blocked_until": "2020-01-01", "reason": "chronic_loser", "n": 3,
+                  "WR": 0.0, "avg_return": -10.0, "auto_renew": True, "renew_threshold_WR": 0.35}
+    }))
+
+    blocked, tiers = mle.get_cooldown_set(verbose=False)
+
+    assert "OLDCO" in blocked
+    saved = __import__("json").loads((tmp_path / "long_cooldowns.json").read_text())
+    assert saved["OLDCO"]["reason"] == "chronic_loser"  # untouched by nomination, only renewed
+
+
+def test_cooldown_renewal_uses_true_horizon_not_7day_proxy(monkeypatch, tmp_path):
+    """An expired entry must renew based on true_horizon_outcome, not the 7-day
+    proxy `outcome` field -- even when the proxy field says WIN, a true-horizon
+    LOSS record must still trigger renewal."""
+    import ml_engine as mle
+    monkeypatch.chdir(tmp_path)
+    picks = [_th_pick("PROXYCO", "LOSS", ret=-4.0, date=f"2026-06-{1+i:02d}") for i in range(20)]
+    (tmp_path / "outcomes_log.json").write_text(__import__("json").dumps(picks))
+    (tmp_path / "long_cooldowns.json").write_text(__import__("json").dumps({
+        "PROXYCO": {"blocked_until": "2020-01-01", "reason": "chronic_loser", "n": 20,
+                    "WR": 0.0, "avg_return": -4.0, "auto_renew": True, "renew_threshold_WR": 0.35}
+    }))
+
+    blocked, tiers = mle.get_cooldown_set(verbose=False)
+
+    assert "PROXYCO" in blocked, "true-horizon LOSS records must drive renewal even though the proxy `outcome` field says WIN"
+    saved = __import__("json").loads((tmp_path / "long_cooldowns.json").read_text())
+    assert saved["PROXYCO"]["blocked_until"] > "2026-01-01"  # renewed 90 days out, not cleared
