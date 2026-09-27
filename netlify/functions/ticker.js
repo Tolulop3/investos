@@ -4,7 +4,7 @@
 // SECURITY:
 //   - Requires x-investos-key header matching INVESTOS_API_KEY (dashboard) or
 //     INVESTOS_API_KEY_VETT (VETT extension) env var — or a valid Origin
-//   - CORS restricted to investos-proxy.netlify.app only
+//   - CORS restricted to ALLOWED_ORIGINS (Netlify site + GitHub Pages dashboard)
 //   - Input sanitized: uppercase, whitespace stripped, length capped
 //   - No stack traces in error responses
 //   - Set INVESTOS_API_KEY / INVESTOS_API_KEY_VETT in Netlify → Site
@@ -27,8 +27,14 @@ const https = require('https');
 const { getStore } = require('@netlify/blobs');
 const { checkRateLimit } = require('./_rateLimiter');
 
-// ── Allowed origin (your Netlify site only) ──────────────────────────────────
-const ALLOWED_ORIGIN = 'https://investos-proxy.netlify.app';
+// ── Allowed origins ──────────────────────────────────────────────────────────
+// The live dashboard is served from GitHub Pages (tolulop3.github.io), not
+// the Netlify site — with only the Netlify origin listed, every Lookup from
+// the real dashboard got ACAO 'null' and was CORS-blocked (fixed 2026-09-27).
+const ALLOWED_ORIGINS = [
+  'https://investos-proxy.netlify.app',
+  'https://tolulop3.github.io',
+];
 
 function httpsGet(url, headers) {
   return new Promise((resolve, reject) => {
@@ -46,13 +52,15 @@ function httpsGet(url, headers) {
 exports.handler = async function(event) {
   // ── CORS headers — restricted to your site only ──────────────────────────
   const origin = event.headers && (event.headers.origin || event.headers.Origin);
-  const corsOrigin = (origin === ALLOWED_ORIGIN) ? ALLOWED_ORIGIN : 'null';
+  const originIsValid = ALLOWED_ORIGINS.includes(origin);
+  const corsOrigin = originIsValid ? origin : 'null';
 
   const cors = {
     'Access-Control-Allow-Origin':  corsOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, x-investos-key',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json',
+    'Vary': 'Origin',
   };
 
   // ── Handle CORS preflight ─────────────────────────────────────────────────
@@ -72,7 +80,6 @@ exports.handler = async function(event) {
     event.headers['X-Investos-Key']
   );
 
-  const originIsValid = (corsOrigin === ALLOWED_ORIGIN);
   const vettKeyMatch      = !!providedKey && !!expectedVettKey && providedKey === expectedVettKey;
   const dashboardKeyMatch = !!providedKey && !!expectedDashboardKey && providedKey === expectedDashboardKey;
 

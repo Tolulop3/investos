@@ -23,12 +23,13 @@
     Referrer-Policy            = "no-referrer"
     Permissions-Policy         = "geolocation=(), camera=(), microphone=()"
 
-# ── API routes: restricted CORS — only your own site ─────────────────────────
-# Note: origin check is also enforced inside ticker.js itself (double protection)
+# ── API routes: restricted CORS ──────────────────────────────────────────────
+# Access-Control-Allow-Origin is set per-request by ticker.js (echoes the
+# caller's origin if it's in ALLOWED_ORIGINS) — a single static value here
+# can't express two allowed origins (Netlify site + GitHub Pages dashboard).
 [[headers]]
   for = "/api/*"
   [headers.values]
-    Access-Control-Allow-Origin  = "https://investos-proxy.netlify.app"
     Access-Control-Allow-Methods = "GET, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, x-investos-key"
 

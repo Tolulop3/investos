@@ -10,7 +10,7 @@
 // Lambda runtime netlify/functions/ uses), which is what actually gates
 // the invocation itself.
 //
-// Mirrors ticker.js's exact auth logic (same ALLOWED_ORIGIN, same
+// Mirrors ticker.js's exact auth logic (same ALLOWED_ORIGINS, same
 // key-or-origin fallback) so behaviour for legitimate callers is
 // unchanged -- this only removes the billed round-trip for callers that
 // were already getting rejected, it doesn't change who's authorised.
@@ -40,7 +40,11 @@
 // free. Revisit if Blobs-from-edge is confirmed to work the same way.
 // ─────────────────────────────────────────────────────────────────────────
 
-const ALLOWED_ORIGIN = 'https://investos-proxy.netlify.app';
+// Keep in sync with ticker.js's ALLOWED_ORIGINS.
+const ALLOWED_ORIGINS = [
+  'https://investos-proxy.netlify.app',
+  'https://tolulop3.github.io',
+];
 
 export default async (request, context) => {
   // CORS preflight must always reach the origin untouched -- ticker.js
@@ -51,7 +55,7 @@ export default async (request, context) => {
   }
 
   const origin = request.headers.get('origin');
-  const originIsValid = origin === ALLOWED_ORIGIN;
+  const originIsValid = ALLOWED_ORIGINS.includes(origin);
 
   const expectedDashboardKey = Netlify.env.get('INVESTOS_API_KEY');
   const expectedVettKey      = Netlify.env.get('INVESTOS_API_KEY_VETT');

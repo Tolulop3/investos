@@ -3382,6 +3382,9 @@ results.options_no_auth = await run(
 results.valid_origin_no_key = await run(
   new Request('https://x/api/ticker?s=AAPL', { headers: { origin: ORIGIN } }));
 
+results.pages_origin_no_key = await run(
+  new Request('https://x/api/ticker?s=AAPL', { headers: { origin: 'https://tolulop3.github.io' } }));
+
 results.wrong_origin_correct_key = await run(
   new Request('https://x/api/ticker?s=AAPL', {
     headers: { origin: 'https://evil.example.com', 'x-investos-key': 'real-secret-key' } }));
@@ -3417,7 +3420,8 @@ console.log(JSON.stringify(results));
     results = _json.loads(proc.stdout.strip().splitlines()[-1])
 
     assert results["options_no_auth"] == 200, "OPTIONS preflight must always pass through"
-    assert results["valid_origin_no_key"] == 200, "valid ALLOWED_ORIGIN must be authorised"
+    assert results["valid_origin_no_key"] == 200, "valid ALLOWED_ORIGINS entry must be authorised"
+    assert results["pages_origin_no_key"] == 200, "GitHub Pages dashboard origin must be authorised -- it's where the live dashboard is served"
     assert results["wrong_origin_correct_key"] == 200, "correct INVESTOS_API_KEY must authorise even with wrong origin"
     assert results["wrong_origin_correct_vett_key"] == 200, "correct INVESTOS_API_KEY_VETT must authorise even with wrong origin -- VETT's key is independent of the dashboard's"
     assert results["wrong_origin_wrong_key"] == 401, "wrong origin + wrong key must be rejected pre-invocation"
