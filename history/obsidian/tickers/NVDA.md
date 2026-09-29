@@ -1,8 +1,8 @@
 ---
 ticker: NVDA
 updated: 2026-09-29
-streak_days: 8
-score_now: 92.6
+streak_days: 6
+score_now: 92.7
 velocity: -6.75
 pf_30d: None
 picks_30d: 2
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # NVDA — Pattern Log
 
 ## Streak
-Appeared in picks **8 of last 7 days**.
-Avg score: 92.6
-Dates: 2026-09-24, 2026-09-24, 2026-09-25, 2026-09-25, 2026-09-28, 2026-09-28, 2026-09-29, 2026-09-29
+Appeared in picks **6 of last 7 days**.
+Avg score: 92.7
+Dates: 2026-09-24, 2026-09-24, 2026-09-25, 2026-09-25, 2026-09-28, 2026-09-28
 
 ## Score Velocity
 📉 **FALLING** at -6.8 pts/day

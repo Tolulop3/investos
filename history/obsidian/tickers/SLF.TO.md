@@ -2,7 +2,7 @@
 ticker: SLF.TO
 updated: 2026-09-29
 streak_days: 6
-score_now: 63.3
+score_now: 63.7
 velocity: 0
 pf_30d: None
 picks_30d: 4
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **6 of last 7 days**.
-Avg score: 63.3
+Avg score: 63.7
 Dates: 2026-09-21, 2026-09-22, 2026-09-23, 2026-09-24, 2026-09-28, 2026-09-29
 
 ---
