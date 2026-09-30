@@ -6,13 +6,13 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-09-30
 
 ## Regime Drift
-- ⚠️ Breadth declining -1.0%/day — watch for regime shift if sustained
+- ⚠️ Breadth declining -1.3%/day — watch for regime shift if sustained
 - ⚠️ Sharpe improving 0.126/day — guard disengagement approaching
-- Breadth (200MA): 64.3%  (-0.99%/day)
+- Breadth (200MA): 62.2%  (-1.29%/day)
 - Sharpe: -0.399  (+0.126/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **NVDA** — 8d streak, avg score 92.4
+- **NVDA** — 6d streak, avg score 92.7
 - **CNQ.TO** — 6d streak, avg score 95.8
 - **SLF.TO** — 5d streak, avg score 63.5
 - **XOM** — 5d streak, avg score 93.9
@@ -29,7 +29,7 @@ tags: [investos, patterns, weekly]
 - 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 68.4% of recent picks (13 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 70.6% of recent picks (12 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -39,10 +39,10 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| NVDA | 🟡 WATCH | 8d | — | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
+| NVDA | 🟡 WATCH | 6d | — | — |
 | CNQ.TO | 🟡 WATCH | 6d | — | 0.75 |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
