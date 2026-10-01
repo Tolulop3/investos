@@ -1,11 +1,11 @@
 ---
 ticker: NVDA
-updated: 2026-09-30
+updated: 2026-10-01
 streak_days: 6
 score_now: 92.7
 velocity: 0
 pf_30d: None
-picks_30d: 2
+picks_30d: 3
 tags: [investos, ticker, pattern]
 ---
 
