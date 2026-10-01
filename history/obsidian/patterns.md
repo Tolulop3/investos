@@ -6,18 +6,18 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-10-01
 
 ## Regime Drift
-- ✅ Regime stable — no drift signals
-- Breadth (200MA): 66.1%  (-0.44%/day)
-- Sharpe: -0.398  (+0.010/day)
+- ⚠️ Breadth declining -1.1%/day — watch for regime shift if sustained
+- Breadth (200MA): 61.3%  (-1.13%/day)
+- Sharpe: -0.411  (+0.008/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **XOM** — 7d streak, avg score 95.6
+- **CNQ.TO** — 8d streak, avg score 94.8
+- **XOM** — 7d streak, avg score 92.7
 - **NVDA** — 6d streak, avg score 92.7
-- **CNQ.TO** — 6d streak, avg score 95.8
 - **SLF.TO** — 4d streak, avg score 63.2
 - **TD.TO** — 3d streak, avg score 66.6
 - **ABBV** — 3d streak, avg score 80.0
-- **JPM** — 3d streak, avg score 77.6
+- **JPM** — 3d streak, avg score 87.9
 
 ## Score Velocity (rising/falling fast)
 - 📈 **NU** +18.9 pts/day  (50.0 → 87.7)
@@ -30,7 +30,7 @@ tags: [investos, patterns, weekly]
 - 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 75.0% of recent picks (12 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 65.0% of recent picks (13 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -40,7 +40,7 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| TD.TO | 🟡 WATCH | 3d | -7.6 | 1.79 |
+| CNQ.TO | 🟡 WATCH | 8d | — | 0.4 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | XOM | 🟡 WATCH | 7d | — | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
