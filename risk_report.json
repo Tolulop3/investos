@@ -1,5 +1,5 @@
 {
-  "date": "September 30, 2026",
+  "date": "October 01, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,21 +9,21 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-09-30T20:23:40.036817",
+    "run_at": "2026-10-01T00:26:54.345902",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 13,
-        "survived": 8,
-        "survival_pct": 61.5,
+        "survived": 7,
+        "survival_pct": 53.8,
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "5 picks unviable after doubling costs"
+        "note": "6 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 13,
-        "survived": 10,
-        "survival_pct": 76.9,
+        "survived": 9,
+        "survival_pct": 69.2,
         "verdict": "\u26a0\ufe0f FRAGILE",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
@@ -32,57 +32,57 @@
         "normal_count": 13,
         "survived": 10,
         "survival_pct": 76.9,
-        "avg_score_change": 2.8,
+        "avg_score_change": 2.9,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b12.8 pts with 10% noise"
+        "note": "Avg score change: \u00b12.9 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 71.8,
-        "stressed_avg": 59.9,
-        "score_drop": 11.9,
+        "normal_avg": 69.1,
+        "stressed_avg": 59.2,
+        "score_drop": 9.9,
         "removed": [
-          "XOM",
-          "GOOGL",
-          "ABBV",
+          "MU",
           "WCP.TO",
-          "MU"
+          "ABBV",
+          "XOM",
+          "GOOGL"
         ],
-        "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 11.9 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 9.9 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 13,
         "survived": 10,
         "survival_pct": 76.9,
-        "avg_score_drop": 2.0,
+        "avg_score_drop": 1.6,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.0 pts"
+        "note": "If momentum stops working: avg score drops 1.6 pts"
       }
     },
     "summary": {
       "normal_picks": 13,
-      "normal_avg_score": 71.8,
+      "normal_avg_score": 69.1,
       "scenarios_robust": 2,
-      "scenarios_fragile": 2,
-      "scenarios_broken": 1,
+      "scenarios_fragile": 3,
+      "scenarios_broken": 0,
       "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
     "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
   },
   "decay_monitor": {
-    "date": "September 30, 2026",
+    "date": "October 01, 2026",
     "robustness_score": 15,
     "rolling_sharpe": {
-      "sharpe": -0.399,
-      "avg_ret_pct": -0.22,
-      "std_ret_pct": 3.91,
-      "picks_used": 1114,
-      "date_from": "2026-07-02",
+      "sharpe": -0.398,
+      "avg_ret_pct": -0.21,
+      "std_ret_pct": 3.89,
+      "picks_used": 1087,
+      "date_from": "2026-07-03",
       "date_to": "2026-09-30",
       "source": "resolved_returns",
-      "note": "Sharpe from 1114 resolved picks (2026-07-02 \u2192 2026-09-30) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 1087 resolved picks (2026-07-03 \u2192 2026-09-30) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": -1.46,
@@ -93,7 +93,7 @@
       "sharpe": 0.54,
       "symbol": "^GSPC"
     },
-    "alpha": -0.939,
+    "alpha": -0.938,
     "neg_alpha_days": 86,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
