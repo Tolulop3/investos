@@ -1,23 +1,23 @@
 {
-  "retrained_at": "2026-09-25T19:42:25.459307",
-  "n_rows": 3018,
+  "retrained_at": "2026-10-02T20:13:25.709748",
+  "n_rows": 3071,
   "n_train": 1827,
-  "n_val": 1191,
+  "n_val": 1244,
   "holdout_cutoff_date": "2026-06-19",
-  "holdout_auc": 0.5135,
-  "cv_auc_mean": 0.5925,
-  "cv_auc_std": 0.0929,
+  "holdout_auc": 0.5082,
+  "cv_auc_mean": 0.5796,
+  "cv_auc_std": 0.0983,
   "feature_importance": {
-    "profit_margin": 0.3069,
-    "momentum_12m": 0.2364,
-    "momentum_6m": 0.1921,
-    "vol_adj_momentum": 0.0978,
-    "div_yield": 0.0479,
-    "rs_rating": 0.0376,
-    "roe": 0.0268,
-    "rev_growth": 0.0189,
-    "fcf_yield": 0.0186,
-    "earn_growth": 0.017,
+    "profit_margin": 0.3026,
+    "momentum_12m": 0.2308,
+    "momentum_6m": 0.1827,
+    "vol_adj_momentum": 0.089,
+    "div_yield": 0.0641,
+    "roe": 0.0373,
+    "rs_rating": 0.0305,
+    "fcf_yield": 0.028,
+    "rev_growth": 0.0193,
+    "earn_growth": 0.0155,
     "earnings_yield": 0.0,
     "volatility_90d": 0.0,
     "beta": 0.0,
@@ -30,29 +30,29 @@
   },
   "calibration_check": {
     "Q1": {
-      "mean_pred_prob": 0.355,
-      "actual_win_rate": 0.358,
-      "count": 604
+      "mean_pred_prob": 0.359,
+      "actual_win_rate": 0.367,
+      "count": 615
     },
     "Q2": {
-      "mean_pred_prob": 0.465,
-      "actual_win_rate": 0.449,
-      "count": 603
+      "mean_pred_prob": 0.47,
+      "actual_win_rate": 0.436,
+      "count": 614
     },
     "Q3": {
-      "mean_pred_prob": 0.528,
-      "actual_win_rate": 0.497,
-      "count": 604
+      "mean_pred_prob": 0.531,
+      "actual_win_rate": 0.502,
+      "count": 614
     },
     "Q4": {
-      "mean_pred_prob": 0.621,
-      "actual_win_rate": 0.499,
-      "count": 603
+      "mean_pred_prob": 0.629,
+      "actual_win_rate": 0.513,
+      "count": 614
     },
     "Q5": {
-      "mean_pred_prob": 0.771,
-      "actual_win_rate": 0.69,
-      "count": 604
+      "mean_pred_prob": 0.776,
+      "actual_win_rate": 0.676,
+      "count": 614
     }
   },
   "features_used": [
@@ -78,5 +78,5 @@
   ],
   "label_definition": "actual_return > median(actual_return)",
   "deployed": false,
-  "rejected_reason": "holdout_auc 0.5135 < minimum 0.53"
+  "rejected_reason": "holdout_auc 0.5082 < minimum 0.53"
 }
