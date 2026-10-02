@@ -2,7 +2,7 @@
 ticker: ABBV
 updated: 2026-10-02
 streak_days: 4
-score_now: 80.5
+score_now: 79.8
 velocity: 0
 pf_30d: None
 picks_30d: 3
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **4 of last 7 days**.
-Avg score: 80.5
+Avg score: 79.8
 Dates: 2026-09-29, 2026-09-30, 2026-10-01, 2026-10-02
 
 ---

@@ -6,16 +6,16 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-10-02
 
 ## Regime Drift
-- ⚠️ Breadth declining -1.1%/day — watch for regime shift if sustained
-- Breadth (200MA): 61.7%  (-1.07%/day)
-- Sharpe: -0.436  (+0.000/day)
+- ⚠️ Breadth declining -0.9%/day — watch for regime shift if sustained
+- Breadth (200MA): 63.0%  (-0.89%/day)
+- Sharpe: -0.431  (+0.001/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CNQ.TO** — 10d streak, avg score 94.2
-- **XOM** — 9d streak, avg score 94.3
+- **CNQ.TO** — 10d streak, avg score 95.8
+- **XOM** — 7d streak, avg score 92.7
 - **NVDA** — 6d streak, avg score 92.7
-- **ABBV** — 4d streak, avg score 80.5
-- **JPM** — 4d streak, avg score 88.9
+- **ABBV** — 4d streak, avg score 79.8
+- **JPM** — 4d streak, avg score 87.9
 - **SLF.TO** — 3d streak, avg score 62.5
 
 ## Score Velocity (rising/falling fast)
@@ -36,12 +36,12 @@ tags: [investos, patterns, weekly]
 |--------|--------|--------|----------|----|
 | CNQ.TO | 🟡 WATCH | 10d | — | 0.4 |
 | NU | 🟡 WATCH | 0d | +18.9 | — |
-| XOM | 🟡 WATCH | 9d | — | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
+| XOM | 🟡 WATCH | 7d | — | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
 
