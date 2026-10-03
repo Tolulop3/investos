@@ -1,9 +1,9 @@
 ---
 ticker: JPM
-updated: 2026-10-02
-streak_days: 4
+updated: 2026-10-03
+streak_days: 5
 score_now: 87.9
-velocity: 0
+velocity: -5.05
 pf_30d: 0.0
 picks_30d: 6
 tags: [investos, ticker, pattern]
@@ -12,9 +12,13 @@ tags: [investos, ticker, pattern]
 # JPM — Pattern Log
 
 ## Streak
-Appeared in picks **4 of last 7 days**.
+Appeared in picks **5 of last 7 days**.
 Avg score: 87.9
-Dates: 2026-09-29, 2026-09-30, 2026-10-01, 2026-10-02
+Dates: 2026-09-29, 2026-09-30, 2026-10-01, 2026-10-02, 2026-10-03
+
+## Score Velocity
+📉 **FALLING** at -5.0 pts/day
+Score: 92.0 → 81.9 (Δ -10.1 over 3 days)
 
 ## Recent Performance (last 30d)
 Profit Factor: **0.0** 🔴  |  n=6 picks

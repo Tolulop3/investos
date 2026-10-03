@@ -1,6 +1,6 @@
 ---
 ticker: XOM
-updated: 2026-10-02
+updated: 2026-10-03
 streak_days: 7
 score_now: 92.7
 velocity: 0
