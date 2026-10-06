@@ -897,6 +897,73 @@ class StockMLPredictor:
 # POSITION SIZER — Half-Kelly + Vol Targeting
 # ============================================================
 
+_LC_MIN_N         = 10    # nomination only: no prior human vetting behind it, unlike renewal
+_LC_PF_FLOOR      = 0.5
+_LC_AVG_RET_FLOOR = -3.0  # percent
+
+
+def _lc_judge(picks, wr_threshold=0.35):
+    """
+    Judge one ticker's true-horizon-resolved picks for the 90-day long cooldown.
+    Shared by renewal and nomination so the two can't drift apart.
+
+    Window = last 20 picks that have a finite true_horizon_return (a NaN row has no
+    information and previously poisoned the mean). Chronic if win rate is under the
+    threshold, OR profit factor is under _LC_PF_FLOOR with a clearly negative average
+    return -- the second leg catches "wins often enough, loses far bigger" (AEM.TO:
+    35% WR, PF 0.12, -10.2% avg), which a win-rate-only rule can't see.
+
+    Returns {n, wr (fraction), avg_return (%), pf, is_chronic, why}; pf is None when
+    there are no losing picks.
+    """
+    import math as _m
+    rows = []
+    for o in picks:
+        r = o.get("true_horizon_return")
+        if isinstance(r, (int, float)) and not isinstance(r, bool) and _m.isfinite(r):
+            rows.append((o.get("true_horizon_date") or o.get("signal_date") or "", o, float(r)))
+    rows.sort(key=lambda x: x[0])
+    rows = rows[-20:]
+    n = len(rows)
+    if n == 0:
+        return {"n": 0, "wr": 0.0, "avg_return": None, "pf": None,
+                "is_chronic": True, "why": "wr"}
+    wr   = sum(1 for _, o, _r in rows if o.get("true_horizon_outcome") == "WIN") / n
+    rets = [r for _, _o, r in rows]
+    avg  = sum(rets) / n
+    gain = sum(r for r in rets if r > 0)
+    loss = -sum(r for r in rets if r < 0)
+    pf   = (gain / loss) if loss > 0 else None
+    why = None
+    if wr < wr_threshold:
+        why = "wr"
+    elif pf is not None and pf < _LC_PF_FLOOR and avg < _LC_AVG_RET_FLOOR:
+        why = "pf"
+    return {"n": n, "wr": wr, "avg_return": avg, "pf": pf,
+            "is_chronic": why is not None, "why": why}
+
+
+def _lc_clean_entry(entry):
+    """Replace non-finite floats in a long_cooldowns entry with None (NaN/Infinity are
+    invalid JSON for strict parsers). Returns True if anything was changed."""
+    import math as _m
+    changed = False
+    for k, v in list(entry.items()):
+        if isinstance(v, float) and not _m.isfinite(v):
+            entry[k] = None
+            changed = True
+    return changed
+
+
+def _lc_entry_stats(j):
+    return {
+        "n": j["n"],
+        "WR": round(j["wr"] * 100, 1),
+        "avg_return": None if j["avg_return"] is None else round(j["avg_return"], 2),
+        "PF": None if j["pf"] is None else round(j["pf"], 2),
+    }
+
+
 def get_cooldown_set(verbose=False):
     """
     Compute tiered loss cooldown set from outcomes_log.json.
@@ -983,6 +1050,22 @@ def get_cooldown_set(verbose=False):
             except Exception:
                 pass
 
+            # Heal any non-finite metadata already in the file (a NaN avg_return was
+            # written once; NaN is invalid JSON for strict parsers). List comprehension,
+            # not any(): every entry must be cleaned, not just up to the first hit.
+            if any([_lc_clean_entry(_e) for _e in _lc_data.values()]):
+                _lc_modified = True
+
+            # Group true-horizon-resolved picks by ticker once (not the 7-day proxy
+            # `resolved`/`outcome` fields -- a 7-day read is the wrong signal for a
+            # 90-day exclusion decision).
+            _lc_by_ticker = {}
+            for o in _lc_outcomes:
+                if (o.get("true_horizon_resolved") is True
+                        and o.get("true_horizon_outcome") in ("WIN", "LOSS", "FLAT")
+                        and o.get("ticker")):
+                    _lc_by_ticker.setdefault(o["ticker"], []).append(o)
+
             for _tkr_lc, _entry_lc in list(_lc_data.items()):
                 _blocked_until_lc = _entry_lc.get("blocked_until", "")
                 if _today_str_lc <= _blocked_until_lc:
@@ -990,34 +1073,27 @@ def get_cooldown_set(verbose=False):
                     blocked.add(_tkr_lc)
                     tiers[_tkr_lc] = "long_cd"
                 elif _entry_lc.get("auto_renew", False):
-                    # Block expired — check rolling WR from last 20 true-horizon-resolved
-                    # picks (not the 7-day proxy `resolved`/`outcome` fields — a 7-day
-                    # read is the wrong signal for a 90-day exclusion decision).
+                    # Block expired — re-judge on the last 20 true-horizon picks
                     _threshold_lc = _entry_lc.get("renew_threshold_WR", 0.35)
-                    _resolved_lc  = sorted(
-                        [o for o in _lc_outcomes
-                         if o.get("ticker") == _tkr_lc
-                         and o.get("true_horizon_resolved") is True
-                         and o.get("true_horizon_outcome") in ("WIN", "LOSS", "FLAT")],
-                        key=lambda x: x.get("true_horizon_date") or x.get("signal_date") or ""
-                    )[-20:]
-                    _rwr_lc = (
-                        sum(1 for o in _resolved_lc if o["true_horizon_outcome"] == "WIN") / len(_resolved_lc)
-                        if _resolved_lc else 0.0
-                    )
-                    if _rwr_lc < _threshold_lc:
+                    _j_lc = _lc_judge(_lc_by_ticker.get(_tkr_lc, []), _threshold_lc)
+                    if _j_lc["is_chronic"]:
                         _new_until_lc = (_today_lc + _dtlc.timedelta(days=90)).isoformat()
                         _lc_data[_tkr_lc]["blocked_until"] = _new_until_lc
+                        if _j_lc["n"] > 0:   # keep the file's stats honest; skip when no data
+                            _lc_data[_tkr_lc].update(_lc_entry_stats(_j_lc))
                         blocked.add(_tkr_lc)
                         tiers[_tkr_lc] = "long_cd"
                         _lc_modified = True
+                        _why_lc = (f"rolling WR {_j_lc['wr']:.0%} < {_threshold_lc:.0%} threshold"
+                                   if _j_lc["why"] == "wr" else
+                                   f"PF {_j_lc['pf']:.2f} < {_LC_PF_FLOOR} with avg return "
+                                   f"{_j_lc['avg_return']:+.1f}%")
                         print(f"  🔄 Long cooldown renewed: {_tkr_lc} "
-                              f"(rolling WR {_rwr_lc:.0%} < {_threshold_lc:.0%} threshold, "
-                              f"blocked until {_new_until_lc})")
+                              f"({_why_lc}, blocked until {_new_until_lc})")
                     else:
                         _lc_to_remove.append(_tkr_lc)
                         print(f"  ✅ Long cooldown cleared: {_tkr_lc} "
-                              f"(rolling WR {_rwr_lc:.0%} >= {_threshold_lc:.0%} threshold, "
+                              f"(rolling WR {_j_lc['wr']:.0%} >= {_threshold_lc:.0%} threshold, "
                               f"returning to universe)")
 
             for _tkr_rm in _lc_to_remove:
@@ -1029,45 +1105,32 @@ def get_cooldown_set(verbose=False):
             # in long_cooldowns.json -- nothing previously scanned outcomes_log.json
             # for a ticker that was never added in the first place. Every existing
             # entry traces back to a manual add during a past session. Close that
-            # gap: apply the same <35% rolling-WR rule to any ticker with enough
-            # true-horizon-resolved history to judge, that isn't already tracked.
-            _lc_min_n = 10  # more conservative than renewal -- no prior human vetting
-            _lc_by_ticker = {}
-            for o in _lc_outcomes:
-                if (o.get("true_horizon_resolved") is True
-                        and o.get("true_horizon_outcome") in ("WIN", "LOSS", "FLAT")
-                        and o.get("ticker")):
-                    _lc_by_ticker.setdefault(o["ticker"], []).append(o)
-
+            # gap: apply the same chronic-loser test (_lc_judge) to any ticker with
+            # enough true-horizon-resolved history to judge, that isn't already tracked.
             for _tkr_new, _picks_new in _lc_by_ticker.items():
                 if _tkr_new in _lc_data:
                     continue  # already tracked -- handled by the renew/clear loop above
-                _picks_new = sorted(
-                    _picks_new,
-                    key=lambda x: x.get("true_horizon_date") or x.get("signal_date") or ""
-                )[-20:]
-                if len(_picks_new) < _lc_min_n:
+                _j_new = _lc_judge(_picks_new, 0.35)
+                if _j_new["n"] < _LC_MIN_N or not _j_new["is_chronic"]:
                     continue
-                _wr_new = sum(1 for o in _picks_new if o["true_horizon_outcome"] == "WIN") / len(_picks_new)
-                if _wr_new < 0.35:
-                    _rets_new = [o.get("true_horizon_return", 0) or 0 for o in _picks_new]
-                    _until_new = (_today_lc + _dtlc.timedelta(days=90)).isoformat()
-                    _lc_data[_tkr_new] = {
-                        "blocked_until": _until_new,
-                        "reason": "chronic_loser_auto",
-                        "n": len(_picks_new),
-                        "WR": round(_wr_new * 100, 1),
-                        "avg_return": round(sum(_rets_new) / len(_rets_new), 2),
-                        "auto_renew": True,
-                        "renew_threshold_WR": 0.35,
-                    }
-                    blocked.add(_tkr_new)
-                    tiers[_tkr_new] = "long_cd"
-                    _lc_modified = True
-                    print(f"  🆕 Long cooldown added: {_tkr_new} "
-                          f"(rolling WR {_wr_new:.0%} < 35% threshold over "
-                          f"{len(_picks_new)} true-horizon-resolved picks, "
-                          f"blocked until {_until_new})")
+                _until_new = (_today_lc + _dtlc.timedelta(days=90)).isoformat()
+                _lc_data[_tkr_new] = {
+                    "blocked_until": _until_new,
+                    "reason": "chronic_loser_auto",
+                    **_lc_entry_stats(_j_new),
+                    "auto_renew": True,
+                    "renew_threshold_WR": 0.35,
+                }
+                blocked.add(_tkr_new)
+                tiers[_tkr_new] = "long_cd"
+                _lc_modified = True
+                _why_new = (f"rolling WR {_j_new['wr']:.0%} < 35% threshold"
+                            if _j_new["why"] == "wr" else
+                            f"PF {_j_new['pf']:.2f} < {_LC_PF_FLOOR} with avg return "
+                            f"{_j_new['avg_return']:+.1f}%")
+                print(f"  🆕 Long cooldown added: {_tkr_new} "
+                      f"({_why_new} over {_j_new['n']} true-horizon-resolved picks, "
+                      f"blocked until {_until_new})")
 
             if _lc_modified:
                 with open("long_cooldowns.json", "w") as _lc_f:
