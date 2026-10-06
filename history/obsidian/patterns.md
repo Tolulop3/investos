@@ -7,17 +7,17 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 63.7%  (-0.47%/day)
-- Sharpe: -0.419  (+0.004/day)
+- Breadth (200MA): 65.6%  (-0.20%/day)
+- Sharpe: -0.392  (+0.007/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CNQ.TO** — 12d streak, avg score 95.8
-- **XOM** — 8d streak, avg score 91.9
+- **XOM** — 8d streak, avg score 91.5
 - **ABBV** — 5d streak, avg score 79.4
 - **JPM** — 5d streak, avg score 87.9
 - **MU** — 5d streak, avg score 100.0
 - **TGT** — 4d streak, avg score 100.0
-- **EOG** — 3d streak, avg score 84.7
+- **EOG** — 3d streak, avg score 84.8
 
 ## Score Velocity (rising/falling fast)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
@@ -30,7 +30,7 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 61.9% of recent picks (13 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 63.6% of recent picks (14 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
