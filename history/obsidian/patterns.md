@@ -12,12 +12,12 @@ tags: [investos, patterns, weekly]
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CNQ.TO** — 12d streak, avg score 95.8
-- **XOM** — 8d streak, avg score 91.5
+- **XOM** — 9d streak, avg score 90.9
 - **ABBV** — 5d streak, avg score 79.4
 - **JPM** — 5d streak, avg score 87.9
 - **MU** — 5d streak, avg score 100.0
 - **TGT** — 4d streak, avg score 100.0
-- **EOG** — 3d streak, avg score 84.8
+- **EOG** — 3d streak, avg score 84.6
 
 ## Score Velocity (rising/falling fast)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
@@ -25,26 +25,26 @@ tags: [investos, patterns, weekly]
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
+- 📉 **NVDA** -16.2 pts/day  (82.5 → 50.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📈 **NU** +13.1 pts/day  (50.0 → 76.1)
-- 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 63.6% of recent picks (14 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 60.9% of recent picks (14 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | CNQ.TO | 🟡 WATCH | 12d | — | 2.18 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
+| XOM | 🟡 WATCH | 9d | — | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
-| XOM | 🟡 WATCH | 8d | — | — |
+| NVDA | 🟡 WATCH | 0d | -16.2 | — |
 | JPM | 🔴 AVOID | 5d | -5.0 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| TGT | 🟢 CONSIDER | 4d | +5.9 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
