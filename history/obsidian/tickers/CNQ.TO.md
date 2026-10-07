@@ -2,7 +2,7 @@
 ticker: CNQ.TO
 updated: 2026-10-07
 streak_days: 12
-score_now: 95.9
+score_now: 95.8
 velocity: 0
 pf_30d: 2.8
 picks_30d: 9
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **12 of last 7 days**.
-Avg score: 95.9
+Avg score: 95.8
 Dates: 2026-10-01, 2026-10-01, 2026-10-02, 2026-10-02, 2026-10-03, 2026-10-03, 2026-10-05, 2026-10-05, 2026-10-06, 2026-10-06, 2026-10-07, 2026-10-07
 
 ## Recent Performance (last 30d)

@@ -7,17 +7,17 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 64.7%  (+0.36%/day)
-- Sharpe: -0.430  (-0.004/day)
+- Breadth (200MA): 62.3%  (+0.01%/day)
+- Sharpe: -0.396  (+0.000/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CNQ.TO** — 12d streak, avg score 95.9
-- **XOM** — 9d streak, avg score 89.9
-- **MU** — 6d streak, avg score 100.0
+- **CNQ.TO** — 12d streak, avg score 95.8
+- **XOM** — 7d streak, avg score 91.1
+- **TGT** — 5d streak, avg score 100.0
+- **MU** — 5d streak, avg score 100.0
 - **ABBV** — 4d streak, avg score 79.5
 - **JPM** — 4d streak, avg score 86.2
-- **TGT** — 4d streak, avg score 100.0
-- **EOG** — 4d streak, avg score 86.6
+- **EOG** — 4d streak, avg score 81.3
 
 ## Score Velocity (rising/falling fast)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
@@ -30,21 +30,21 @@ tags: [investos, patterns, weekly]
 - 📈 **NU** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 63.6% of recent picks (14 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 68.4% of recent picks (13 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | CNQ.TO | 🟡 WATCH | 12d | — | 2.8 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
-| XOM | 🟡 WATCH | 9d | — | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SO | 🟡 WATCH | 0d | -16.5 | — |
 | NVDA | 🟡 WATCH | 0d | -15.4 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| TGT | 🟢 CONSIDER | 4d | +5.9 | — |
+| XOM | 🟡 WATCH | 7d | — | — |
+| JPM | 🔴 AVOID | 4d | -5.0 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
