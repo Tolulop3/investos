@@ -7,37 +7,38 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 62.8%  (+0.21%/day)
+- Breadth (200MA): 62.3%  (+0.14%/day)
 - Sharpe: -0.361  (+0.007/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CNQ.TO** — 14d streak, avg score 95.3
-- **TGT** — 6d streak, avg score 100.0
-- **NVDA** — 6d streak, avg score 85.7
-- **XOM** — 5d streak, avg score 87.5
+- **XOM** — 6d streak, avg score 87.7
+- **NVDA** — 6d streak, avg score 90.9
 - **MU** — 5d streak, avg score 100.0
 - **EOG** — 5d streak, avg score 82.9
+- **TGT** — 4d streak, avg score 100.0
 - **ABBV** — 4d streak, avg score 79.5
 - **JPM** — 3d streak, avg score 91.9
+- **MFC.TO** — 3d streak, avg score 64.0
 
 ## Score Velocity (rising/falling fast)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
+- 📈 **NVDA** +17.2 pts/day  (50.0 → 84.4)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **SO** -16.5 pts/day  (97.0 → 64.0)
-- 📈 **NVDA** +15.7 pts/day  (50.0 → 81.4)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📈 **NU** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 66.7% of recent picks (16 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 70.8% of recent picks (17 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | CNQ.TO | 🟡 WATCH | 14d | — | 2.54 |
-| NVDA | 🟢 CONSIDER | 6d | +15.7 | — |
+| NVDA | 🟢 CONSIDER | 6d | +17.2 | — |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
