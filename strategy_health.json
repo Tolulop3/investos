@@ -8721,9 +8721,62 @@
         }
       ],
       "robustness_score": 15
+    },
+    {
+      "date": "2026-10-08",
+      "timestamp": "2026-10-08T00:48:54.803416",
+      "rolling_sharpe": {
+        "sharpe": -0.402,
+        "avg_ret_pct": -0.22,
+        "std_ret_pct": 3.88,
+        "picks_used": 978,
+        "date_from": "2026-07-10",
+        "date_to": "2026-10-07",
+        "source": "resolved_returns",
+        "note": "Sharpe from 978 resolved picks (2026-07-10 \u2192 2026-10-07) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      },
+      "benchmark_spx": {
+        "ret_7d": 1.71,
+        "ret_30d": 1.64,
+        "ret_90d": 2.66,
+        "ann_ret": 7.4,
+        "ann_vol": 12.4,
+        "sharpe": 0.6,
+        "symbol": "^GSPC"
+      },
+      "benchmark_tsx": {
+        "ret_7d": -1.18,
+        "ret_30d": -4.81,
+        "ret_90d": 0.88,
+        "ann_ret": 2.5,
+        "ann_vol": 11.8,
+        "sharpe": 0.21,
+        "symbol": "^GSPTSE"
+      },
+      "alpha_vs_spx": -1.002,
+      "neg_alpha_days": 91,
+      "last_streak_increment_date": "2026-10-08",
+      "momentum_health": {
+        "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
+        "decaying": false,
+        "alignment_pct": 84.6,
+        "momentum_picks": 26,
+        "note": "22/26 rising-score picks also rose in price"
+      },
+      "alerts": [
+        {
+          "level": "\ud83d\udea8 CRITICAL",
+          "message": "Strategy has underperformed S&P 500 for 91 days. Factor may be decaying. Review system."
+        },
+        {
+          "level": "\u26a0\ufe0f WARNING",
+          "message": "Rolling Sharpe -0.40 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        }
+      ],
+      "robustness_score": 15
     }
   ],
   "created": "2026-03-02T03:33:15.277905",
-  "last_updated": "2026-10-07T20:53:25.000157",
+  "last_updated": "2026-10-08T00:48:54.803416",
   "streak_corrected_note": "Deduplicated 532 entries to 107 (one per calendar day) on 2026-07-02. Real streak = 9 days vs inflated 49."
 }

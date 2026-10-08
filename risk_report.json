@@ -1,5 +1,5 @@
 {
-  "date": "October 07, 2026",
+  "date": "October 08, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,80 +9,80 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-10-07T20:53:24.999565",
+    "run_at": "2026-10-08T00:48:54.802979",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
-        "normal_count": 14,
-        "survived": 10,
-        "survival_pct": 71.4,
-        "verdict": "\u2705 ROBUST",
+        "normal_count": 13,
+        "survived": 9,
+        "survival_pct": 69.2,
+        "verdict": "\u26a0\ufe0f FRAGILE",
         "note": "4 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
-        "normal_count": 14,
-        "survived": 11,
-        "survival_pct": 78.6,
+        "normal_count": 13,
+        "survived": 10,
+        "survival_pct": 76.9,
         "verdict": "\u26a0\ufe0f FRAGILE",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
-        "normal_count": 14,
-        "survived": 10,
-        "survival_pct": 71.4,
-        "avg_score_change": 2.7,
+        "normal_count": 13,
+        "survived": 11,
+        "survival_pct": 84.6,
+        "avg_score_change": 2.9,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b12.7 pts with 10% noise"
+        "note": "Avg score change: \u00b12.9 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 70.5,
-        "stressed_avg": 60.4,
-        "score_drop": 10.1,
+        "normal_avg": 71.2,
+        "stressed_avg": 59.5,
+        "score_drop": 11.7,
         "removed": [
-          "NVDA",
-          "MU",
-          "ABBV",
+          "GOOGL",
           "WCP.TO",
-          "CNQ.TO"
+          "CNQ.TO",
+          "VLO",
+          "MU"
         ],
         "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 10.1 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 11.7 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
-        "normal_count": 14,
+        "normal_count": 13,
         "survived": 11,
-        "survival_pct": 78.6,
-        "avg_score_drop": 2.3,
+        "survival_pct": 84.6,
+        "avg_score_drop": 2.0,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.3 pts"
+        "note": "If momentum stops working: avg score drops 2.0 pts"
       }
     },
     "summary": {
-      "normal_picks": 14,
-      "normal_avg_score": 70.5,
-      "scenarios_robust": 3,
-      "scenarios_fragile": 1,
+      "normal_picks": 13,
+      "normal_avg_score": 71.2,
+      "scenarios_robust": 2,
+      "scenarios_fragile": 2,
       "scenarios_broken": 1,
       "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
     "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
   },
   "decay_monitor": {
-    "date": "October 07, 2026",
+    "date": "October 08, 2026",
     "robustness_score": 15,
     "rolling_sharpe": {
-      "sharpe": -0.396,
-      "avg_ret_pct": -0.21,
-      "std_ret_pct": 3.87,
-      "picks_used": 997,
-      "date_from": "2026-07-09",
+      "sharpe": -0.402,
+      "avg_ret_pct": -0.22,
+      "std_ret_pct": 3.88,
+      "picks_used": 978,
+      "date_from": "2026-07-10",
       "date_to": "2026-10-07",
       "source": "resolved_returns",
-      "note": "Sharpe from 997 resolved picks (2026-07-09 \u2192 2026-10-07) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 978 resolved picks (2026-07-10 \u2192 2026-10-07) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": 1.71,
@@ -93,7 +93,7 @@
       "sharpe": 0.6,
       "symbol": "^GSPC"
     },
-    "alpha": -0.996,
+    "alpha": -1.002,
     "neg_alpha_days": 91,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
