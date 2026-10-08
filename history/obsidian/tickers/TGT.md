@@ -1,11 +1,11 @@
 ---
 ticker: TGT
-updated: 2026-10-07
+updated: 2026-10-08
 streak_days: 4
 score_now: 100.0
 velocity: 0
 pf_30d: None
-picks_30d: 2
+picks_30d: 3
 tags: [investos, ticker, pattern]
 ---
 
