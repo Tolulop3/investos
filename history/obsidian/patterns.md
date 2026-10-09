@@ -44,8 +44,8 @@ tags: [investos, patterns, weekly]
 | SO | 🟡 WATCH | 0d | -16.5 | — |
 | NVDA | 🟡 WATCH | 8d | — | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| RTX | 🟡 WATCH | 0d | +13.1 | — |
 | NU | 🟡 WATCH | 0d | +13.1 | — |
+| RTX | 🟡 WATCH | 0d | +13.1 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
