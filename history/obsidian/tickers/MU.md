@@ -1,7 +1,7 @@
 ---
 ticker: MU
 updated: 2026-10-09
-streak_days: 5
+streak_days: 4
 score_now: 100.0
 velocity: 0
 pf_30d: 0.94
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # MU — Pattern Log
 
 ## Streak
-Appeared in picks **5 of last 7 days**.
+Appeared in picks **4 of last 7 days**.
 Avg score: 100.0
-Dates: 2026-10-02, 2026-10-03, 2026-10-05, 2026-10-06, 2026-10-09
+Dates: 2026-10-02, 2026-10-03, 2026-10-05, 2026-10-06
 
 ## Recent Performance (last 30d)
 Profit Factor: **0.94** 🔴  |  n=9 picks
