@@ -1,11 +1,11 @@
 ---
 ticker: XOM
-updated: 2026-10-10
+updated: 2026-10-12
 streak_days: 4
 score_now: 86.7
 velocity: 0
 pf_30d: None
-picks_30d: 8
+picks_30d: 9
 tags: [investos, ticker, pattern]
 ---
 
