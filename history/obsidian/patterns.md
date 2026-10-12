@@ -8,7 +8,7 @@ tags: [investos, patterns, weekly]
 ## Regime Drift
 - ✅ Regime stable — no drift signals
 - Breadth (200MA): 64.5%  (+0.11%/day)
-- Sharpe: -0.302  (+0.018/day)
+- Sharpe: -0.257  (+0.024/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CNQ.TO** — 13d streak, avg score 93.6
