@@ -1,11 +1,11 @@
 ---
 ticker: MFC.TO
-updated: 2026-10-12
+updated: 2026-10-13
 streak_days: 3
 score_now: 64.0
 velocity: 0
 pf_30d: None
-picks_30d: 1
+picks_30d: 2
 tags: [investos, ticker, pattern]
 ---
 
