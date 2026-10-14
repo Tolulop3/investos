@@ -1,11 +1,11 @@
 ---
 ticker: ABBV
-updated: 2026-10-13
+updated: 2026-10-14
 streak_days: 4
 score_now: 95.5
 velocity: 0
 pf_30d: None
-picks_30d: 8
+picks_30d: 9
 tags: [investos, ticker, pattern]
 ---
 
