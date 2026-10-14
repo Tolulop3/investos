@@ -1,8 +1,8 @@
 ---
 ticker: GOOGL
 updated: 2026-10-14
-streak_days: 5
-score_now: 78.7
+streak_days: 6
+score_now: 77.7
 velocity: 0
 pf_30d: 0.35
 picks_30d: 5
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # GOOGL — Pattern Log
 
 ## Streak
-Appeared in picks **5 of last 7 days**.
-Avg score: 78.7
-Dates: 2026-10-07, 2026-10-08, 2026-10-09, 2026-10-10, 2026-10-13
+Appeared in picks **6 of last 7 days**.
+Avg score: 77.7
+Dates: 2026-10-07, 2026-10-08, 2026-10-09, 2026-10-10, 2026-10-13, 2026-10-14
 
 ## Recent Performance (last 30d)
 Profit Factor: **0.35** 🔴  |  n=5 picks
