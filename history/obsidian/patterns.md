@@ -15,12 +15,11 @@ tags: [investos, patterns, weekly]
 - **EOG** — 7d streak, avg score 84.8
 - **NVDA** — 5d streak, avg score 90.6
 - **GOOGL** — 5d streak, avg score 78.5
-- **WCP.TO** — 5d streak, avg score 98.1
+- **WCP.TO** — 5d streak, avg score 98.9
 - **ABBV** — 3d streak, avg score 100.0
 - **MRVL** — 3d streak, avg score 100.0
 
 ## Score Velocity (rising/falling fast)
-- 📈 **VLO** +24.2 pts/day  (50.0 → 98.5)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **CVE.TO** +17.3 pts/day  (50.0 → 84.6)
@@ -28,15 +27,15 @@ tags: [investos, patterns, weekly]
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
+- 📉 **BLK** -12.4 pts/day  (94.8 → 69.9)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 79.3% of recent picks (23 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 77.4% of recent picks (24 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | CNQ.TO | 🟡 WATCH | 13d | — | 14.25 |
-| VLO | 🟡 WATCH | 0d | +24.2 | 0.97 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | CVE.TO | 🟡 WATCH | 0d | +17.3 | — |
@@ -45,6 +44,7 @@ tags: [investos, patterns, weekly]
 | EOG | 🟡 WATCH | 7d | — | 3.22 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
+| BLK | 🟡 WATCH | 0d | -12.4 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
