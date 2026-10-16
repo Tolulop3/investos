@@ -4,10 +4,10 @@
     "regime": "BULL",
     "signal": "FULL_EXPOSURE",
     "cash_pct": 0.0,
-    "spx_price": 7639.45,
-    "ma200": 7271.34,
-    "ma50": 7706.02,
-    "pct_above_ma": 5.06,
+    "spx_price": 7659.44,
+    "ma200": 7271.44,
+    "ma50": 7706.42,
+    "pct_above_ma": 5.34,
     "full_exposure_pct": 100.0
   },
   "sharpe": {
@@ -24,48 +24,43 @@
   "win_rate_overall": null,
   "breadth": {
     "total_stocks": 217,
-    "above_ma50": 92,
-    "above_ma200": 144,
-    "pct_above_50": 42.4,
-    "pct_above_200": 66.4,
+    "above_ma50": 97,
+    "above_ma200": 147,
+    "pct_above_50": 44.7,
+    "pct_above_200": 67.7,
     "signal": "MODERATE",
     "note": "Moderate breadth \u2014 majority above 200MA",
     "momentum_breadth": "CONTRACTING",
     "sector_breadth": {
-      "Consumer Cyclical": {
-        "pct_above_50": 13,
-        "pct_above_200": 27,
-        "count": 15
+      "Financial Services": {
+        "pct_above_50": 44,
+        "pct_above_200": 62,
+        "count": 32
+      },
+      "Technology": {
+        "pct_above_50": 50,
+        "pct_above_200": 89,
+        "count": 28
+      },
+      "Consumer Defensive": {
+        "pct_above_50": 75,
+        "pct_above_200": 88,
+        "count": 8
       },
       "": {
-        "pct_above_50": 34,
+        "pct_above_50": 36,
         "pct_above_200": 77,
         "count": 47
       },
-      "Financial Services": {
-        "pct_above_50": 41,
-        "pct_above_200": 59,
-        "count": 32
-      },
       "Communication Services": {
         "pct_above_50": 17,
-        "pct_above_200": 17,
+        "pct_above_200": 33,
         "count": 6
       },
-      "Energy": {
-        "pct_above_50": 88,
-        "pct_above_200": 88,
-        "count": 16
-      },
-      "Healthcare": {
-        "pct_above_50": 62,
-        "pct_above_200": 92,
-        "count": 26
-      },
-      "Technology": {
-        "pct_above_50": 43,
-        "pct_above_200": 89,
-        "count": 28
+      "Real Estate": {
+        "pct_above_50": 30,
+        "pct_above_200": 20,
+        "count": 10
       },
       "Basic Materials": {
         "pct_above_50": 0,
@@ -74,38 +69,38 @@
       },
       "Utilities": {
         "pct_above_50": 67,
-        "pct_above_200": 22,
+        "pct_above_200": 33,
         "count": 9
-      },
-      "Real Estate": {
-        "pct_above_50": 20,
-        "pct_above_200": 20,
-        "count": 10
       },
       "Industrials": {
         "pct_above_50": 33,
         "pct_above_200": 58,
         "count": 12
       },
-      "Consumer Defensive": {
-        "pct_above_50": 75,
+      "Consumer Cyclical": {
+        "pct_above_50": 13,
+        "pct_above_200": 27,
+        "count": 15
+      },
+      "Healthcare": {
+        "pct_above_50": 62,
+        "pct_above_200": 92,
+        "count": 26
+      },
+      "Energy": {
+        "pct_above_50": 88,
         "pct_above_200": 88,
-        "count": 8
+        "count": 16
       }
     }
   },
   "sector_sentiment": {
-    "DEFENSE": {
-      "bullish_score": 350.0,
+    "OIL": {
+      "bullish_score": 200,
       "bearish_score": 0,
-      "net_score": 350.0,
+      "net_score": 200,
       "sentiment": "BULLISH",
       "signals": [
-        {
-          "name": "russia_ukraine",
-          "direction": "bullish",
-          "confidence": 100
-        },
         {
           "name": "middle_east_tension",
           "direction": "bullish",
@@ -113,12 +108,35 @@
         }
       ]
     },
-    "EUROPEAN_ENERGY": {
-      "bullish_score": 150.0,
+    "CANADIAN_ENERGY": {
+      "bullish_score": 200,
+      "bearish_score": 200,
+      "net_score": 0,
+      "sentiment": "NEUTRAL",
+      "signals": [
+        {
+          "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        },
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "DEFENSE": {
+      "bullish_score": 350.0,
       "bearish_score": 0,
-      "net_score": 150.0,
+      "net_score": 350.0,
       "sentiment": "BULLISH",
       "signals": [
+        {
+          "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        },
         {
           "name": "russia_ukraine",
           "direction": "bullish",
@@ -133,12 +151,56 @@
       "sentiment": "BULLISH",
       "signals": [
         {
-          "name": "russia_ukraine",
+          "name": "middle_east_tension",
           "direction": "bullish",
           "confidence": 100
         },
         {
+          "name": "russia_ukraine",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "AIRLINES": {
+      "bullish_score": 0,
+      "bearish_score": 300,
+      "net_score": -300,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
           "name": "middle_east_tension",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "health_outbreak",
+          "direction": "bearish",
+          "confidence": 50
+        }
+      ]
+    },
+    "SHIPPING": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "middle_east_tension",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "EUROPEAN_ENERGY": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "russia_ukraine",
           "direction": "bullish",
           "confidence": 100
         }
@@ -205,24 +267,6 @@
         {
           "name": "trump_tariff_negative",
           "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "CANADIAN_ENERGY": {
-      "bullish_score": 200,
-      "bearish_score": 200,
-      "net_score": 0,
-      "sentiment": "NEUTRAL",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "middle_east_tension",
-          "direction": "bullish",
           "confidence": 100
         }
       ]
@@ -369,50 +413,6 @@
           "confidence": 50
         }
       ]
-    },
-    "AIRLINES": {
-      "bullish_score": 0,
-      "bearish_score": 300,
-      "net_score": -300,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "health_outbreak",
-          "direction": "bearish",
-          "confidence": 50
-        },
-        {
-          "name": "middle_east_tension",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "OIL": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "middle_east_tension",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "SHIPPING": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "middle_east_tension",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
     }
   },
   "system_exposure": {
@@ -444,17 +444,17 @@
       "score": 95.8,
       "data": {
         "ticker": "CNQ.TO",
-        "price": 76.14,
-        "day_chg_pct": 3.24,
-        "perf_30d": 8.65,
-        "perf_90d": 27.8,
-        "w52_high": 76.18,
+        "price": 76.1,
+        "day_chg_pct": 3.19,
+        "perf_30d": 8.59,
+        "perf_90d": 27.74,
+        "w52_high": 76.25,
         "w52_low": 41.67,
-        "drawdown_high": -0.05,
-        "recovery_pct": 82.72,
-        "avg_volume": 13614671,
+        "drawdown_high": -0.2,
+        "recovery_pct": 82.63,
+        "avg_volume": 13708036,
         "volatility": 1.18,
-        "rsi_approx": 83.5,
+        "rsi_approx": 83.4,
         "div_yield": 3.39,
         "div_rate": 2.5,
         "ex_div_date": "Sep 11, 2026",
@@ -467,8 +467,8 @@
         "debt_equity": 43.1,
         "roe": 26.7,
         "current_ratio": 1.0,
-        "target_price": 73.71,
-        "upside_target": -3.2,
+        "target_price": 73.95,
+        "upside_target": -2.8,
         "analyst_rec": "buy",
         "sector": "Energy",
         "industry": "Oil & Gas E&P",
@@ -507,7 +507,7 @@
           74.19,
           73.83,
           73.75,
-          76.14
+          76.1
         ],
         "pct_from_20d_high": 0.0,
         "above_ma50": true,
@@ -523,8 +523,8 @@
         "volume_liquidity": 10.0
       },
       "reasons": [
-        "\ud83d\ude80 Strong 90d: +27.8%",
-        "\ud83d\udcc8 30d momentum: +8.65%",
+        "\ud83d\ude80 Strong 90d: +27.74%",
+        "\ud83d\udcc8 30d momentum: +8.59%",
         "\ud83d\udcb0 Good yield: 3.39%",
         "\ud83d\udcca Revenue growth: +69.5%",
         "\ud83d\udcca Earnings growth: +83.8%",
@@ -543,9 +543,9 @@
         "risk_label": "LOW",
         "amount": 0.39,
         "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 81d old (earnings t\u00bd=30d) \u221217pts",
-        "exit_note": "FHSA stop: $63.96 (16% rule). Review if drawdown hits 12%.",
+        "exit_note": "FHSA stop: $63.92 (16% rule). Review if drawdown hits 12%.",
         "exp_low": 22.2,
-        "exp_high": 83.4,
+        "exp_high": 83.2,
         "exp_prob": 68,
         "options_eligible": false,
         "suggested_play": "none",
@@ -555,7 +555,7 @@
       },
       "sector": "ENERGY",
       "sector_canonical": "ENERGY",
-      "ml_prob": 0.733,
+      "ml_prob": 0.7329,
       "ml_prob_raw": 0.73282,
       "ml_prob_xgb": 0.73282,
       "ml_prob_source": "rules_based",
@@ -571,10 +571,10 @@
         "median_return": 0.26,
         "max_drawdown": -35.96,
         "regime_match_pct": 94.8,
-        "expected_alpha": -5.06,
+        "expected_alpha": -5.34,
         "confidence": "HIGH",
         "score_band": "84-100",
-        "evidence_text": "919 similar setups (871 in same regime) | WR: 48.0% | Avg: +0.0% | Expected alpha: -5.1% vs SPX",
+        "evidence_text": "919 similar setups (871 in same regime) | WR: 48.0% | Avg: +0.0% | Expected alpha: -5.3% vs SPX",
         "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 919 historical setups at this score level produced only 48.0% WR. ML confirmation required before BUY."
       },
       "rs_rating": 87,
@@ -612,17 +612,17 @@
       "score": 92.3,
       "data": {
         "ticker": "SU.TO",
-        "price": 109.99,
-        "day_chg_pct": 2.43,
-        "perf_30d": 14.03,
-        "perf_90d": 29.86,
-        "w52_high": 110.15,
+        "price": 110.25,
+        "day_chg_pct": 2.67,
+        "perf_30d": 14.3,
+        "perf_90d": 30.17,
+        "w52_high": 110.57,
         "w52_low": 53.02,
-        "drawdown_high": -0.15,
-        "recovery_pct": 107.45,
-        "avg_volume": 4908492,
+        "drawdown_high": -0.29,
+        "recovery_pct": 107.94,
+        "avg_volume": 5012899,
         "volatility": 1.34,
-        "rsi_approx": 80.6,
+        "rsi_approx": 80.8,
         "div_yield": 2.24,
         "div_rate": 2.4,
         "ex_div_date": "Sep 04, 2026",
@@ -635,8 +635,8 @@
         "debt_equity": 30.5,
         "roe": 19.3,
         "current_ratio": 1.65,
-        "target_price": 110.9,
-        "upside_target": 0.8,
+        "target_price": 111.65,
+        "upside_target": 1.3,
         "analyst_rec": "buy",
         "sector": "Energy",
         "industry": "Oil & Gas Integrated",
@@ -675,7 +675,7 @@
           106.82,
           107.9,
           107.38,
-          109.99
+          110.25
         ],
         "pct_from_20d_high": 0.0,
         "above_ma50": true,
@@ -691,13 +691,12 @@
         "volume_liquidity": 10.0
       },
       "reasons": [
-        "\ud83d\ude80 Strong 90d: +29.86%",
-        "\ud83d\udcc8 30d momentum: +14.03%",
+        "\ud83d\ude80 Strong 90d: +30.17%",
+        "\ud83d\udcc8 30d momentum: +14.3%",
         "\ud83d\udcb0 Dividend: 2.24%",
         "\ud83d\udcca Revenue growth: +45.9%",
         "\ud83d\udcca Earnings growth: +241.9%",
         "\u2705 Fair value: P/E 14.7",
-        "\ud83d\udcca Good liquidity",
         "\u2705 Analyst consensus: buy",
         "\ud83d\udcaa RS Rating: 91 \u2014 \ud83d\udd25 TOP PERFORMER"
       ],
@@ -712,9 +711,9 @@
         "risk_label": "LOW",
         "amount": 0.39,
         "action": "Suggested: $50 | Core hold \u2014 review in 180 days | \u23f3 80d old (earnings t\u00bd=30d) \u221217pts",
-        "exit_note": "FHSA stop: $92.39 (16% rule). Review if drawdown hits 12%.",
-        "exp_low": 23.9,
-        "exp_high": 89.6,
+        "exit_note": "FHSA stop: $92.61 (16% rule). Review if drawdown hits 12%.",
+        "exp_low": 24.1,
+        "exp_high": 90.5,
         "exp_prob": 68,
         "options_eligible": false,
         "suggested_play": "none",
@@ -724,9 +723,9 @@
       },
       "sector": "ENERGY",
       "sector_canonical": "ENERGY",
-      "ml_prob": 0.7472,
-      "ml_prob_raw": 0.750165,
-      "ml_prob_xgb": 0.750165,
+      "ml_prob": 0.7484,
+      "ml_prob_raw": 0.750135,
+      "ml_prob_xgb": 0.750135,
       "ml_prob_source": "rules_based",
       "scored_by_model_trained_at": null,
       "ml_signal": "\ud83d\udd25 STRONG BUY",
@@ -740,10 +739,10 @@
         "median_return": 0.35,
         "max_drawdown": -35.96,
         "regime_match_pct": 95.8,
-        "expected_alpha": -5.12,
+        "expected_alpha": -5.4,
         "confidence": "HIGH",
         "score_band": "80-96",
-        "evidence_text": "970 similar setups (929 in same regime) | WR: 48.5% | Avg: -0.1% | Expected alpha: -5.1% vs SPX",
+        "evidence_text": "970 similar setups (929 in same regime) | WR: 48.5% | Avg: -0.1% | Expected alpha: -5.4% vs SPX",
         "rule_note": null
       },
       "rs_rating": 91,
@@ -781,22 +780,22 @@
       "score": 90.2,
       "data": {
         "ticker": "CSU.TO",
-        "price": 3165.39,
-        "day_chg_pct": -3.6,
-        "perf_30d": 11.65,
-        "perf_90d": 18.53,
+        "price": 3185.8,
+        "day_chg_pct": -2.98,
+        "perf_30d": 12.37,
+        "perf_90d": 19.3,
         "w52_high": 3898.03,
         "w52_low": 2196.0,
-        "drawdown_high": -18.8,
-        "recovery_pct": 44.14,
-        "avg_volume": 66893,
+        "drawdown_high": -18.27,
+        "recovery_pct": 45.07,
+        "avg_volume": 67841,
         "volatility": 2.82,
-        "rsi_approx": 70.0,
+        "rsi_approx": 72.1,
         "div_yield": 17.0,
         "div_rate": 5.69,
         "ex_div_date": "Sep 18, 2026",
         "days_to_ex_div": -29,
-        "pe_ratio": 50.5,
+        "pe_ratio": 50.8,
         "peg_ratio": 0.48,
         "profit_margin": 7.6,
         "rev_growth": 17.3,
@@ -804,8 +803,8 @@
         "debt_equity": 119.5,
         "roe": 23.3,
         "current_ratio": 0.9,
-        "target_price": 3992.18,
-        "upside_target": 26.1,
+        "target_price": 3989.08,
+        "upside_target": 25.2,
         "analyst_rec": "buy",
         "sector": "Technology",
         "industry": "Software - Application",
@@ -844,9 +843,9 @@
           3093.29,
           3139.3,
           3283.76,
-          3165.3899
+          3185.8
         ],
-        "pct_from_20d_high": -3.6,
+        "pct_from_20d_high": -2.98,
         "above_ma50": true,
         "above_ma200": true,
         "momentum_12m_real": -0.1104
@@ -860,15 +859,15 @@
         "volume_liquidity": 10.0
       },
       "reasons": [
-        "\ud83d\udcc8 Good 90d: +18.53%",
-        "\ud83d\udcc8 30d momentum: +11.65%",
-        "\ud83d\udcc9 Pullback entry: -3.6% from 20d high (trend intact)",
+        "\ud83d\udcc8 Good 90d: +19.3%",
+        "\ud83d\udcc8 30d momentum: +12.37%",
+        "\ud83d\udcc9 Pullback entry: -3.0% from 20d high (trend intact)",
         "\ud83d\udcb0 Exceptional yield: 17.0%",
         "\ud83d\udcca Revenue growth: +17.3%",
         "\ud83d\udcca Earnings growth: +389.3%",
         "\ud83d\udcaa Strong ROE: 23.3%",
         "\ud83d\udc8e PEG < 1: 0.48 (undervalued vs growth)",
-        "\ud83c\udfaf Analyst upside: +26.1%",
+        "\ud83c\udfaf Analyst upside: +25.2%",
         "\ud83d\udcc8 Volume accumulation \u2014 up-day volume dominates",
         "\u2705 Analyst consensus: buy",
         "\ud83d\udcaa RS Rating: 82 \u2014 \u2705 STRONG"
@@ -881,10 +880,10 @@
         "hold_days": 365,
         "risk_label": "MODERATE",
         "amount": 0.65,
-        "action": "Suggested: $300 | Hold 365 days for income cycle | Analyst target: $3992.18 (+26.1% upside) | \u23f3 78d old (earnings t\u00bd=30d) \u221217pts",
+        "action": "Suggested: $300 | Hold 365 days for income cycle | Analyst target: $3989.08 (+25.2% upside) | \u23f3 78d old (earnings t\u00bd=30d) \u221217pts",
         "exit_note": "Monthly review. Reassess if fundamentals deteriorate or div cut.",
         "exp_low": 11.9,
-        "exp_high": 39.5,
+        "exp_high": 40.5,
         "exp_prob": 72,
         "options_eligible": false,
         "suggested_play": "none",
@@ -894,9 +893,9 @@
       },
       "sector": "TECH_CA",
       "sector_canonical": "TECH_CA",
-      "ml_prob": 0.6321,
-      "ml_prob_raw": 0.65184,
-      "ml_prob_xgb": 0.65184,
+      "ml_prob": 0.64,
+      "ml_prob_raw": 0.6519250000000001,
+      "ml_prob_xgb": 0.6519250000000001,
       "ml_prob_source": "rules_based",
       "scored_by_model_trained_at": null,
       "ml_signal": "\u2705 BUY",
@@ -910,10 +909,10 @@
         "median_return": 0.35,
         "max_drawdown": -35.96,
         "regime_match_pct": 95.5,
-        "expected_alpha": -5.08,
+        "expected_alpha": -5.36,
         "confidence": "HIGH",
         "score_band": "82-98",
-        "evidence_text": "984 similar setups (940 in same regime) | WR: 48.7% | Avg: -0.0% | Expected alpha: -5.1% vs SPX",
+        "evidence_text": "984 similar setups (940 in same regime) | WR: 48.7% | Avg: -0.0% | Expected alpha: -5.4% vs SPX",
         "rule_note": "\u26a0\ufe0f  High Score Confirmation Rule: 984 historical setups at this score level produced only 48.7% WR. ML confirmation required before BUY."
       },
       "rs_rating": 82,
@@ -927,7 +926,7 @@
       "stale_label": "DEGRADING",
       "conviction_signals": [
         "\ud83d\udcaa RS 82 \u2014 Top Performer",
-        "\ud83e\udd16 ML Score 63%"
+        "\ud83e\udd16 ML Score 64%"
       ],
       "conviction_boost": 12,
       "conviction_count": 2,
@@ -950,7 +949,7 @@
   "top_picks": [
     {
       "ticker": "NEE",
-      "score": 67.8,
+      "score": 68.4,
       "category": "WATCH"
     },
     {
@@ -960,7 +959,7 @@
     },
     {
       "ticker": "SO",
-      "score": 69.4,
+      "score": 70.0,
       "category": "WATCH"
     },
     {
@@ -980,7 +979,7 @@
     },
     {
       "ticker": "CVX",
-      "score": 90.6,
+      "score": 86.6,
       "category": "FHSA Conservative Growth"
     },
     {
@@ -993,27 +992,27 @@
     {
       "ticker": "XEG.TO",
       "score": 71.0,
-      "ret_90": 20.5
+      "ret_90": 20.7
     },
     {
       "ticker": "XLE",
       "score": 68.2,
-      "ret_90": 18.4
+      "ret_90": 18.7
     },
     {
       "ticker": "ARKG",
       "score": 55.6,
-      "ret_90": 41.8
+      "ret_90": 42.2
     },
     {
       "ticker": "VFV.TO",
       "score": 52.0,
-      "ret_90": 5.3
+      "ret_90": 5.4
     },
     {
       "ticker": "XIC.TO",
       "score": 52.0,
-      "ret_90": 5.6
+      "ret_90": 6.0
     }
   ],
   "macro_signals": []
