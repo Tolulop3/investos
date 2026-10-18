@@ -511,7 +511,14 @@ def build_score_weight_adjustments(detected_signals):
         sig = detection["signal_data"]
         for key, val in sig.get("score_adjust", {}).items():
             if key in adjustments:
-                adjustments[key] = max(-10, min(10, adjustments[key] + val))
+                adjustments[key] += val
+
+    # Clamp once, after summing (2026-09-27). Clamping inside the loop made the
+    # result depend on dict order: e.g. +5, +6, -3 gave 7 (11 → capped 10 → 7)
+    # but -3, +5, +6 gave 8 -- either side of the RISK_OFF/CAUTIOUS lines below.
+    for key in ("safety_weight", "momentum_weight", "growth_weight",
+                "dividend_weight", "value_weight"):
+        adjustments[key] = max(-10, min(10, adjustments[key]))
 
     safety = adjustments["safety_weight"]
     growth = adjustments["growth_weight"]

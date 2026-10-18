@@ -202,12 +202,89 @@ def compute_early_regime(macro_regime_str, market_regime_dict):
     # more conservative band. Comparing the rounded value closes that off in
     # general, not just for the one combination that happened to trigger it.
 
-    if score >= 0.4:    regime = "RISK_ON";              blocks = []
-    elif score >= 0.1:  regime = "NEUTRAL";              blocks = []
-    elif score >= -0.3: regime = "DEFENSIVE";            blocks = ["SWING"]
-    else:               regime = "CAPITAL_PRESERVATION"; blocks = ["SWING", "GROWTH CORE"]
+    if score >= 0.4:    regime = "RISK_ON"
+    elif score >= 0.1:  regime = "NEUTRAL"
+    elif score >= -0.3: regime = "DEFENSIVE"
+    else:               regime = "CAPITAL_PRESERVATION"
 
-    return regime, blocks, score, m, n
+    return regime, list(REGIME_CATEGORY_BLOCKS[regime]), score, m, n
+
+
+REGIME_CATEGORY_BLOCKS = {
+    "RISK_ON": [], "NEUTRAL": [],
+    "DEFENSIVE": ["SWING"],
+    "CAPITAL_PRESERVATION": ["SWING", "GROWTH CORE"],
+}
+REGIME_LABEL_STATE_FILE  = "regime_label_state.json"
+REGIME_PERSIST_DAYS      = 3
+_REGIME_RANK = {"RISK_ON": 0, "NEUTRAL": 1, "DEFENSIVE": 2, "CAPITAL_PRESERVATION": 3}
+
+
+def apply_regime_persistence(raw_regime, today_str, state_file=REGIME_LABEL_STATE_FILE,
+                             save=True, persist_days=REGIME_PERSIST_DAYS):
+    """
+    Day-over-day hysteresis on the regime LABEL (2026-09-27). Without it, the
+    label flipped RISK_ON <-> NEUTRAL (100% <-> 75% equity cap) run-to-run on
+    Sep 21-25 because both of its inputs sit on a threshold: universe breadth
+    oscillating 41-52% around the macro gate's 50% line, and news safety_weight
+    landing on 7-10 around news_analyzer's >8 RISK_OFF line (one peace_deal
+    keyword match was the whole Sep 24 -> 25 flip).
+
+    Rules:
+      * A move INTO DEFENSIVE / CAPITAL_PRESERVATION that is more defensive than
+        the confirmed label applies immediately -- never delay de-risking on a
+        real market-structure break (with market=BULL the score can't go below
+        0.30, so these bands are only reachable via a market regime change).
+      * Every other change (incl. NEUTRAL <-> RISK_ON, and recovering out of
+        DEFENSIVE) must show up on `persist_days` distinct calendar days with no
+        run in between reverting to the confirmed label. Counted in days, not
+        runs -- CI runs ~3x/day against largely the same data.
+      * 3 days, not 2: replaying Sep 21-25, the raw label moved in 2-day blocks
+        (RISK_ON x2, NEUTRAL x2, RISK_ON); a 2-day hold just lagged it by a day
+        (out of phase on every day). 3 days: zero flips.
+
+    Returns (label, info). `info` is for regime_debug; nothing reads it back.
+    """
+    state = {}
+    try:
+        with open(state_file) as f:
+            state = json.load(f) or {}
+    except Exception:
+        pass
+
+    confirmed = state.get("confirmed")
+    pending   = state.get("pending")
+    p_dates   = list(state.get("pending_dates") or [])
+    reason    = ""
+
+    if confirmed not in _REGIME_RANK:
+        confirmed, pending, p_dates, reason = raw_regime, None, [], "no prior state"
+    elif raw_regime == confirmed:
+        pending, p_dates = None, []
+    elif (raw_regime in ("DEFENSIVE", "CAPITAL_PRESERVATION")
+          and _REGIME_RANK[raw_regime] > _REGIME_RANK[confirmed]):
+        confirmed, pending, p_dates, reason = raw_regime, None, [], "de-risk applies immediately"
+    else:
+        if pending != raw_regime:
+            pending, p_dates = raw_regime, []
+        if today_str not in p_dates:
+            p_dates.append(today_str)
+        if len(p_dates) >= persist_days:
+            confirmed, pending, p_dates, reason = raw_regime, None, [], f"persisted {persist_days} days"
+        else:
+            reason = f"{raw_regime} pending ({len(p_dates)}/{persist_days} days) -- holding {confirmed}"
+
+    if save:
+        try:
+            with open(state_file, "w") as f:
+                json.dump({"confirmed": confirmed, "pending": pending,
+                           "pending_dates": p_dates, "last_raw": raw_regime,
+                           "updated": today_str}, f, indent=2)
+        except Exception as e:
+            print(f"  ⚠️  regime_label_state save failed: {e}")
+
+    return confirmed, {"raw": raw_regime, "confirmed": confirmed, "pending": pending,
+                       "pending_dates": p_dates, "reason": reason}
 
 
 def apply_regime_filter(screener_results, early_regime, category_blocks):
@@ -1017,6 +1094,18 @@ def run_daily(test_mode=False, dry_run=False):
     early_regime, category_blocks, early_regime_score, _early_m, _early_n = compute_early_regime(
         _macro_for_regime, regime
     )
+    # Label hysteresis -- see apply_regime_persistence(). early_regime_score stays
+    # the raw same-run score; only the label (and what it drives: category
+    # blocks, ml_max_equity, style bands) is held. Dry runs read state, never write it.
+    early_regime_raw = early_regime
+    early_regime, regime_persistence = apply_regime_persistence(
+        early_regime_raw, datetime.now().strftime("%Y-%m-%d"), save=not dry_run)
+    category_blocks = list(REGIME_CATEGORY_BLOCKS[early_regime])
+    if early_regime != early_regime_raw:
+        print(f"  ⏸  Regime hold: raw {early_regime_raw} ({early_regime_score:+.2f}) → "
+              f"keeping {early_regime} — {regime_persistence['reason']}")
+    elif regime_persistence["reason"]:
+        print(f"  🔁 Regime label: {early_regime} ({regime_persistence['reason']})")
     screener = apply_regime_filter(screener, early_regime, category_blocks)
     print(f"  🎯 Early regime: {early_regime} | Blocks: {category_blocks or 'none'}")
 
@@ -1566,6 +1655,8 @@ def run_daily(test_mode=False, dry_run=False):
 
     exposure_reason = (f"M:{market_score:+.1f} N:{macro_score:+.1f} → {unified_score:+.2f} "
                        f"(health/Sharpe H:{health_score:+.1f} is sizing-only, not regime-weighted)")
+    if early_regime != early_regime_raw:
+        exposure_reason += f" · label held at {early_regime} (raw {early_regime_raw}, {regime_persistence['reason']})"
 
     print(f"  🎯 Unified regime: {unified_regime} ({system_exposure*100:.0f}%) | {exposure_reason}")
     print(f"     Allowed: {allowed_styles}")
@@ -1794,6 +1885,8 @@ def run_daily(test_mode=False, dry_run=False):
             "market_signal":            regime.get("signal") if isinstance(regime, dict) else None,
             "early_regime":             early_regime,           # compute_early_regime(): 0.65*mkt + 0.35*macro
             "early_regime_score":       early_regime_score,
+            "early_regime_raw":         early_regime_raw,       # same-run label before persistence hold
+            "regime_persistence":       regime_persistence,     # apply_regime_persistence() info (2026-09-27)
             "strategy_prelim_unified":  _unified,               # 4-branch guess fed into strategy_engine
             "strategy_name":            strategy_name,          # STRATEGY_PROFILES key the screener scored with
             "strategy_profile_source":  "exception_fallback" if strategy_profile is None else "normal",

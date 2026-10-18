@@ -5572,3 +5572,83 @@ def test_cooldown_renewal_uses_true_horizon_not_7day_proxy(monkeypatch, tmp_path
     assert "PROXYCO" in blocked, "true-horizon LOSS records must drive renewal even though the proxy `outcome` field says WIN"
     saved = __import__("json").loads((tmp_path / "long_cooldowns.json").read_text())
     assert saved["PROXYCO"]["blocked_until"] > "2026-01-01"  # renewed 90 days out, not cleared
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Regime label persistence (2026-09-27)
+# Bug: early_regime flipped RISK_ON <-> NEUTRAL (100% <-> 75% equity cap) run to
+#      run on Sep 21-25 -- breadth oscillating around the macro gate's 50% line
+#      and a single peace_deal keyword moving news safety_weight across >8.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _persist(tmp_path, seq, start=None):
+    import json
+    from run_daily import apply_regime_persistence
+    st = tmp_path / "regime_label_state.json"
+    if start:
+        st.write_text(json.dumps({"confirmed": start}))
+    return [apply_regime_persistence(r, d, state_file=str(st))[0] for r, d in seq]
+
+
+def test_regime_persistence_absorbs_sep21_25_oscillation(tmp_path):
+    runs = [("RISK_ON", "2026-09-21"), ("RISK_ON", "2026-09-22"),
+            ("NEUTRAL", "2026-09-23"), ("NEUTRAL", "2026-09-24"),
+            ("RISK_ON", "2026-09-25")]
+    assert set(_persist(tmp_path, runs, start="NEUTRAL")) == {"NEUTRAL"}
+
+
+def test_regime_persistence_counts_days_not_runs(tmp_path):
+    # 3 CI runs on one day must not confirm a 3-day change
+    runs = [("RISK_ON", "2026-10-01")] * 3
+    assert _persist(tmp_path, runs, start="NEUTRAL")[-1] == "NEUTRAL"
+
+
+def test_regime_persistence_confirms_after_three_days(tmp_path):
+    runs = [("RISK_ON", "2026-10-01"), ("RISK_ON", "2026-10-02"), ("RISK_ON", "2026-10-05")]
+    assert _persist(tmp_path, runs, start="NEUTRAL") == ["NEUTRAL", "NEUTRAL", "RISK_ON"]
+
+
+def test_regime_persistence_reversion_resets_pending(tmp_path):
+    runs = [("RISK_ON", "2026-10-01"), ("RISK_ON", "2026-10-02"),
+            ("NEUTRAL", "2026-10-02"), ("RISK_ON", "2026-10-05")]
+    assert _persist(tmp_path, runs, start="NEUTRAL")[-1] == "NEUTRAL"
+
+
+def test_regime_persistence_derisk_is_immediate(tmp_path):
+    assert _persist(tmp_path, [("DEFENSIVE", "2026-10-01")], start="RISK_ON") == ["DEFENSIVE"]
+    assert _persist(tmp_path, [("CAPITAL_PRESERVATION", "2026-10-02")]) == ["CAPITAL_PRESERVATION"]
+
+
+def test_regime_persistence_recovery_from_defensive_is_held(tmp_path):
+    assert _persist(tmp_path, [("RISK_ON", "2026-10-01")], start="DEFENSIVE") == ["DEFENSIVE"]
+
+
+def test_regime_persistence_seeds_from_raw_without_state(tmp_path):
+    assert _persist(tmp_path, [("RISK_ON", "2026-10-01")]) == ["RISK_ON"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# News weight clamp order (2026-09-27)
+# Bug: build_score_weight_adjustments clamped to ±10 inside the per-signal loop,
+#      so the same signals in a different dict order gave a different
+#      safety_weight (+5,+6,-3 → 7 vs -3,+5,+6 → 8).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_news_weight_clamp_is_order_independent():
+    from news_analyzer import build_score_weight_adjustments
+    sigs = {
+        "a": {"confidence": 100, "signal_data": {"score_adjust": {"safety_weight": 5}}},
+        "b": {"confidence": 100, "signal_data": {"score_adjust": {"safety_weight": 6}}},
+        "c": {"confidence": 100, "signal_data": {"score_adjust": {"safety_weight": -3}}},
+    }
+    fwd = build_score_weight_adjustments(sigs)
+    rev = build_score_weight_adjustments(dict(reversed(list(sigs.items()))))
+    assert fwd["safety_weight"] == rev["safety_weight"] == 8
+    assert fwd["regime"] == rev["regime"] == "CAUTIOUS"
+
+
+def test_news_weight_clamp_still_bounds_total():
+    from news_analyzer import build_score_weight_adjustments
+    sigs = {k: {"confidence": 100, "signal_data": {"score_adjust": {"safety_weight": 8}}}
+            for k in "abc"}
+    assert build_score_weight_adjustments(sigs)["safety_weight"] == 10
