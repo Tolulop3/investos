@@ -1,6 +1,6 @@
 ---
 ticker: NVDA
-updated: 2026-10-16
+updated: 2026-10-19
 streak_days: 3
 score_now: 84.4
 velocity: 0

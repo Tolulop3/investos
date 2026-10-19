@@ -1,11 +1,11 @@
 ---
 ticker: SU.TO
-updated: 2026-10-16
+updated: 2026-10-19
 streak_days: 4
 score_now: 94.4
 velocity: 0
 pf_30d: None
-picks_30d: 2
+picks_30d: 1
 tags: [investos, ticker, pattern]
 ---
 
