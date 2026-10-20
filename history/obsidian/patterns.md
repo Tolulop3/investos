@@ -39,8 +39,8 @@ tags: [investos, patterns, weekly]
 |--------|--------|--------|----------|----|
 | CNQ.TO | 🟡 WATCH | 13d | — | 26.35 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
-| CVE.TO | 🟡 WATCH | 0d | -17.5 | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
+| CVE.TO | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SU.TO | 🟡 WATCH | 8d | — | — |
