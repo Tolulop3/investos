@@ -1,9 +1,9 @@
 ---
 week: 2026-W42
-generated: 2026-10-19
-oos_n: 560
-oos_wr: 38.6
-oos_pf: 0.92
+generated: 2026-10-20
+oos_n: 581
+oos_wr: 39.2
+oos_pf: 0.94
 pre_oos_pf: 1.06
 tags: [investos, weekly, performance]
 ---
@@ -14,31 +14,31 @@ tags: [investos, weekly, performance]
 | Period | n | WR | Avg Return | PF |
 |--------|---|----|------------|-----|
 | Pre-OOS (in-sample) | 2645 | 47.0% | 0.1% | 1.06 |
-| **Post-OOS (live test)** | **560** | **38.6%** | **-0.14%** | **0.92** |
+| **Post-OOS (live test)** | **581** | **39.2%** | **-0.1%** | **0.94** |
 
 > OOS picks are made under frozen v4.1 rules — no tuning since 2026-08-15.
 
 ## Regime Timeline (recent)
 | Regime | Period | Duration | Avg Sharpe |
 |--------|--------|----------|------------|
-| FULL_EXPOSURE | 2026-06-17 → 2026-10-19 | 107d | -0.332 |
+| FULL_EXPOSURE | 2026-06-17 → 2026-10-20 | 108d | -0.329 |
 
 ## Sharpe Trajectory (last 7 days)
 | Date | Sharpe | 7d Avg | Direction |
 |------|--------|--------|-----------|
-| 2026-10-10 | -0.328 | -0.379 | improving |
 | 2026-10-12 | -0.257 | -0.354 | improving |
 | 2026-10-13 | -0.176 | -0.318 | improving |
 | 2026-10-14 | -0.09 | -0.275 | improving |
 | 2026-10-15 | -0.08 | -0.23 | improving |
 | 2026-10-16 | -0.085 | -0.19 | improving |
 | 2026-10-19 | 0.011 | -0.144 | improving |
+| 2026-10-20 | 0.03 | -0.092 | improving |
 
 ## Pick Quality by Macro Signal (min 5 picks)
 | Signal | n | WR | PF | Status |
 |--------|---|----|----|--------|
 | NO_DATA | 1587 | 53.9% | 1.13 | ⚠️ |
-| NO_SIGNALS | 1235 | 48.9% | 0.9 | 🔴 |
+| NO_SIGNALS | 1253 | 49.2% | 0.91 | 🔴 |
 
 ## Notes
 _Add weekly observations here_
