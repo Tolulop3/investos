@@ -1,8 +1,8 @@
 ---
 ticker: SLF.TO
-updated: 2026-10-20
+updated: 2026-10-21
 streak_days: 3
-score_now: 62.6
+score_now: 63.1
 velocity: 0
 pf_30d: 0.0
 picks_30d: 8
@@ -13,8 +13,8 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **3 of last 7 days**.
-Avg score: 62.6
-Dates: 2026-10-16, 2026-10-19, 2026-10-20
+Avg score: 63.1
+Dates: 2026-10-16, 2026-10-19, 2026-10-21
 
 ## Recent Performance (last 30d)
 Profit Factor: **0.0** 🔴  |  n=8 picks
