@@ -1,6 +1,6 @@
 ---
 ticker: CVE.TO
-updated: 2026-10-20
+updated: 2026-10-21
 streak_days: 3
 score_now: 94.9
 velocity: 7.5

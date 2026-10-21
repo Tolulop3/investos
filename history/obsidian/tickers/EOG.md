@@ -1,6 +1,6 @@
 ---
 ticker: EOG
-updated: 2026-10-20
+updated: 2026-10-21
 streak_days: 5
 score_now: 87.5
 velocity: 0

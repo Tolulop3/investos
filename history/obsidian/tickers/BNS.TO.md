@@ -1,6 +1,6 @@
 ---
 ticker: BNS.TO
-updated: 2026-10-20
+updated: 2026-10-21
 streak_days: 3
 score_now: 64.5
 velocity: 0
