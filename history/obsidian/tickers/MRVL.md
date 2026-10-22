@@ -1,6 +1,6 @@
 ---
 ticker: MRVL
-updated: 2026-10-21
+updated: 2026-10-22
 streak_days: 3
 score_now: 100.0
 velocity: 0

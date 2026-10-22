@@ -1,6 +1,6 @@
 ---
 ticker: CSU.TO
-updated: 2026-10-21
+updated: 2026-10-22
 streak_days: 5
 score_now: 91.2
 velocity: 0

@@ -1,6 +1,6 @@
 ---
 ticker: NEE
-updated: 2026-10-21
+updated: 2026-10-22
 streak_days: 5
 score_now: 67.8
 velocity: 0
