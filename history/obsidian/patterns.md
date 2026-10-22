@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 69.0%  (+0.44%/day)
+- Breadth (200MA): 69.4%  (+0.50%/day)
 - Sharpe: 0.086  (+0.025/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -15,7 +15,7 @@ tags: [investos, patterns, weekly]
 - **SU.TO** — 10d streak, avg score 95.5
 - **NEE** — 6d streak, avg score 68.2
 - **CSU.TO** — 6d streak, avg score 92.7
-- **CVE.TO** — 5d streak, avg score 91.0
+- **CVE.TO** — 4d streak, avg score 96.2
 - **SLF.TO** — 4d streak, avg score 62.6
 - **MRVL** — 3d streak, avg score 100.0
 - **WCP.TO** — 3d streak, avg score 98.1
@@ -33,7 +33,7 @@ tags: [investos, patterns, weekly]
 - 📉 **MMM** -12.2 pts/day  (74.3 → 50.0)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 71.9% of recent picks (23 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 72.7% of recent picks (24 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -42,11 +42,11 @@ tags: [investos, patterns, weekly]
 | VLO | 🟡 WATCH | 0d | +23.4 | 1.83 |
 | SU.TO | 🟡 WATCH | 10d | — | — |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
-| CVE.TO | 🔴 AVOID | 5d | -8.2 | 0.88 |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
-| MRVL | 🟡 WATCH | 3d | -11.2 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
+| MRVL | 🟡 WATCH | 3d | -10.7 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
+| CVE.TO | 🔴 AVOID | 4d | -8.2 | 0.88 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
