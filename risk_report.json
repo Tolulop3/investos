@@ -9,21 +9,21 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-10-23T19:37:40.318926",
+    "run_at": "2026-10-23T23:48:10.776997",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
         "normal_count": 14,
-        "survived": 9,
-        "survival_pct": 64.3,
+        "survived": 8,
+        "survival_pct": 57.1,
         "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "5 picks unviable after doubling costs"
+        "note": "6 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 14,
-        "survived": 10,
-        "survival_pct": 71.4,
+        "survived": 11,
+        "survival_pct": 78.6,
         "verdict": "\u26a0\ufe0f FRAGILE",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
@@ -38,35 +38,35 @@
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 73.1,
-        "stressed_avg": 62.8,
-        "score_drop": 10.3,
+        "normal_avg": 75.5,
+        "stressed_avg": 66.0,
+        "score_drop": 9.5,
         "removed": [
-          "CNQ.TO",
-          "SU.TO",
-          "MRVL",
           "CSU.TO",
+          "SU.TO",
+          "MDLZ",
+          "CNQ.TO",
           "VLO"
         ],
-        "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 10.3 pts without top 5 \u2014 system depth check"
+        "verdict": "\u26a0\ufe0f FRAGILE",
+        "note": "Score drops 9.5 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 14,
         "survived": 13,
         "survival_pct": 92.9,
-        "avg_score_drop": 2.3,
+        "avg_score_drop": 2.4,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.3 pts"
+        "note": "If momentum stops working: avg score drops 2.4 pts"
       }
     },
     "summary": {
       "normal_picks": 14,
-      "normal_avg_score": 73.1,
+      "normal_avg_score": 75.5,
       "scenarios_robust": 2,
-      "scenarios_fragile": 2,
-      "scenarios_broken": 1,
+      "scenarios_fragile": 3,
+      "scenarios_broken": 0,
       "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
     "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
@@ -85,22 +85,22 @@
       "note": "Sharpe from 971 resolved picks (2026-07-27 \u2192 2026-10-23) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": -1.48,
-      "ret_30d": 0.13,
-      "ret_90d": 2.82,
-      "ann_ret": 7.9,
+      "ret_7d": -1.55,
+      "ret_30d": 0.05,
+      "ret_90d": 2.74,
+      "ann_ret": 7.7,
       "ann_vol": 11.1,
-      "sharpe": 0.71,
+      "sharpe": 0.69,
       "symbol": "^GSPC"
     },
-    "alpha": -0.585,
+    "alpha": -0.565,
     "neg_alpha_days": 91,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 77.3,
-      "momentum_picks": 22,
-      "note": "17/22 rising-score picks also rose in price"
+      "alignment_pct": 78.3,
+      "momentum_picks": 23,
+      "note": "18/23 rising-score picks also rose in price"
     },
     "alerts": [
       {
