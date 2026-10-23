@@ -13,11 +13,11 @@ tags: [investos, patterns, weekly]
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CNQ.TO** — 14d streak, avg score 96.6
 - **SU.TO** — 11d streak, avg score 95.2
-- **CSU.TO** — 7d streak, avg score 92.3
+- **CSU.TO** — 7d streak, avg score 92.2
 - **NEE** — 6d streak, avg score 69.3
 - **CVE.TO** — 4d streak, avg score 96.2
 - **SLF.TO** — 4d streak, avg score 62.6
-- **MDLZ** — 4d streak, avg score 67.2
+- **MDLZ** — 4d streak, avg score 72.4
 
 ## Score Velocity (rising/falling fast)
 - 📈 **VLO** +23.4 pts/day  (50.0 → 96.7)
