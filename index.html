@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:8888 https://investos-proxy.netlify.app https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://api.binance.com https://api.coingecko.com https://api.alternative.me https://ipapi.co https://ip-api.com https://ipwho.is; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <meta name="googlebot" content="noindex, nofollow">
@@ -1638,27 +1639,25 @@ body::after {
   <!-- Open Trades from system -->
   <div id="portfolioOpenTrades" style="margin-bottom:14px"></div>
 
-  <!-- GitHub token -->
+  <!-- Portfolio backup (local only — no GitHub token, no sync) -->
   <div class="panel fi" style="margin-bottom:10px">
     <div class="panel-hdr">
-      <span class="panel-title">🔑 GITHUB SYNC</span>
+      <span class="panel-title">💾 PORTFOLIO BACKUP — LOCAL ONLY</span>
       <span id="patStatus" style="font-size:9px;color:var(--t3)"></span>
     </div>
     <div style="padding:12px 16px">
       <div style="font-size:9px;color:var(--t2);margin-bottom:8px;line-height:1.6">
-        Positions sync to <span style="color:var(--c);font-family:var(--mono)">Tolulop3/investos/portfolio.json</span> (private repo). Token stored in browser only.
+        Positions are stored <b>only in this browser</b> on this device. They are never synced to GitHub —
+        this repo is public, and no access token is asked for or stored. To move devices, Export a backup file here and Import it there.
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="patInput" type="password" placeholder="ghp_xxxxxxxxxxxx"
-          style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;color:var(--t1);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none"/>
-        <button onclick="saveGitHubToken()"
-          style="padding:7px 14px;background:var(--g);color:#000;border:none;border-radius:3px;font-family:var(--mono);font-size:10px;font-weight:800;cursor:pointer">SAVE</button>
-        <button onclick="syncFromGitHub()"
-          style="padding:7px 12px;background:var(--bg3);color:var(--t2);border:1px solid var(--border);border-radius:3px;font-family:var(--mono);font-size:10px;cursor:pointer">⟳ SYNC</button>
-        <button onclick="clearGitHubToken()"
-          style="padding:7px 10px;background:var(--bg3);color:var(--r);border:1px solid rgba(255,56,96,.3);border-radius:3px;font-family:var(--mono);font-size:10px;cursor:pointer">CLEAR</button>
+        <button onclick="exportPortfolio()"
+          style="padding:7px 14px;background:var(--g);color:#000;border:none;border-radius:3px;font-family:var(--mono);font-size:10px;font-weight:800;cursor:pointer">⬇ EXPORT</button>
+        <label style="padding:7px 12px;background:var(--bg3);color:var(--t2);border:1px solid var(--border);border-radius:3px;font-family:var(--mono);font-size:10px;cursor:pointer">⬆ IMPORT
+          <input id="portImportFile" type="file" accept="application/json,.json" style="display:none" onchange="importPortfolio(event)"/>
+        </label>
       </div>
-      <div style="font-size:8px;color:var(--t3);margin-top:6px">github.com → Settings → Developer settings → Personal access tokens → Fine-grained → repo scope (Contents: Read & Write)</div>
+      <div style="font-size:8px;color:var(--t3);margin-top:6px">Backup file = your positions, DCAs and discipline log as JSON. Keep it somewhere private — it lists your holdings.</div>
     </div>
   </div>
 
@@ -2240,7 +2239,7 @@ function switchTab(name) {
   const pane = document.getElementById('pane-'+name);
   if (pane) pane.classList.add('active');
   if (name === 'today')     { renderToday(); }
-  if (name === 'portfolio') { renderPortfolio(); syncFromGitHub(); }
+  if (name === 'portfolio') { renderPortfolio(); initPortfolioStorage(); }
   if (name === 'breadth')   { renderBreadth(); }
   if (name === 'etf')       { renderETF(); }
   if (name === 'ngx')       { renderNGX(); }
@@ -3888,32 +3887,33 @@ function renderUnifiedPickList(brief) {
 
 // ═══════════════════════════════════════════════════════
 // PORTFOLIO — GitHub-synced position tracker
-// Positions stored in private GitHub repo as portfolio.json
-// PAT token stored in localStorage (never in repo)
+// Positions stored ONLY in this browser's localStorage.
+// SECURITY (2026-10-24): the old GitHub-PAT sync was removed — it kept a
+// repo read/write token in localStorage on a public page, and the target
+// repo is public, not private. Cross-device transfer is via Export/Import.
 // ═══════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════
 // PORTFOLIO INTELLIGENCE ENGINE — InvestOS
 // Four brains: Brain 0 (Risk Budget) → Brain 1 (Monitor) →
 //              Brain 2 (Deployment) → Brain 3 (Projection)
-// GitHub-synced · Wealthsimple-aligned · Shared truth from BRIEF
+// Local-only · Wealthsimple-aligned · Shared truth from BRIEF
 // ═══════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════
 // PORTFOLIO INTELLIGENCE ENGINE — InvestOS
 // Four brains: Brain 0 (Risk Budget) → Brain 1 (Monitor) →
 //              Brain 2 (Deployment) → Brain 3 (Projection)
-// GitHub-synced · Wealthsimple-aligned · Shared truth from BRIEF
+// Local-only · Wealthsimple-aligned · Shared truth from BRIEF
 // ═══════════════════════════════════════════════════════════════════
 
 const PORT_KEY  = 'investos_positions_v2';
 const DCA_KEY   = 'investos_dca_v1';
 const PREF_KEY  = 'investos_prefs_v1';
 const DISC_KEY  = 'investos_discipline_v1';
-const PAT_KEY   = 'investos_github_pat';
-const GH_REPO   = 'Tolulop3/investos';
-const GH_FILE   = 'portfolio.json';
-const GH_API    = `https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
+// Legacy key name, kept only so initPortfolioStorage() can delete any
+// token an older version stored. Never written again.
+const LEGACY_PAT_KEY = 'investos_github_pat';
 
 // ── FACTOR MAP — economic exposure (not just sector) ──────────────
 // This catches GDX + WPM.TO + AEM.TO = all GOLD exposure
@@ -3977,57 +3977,51 @@ const DEFAULT_LIMITS = {
   singlePos: { soft: 20, highConv: 25 },
 };
 
-// ── GITHUB SYNC ────────────────────────────────────────────────────
+// ── LOCAL BACKUP (replaces GitHub sync — removed 2026-10-24) ─────
 
-let _ghSha = null;
-
-function getToken() { return localStorage.getItem(PAT_KEY) || ''; }
-
-async function ghRead() {
-  const token = getToken();
-  if (!token) return null;
-  try {
-    const r = await fetch(GH_API, {
-      headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-    });
-    if (!r.ok) return null;
-    const j = await r.json();
-    const decoded = atob(j.content.replace(/\n/g, ''));
-    return { data: JSON.parse(decoded), sha: j.sha };
-  } catch { return null; }
+function initPortfolioStorage() {
+  // One-time cleanup: delete any GitHub PAT stored by an older version.
+  try { localStorage.removeItem(LEGACY_PAT_KEY); } catch {}
+  const el = document.getElementById('ghSyncStatus');
+  if (el) el.textContent = '💾 Local only';
 }
 
-async function ghWrite(payload, sha) {
-  const token = getToken();
-  if (!token) return false;
-  const body = {
-    message: 'InvestOS: portfolio update',
-    content: btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))))
-  };
-  if (sha) body.sha = sha;
-  try {
-    const r = await fetch(GH_API, {
-      method: 'PUT',
-      headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (r.status === 409) {
-      // SHA conflict — re-fetch and retry once
-      const fresh = await ghRead();
-      if (!fresh) return false;
-      _ghSha = fresh.sha;
-      body.sha = fresh.sha;
-      const r2 = await fetch(GH_API, {
-        method: 'PUT',
-        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      if (r2.ok) { const j2 = await r2.json(); _ghSha = j2.content?.sha || _ghSha; }
-      return r2.ok;
+function exportPortfolio() {
+  const payload = loadPortData();
+  payload.prefs = loadPrefs();
+  payload.discipline = loadDiscipline();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'investos-portfolio-backup.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  const el = document.getElementById('ghSyncStatus');
+  if (el) el.textContent = '⬇ Backup downloaded';
+}
+
+function importPortfolio(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data || (!Array.isArray(data.positions) && !Array.isArray(data.dcas))) {
+        throw new Error('not an InvestOS backup');
+      }
+      cachePortData({ positions: data.positions || [], dcas: data.dcas || [] });
+      if (data.prefs) savePrefs(data.prefs);
+      if (Array.isArray(data.discipline)) saveDiscipline(data.discipline);
+      renderPortfolio();
+      const el = document.getElementById('ghSyncStatus');
+      if (el) el.textContent = '✅ Backup imported';
+    } catch {
+      alert('That file is not a valid InvestOS portfolio backup.');
     }
-    if (r.ok) { const j = await r.json(); _ghSha = j.content?.sha || _ghSha; }
-    return r.ok;
-  } catch { return false; }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
 }
 
 // ── LOCAL CACHE ────────────────────────────────────────────────────
@@ -4063,36 +4057,10 @@ function saveDiscipline(d) { localStorage.setItem(DISC_KEY, JSON.stringify(d)); 
 
 // ── SYNC ───────────────────────────────────────────────────────────
 
-async function syncFromGitHub() {
-  const el = document.getElementById('ghSyncStatus');
-  if (el) el.textContent = '⏳ Syncing...';
-  const result = await ghRead();
-  if (result) {
-    _ghSha = result.sha;
-    cachePortData(result.data);
-    if (el) { el.textContent = '✅ Synced'; setTimeout(() => { if (el) el.textContent = ''; }, 3000); }
-    renderPortfolio();
-  } else {
-    if (el) el.textContent = getToken() ? '⚠️ Sync failed — using local cache' : '🔑 Add GitHub token to sync across devices';
-  }
-}
-
-async function pushToGitHub() {
-  const el = document.getElementById('ghSyncStatus');
-  if (!getToken()) { if (el) el.textContent = '💾 Saved locally'; return; }
-  if (el) el.textContent = '⏳ Saving...';
-  const payload = loadPortData();
-  const ok = await ghWrite(payload, _ghSha);
-  if (ok) {
-    if (el) { el.textContent = '✅ Saved to GitHub'; setTimeout(() => { if (el) el.textContent = ''; }, 3000); }
-  } else {
-    if (el) el.textContent = '⚠️ GitHub save failed — saved locally';
-  }
-}
-
 async function savePortData(d) {
   cachePortData(d);
-  await pushToGitHub();
+  const el = document.getElementById('ghSyncStatus');
+  if (el) el.textContent = '💾 Saved locally';
 }
 
 // ── PRICE MAP from BAKED BRIEF ─────────────────────────────────────
@@ -4542,21 +4510,6 @@ function saveSettings() {
   savePrefs(p);
   showPosMsg(`✅ Settings saved — $${budget}/mo budget, $${goal}/mo income goal`, 'var(--g)');
   renderPortfolio();
-}
-
-function saveGitHubToken() {
-  const val = (document.getElementById('patInput')?.value || '').trim();
-  if (!val) { alert('Paste your GitHub Personal Access Token first.'); return; }
-  localStorage.setItem(PAT_KEY, val);
-  if (document.getElementById('patInput')) document.getElementById('patInput').value = '';
-  if (document.getElementById('patStatus')) document.getElementById('patStatus').textContent = '✅ Token saved';
-  syncFromGitHub();
-}
-
-function clearGitHubToken() {
-  if (!confirm('Remove GitHub token?')) return;
-  localStorage.removeItem(PAT_KEY);
-  if (document.getElementById('patStatus')) document.getElementById('patStatus').textContent = '🔑 Token cleared';
 }
 
 async function closePosition(id) {
