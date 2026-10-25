@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+# Least privilege (2026-10-25): the suite only reads code and runs pytest.
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
