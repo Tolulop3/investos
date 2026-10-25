@@ -37,3 +37,53 @@
   from   = "/api/ticker"
   to     = "/.netlify/functions/ticker"
   status = 200
+
+# ── Publish scoping (2026-10-25) ────────────────────────────────────────────
+# No publish dir is configured, so Netlify serves the whole repo root. The
+# repo is public on GitHub, so today this is zero incremental exposure —
+# these forced 404s exist so a future private repo (or a sensitive file
+# committed by accident) doesn't leak through this domain. The dashboard's
+# data files (root *.json), index.html and signal_ledger.html stay public:
+# the Netlify-hosted dashboard copy needs them. Function invocation is not
+# affected — it routes via /.netlify/functions/* and /api/*, not /netlify/*.
+[[redirects]]
+  from   = "/netlify/*"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/tests/*"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/scripts/*"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/*.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/*.pkl"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/package.json"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/package-lock.json"
+  to     = "/404.html"
+  status = 404
+  force  = true
