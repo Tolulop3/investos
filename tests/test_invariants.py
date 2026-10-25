@@ -4338,13 +4338,28 @@ def test_category_is_data_ready_matches_known_live_categories():
     RULES_BASED_CATEGORIES must read not-ready. This is what makes the
     check trustworthy as a future drop-in replacement for that hardcoded
     set -- it must agree with today's known-correct manual classification
-    before it's trusted to drive it automatically."""
+    before it's trusted to drive it automatically.
+
+    UPDATED 2026-10-25: WATCH crossed the data bar on its own schedule --
+    492 true-horizon-resolved rows at ~19% feature coverage (bar: 80 rows /
+    10%), because post-2026-06-14 picks (the first carrying real features)
+    aged past WATCH's 90-day horizon from mid-September on. The detector
+    now reads WATCH ready while ml_engine.py still hardcodes it
+    rules_based. That divergence is DELIBERATE: promotion is a human
+    decision, not something the detector forces by failing CI. WATCH is
+    therefore asserted ready here, and the not-ready loop covers the
+    remaining rules_based categories. If WATCH is ever promoted out of
+    RULES_BASED_CATEGORIES, revisit this test."""
     from outcome_tracker import category_is_data_ready, load_outcomes
     from ml_engine import RULES_BASED_CATEGORIES
 
     outcomes = load_outcomes()
     assert category_is_data_ready("SWING", outcomes=outcomes) is True
-    for cat in RULES_BASED_CATEGORIES:
+    assert category_is_data_ready("WATCH", outcomes=outcomes) is True, (
+        "WATCH crossed the data-readiness bar (rows + feature coverage) -- "
+        "if this fails, WATCH data regressed below the bar"
+    )
+    for cat in RULES_BASED_CATEGORIES - {"WATCH"}:
         assert category_is_data_ready(cat, outcomes=outcomes) is False, (
             f"{cat} is hardcoded rules_based today -- category_is_data_ready "
             f"must agree it isn't ready, or the two would silently disagree"
@@ -4496,6 +4511,26 @@ def test_train_and_save_deploys_when_auc_clears_bar(monkeypatch, tmp_path):
     never dropped below 0.87 in the same sweep. n=150 keeps real margin over
     the 0.53 bar without materially slowing the test."""
     import ml_retrainer as mr
+
+    # FIX (2026-10-25): build_feature_matrix computes its 90-day recency
+    # sample weights against datetime.now(), so this fixture DECAYED WITH
+    # THE CALENDAR: by Oct 2026 the Jun-2026 train rows' weights had fallen
+    # to a ~0.40 mean, the weighted Hessian could no longer clear
+    # XGB_PARAMS' min_child_weight=4, and the model collapsed to a
+    # 0.5-AUC / zero-importance stump on every run (library versions were
+    # bisected and exonerated -- xgboost is pinned and the failure
+    # reproduced identically across pandas/numpy/sklearn/scipy versions).
+    # Freeze the clock at the fixture's design era (2026-08-20, when the
+    # n=150 margin above was probed) so the weights are the ones the
+    # fixture was calibrated with. Production code is untouched.
+    from datetime import datetime as _RealDateTime
+
+    class _FrozenDateTime(_RealDateTime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 8, 20, 12, 0, 0)
+
+    monkeypatch.setattr(mr, "datetime", _FrozenDateTime)
 
     resolved = _synthetic_resolved_rows(n=150, informative=True, seed=1)
     X, y, w, dates = mr.build_feature_matrix(resolved)
