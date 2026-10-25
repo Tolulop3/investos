@@ -61,6 +61,9 @@ jobs:
         run: python run_daily.py --github
         env:
           NGN_MARKETS_KEY: ${{ secrets.NGN_MARKETS_KEY }}
+          # Free NGX price feed for the screener (NGN per-stock endpoints
+          # are plan-gated). Key above is still used by the outcome tracker.
+          NGX_PRICE_SOURCE: "kwayisi"
 
       - name: Commit updated dashboard
         run: |
