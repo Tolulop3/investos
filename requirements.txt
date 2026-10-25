@@ -9,10 +9,12 @@ urllib3>=2.0.0
 yfinance>=0.2.40
 
 # ML (pinned 2026-10-25 -- verified green against the full invariant
-# suite; bump deliberately, with a full suite run, not by drift)
+# suite on CI's Python 3.11; note numpy>=2.5 requires Python 3.12+, so
+# numpy stays on the 2.4 line while the workflows run 3.11. Bump
+# deliberately, with a full suite run, not by drift)
 scikit-learn==1.9.1
 xgboost-cpu==2.1.4
-numpy==2.5.4
+numpy==2.4.6
 pandas==3.1.0
 
 # RSS parsing
