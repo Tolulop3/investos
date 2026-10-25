@@ -27,6 +27,21 @@ const https = require('https');
 const { getStore } = require('@netlify/blobs');
 const { checkRateLimit } = require('./_rateLimiter');
 
+// ── In-memory fallback rate store ─────────────────────────────────────────
+// Used only when Netlify Blobs context is unavailable on this site (see the
+// try/catch at the rate-limit check in the handler). Satisfies the same
+// store contract _rateLimiter.js documents: async get(key, {type}) ->
+// parsed value, async set(key, value). Per-instance and reset on cold
+// start — exactly the behaviour this proxy ran on before the Blobs move.
+const _memoryRateData = new Map();
+const _memoryRateStore = {
+  get: async (key) => (_memoryRateData.has(key) ? _memoryRateData.get(key) : null),
+  set: async (key, value) => {
+    if (_memoryRateData.size > 500) _memoryRateData.clear(); // soft cap; counts are per-10-min-window
+    _memoryRateData.set(key, JSON.parse(value));
+  },
+};
+
 // ── Allowed origins ──────────────────────────────────────────────────────────
 // The live dashboard is served from GitHub Pages (tolulop3.github.io), not
 // the Netlify site — with only the Netlify origin listed, every Lookup from
@@ -108,8 +123,20 @@ exports.handler = async function(event) {
   // dashboard, which sends no real key) bucket under 'dashboard' same as a
   // dashboard-key match would.
   const rateIdentity = vettKeyMatch ? 'vett' : 'dashboard';
-  const rateStore = getStore('ticker-ratelimit');
-  const allowed = await checkRateLimit(rateStore, rateIdentity, Date.now());
+  // FIX (2026-10-25): getStore() throws MissingBlobsEnvironmentError on this
+  // site — the function runtime provides no Blobs context (verified across
+  // two full production redeploys, incl. clear-cache). Unhandled, that 502'd
+  // EVERY lookup once the current code finally deployed. Fall back to the
+  // in-memory store so a storage-config problem can never take the lookup
+  // down with it; if a Blobs context ever becomes available, the durable
+  // store is used again automatically.
+  let allowed;
+  try {
+    allowed = await checkRateLimit(getStore('ticker-ratelimit'), rateIdentity, Date.now());
+  } catch (blobsErr) {
+    console.warn('Blobs rate store unavailable (' + (blobsErr && blobsErr.name) + ') — in-memory fallback');
+    allowed = await checkRateLimit(_memoryRateStore, rateIdentity, Date.now());
+  }
   if (!allowed) {
     return {
       statusCode: 429,
