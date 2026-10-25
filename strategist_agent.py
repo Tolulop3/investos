@@ -12,7 +12,15 @@ A thinking layer that:
   4. Flags contradictions between what the engine says and what data shows
   5. Writes a daily research note you can trust
 
-Uses the Anthropic API — calls Claude to do the actual reasoning.
+HYBRID DESIGN (2026-10-25): a deterministic core computes the checks
+below from system data and ALWAYS produces the research note — regime
+state, contradiction flags, pick quality, opportunities, watch items,
+and one prioritised action. The Anthropic API layer (Claude) adds a
+commentary section on top when the call succeeds; if it fails, the note
+still ships and the failure is recorded in the note itself. The AI is an
+enhancement, never a single point of failure. (Before this change the
+note WAS the API call: when it began failing on 2026-07-23, 86 of the
+first 90 notes were failure banners and nothing else was produced.)
 Commits research note to history/obsidian/research/YYYY-MM-DD.md
 
 AUTONOMY STACK POSITION:
@@ -201,6 +209,163 @@ RECENT OBSIDIAN NOTES (last 3 days):
     return context
 
 
+# ── Deterministic Core ──────────────────────────────────────────────────
+
+def build_deterministic_note(brief, history_analysis, pattern_signals,
+                             recent_outcomes):
+    """
+    Compute the strategist's checks from system data and render the note.
+    Pure function of its inputs — no API, no I/O — so it cannot fail the
+    way the API layer did. Returns (note_markdown, flags_list).
+    """
+    sys_exp  = brief.get("system_exposure", {}) or {}
+    mkt_reg  = brief.get("market_regime",   {}) or {}
+    macro    = brief.get("macro",           {}) or {}
+    rm       = brief.get("regime_momentum", {}) or {}
+    risk_rep = brief.get("risk_report",     {}) or {}
+    decay    = risk_rep.get("decay_monitor", {}) or {}
+    breadth  = brief.get("breadth",         {}) or {}
+    pcr_data = brief.get("market_pcr",      {}) or {}
+
+    mkt   = str(mkt_reg.get("regime") or "UNKNOWN")
+    mac   = str(macro.get("regime") or "UNKNOWN")
+    expo  = float(sys_exp.get("pct") or 0)
+    label = sys_exp.get("label") or "?"
+    neg_alpha = int(decay.get("neg_alpha_days") or 0)
+    sharpe_raw = decay.get("rolling_sharpe", 0)
+    sharpe = sharpe_raw.get("sharpe", 0) if isinstance(sharpe_raw, dict) else (sharpe_raw or 0)
+    slope = float(rm.get("breadth_slope") or 0)
+    pcr_signal = str(pcr_data.get("signal") or "")
+
+    ml_picks = (brief.get("ml", {}) or {}).get("position_sizing", [])[:5]
+    basket = [str(p.get("ticker")) for p in ml_picks if p.get("ticker")]
+    conviction = brief.get("conviction_picks", []) or []
+
+    boosted   = {t: d for t, d in pattern_signals.items() if (d.get("boost") or 0) > 0}
+    penalised = {t: d for t, d in pattern_signals.items() if (d.get("boost") or 0) < 0}
+    penalised_in_basket = [t for t in basket if t in penalised]
+    boosted_not_in_basket = [t for t in boosted if t not in basket]
+
+    # ── Contradiction flags ──
+    flags = []
+    if "BULL" in mkt and "RISK_OFF" in mac:
+        flags.append(f"Market regime is {mkt} but the macro overlay is {mac} (defensive).")
+    if "BEAR" in mkt and "RISK_ON" in mac:
+        flags.append(f"Market regime is {mkt} but the macro overlay is {mac} (risk-seeking).")
+    if expo >= 0.70 and "RISK_OFF" in mac:
+        flags.append(f"Exposure is {expo*100:.0f}% while the macro overlay recommends defensive positioning.")
+    if expo <= 0.30 and "RISK_ON" in mac:
+        flags.append(f"Exposure is only {expo*100:.0f}% while the macro overlay is {mac}.")
+    if neg_alpha >= 30 and expo >= 0.60:
+        flags.append(f"Negative-alpha streak is {neg_alpha} days while exposure sits at {expo*100:.0f}%.")
+    if "BEARISH" in pcr_signal and "BULL" in mkt:
+        flags.append(f"Options PCR reads {pcr_signal} against a {mkt} market regime — hedging the engine isn't pricing.")
+    if "BULLISH" in pcr_signal and "BEAR" in mkt:
+        flags.append(f"Options PCR reads {pcr_signal} against a {mkt} market regime.")
+    if slope < 0 and "BULL" in mkt:
+        flags.append(f"Breadth slope is {slope:+.2f}%/day under a {mkt} regime — participation is narrowing.")
+    for t in penalised_in_basket:
+        flags.append(f"{t} is in today's ML basket but the pattern agent flags it "
+                     f"{penalised[t].get('action', 'AVOID')} ({penalised[t].get('reason', '')}).")
+
+    # ── Sections ──
+    active_signals = list((macro.get("active_signals") or {}).keys())
+    regime_md = f"""## Regime Check
+- Market: **{mkt}** — SPX ${float(mkt_reg.get('spx_price') or 0):,.0f}, {float(mkt_reg.get('pct_above_ma') or 0):+.1f}% vs its 200-day average.
+- System stance: **{label}** at {expo*100:.0f}% exposure · risk multiplier {float(risk_rep.get('risk_multiplier') or 1.0):.2f}×.
+- Macro overlay: **{mac}** — {macro.get('regime_note', '')}
+- Active macro signals: {', '.join(active_signals) if active_signals else 'none'}.
+- Breadth: {breadth.get('pct_above_200', 0)}% above 200MA, slope {slope:+.2f}%/day · PCR {pcr_data.get('pcr', 0)} ({pcr_signal or 'n/a'}).
+- Regime age: {rm.get('days_in_regime', 0)} days · momentum {rm.get('momentum', 'STABLE')} (confidence {float(rm.get('confidence') or 0):.0%})."""
+
+    flags_md = "## Contradictions & Flags\n" + (
+        "\n".join(f"- ⚠️ {f}" for f in flags) if flags
+        else "- None today — the system's signals are internally consistent.")
+
+    if ml_picks:
+        scores = [float(p.get("score") or 0) for p in ml_picks]
+        probs  = [float(p.get("ml_prob") or 0) for p in ml_picks]
+        basket_txt = ", ".join(
+            f"{p.get('ticker')} (score {float(p.get('score') or 0):.0f}, ML {float(p.get('ml_prob') or 0):.0%}, {float(p.get('weight_pct') or 0):.0f}%)"
+            for p in ml_picks)
+        quality_lines = [
+            f"- Today's ML basket: {basket_txt}.",
+            f"- Basket means: score {sum(scores)/len(scores):.0f}, ML probability {sum(probs)/len(probs):.0%}.",
+        ]
+        low = [p.get("ticker") for p in ml_picks if float(p.get("score") or 0) < 60]
+        if low:
+            quality_lines.append(f"- ⚠️ Below the usual quality line (score < 60): {', '.join(low)}.")
+    else:
+        quality_lines = ["- No ML-sized basket today."]
+
+    oc = recent_outcomes or {}
+    if oc.get("n"):
+        quality_lines.append(
+            f"- Last 14 days: {oc['n']} resolved picks at {oc.get('wr', 0)}% win rate "
+            f"({oc.get('wins', 0)}W / {oc.get('losses', 0)}L).")
+    aligned = [t for t in basket if t in boosted]
+    if aligned:
+        quality_lines.append(f"- Pattern-aligned basket names (boosted): {', '.join(aligned)}.")
+    if penalised_in_basket:
+        quality_lines.append(
+            f"- ⚠️ Pattern-penalised names sized anyway: {', '.join(penalised_in_basket)} "
+            f"(see Contradictions).")
+    quality_md = "## Pick Quality\n" + "\n".join(quality_lines)
+
+    opp_lines = []
+    conv_out = [p for p in conviction if p.get("ticker") not in basket]
+    if conv_out:
+        opp_lines.append("- Conviction picks outside the basket: " + ", ".join(
+            f"{p.get('ticker')} (score {p.get('score')}, {p.get('conviction_count', 0)} signals)"
+            for p in conv_out))
+    if boosted_not_in_basket:
+        opp_lines.append("- Pattern-boosted but not picked: " + ", ".join(
+            f"{t} (+{boosted[t].get('boost', 0):.0f}: {boosted[t].get('reason', '')})"
+            for t in boosted_not_in_basket))
+    opp_md = "## Opportunities\n" + (
+        "\n".join(opp_lines) if opp_lines
+        else "- Nothing new outside today's basket — the screen and the pattern layer agree on where the action is.")
+
+    watch_lines = [f"- Negative-alpha streak: {neg_alpha} days."]
+    traj = (history_analysis or {}).get("sharpe_trajectory", [])
+    if traj:
+        last = traj[-1]
+        watch_lines.append(
+            f"- Rolling Sharpe (90d): {float(sharpe or 0):.3f} · 7d trajectory avg "
+            f"{last.get('rolling_avg')}, direction {last.get('direction')}.")
+    else:
+        watch_lines.append(f"- Rolling Sharpe (90d): {float(sharpe or 0):.3f}.")
+    if penalised:
+        watch_lines.append("- Pattern-penalised: " + ", ".join(
+            f"{t} ({d.get('boost', 0):+.0f})" for t, d in penalised.items()))
+    watch_lines.append(f"- Regime age: {rm.get('days_in_regime', 0)} days in {mkt}.")
+    watch_md = "## Watch\n" + "\n".join(watch_lines)
+
+    # ── One Action (deterministic priority ladder) ──
+    if penalised_in_basket:
+        t = penalised_in_basket[0]
+        action = (f"Review {t} before acting on today's basket — the pattern agent flags it "
+                  f"{penalised[t].get('action', 'AVOID')} ({penalised[t].get('reason', '')}), "
+                  f"yet the engine sized it today.")
+    elif expo >= 0.70 and "RISK_OFF" in mac:
+        action = (f"Decide the stance conflict explicitly: {expo*100:.0f}% exposure into a "
+                  f"{mac} macro read is today's biggest open contradiction.")
+    elif neg_alpha >= 30:
+        action = (f"Audit the recent pick stream: a {neg_alpha}-day negative-alpha streak "
+                  f"with {oc.get('n', 0)} resolved picks in 14 days at {oc.get('wr', 0)}% win rate.")
+    elif oc.get("n", 0) >= 20 and oc.get("wr", 0) < 40:
+        action = (f"Pick quality is below the line — {oc.get('wr', 0)}% win rate over "
+                  f"{oc.get('n', 0)} resolved picks (14d). Review category mix before adding new picks.")
+    elif flags:
+        action = f"Resolve today's top flag: {flags[0]}"
+    else:
+        action = "No action required — no material contradictions today; the system is internally consistent."
+    action_md = f"## One Action\n{action}"
+
+    note = "\n\n".join([regime_md, flags_md, quality_md, opp_md, watch_md, action_md])
+    return note, flags
+
+
 # ── Strategist Prompt ─────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = """You are the InvestOS daily investment strategist. 
@@ -336,8 +501,9 @@ def run_strategist(verbose=True):
     recent_outcomes = load_recent_outcomes(14)
 
     if not brief:
-        print("  ⚠️  No latest_brief.json found — skipping")
-        return
+        # Loud, not silent: producing no note at all is a real failure.
+        print("  ❌ No latest_brief.json found — cannot build a note")
+        raise SystemExit(1)
 
     if verbose:
         print(f"  Loaded: brief={bool(brief)}, history_analysis={bool(history_analysis)}")
@@ -359,27 +525,38 @@ def run_strategist(verbose=True):
         print(f"  Context built: {len(context)} chars")
         print(f"  Calling strategist API...")
 
-    # Call API
-    note_text = call_strategist_api(context)
+    # Deterministic core — always runs; the note exists even if the
+    # API layer is down (hybrid design, 2026-10-25).
+    try:
+        core_note, flags = build_deterministic_note(
+            brief, history_analysis, pattern_signals, recent_outcomes)
+    except Exception as e:
+        # The core failing is a genuine bug — loud, never silent.
+        print(f"  ❌ Deterministic core failed: {e}")
+        raise SystemExit(1)
+
+    # AI commentary layer — an enhancement, not a dependency. On failure
+    # the note still ships, with the API's own error recorded in place of
+    # the commentary (the error-body surfacing from the 2026-10-25 fix).
+    ai_text = call_strategist_api(context)
+    if ai_text.startswith("[Strategist API call failed") or ai_text == "[No content returned]":
+        print("  ⚠️  AI commentary unavailable this run — core note still written")
+        ai_section = ("## Strategist Commentary (AI)\n\n"
+                      f"_Unavailable this run. {ai_text}_")
+    else:
+        ai_section = f"## Strategist Commentary (AI)\n\n{ai_text}"
+
+    note_text = core_note + "\n\n---\n\n" + ai_section
 
     if verbose:
-        print(f"  Response: {len(note_text)} chars")
+        print(f"  Core note: {len(core_note)} chars · flags: {len(flags)}")
+        print(f"  AI commentary: {len(ai_text)} chars")
         print(f"\n{'─'*55}")
         print(note_text[:600])
         print(f"{'─'*55}\n")
 
     # Write note
     path = write_research_note(today, note_text, context)
-
-    if note_text.startswith("[Strategist API call failed"):
-        # Fail loud (2026-10-25): a failed call used to return its banner
-        # as if it were a note, so the run stayed green and the failure sat
-        # invisible inside the note for ~3 months (86 of the first 90).
-        # The workflow's commit step runs with if: always(), so the note —
-        # which now carries the API's own error message — still lands in
-        # the repo, but this run is marked failed.
-        print("  ❌ Strategist API call failed — failing this run so it's visible")
-        raise SystemExit(1)
 
     if verbose:
         print(f"  📝 Research note → {path}")
