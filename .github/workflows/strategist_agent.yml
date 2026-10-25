@@ -46,6 +46,9 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Commit research note
+        # always(): a failed strategist run must still commit its note —
+        # the note carries the API's error message (2026-10-25 change).
+        if: always()
         run: |
           git config --global user.name "InvestOS Bot"
           git config --global user.email "investos-bot@users.noreply.github.com"
