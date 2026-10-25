@@ -46,6 +46,9 @@
 # data files (root *.json), index.html and signal_ledger.html stay public:
 # the Netlify-hosted dashboard copy needs them. Function invocation is not
 # affected — it routes via /.netlify/functions/* and /api/*, not /netlify/*.
+# NOTE: extension splats ("/*.py") do NOT match in Netlify's redirect
+# engine (verified live 2026-10-25) — root files are blocked by exact path.
+# New root .py files must be added here to stay blocked.
 [[redirects]]
   from   = "/netlify/*"
   to     = "/404.html"
@@ -65,25 +68,271 @@
   force  = true
 
 [[redirects]]
-  from   = "/*.py"
+  from   = "/content_engine.py"
   to     = "/404.html"
   status = 404
   force  = true
 
 [[redirects]]
-  from   = "/*.pkl"
+  from   = "/crypto_engine.py"
   to     = "/404.html"
   status = 404
   force  = true
 
 [[redirects]]
-  from   = "/package.json"
+  from   = "/crypto_outcome_tracker.py"
   to     = "/404.html"
   status = 404
   force  = true
 
 [[redirects]]
-  from   = "/package-lock.json"
+  from   = "/etf_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/etf_outcome_tracker.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/evidence_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/factor_investigation.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/fx_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/fx_outcome_tracker.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/gate_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/history_analyzer.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/insider_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/intelligence_layers.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/launch.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/migrate_etf_sector_split.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/ml_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/ml_retrainer.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/news_analyzer.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/ngx_diagnostic.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/ngx_outcome_tracker.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/ngx_price_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/ngx_price_kwayisi.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/ngx_screener.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/options_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/outcome_tracker.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/pattern_agent.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/pick_utils.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/portfolio_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/regime_predictor.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/risk_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/run_daily.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/scout_agent.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/signal_ledger.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/signal_quality.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/stock_screener.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/strategist_agent.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/strategy_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/strategy_version.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/test_account_sizing.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/test_etf_engine_sector_split.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/test_etf_outcome_tracker.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/test_gate_engine.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/test_safe_parse_records.py"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/requirements.txt"
+  to     = "/404.html"
+  status = 404
+  force  = true
+
+[[redirects]]
+  from   = "/netlify.toml"
   to     = "/404.html"
   status = 404
   force  = true
