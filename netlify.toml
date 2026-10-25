@@ -6,13 +6,24 @@
   # bot-traffic problem. Every push to main (up to 9/weekday from the
   # automated Brief/Patterns/Research workflows) was triggering a full
   # rebuild regardless of whether anything Netlify actually serves changed.
-  # Skip the build unless netlify/, netlify.toml, or index.html (the baked
-  # dashboard Brief writes every run) changed. ignore exits 0 -> skip build,
-  # non-zero -> proceed. The `-n "$CACHED_COMMIT_REF"` guard forces a build
-  # when there's no prior deploy to diff against (e.g. site reconnected),
-  # rather than letting an empty ref silently skip. netlify.toml is in the
-  # watched path list, so the deploy that introduces this rule always fires.
-  ignore = '[ -n "$CACHED_COMMIT_REF" ] && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- netlify/ netlify.toml index.html'
+  # Skip the build unless netlify/ or netlify.toml changed. ignore exits
+  # 0 -> skip build, non-zero -> proceed. The `-n "$CACHED_COMMIT_REF"`
+  # guard forces a build when there's no prior deploy to diff against
+  # (e.g. site reconnected), rather than letting an empty ref silently
+  # skip. netlify.toml is in the watched path list, so the deploy that
+  # introduces this rule always fires.
+  # 2026-10-25 tightening: index.html REMOVED from the watched paths.
+  # Measured again that day: 11 production deploys = 165 of 165.5 credits
+  # consumed in the new cycle's first day (flat 15/deploy; functions,
+  # bandwidth and requests are ~free at this volume). The dashboard bake
+  # rewrites index.html 3x/weekday, so watching it means ~66 deploys/mo
+  # ~= 990 credits against a 300-credit free budget — the July fix could
+  # never have held. This site exists for the ticker function; the
+  # Netlify-hosted dashboard copy is a duplicate of the canonical GitHub
+  # Pages dashboard and may go stale between function deploys (accepted).
+  # To ship a dashboard-code change here: manual deploy, or touch this
+  # file in the same push.
+  ignore = '[ -n "$CACHED_COMMIT_REF" ] && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- netlify/ netlify.toml'
 
 # ── Security headers on all pages ────────────────────────────────────────────
 [[headers]]
