@@ -1009,6 +1009,23 @@ def run_daily(test_mode=False, dry_run=False):
         with open("all_scores.json", "w") as _asf:
             _asj.dump(_as_out, _asf, indent=2)
         print(f"  📋 all_scores.json: {len(_all_scored)} tickers saved")
+        # Drop record (2026-10-25): every universe name that reached no
+        # bucket, with its stage + reason — the permanent, inspectable
+        # counterpart to all_scores. See stock_screener drop tracking.
+        try:
+            with open("screen_drops.json", "w") as _sdf:
+                _asj.dump({"generated_at": datetime.now().isoformat(),
+                           "universe":   screener.get("universe_size"),
+                           "fetched":    screener.get("screened"),
+                           "scored":     len(_all_scored),
+                           "drop_counts": screener.get("drop_counts", {}),
+                           "dropped":     screener.get("dropped", {})},
+                          _sdf, indent=2)
+            print(f"  📉 screen_drops.json: "
+                  f"{sum(screener.get('drop_counts', {}).values())} dropped names recorded "
+                  f"{screener.get('drop_counts', {})}")
+        except Exception as _sde:
+            print(f"  ⚠️  screen_drops.json write failed: {_sde}")
     except Exception as _ase:
         print(f"  ⚠️  all_scores.json write failed: {_ase}")
 
@@ -1970,7 +1987,14 @@ def run_daily(test_mode=False, dry_run=False):
         "signal_accuracy": signal_accuracy,
         "screen_stats":   screener["stats"] | {
             "universe": screener["universe_size"],
-            "screened": screener["screened"]
+            "screened": screener["screened"],
+            # scored = names that reached a bucket (= all_scores size);
+            # dropped = names lost per funnel stage. Added 2026-10-25 so
+            # "screened" (fetched OK) is never again read as coverage.
+            "scored": len({p["ticker"] for _b in ["FHSA_all", "TFSA_core_all",
+                        "TFSA_income_all", "TFSA_swing_all"]
+                        for p in screener.get(_b, []) if isinstance(p, dict)}),
+            "drop_counts": screener.get("drop_counts", {})
         },
         "breadth":         screener.get("breadth"),
         "unified_regime":  unified_regime,    # logged to outcomes + shown in dashboard
