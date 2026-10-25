@@ -1073,6 +1073,24 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
         print(f"   ⚠️  Unavailable tickers: {', '.join(sorted(failed)[:8])}")
         print(f"     → Check if delisted/renamed; swap out in UNIVERSE if persistent")
 
+    # ── Drop tracking (2026-10-25) ──────────────────────────────────────
+    # Every universe name that reaches NO bucket gets a recorded stage +
+    # reason. Until now these vanished silently: the 2026-10-25 data
+    # quality scan found 216 screened → 113 in all_scores with no
+    # attributable cause. Events are recorded per ticker as the funnel
+    # runs; the most-terminal stage wins (a name sector-capped out of its
+    # last bucket outranks an earlier below-floor note).
+    _events = {}   # ticker → (stage, reason)
+    _PRIO = {"fetch": 0, "hard_filter": 1, "below_floor": 2,
+             "earnings_cut": 3, "sector_cap": 4}
+    def _note(ticker, stage, reason):
+        cur = _events.get(ticker)
+        if cur is None or _PRIO[stage] >= _PRIO[cur[0]]:
+            _events[ticker] = (stage, reason)
+    for _ft in failed:
+        _note(_ft, "fetch", "yfinance returned no usable price history")
+    _pass_info = {}   # ticker → (fhsa_ok, fhsa_reason, fhsa_score, tfsa_ok, tfsa_reason, tfsa_score)
+
     # --- Score everything for both accounts ---
     fhsa_candidates   = []
     tfsa_core_cands   = []
@@ -1083,8 +1101,10 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
 
         # FHSA pass
         ok, reason = passes_hard_filters(d, "FHSA")
+        _f_score = None
         if ok:
             score, pillars, reasons, flags = score_stock(d, "FHSA", strategy_profile=strategy_profile)
+            _f_score = score
             if score >= 45:
                 pick = classify_pick(d, score, "FHSA")
                 fhsa_candidates.append({
@@ -1094,9 +1114,11 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
                 })
 
         # TFSA pass
-        ok_tfsa, _ = passes_hard_filters(d, "TFSA")
+        ok_tfsa, reason_tfsa = passes_hard_filters(d, "TFSA")
+        _t_score = None
         if ok_tfsa:
             score_t, pillars_t, reasons_t, flags_t = score_stock(d, "TFSA_core", strategy_profile=strategy_profile)
+            _t_score = score_t
             if score_t >= 40:
                 pick_t = classify_pick(d, score_t, "TFSA_core")
 
@@ -1119,6 +1141,28 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
                         "data": d, "pillars": pillars_t,
                         "reasons": reasons_t, "flags": flags_t, "pick": pick_t
                     })
+
+        _pass_info[d["ticker"]] = (ok, reason, _f_score, ok_tfsa, reason_tfsa, _t_score)
+
+    # Classify fetched names that no bucket claimed (filter / floor) ──
+    _claimed_now = {c["ticker"] for c in fhsa_candidates + tfsa_core_cands
+                    + tfsa_swing_cands + tfsa_income_cands}
+    for _t, (_ok, _rsn, _fs, _okt, _rsnt, _ts) in _pass_info.items():
+        if _t in _claimed_now:
+            continue
+        if not _ok and not _okt:
+            _note(_t, "hard_filter", f"FHSA: {_rsn} · TFSA: {_rsnt}")
+        else:
+            _bits = []
+            if not _ok:
+                _bits.append(f"FHSA filter: {_rsn}")
+            elif _fs is not None:
+                _bits.append(f"FHSA score {_fs:.0f} < 45")
+            if not _okt:
+                _bits.append(f"TFSA filter: {_rsnt}")
+            elif _ts is not None:
+                _bits.append(f"TFSA score {_ts:.0f} < 40")
+            _note(_t, "below_floor", " · ".join(_bits) or "below score floors")
 
     # Sort by score descending
     fhsa_candidates.sort(  key=lambda x: x["score"], reverse=True)
@@ -1196,6 +1240,8 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
     try:
         from risk_engine import filter_swing_earnings
         tfsa_swing_cands, blocked = filter_swing_earnings(tfsa_swing_cands, buffer_days=14)
+        for _bp in blocked:
+            _note(_bp["ticker"], "earnings_cut", "swing entry within 14 days of earnings")
         if blocked and verbose:
             print(f"   ⚠️  Earnings filter: blocked {len(blocked)} swing picks near earnings")
     except ImportError:
@@ -1212,6 +1258,7 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
                     pass
             pick["days_to_earnings"] = days_to
             if days_to <= 14:
+                _note(pick["ticker"], "earnings_cut", f"earnings in {days_to}d (swing block)")
                 pick.setdefault("flags", []).append(f"🚨 EARNINGS in {days_to}d — blocked")
             else:
                 safe_swings.append(pick)
@@ -1224,18 +1271,40 @@ def run_full_screen(max_tickers=None, verbose=True, strategy_profile=None):
         _pct200 = sum(1 for d in raw_data if d.get("above_ma200", False)) / max(len(raw_data), 1)
         regime_now  = "BULL" if _pct200 >= 0.65 else ("BEAR" if _pct200 < 0.35 else "NORMAL")
         max_sect    = CONFIG.get("risk_rules", {}).get("max_picks_per_sector", 2)
-        tfsa_core_cands,   _ = apply_sector_cap(tfsa_core_cands,   max_sect, regime=regime_now)
-        tfsa_income_cands, _ = apply_sector_cap(tfsa_income_cands, max_sect, regime=regime_now)
-        fhsa_candidates,   _ = apply_sector_cap(fhsa_candidates,   max_sect, regime=regime_now)
+        tfsa_core_cands,   _cap_rm_core = apply_sector_cap(tfsa_core_cands,   max_sect, regime=regime_now)
+        tfsa_income_cands, _cap_rm_inc  = apply_sector_cap(tfsa_income_cands, max_sect, regime=regime_now)
+        fhsa_candidates,   _cap_rm_fhsa = apply_sector_cap(fhsa_candidates,   max_sect, regime=regime_now)
+        for _rm in _cap_rm_core + _cap_rm_inc + _cap_rm_fhsa:
+            _note(_rm["ticker"], "sector_cap", _rm.get("reason", "sector cap"))
     except ImportError:
         pass
+
+    # ── Final drop accounting ───────────────────────────────────────────
+    _final_tickers = {p["ticker"] for p in fhsa_candidates + tfsa_core_cands
+                      + tfsa_income_cands + tfsa_swing_cands}
+    dropped = {t: {"stage": s, "reason": r}
+               for t, (s, r) in _events.items() if t not in _final_tickers}
+    for d in raw_data:
+        if d["ticker"] not in _final_tickers and d["ticker"] not in dropped:
+            dropped[d["ticker"]] = {"stage": "unclassified",
+                                    "reason": "left the funnel without a recorded stage"}
+    drop_counts = {}
+    for _dv in dropped.values():
+        drop_counts[_dv["stage"]] = drop_counts.get(_dv["stage"], 0) + 1
+    if verbose and dropped:
+        print(f"\n📉 Drop accounting: {len(dropped)} of {len(tickers)} universe names reached no bucket")
+        for _st, _n in sorted(drop_counts.items(), key=lambda kv: -kv[1]):
+            _names = sorted(t for t, v in dropped.items() if v["stage"] == _st)
+            print(f"     {_st}: {_n} — {', '.join(_names[:6])}{' …' if len(_names) > 6 else ''}")
 
     # Top picks
     results = {
         "generated_at":    datetime.now().isoformat(),
         "universe_size":   len(tickers),
         "screened":        len(raw_data),
-        "failed_tickers":  failed[:20],
+        "failed_tickers":  failed,
+        "dropped":         dropped,
+        "drop_counts":     drop_counts,
 
         # TOP 5 per bucket — these are YOUR independent picks
         "FHSA_top5":         fhsa_candidates[:5],
