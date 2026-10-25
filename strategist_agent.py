@@ -224,6 +224,7 @@ def call_strategist_api(context):
     """Call Anthropic API with the strategist prompt."""
     try:
         import urllib.request
+        import urllib.error
 
         user_prompt = f"""Here is today's InvestOS system state. 
 Write a daily research note as the investment strategist.
@@ -258,6 +259,25 @@ Reference actual tickers and numbers from the data above."""
         for block in data.get("content", []):
             if block.get("type") == "text":
                 return block["text"]
+
+    except urllib.error.HTTPError as e:
+        # Surface the API's own error message (2026-10-25). Until now the
+        # body was discarded and only "HTTP Error 400" reached the note —
+        # which is why the failure that started 2026-07-23 (after 4 good
+        # notes) stayed undiagnosed for ~3 months: the status line alone
+        # can't distinguish billing, model, and request-shape causes.
+        body = ""
+        try:
+            body = e.read().decode("utf-8", "replace")
+        except Exception:
+            pass
+        detail = body.strip()
+        try:
+            detail = json.loads(body).get("error", {}).get("message", detail)
+        except Exception:
+            pass
+        print(f"  ❌ Anthropic API error {e.code}: {detail[:500]}")
+        return (f"[Strategist API call failed: HTTP {e.code} — {detail[:300]}]")
 
     except Exception as e:
         return f"[Strategist API call failed: {e}]"
@@ -329,6 +349,12 @@ def run_strategist(verbose=True):
     context = build_context(brief, history_analysis, pattern_signals,
                             obsidian_notes, recent_outcomes)
 
+    # Hard cap (2026-10-25): the builder is deliberately tight (~a few K
+    # chars), but the state it summarises keeps growing — cap it so the
+    # prompt can never balloon into a size-based API rejection.
+    if len(context) > 12000:
+        context = context[:12000] + "\n  [context truncated at 12,000 chars]"
+
     if verbose:
         print(f"  Context built: {len(context)} chars")
         print(f"  Calling strategist API...")
@@ -344,6 +370,16 @@ def run_strategist(verbose=True):
 
     # Write note
     path = write_research_note(today, note_text, context)
+
+    if note_text.startswith("[Strategist API call failed"):
+        # Fail loud (2026-10-25): a failed call used to return its banner
+        # as if it were a note, so the run stayed green and the failure sat
+        # invisible inside the note for ~3 months (86 of the first 90).
+        # The workflow's commit step runs with if: always(), so the note —
+        # which now carries the API's own error message — still lands in
+        # the repo, but this run is marked failed.
+        print("  ❌ Strategist API call failed — failing this run so it's visible")
+        raise SystemExit(1)
 
     if verbose:
         print(f"  📝 Research note → {path}")
