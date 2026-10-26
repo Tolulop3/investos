@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 69.7%  (+0.29%/day)
+- Breadth (200MA): 67.9%  (+0.03%/day)
 - Sharpe: 0.083  (+0.024/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -16,7 +16,7 @@ tags: [investos, patterns, weekly]
 - **CSU.TO** — 7d streak, avg score 92.1
 - **NEE** — 7d streak, avg score 70.2
 - **SLF.TO** — 5d streak, avg score 62.4
-- **MDLZ** — 5d streak, avg score 72.7
+- **MDLZ** — 5d streak, avg score 72.1
 - **CVE.TO** — 3d streak, avg score 100.0
 
 ## Score Velocity (rising/falling fast)
