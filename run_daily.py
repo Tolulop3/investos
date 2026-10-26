@@ -1814,6 +1814,19 @@ def run_daily(test_mode=False, dry_run=False):
             log_etf_signals(etf_signals)
             current_etf_prices = {e["ticker"]: e["price"] for e in etf_signals.get("scored", [])}
             resolve_etf_outcomes(current_prices=current_etf_prices)
+            # ETF storage discipline (2026-10-26): hash-chained signal ledger
+            # + daily score history + ledger resolution sync — the same
+            # standard the NA engine keeps. Isolated try: a storage failure
+            # must never take the ETF pipeline down with it.
+            try:
+                from etf_signal_store import (append_etf_signals,
+                                              update_etf_score_history,
+                                              sync_ledger_resolutions)
+                append_etf_signals(etf_signals)
+                update_etf_score_history(etf_signals)
+                sync_ledger_resolutions()
+            except Exception as _etss:
+                print(f"   ⚠️ ETF signal store error: {_etss}")
         except Exception as _etoe:
             print(f"   ⚠️ ETF outcome tracker error: {_etoe} — continuing without")
     except Exception as _etfe:
