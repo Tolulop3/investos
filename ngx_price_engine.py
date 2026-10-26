@@ -33,9 +33,14 @@ def _use_kwayisi():
     return os.environ.get("NGX_PRICE_SOURCE", "").strip().lower() == "kwayisi"
 
 
+def _use_tradelines():
+    """True when the free tradelines feed is selected as the price source."""
+    return os.environ.get("NGX_PRICE_SOURCE", "").strip().lower() == "tradelines"
+
+
 def gate_level():
     """Returns current NGX gate level (0, 1, 2, or 3)."""
-    if not _get_api_key() and not _use_kwayisi():
+    if not _get_api_key() and not _use_kwayisi() and not _use_tradelines():
         return 0
 
     try:
@@ -61,6 +66,10 @@ def fetch_ngx_price(ticker):
     if _use_kwayisi():
         from ngx_price_kwayisi import fetch_ngx_price_kwayisi
         return fetch_ngx_price_kwayisi(ticker)
+
+    if _use_tradelines():
+        from ngx_price_tradelines import fetch_ngx_price_tradelines
+        return fetch_ngx_price_tradelines(ticker)
 
     key = _get_api_key()
     if not key:
@@ -168,6 +177,10 @@ def fetch_all_ngx_prices(tickers, verbose=False):
         from ngx_price_kwayisi import fetch_all_ngx_prices_kwayisi
         return fetch_all_ngx_prices_kwayisi(tickers, verbose=verbose)
 
+    if _use_tradelines():
+        from ngx_price_tradelines import fetch_all_ngx_prices_tradelines
+        return fetch_all_ngx_prices_tradelines(tickers, verbose=verbose)
+
     if not _get_api_key():
         return {}
 
@@ -226,6 +239,15 @@ def fetch_ngx_market_snapshot(verbose=False):
         from ngx_price_kwayisi import fetch_ngx_market_snapshot_kwayisi
         return fetch_ngx_market_snapshot_kwayisi(verbose=verbose)
 
+    if _use_tradelines():
+        from ngx_price_tradelines import fetch_ngx_market_snapshot_tradelines
+        return fetch_ngx_market_snapshot_tradelines(verbose=verbose)
+
+    return _fetch_ngn_market_snapshot(verbose=verbose)
+
+
+def _fetch_ngn_market_snapshot(verbose=False):
+    """The NGN Markets snapshot call (free-plan endpoint), unchanged."""
     key = _get_api_key()
     if not key:
         return {}
