@@ -32,7 +32,7 @@ tags: [investos, weekly, performance]
 | 2026-10-21 | 0.076 | -0.04 | improving |
 | 2026-10-22 | 0.086 | -0.002 | improving |
 | 2026-10-23 | 0.125 | 0.029 | improving |
-| 2026-10-26 | 0.073 | 0.05 | declining |
+| 2026-10-26 | 0.083 | 0.052 | declining |
 
 ## Pick Quality by Macro Signal (min 5 picks)
 | Signal | n | WR | PF | Status |
