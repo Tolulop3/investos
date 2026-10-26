@@ -63,7 +63,10 @@ jobs:
           NGN_MARKETS_KEY: ${{ secrets.NGN_MARKETS_KEY }}
           # Free NGX price feed for the screener (NGN per-stock endpoints
           # are plan-gated). Key above is still used by the outcome tracker.
-          NGX_PRICE_SOURCE: "kwayisi"
+          # kwayisi was unreachable from GitHub runners (Errno 101, run
+          # #864, 2026-10-26); tradelines.com.ng publishes the same daily
+          # price list on ordinary hosting — see ngx_price_tradelines.py.
+          NGX_PRICE_SOURCE: "tradelines"
 
       - name: Commit updated dashboard
         run: |
