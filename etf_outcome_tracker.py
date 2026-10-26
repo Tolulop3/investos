@@ -178,6 +178,26 @@ def log_etf_signals(etf_result, run_time=None):
             "score_at_signal":  e.get("score"),
             "entry_price":      e.get("price"),        # already fetched this run
             "regime_at_signal": regime,
+
+            # Feature snapshot (2026-10-26 — start of the ETF feature era):
+            # the inputs behind the score, frozen at signal time so outcomes
+            # can be LEARNED from, not just counted. Rows logged before this
+            # change lack these fields (null/absent) — the same era boundary
+            # as the NA engine's 2026-06-14 feature cutoff. Values come from
+            # the engine's scored entry; no new fetch.
+            "ret_30":            e.get("ret_30"),
+            "ret_90":            e.get("ret_90"),
+            "above_ma200":       e.get("above_ma200"),
+            "range_pct":         e.get("range_pct"),
+            "overextended":      e.get("overextended"),
+            "sector_signal":     e.get("sector_signal"),
+            "signal_boost":      e.get("signal_boost"),
+            "track":             e.get("track"),
+            "acct_pref":         e.get("acct_pref"),
+            "div_yield":         e.get("div_yield"),
+            "div_flag":          e.get("div_flag"),
+            "reasons":           e.get("reasons", []),
+
             "acct_flags": {
                 "rrsp": ticker in rrsp_tickers,
                 "tfsa": ticker in tfsa_tickers,
