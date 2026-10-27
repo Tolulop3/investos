@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-10-27T16:20:42.790063",
+    "run_at": "2026-10-27T20:18:52.266315",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,26 +30,26 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 13,
-        "survived": 10,
-        "survival_pct": 76.9,
+        "survived": 11,
+        "survival_pct": 84.6,
         "avg_score_change": 2.8,
         "verdict": "\u2705 ROBUST",
         "note": "Avg score change: \u00b12.8 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 76.0,
-        "stressed_avg": 63.7,
-        "score_drop": 12.3,
+        "normal_avg": 74.5,
+        "stressed_avg": 61.8,
+        "score_drop": 12.7,
         "removed": [
           "SU.TO",
-          "MRVL",
-          "PSX",
           "CNQ.TO",
-          "ADI"
+          "ADI",
+          "CSU.TO",
+          "PSX"
         ],
         "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 12.3 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 12.7 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
@@ -63,7 +63,7 @@
     },
     "summary": {
       "normal_picks": 13,
-      "normal_avg_score": 76.0,
+      "normal_avg_score": 74.5,
       "scenarios_robust": 3,
       "scenarios_fragile": 1,
       "scenarios_broken": 1,
@@ -85,15 +85,15 @@
       "note": "Sharpe from 947 resolved picks (2026-07-29 \u2192 2026-10-27) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": 0.48,
-      "ret_30d": 2.33,
-      "ret_90d": 3.41,
-      "ann_ret": 9.5,
+      "ret_7d": 0.41,
+      "ret_30d": 2.26,
+      "ret_90d": 3.34,
+      "ann_ret": 9.4,
       "ann_vol": 10.8,
-      "sharpe": 0.88,
+      "sharpe": 0.86,
       "symbol": "^GSPC"
     },
-    "alpha": -0.801,
+    "alpha": -0.781,
     "neg_alpha_days": 91,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
