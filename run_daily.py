@@ -1556,6 +1556,14 @@ def run_daily(test_mode=False, dry_run=False):
         print_fx_outcome_report()
     except Exception as _fxe:
         print(f"  ⚠️  FX outcome tracking skipped: {_fxe}")
+    # Simulated trade book (2026-10-26): path-resolved paper portfolio
+    # for the same calls — target/stop/expiry against daily bars, 1%
+    # risk sizing, spread costs in. Isolated: never breaks the run.
+    try:
+        from sim_book import update_fx_sim
+        update_fx_sim(fx_signals)
+    except Exception as _fxs:
+        print(f"  ⚠️  FX sim book skipped: {_fxs}")
 
     # ── 10. Crypto Signals ───────────────────────────────────
     _mark("FX & Gold Signals")
@@ -1573,6 +1581,13 @@ def run_daily(test_mode=False, dry_run=False):
         print_crypto_outcome_report()
     except Exception as _cte:
         print(f"  ⚠️  Crypto outcome tracking skipped: {_cte}")
+    # Simulated trade books (2026-10-26): official (>=65 conviction)
+    # + shadow (every directional call), path-resolved like the FX book.
+    try:
+        from sim_book import update_crypto_sim
+        update_crypto_sim(crypto_signals)
+    except Exception as _csb:
+        print(f"  ⚠️  Crypto sim books skipped: {_csb}")
 
     # ── 11. Risk Audit ───────────────────────────────────────
     _mark("Crypto Signals")
