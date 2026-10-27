@@ -645,7 +645,9 @@ def get_validation_phase(ticker):
 
 
 def run_ngx_screen(investos_macro="NORMAL", verbose=True):
-    """Run full NGX macro-driven screen. Returns dict for brief.ngx."""
+    """Run full NGX screen — macro scores blended with live prices when
+    the price feed is active, macro-only otherwise. Returns dict for
+    brief.ngx."""
     if verbose:
         print("\n" + "="*55)
         print("  NGX SIGNAL ENGINE — Nigerian Exchange")
@@ -744,7 +746,9 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
     scored.sort(key=lambda x: x["score"], reverse=True)
 
     if verbose:
-        print(f"\n  Scored {len(scored)}/30 NGX stocks (macro-driven, no price data needed)")
+        _mode = (f"price-blended, {len(_prices)} priced" if _prices
+                 else "macro-driven, no price data")
+        print(f"\n  Scored {len(scored)}/{len(NGX_ALL)} NGX stocks ({_mode})")
 
     basket_regime = compute_ngx_basket_regime(scored)
 
@@ -846,11 +850,12 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
         "feeds_ok":        len(components),
         "feeds_failed":    0,
         "timestamp":       datetime.now().isoformat(),
-        "data_mode":       "MACRO",
+        "data_mode":       "PRICE" if _prices else "MACRO",
         "note": (
             "Validation phase — paper trade only." if phase == "PAPER_ONLY" else
             "Tier 1 + score ≥75 only (RESTRICTED)." if phase == "RESTRICTED" else
-            "Full signal mode — macro-driven."
+            "Full signal mode — price-blended." if _prices else
+            "Full signal mode — macro-driven (no price feed)."
         ),
     }
 
