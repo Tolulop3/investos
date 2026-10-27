@@ -18,6 +18,7 @@ v2 fix: log_picks() now saves all ML features at signal time.
 """
 
 import json
+import math
 import os
 from datetime import datetime, timedelta
 from pick_utils import get_pick_category, get_pick_field
@@ -133,14 +134,23 @@ def compute_true_horizon_summary(outcomes=None):
         n = len(rows)
         if n == 0:
             return None
-        rets   = [o.get("true_horizon_return", 0) or 0 for o in rows]
+        # FIX (2026-10-27): sanitize non-finite returns. The old
+        # `o.get("true_horizon_return", 0) or 0` guard cannot catch NaN --
+        # NaN is truthy -- so the 76 historical rows resolved FLAT with a
+        # NaN return (bad Yahoo bars, pre-fix) poisoned sum(rets) and
+        # avg_return shipped as NaN in every brief while PF/expectancy
+        # (which never sum FLAT rows) stayed clean. Non-finite now counts
+        # as 0.0, matching the guard's original intent for missing values.
+        def _fin(v):
+            return float(v) if isinstance(v, (int, float)) and math.isfinite(v) else 0.0
+        rets   = [_fin(o.get("true_horizon_return")) for o in rows]
         wins   = [o for o in rows if o.get("true_horizon_outcome") == "WIN"]
         losses = [o for o in rows if o.get("true_horizon_outcome") == "LOSS"]
         win_sum  = sum(r for r in rets if r > 0)
         loss_sum = sum(-r for r in rets if r < 0)
         wr = len(wins) / n * 100
-        aw = (sum(o["true_horizon_return"] for o in wins)   / len(wins))   if wins   else 0.0
-        al = (sum(o["true_horizon_return"] for o in losses) / len(losses)) if losses else 0.0
+        aw = (sum(_fin(o.get("true_horizon_return")) for o in wins)   / len(wins))   if wins   else 0.0
+        al = (sum(_fin(o.get("true_horizon_return")) for o in losses) / len(losses)) if losses else 0.0
         lr = len(losses) / n
         return {
             "n":             n,
@@ -631,7 +641,16 @@ def _fetch_historical_price(ticker, target_date, cache, max_lookahead=5):
                 cache[ticker] = {}
             else:
                 hist.index = hist.index.tz_localize(None)
-                cache[ticker] = {d.date(): float(v) for d, v in hist["Close"].items()}
+                # FIX (2026-10-27): drop non-finite closes at ingestion. A NaN
+                # bar from Yahoo used to flow through as a "price": the
+                # resolver's `exit_price is None` guard cannot see NaN (NaN is
+                # truthy and != None), so the row resolved FLAT with a NaN
+                # return -- poisoning compute_true_horizon_summary's
+                # avg_return (NaN in every brief) and the category trainer's
+                # label median (np.median propagates NaN -> every label 0 ->
+                # single-class fit -> training silently dead since 2026-09-29).
+                cache[ticker] = {d.date(): float(v) for d, v in hist["Close"].items()
+                                 if math.isfinite(float(v))}
         except Exception:
             cache[ticker] = {}
     series = cache[ticker]
@@ -678,7 +697,7 @@ def resolve_true_horizon_outcomes(outcomes=None, save=True):
 
         target_date = signal_date + timedelta(days=horizon)
         exit_price = _fetch_historical_price(o["ticker"], target_date, price_cache)
-        if exit_price is None:
+        if exit_price is None or not math.isfinite(exit_price):
             continue
 
         ret = (exit_price - entry_price) / entry_price * 100
@@ -736,7 +755,8 @@ def resolve_outcomes(current_prices):
             entry_price = o.get("entry_price", 0)
             exit_price  = current_prices.get(ticker)
 
-            if exit_price and entry_price and entry_price > 0:
+            if exit_price and entry_price and entry_price > 0 \
+                    and math.isfinite(exit_price) and math.isfinite(entry_price):
                 ret = (exit_price - entry_price) / entry_price * 100
                 o["exit_price"]    = round(exit_price, 2)
                 o["actual_return"] = round(ret, 2)
