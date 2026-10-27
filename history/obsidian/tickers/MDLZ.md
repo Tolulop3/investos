@@ -1,11 +1,11 @@
 ---
 ticker: MDLZ
-updated: 2026-10-26
+updated: 2026-10-27
 streak_days: 5
 score_now: 72.1
 velocity: 0
 pf_30d: None
-picks_30d: 1
+picks_30d: 2
 tags: [investos, ticker, pattern]
 ---
 
