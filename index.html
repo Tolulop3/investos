@@ -1124,6 +1124,7 @@ body::after {
 
   <!-- Screen stats -->
   <div class="stats-row fi" id="statsRow"></div>
+  <div class="fi" id="funnelRow" style="font-size:8.5px;color:var(--t3);padding:0 2px 10px;letter-spacing:.02em"></div>
 
   <!-- SHORTLIST -->
   <div class="sec fi">🎯 TODAY'S SHORTLIST — ACT ON THESE</div>
@@ -2567,10 +2568,11 @@ function renderToday() {
     if(ngn.ngn_usd_rate){ _set('tdNgxF'+n,'<span style="color:var(--t2);font-size:7.5px">₦1 = $'+ngn.ngn_usd_rate+' USD</span>'); }
     else if(ft){ _set('tdNgxF'+n,'<span style="color:var(--sl,#ff4466);font-size:7.5px">'+ft+'</span>'); }
   });
+  var liveTag=(ngx.data_mode==='PRICE')?' · <span style="color:var(--sh)">live prices</span>':'';
   if(sigs.length>0){
-    _set('tdNgxStatus','<span style="color:var(--sh);font-size:11px">●</span><span>'+sigs.length+' signals active · basket: '+(ngx.basket_regime||'')+' · RESTRICTED Tier 1 ≥80 only</span>');
+    _set('tdNgxStatus','<span style="color:var(--sh);font-size:11px">●</span><span>'+sigs.length+' signals active · basket: '+(ngx.basket_regime||'')+' · RESTRICTED Tier 1 ≥80 only'+liveTag+'</span>');
   } else {
-    _set('tdNgxStatus','<span style="color:var(--sl,#ff4466);font-size:11px">●</span><span>No signals today — '+(mr2.replace(/_/g,' '))+' + Brent '+bchg.toFixed(1)+'% blocks all '+scored.length+' stocks. Returns when Brent stabilises + EM score > −5.</span>');
+    _set('tdNgxStatus','<span style="color:var(--sl,#ff4466);font-size:11px">●</span><span>No signals today — '+(mr2.replace(/_/g,' '))+' + Brent '+bchg.toFixed(1)+'% blocks all '+scored.length+' stocks. Returns when Brent stabilises + EM score > −5.'+liveTag+'</span>');
   }
 }
 
@@ -2714,6 +2716,15 @@ function renderBrief(D) {
     {v:s.tfsa_income||0,l:'TFSA Income', c:'var(--a)'},
     {v:s.tfsa_swing||0, l:'Swing Sets',  c:'var(--p)'},
   ].map(x=>`<div class="stat-box"><div class="big" style="color:${x.c}">${x.v}</div><div class="lbl">${x.l}</div></div>`).join('');
+
+  // Screen funnel — where the universe narrows to scored names, and why
+  const fEl = document.getElementById('funnelRow');
+  if (fEl && s.universe) {
+    const dc = s.drop_counts || {};
+    const dropLbl = {sector_cap:'sector cap', hard_filter:'hard filters', below_floor:'below score floor', earnings:'earnings blackout'};
+    const drops = Object.entries(dc).filter(([,v])=>v>0).map(([k,v])=>`${v} ${dropLbl[k]||k.replace(/_/g,' ')}`).join(' · ');
+    fEl.innerHTML = `Screen funnel: <span style="color:var(--t2)">${s.universe} universe → ${s.screened||0} screened → ${s.scored||0} scored</span>` + (drops ? ` &nbsp;—&nbsp; dropped: ${drops}` : '');
+  }
 
   // Picks rendered by renderUnifiedPickList(BRIEF) — called from renderAll
   // Old FHSA/TFSA split replaced by unified ranked list with account tags
@@ -4997,6 +5008,9 @@ function renderETF() {
     ? `<div style="background:rgba(255,80,80,.06);border:1px solid var(--r2);border-radius:6px;padding:6px 10px;font-size:8px;color:var(--r);margin-bottom:10px">⚠️ Energy confirmation: XOM/CVX not confirming — energy ETF momentum may not have underlying support</div>`
     : '';
 
+  const es = (typeof BRIEF !== 'undefined' && BRIEF && BRIEF.etf_store) || null;
+  const storeTxt = es ? ` · Ledger: ${es.ledger_entries} entries · chain ${es.chain_ok ? 'verified ✓' : '⚠ FAILED'} · history: ${es.history_tickers} tickers` : '';
+
   let h = `
   <!-- Regime + Allocation Bar -->
   <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -5016,7 +5030,7 @@ function renderETF() {
         <div style="background:var(--bg2);width:${alloc.cash_pct||0}%"></div>
       </div>
     </div>
-    <div style="font-size:8px;color:var(--t3)">${etf.etf_count} ETFs scored</div>
+    <div style="font-size:8px;color:var(--t3)">${etf.etf_count} ETFs scored${storeTxt}</div>
   </div>
   ${engBanner}`;
 
@@ -5106,10 +5120,10 @@ function renderETF() {
     h += '</div></div>';
   }
 
-  // Full table — all 30 ETFs
-  const all = (etf.scored||[]).slice(0,30);
+  // Full table — the whole scored universe
+  const all = (etf.scored||[]);
   if (all.length) {
-    h += `<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">All ETFs — Top ${all.length}</div>
+    h += `<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">All ETFs — ${all.length} scored</div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:8.5px">
     <tr style="color:var(--t3)">
       <th style="text-align:left;padding:3px 5px">Ticker</th>
@@ -5292,6 +5306,11 @@ function renderNGX() {
   h += '<div style="font-size:8px;color:' + phCol + ';font-weight:700;margin-bottom:3px">' + phase.replace('_',' ') + ' — DAY ' + phaseDays + '</div>';
   h += '<div style="font-size:8px;color:var(--t3)">' + all.length + ' scored | ' + (signals.length + watch.length) + ' eligible</div>';
   if (dataMode === 'MACRO') h += '<div style="font-size:7px;color:var(--t3);margin-top:2px">Macro-driven scoring</div>';
+  if (dataMode === 'PRICE') {
+    const pxEnt = all.find(function(x){ return x.price_data && x.price_data.source; });
+    const pxSrc = pxEnt ? pxEnt.price_data.source : '';
+    h += '<div style="font-size:7px;color:var(--g);margin-top:2px">● LIVE PRICES — price-blended' + (pxSrc ? ' · ' + pxSrc : '') + '</div>';
+  }
   h += '</div></div>';
 
   // ── Macro context panel ────────────────────────────────────────
@@ -5400,9 +5419,9 @@ function renderNGX() {
 
   // ── Universe table ─────────────────────────────────────────────
   if (all.length > 0) {
-    h += '<div style="font-size:9px;color:var(--t3);letter-spacing:1px;margin:12px 0 6px">NGX UNIVERSE — TOP 15</div>';
+    h += '<div style="font-size:9px;color:var(--t3);letter-spacing:1px;margin:12px 0 6px">NGX UNIVERSE — ALL ' + all.length + '</div>';
     h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:8px">';
-    h += '<tr style="color:var(--t3)"><th style="text-align:left;padding:3px 6px">STOCK</th><th>TIER</th><th>SECTOR</th><th>SCORE</th><th>STATUS</th></tr>';
+    h += '<tr style="color:var(--t3)"><th style="text-align:left;padding:3px 6px">STOCK</th><th>TIER</th><th>SECTOR</th><th>PRICE</th><th>DAY %</th><th>SCORE</th><th>STATUS</th></tr>';
     all.forEach(function(s) {
       const nm  = s.name || s.ticker.replace('.LG','');
       const sc2 = s.score>=80?'var(--g)':s.score>=65?'var(--a)':s.score>=50?'var(--t2)':'var(--r)';
@@ -5410,10 +5429,17 @@ function renderNGX() {
       const pers = s.persistence || '—';
       const persCol = (pers.includes('streak') || pers==='ELIGIBLE') ? 'var(--g)'
                     : (pers.includes('/3') || pers==='WATCH') ? 'var(--a)' : 'var(--t3)';
+      const pd = s.price_data || {};
+      const pxTxt = (pd.close != null) ? '₦' + Number(pd.close).toLocaleString('en-US', {maximumFractionDigits: 2}) : '—';
+      const chg = pd.change_pct;
+      const chgTxt = (chg != null) ? ((chg >= 0 ? '+' : '') + Number(chg).toFixed(2) + '%') : '—';
+      const chgCol = (chg == null) ? 'var(--t3)' : (chg >= 0 ? 'var(--g)' : 'var(--r)');
       h += '<tr style="border-top:1px solid var(--border)">';
       h += '<td style="padding:3px 6px;color:var(--t);font-weight:600">' + nm + '</td>';
       h += '<td style="text-align:center;color:var(--t3)">T' + s.tier + '</td>';
       h += '<td style="text-align:center;color:var(--t3)">' + (s.sector||'—') + '</td>';
+      h += '<td style="text-align:center;color:var(--t2);font-family:var(--mono)">' + pxTxt + '</td>';
+      h += '<td style="text-align:center;color:' + chgCol + '">' + chgTxt + '</td>';
       h += '<td style="text-align:center;color:' + sc2 + ';font-weight:700">' + s.score + '</td>';
       h += '<td style="text-align:center;color:' + persCol + '">' + pers + '</td>';
       h += '</tr>';
