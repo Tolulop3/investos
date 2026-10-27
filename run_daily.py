@@ -1170,9 +1170,12 @@ def run_daily(test_mode=False, dry_run=False):
     if _swing_trained_today:
         print("  ⏭  SWING / category model training already ran today — skipping")
     else:
+        _swing_train_error = None
         try:
             train_swing_model(verbose=True)
         except Exception as _ste:
+            _swing_train_error = _ste
+            import traceback as _tb; _tb.print_exc()
             print(f"  ⚠️  SWING model retrain skipped: {_ste}")
         # Auto-promotion (FIX 2026-08-09): once category_is_data_ready() turns
         # true for a category it needs its OWN model (earliest real trigger:
@@ -1187,12 +1190,35 @@ def run_daily(test_mode=False, dry_run=False):
                 if category_is_data_ready(_cat):
                     train_category_model(_cat, verbose=True)
         except Exception as _cte:
+            import traceback as _tb; _tb.print_exc()
             print(f"  ⚠️  Category model auto-promotion skipped: {_cte}")
+        # FIX (2026-10-27): the lock used to be written unconditionally, so a
+        # failed or silently-skipped training day still recorded "trained" --
+        # that is exactly how the dedicated-model layer died unnoticed on
+        # 2026-09-29 (Full_Diagnosis_2026-10-27, D-02). The lock now advances
+        # only when the SWING trainer actually produced a fresh report today;
+        # otherwise the next run retries and the warning below repeats in
+        # every run log until the underlying failure is fixed.
+        _swing_report_fresh = False
         try:
-            with open(_SWING_TRAIN_LOCK, "w") as _f:
-                _f.write(_today_str)
+            import json as _json
+            with open("swing_model_report.json") as _rf:
+                _swing_report_fresh = str(_json.load(_rf).get("trained_at", ""))[:10] == _today_str
         except Exception:
-            pass
+            _swing_report_fresh = False
+        if _swing_train_error is None and _swing_report_fresh:
+            try:
+                with open(_SWING_TRAIN_LOCK, "w") as _f:
+                    _f.write(_today_str)
+            except Exception:
+                pass
+        else:
+            print("  🚨 SWING training produced NO fresh report today "
+                  f"(exception: {_swing_train_error!r}) -- train lock NOT "
+                  "written; training will retry next run. A repeating 🚨 "
+                  "means training is broken: an exception traceback above = "
+                  "crash; no exception + no report = silent early return in "
+                  "ml_retrainer.")
 
     # FIX (2026-08-09): auto-demotion signal, computed once per run so
     # ml_engine.py's scoring loop can read a fresh verdict without
