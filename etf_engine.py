@@ -27,6 +27,21 @@ ETF_UNIVERSE = [
     ("QQQ",     "NASDAQ 100",             "CORE",      "core",     "RRSP", "TECH",            0.20, "index",     "nasdaq"),
     ("XEF.TO",  "Intl Developed",         "CORE",      "core",     "TFSA", None,              0.22, "index",     "intl_dev"),
     ("VWO",     "Emerging Markets",       "CORE",      "core",     "RRSP", None,              0.08, "index",     "em"),
+    # Universe expansion 2026-10-26 (29 -> 47 scored): dividend, small-cap,
+    # US sector, bond-ladder, cash, covered-call and preferred blocks added
+    # to fill the coverage gaps. New tickers file under EXISTING categories
+    # (dividend/small-cap under CORE — they move like core equity; US
+    # sectors under SECTOR_EARNINGS / DEFENSIVE per the 2026-08-29 split
+    # logic), so no regime weight or resolution threshold changes. Every
+    # ticker was verified fetchable on Yahoo before being added.
+    ("XDIV.TO", "Canadian Dividend",      "CORE",      "core",     "TFSA", None,              0.11, "index",     "cdn_div"),
+    ("CDZ.TO",  "Cdn Dividend Aristocrats","CORE",     "core",     "TFSA", None,              0.66, "index",     "cdn_div"),
+    ("SCHD",    "US Dividend Quality",    "CORE",      "core",     "RRSP", None,              0.06, "index",     "us_div"),
+    ("DGRO",    "US Dividend Growth",     "CORE",      "core",     "RRSP", None,              0.08, "index",     "us_div"),
+    ("XCS.TO",  "Canadian Small Cap",      "CORE",      "core",     "TFSA", None,              0.26, "index",     "cdn_small"),
+    ("IJR",     "US Small Cap",           "CORE",      "core",     "RRSP", None,              0.06, "index",     "us_small"),
+    ("ZWC.TO",  "Cdn Equity Covered Call","CORE",      "core",     "TFSA", None,              0.72, "income",    "cdn_div"),
+    ("QYLD",    "Nasdaq Covered Call",    "CORE",      "core",     "RRSP", None,              0.61, "income",    "us_cc"),
     # SECTOR split into SECTOR_COMMODITY / SECTOR_EARNINGS (2026-08-29): 70 days
     # of etf_signals history + reconstructed forward-30d returns showed commodity
     # names (XEG/XLE/GLD/ZGD) move ~5-6x more than earnings names (ZEB/XRE) --
@@ -40,7 +55,11 @@ ETF_UNIVERSE = [
     ("ZEB.TO",  "Canadian Banks",         "SECTOR_EARNINGS",  "core", "FHSA", "CANADIAN_BANKS",  0.28, "earnings",  "cdn_banks"),
     ("ZGD.TO",  "Canadian Gold Miners",   "SECTOR_COMMODITY", "core", "TFSA", "GOLD",            0.61, "commodity", "gold"),
     ("GLD",     "Gold",                   "SECTOR_COMMODITY", "core", "RRSP", "GOLD",            0.40, "commodity", "gold"),
+    ("DBC",     "Broad Commodities",      "SECTOR_COMMODITY", "core", "RRSP", None,              0.85, "commodity", "broad_cmdty"),
     ("XRE.TO",  "Canadian REITs",         "SECTOR_EARNINGS",  "core", "TFSA", "CANADIAN_REITS",  0.61, "earnings",  "cdn_reit"),
+    ("XLK",     "US Technology",          "SECTOR_EARNINGS",  "core", "RRSP", "TECH",            0.13, "earnings",  "us_tech"),
+    ("XLF",     "US Financials",          "SECTOR_EARNINGS",  "core", "RRSP", None,              0.13, "earnings",  "us_fin"),
+    ("XLV",     "US Health Care",         "SECTOR_EARNINGS",  "core", "RRSP", None,              0.13, "earnings",  "us_health"),
     ("BOTZ",    "Robotics & AI",          "THEMATIC",  "thematic", "RRSP", "TECH",            0.69, "theme",     "ai_tech"),
     ("SMH",     "Semiconductors",         "THEMATIC",  "thematic", "RRSP", "TECH",            0.35, "earnings",  "semis"),
     ("SKYY",    "Cloud Computing",        "THEMATIC",  "thematic", "RRSP", "TECH",            0.68, "theme",     "cloud"),
@@ -55,20 +74,33 @@ ETF_UNIVERSE = [
     ("XBB.TO",  "Canadian Bond Universe", "DEFENSIVE", "core",     "FHSA", None,              0.10, "bond",      "cdn_bond"),
     ("TLT",     "US Long Bonds",          "DEFENSIVE", "core",     "RRSP", None,              0.15, "bond",      "us_ltbond"),
     ("ZLB.TO",  "Canadian Low-Vol Eq",    "DEFENSIVE", "core",     "FHSA", None,              0.39, "index",     "cdn_lowvol"),
+    ("ZCS.TO",  "Cdn Short Corp Bonds",   "DEFENSIVE", "core",     "FHSA", None,              0.09, "bond",      "cdn_bond"),
+    ("ZFL.TO",  "Cdn Long Federal Bonds", "DEFENSIVE", "core",     "FHSA", None,              0.20, "bond",      "cdn_bond"),
+    ("AGG",     "US Aggregate Bonds",     "DEFENSIVE", "core",     "RRSP", None,              0.03, "bond",      "us_bond"),
+    ("XLU",     "US Utilities",           "DEFENSIVE", "core",     "RRSP", None,              0.13, "earnings",  "us_util"),
+    ("ZPR.TO",  "Cdn Preferred Shares",   "DEFENSIVE", "core",     "TFSA", None,              0.51, "bond",      "cdn_pref"),
+    ("CASH.TO", "High Interest Savings",  "DEFENSIVE", "core",     "FHSA", None,              0.11, "cash",      "cash"),
     ("EFA",     "Intl Developed",         "INTL",      "core",     "RRSP", None,              0.32, "index",     "intl_dev"),
     ("EEM",     "Emerging Markets",       "INTL",      "core",     "RRSP", None,              0.68, "index",     "em"),
     ("XOM",     "ExxonMobil",             "SIGNAL",    "core",     "RRSP", "OIL_PRODUCERS",   0.00, "earnings",  "us_energy"),
     ("CVX",     "Chevron",                "SIGNAL",    "core",     "RRSP", "OIL_PRODUCERS",   0.00, "earnings",  "us_energy"),
 ]
 
-FHSA_PREFERRED = {"XEQT.TO","VFV.TO","XIC.TO","ZEB.TO","ZAG.TO","XBB.TO","ZLB.TO","XEF.TO"}
+FHSA_PREFERRED = {"XEQT.TO","VFV.TO","XIC.TO","ZEB.TO","ZAG.TO","XBB.TO","ZLB.TO","XEF.TO",
+                   "CASH.TO"}   # 2026-10-26: HISA cash fits FHSA's capital-preservation use
 FHSA_AVOID     = {"BOTZ","SMH","SKYY","CIBR","ITA","SHLD","PPA","QTUM","ARKG","BLOK",
-                   "GLD","TLT","VWO","EEM","XLE","QQQ","VOO","XOM","CVX"}
+                   "GLD","TLT","VWO","EEM","XLE","QQQ","VOO","XOM","CVX",
+                   "SCHD","DGRO","XLK","XLF","XLV","XLU","AGG","QYLD","IJR","DBC"}
 
 OVERLAP_GROUPS = {
     "sp500": "S&P 500 (pick one)", "tsx_broad": "TSX broad", "cdn_energy": "Canadian energy",
     "us_energy": "US energy", "gold": "Gold", "cdn_bond": "Canadian bonds",
     "defense": "Defense", "intl_dev": "International developed", "em": "Emerging markets",
+    "cdn_div": "Canadian dividend/income", "us_div": "US dividend", "cdn_small": "Canadian small cap",
+    "us_small": "US small cap", "us_cc": "US covered call", "us_tech": "US technology",
+    "us_fin": "US financials", "us_health": "US health care", "us_util": "US utilities",
+    "us_bond": "US bonds", "cdn_pref": "Canadian preferreds", "cash": "Cash / HISA",
+    "broad_cmdty": "Broad commodities",
 }
 
 SECTOR_ETF_BOOST = {
@@ -101,6 +133,35 @@ ACCOUNT_ALLOCATION = {
 }
 
 
+def _norm_yield_pct(raw):
+    """
+    Normalize a Yahoo/yfinance yield field to PERCENT.
+
+    The upstream fields arrive in inconsistent units: dividendYield is a
+    fraction (0.0239) for most stocks but already a percent (2.39) for many
+    ETFs, while fiveYearAvgDividendYield is a percent. Before 2026-10-26
+    the engine multiplied dividendYield by 100 unconditionally, so a
+    percent-form value was stored 100x too large (e.g. XEG.TO at 239.0)
+    and the div_flag ratio compared mismatched units. Bands: <=0.5 is a
+    fraction (-> x100); (0.5, 30] is already a percent; >30 can only be
+    an already-scaled value (-> /100). Display/flag field only — the
+    score never consumed div_yield.
+    """
+    if raw is None:
+        return None
+    try:
+        v = float(raw)
+    except (TypeError, ValueError):
+        return None
+    if v <= 0:
+        return None
+    if v <= 0.5:
+        return round(v * 100, 2)
+    if v <= 30:
+        return round(v, 2)
+    return round(v / 100, 2)
+
+
 def _fetch_etf_data(ticker):
     try:
         t    = yf.Ticker(ticker)
@@ -125,10 +186,8 @@ def _fetch_etf_data(ticker):
         div_yield = div_5yr_avg = div_flag = None
         try:
             info = t.info
-            div_yield   = info.get("dividendYield") or info.get("trailingAnnualDividendYield")
-            div_5yr_avg = info.get("fiveYearAvgDividendYield")
-            if div_yield:   div_yield   = round(div_yield * 100, 2)
-            if div_5yr_avg: div_5yr_avg = round(div_5yr_avg, 2)
+            div_yield   = _norm_yield_pct(info.get("dividendYield") or info.get("trailingAnnualDividendYield"))
+            div_5yr_avg = _norm_yield_pct(info.get("fiveYearAvgDividendYield"))
             if div_yield and div_5yr_avg and div_5yr_avg > 0:
                 ratio = div_yield / div_5yr_avg
                 div_flag = "HIGH" if ratio > 1.5 else "NORMAL" if ratio > 0.8 else "LOW"
