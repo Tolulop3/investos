@@ -2371,6 +2371,26 @@ def bake_dashboard(brief, fx_signals, crypto_signals):
             if k in brief:
                 slim_brief[k] = brief[k]
 
+        # ETF store status (2026-10-26): the dashboard's ETF pane shows
+        # ledger size, hash-chain integrity and score-history coverage.
+        # Read from the on-disk store the daily run maintains, so the
+        # panel reflects the latest committed state even if today's
+        # store step hiccuped.
+        try:
+            from etf_signal_store import verify_etf_chain as _vetc
+            _chain_ok, _n_entries, _bad_idx = _vetc()
+            _hist = {}
+            if os.path.exists("etf_score_history.json"):
+                with open("etf_score_history.json") as _hf:
+                    _hist = json.load(_hf)
+            slim_brief["etf_store"] = {
+                "ledger_entries": _n_entries,
+                "chain_ok": bool(_chain_ok),
+                "history_tickers": len(_hist) if isinstance(_hist, dict) else 0,
+            }
+        except Exception as _ese:
+            print(f"  ⚠️  ETF store status skipped: {_ese}")
+
         def _sanitize_floats(obj, _depth=0):
             """Recursively round all floats to 4dp to kill IEEE 754 artifacts.
             Also catches string-encoded floats (e.g. '57.599999999999994')
