@@ -3612,6 +3612,50 @@ def test_resolve_true_horizon_skips_picks_not_yet_at_horizon():
     assert "true_horizon_resolved" not in updated[0]
 
 
+def test_resolve_true_horizon_skips_nan_exit_price(monkeypatch):
+    """FIX (2026-10-27): a NaN exit price (bad Yahoo bar) must NOT resolve
+    the row. Before the fix, the `exit_price is None` guard could not see
+    NaN (NaN is truthy), so the row was stamped resolved FLAT with a NaN
+    true_horizon_return -- the poison that made the brief's true-horizon
+    avg_return NaN and killed category training via a NaN label median."""
+    import outcome_tracker as ot
+
+    outcomes = [{
+        "ticker": "TEST", "category": "SWING",
+        "signal_date": "2020-01-01", "entry_price": 100.0,
+    }]
+
+    def fake_fetch_nan(ticker, target_date, cache, max_lookahead=5):
+        return float("nan")
+
+    monkeypatch.setattr(ot, "_fetch_historical_price", fake_fetch_nan)
+    updated, n_resolved = ot.resolve_true_horizon_outcomes(outcomes, save=False)
+    assert n_resolved == 0
+    assert "true_horizon_resolved" not in updated[0]
+
+
+def test_true_horizon_summary_avg_return_survives_nan_rows():
+    """FIX (2026-10-27): historical rows that carry a NaN true_horizon_return
+    (resolved FLAT before the ingestion fix) must not poison avg_return --
+    it shipped as NaN in every brief while PF/expectancy stayed clean."""
+    import outcome_tracker as ot
+
+    outcomes = [
+        {"category": "SWING", "true_horizon_resolved": True,
+         "true_horizon_outcome": "WIN", "true_horizon_return": 10.0},
+        {"category": "SWING", "true_horizon_resolved": True,
+         "true_horizon_outcome": "LOSS", "true_horizon_return": -5.0},
+        {"category": "SWING", "true_horizon_resolved": True,
+         "true_horizon_outcome": "FLAT", "true_horizon_return": float("nan")},
+    ]
+    summary = ot.compute_true_horizon_summary(outcomes)
+    import math
+    assert math.isfinite(summary["overall"]["avg_return"])
+    assert math.isfinite(summary["by_category"]["SWING"]["avg_return"])
+    # NaN FLAT counts as 0.0: (10 - 5 + 0) / 3
+    assert summary["overall"]["avg_return"] == round(5.0 / 3, 3)
+
+
 def test_dead_features_removed_and_configs_stay_in_sync():
     """sector_momentum, market_regime, close_to_ema20_ratio were confirmed
     constant (zero variance) across the entire training set -- must not
