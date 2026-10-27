@@ -1,7 +1,24 @@
 """
-ngx_screener.py — Nigerian Exchange (NGX) Signal Engine v2.2.1
+ngx_screener.py — Nigerian Exchange (NGX) Signal Engine v2.3
 ===========================================================
 Macro-driven EM desk model. Completely standalone.
+
+v2.3 changes (persistence bookkeeping fix — 2026-10-26):
+  - The persistence streak now counts DAYS, not runs.
+    record_daily_scores() writes one entry per ticker per calendar
+    day (last run of the day wins) for the FULL scored list, and
+    apply_persistence_gate only reads that history. Before this fix
+    the gate appended on every run (3x/day), so a "3-day streak"
+    could complete in a single afternoon — 121 of 231 entries in
+    ngx_persistence.json were same-date repeats.
+  - Sub-75 days are now on record for every scored name, so a dip
+    below the ENTER bar breaks a streak honestly (previously the dip
+    was invisible: only ENTER candidates were ever logged).
+  - A calendar gap > 4 days between recorded days also breaks the
+    streak (weekends / holidays pass; feed outages do not).
+  - No scoring, thresholds, or phase rules changed. The existing
+    history file was migrated in the same change (same-date repeats
+    collapsed, last score of each day kept).
 
 v2.2.1 changes (macro-bridge fix — 2026-08-29):
   - run_daily.py:2509 read a non-existent key ("regime_note"), so the
@@ -564,27 +581,77 @@ def apply_macro_bridge(all_scored, investos_macro, brent_trend, basket_regime):
     return signals, watch, gate_status
 
 
-def apply_persistence_gate(signals):
-    """Require 3 consecutive scoring days at the ENTER threshold (75, v2.2)
-    before ENTER fires. NOTE: signals reaching here have already passed the
-    score>=75 gate in apply_macro_bridge; this checks the prior days' scores
-    held >=75 too."""
+PERSISTENCE_FILE = "ngx_persistence.json"
+PERSISTENCE_WINDOW_DAYS = 7   # recorded days kept per ticker
+PERSISTENCE_MAX_GAP_DAYS = 4  # Fri->Mon = 3; anything wider breaks a streak
+
+
+def _load_persistence():
     try:
-        history = json.load(open("ngx_persistence.json"))
+        with open(PERSISTENCE_FILE) as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
     except Exception:
-        history = {}
+        return {}
+
+
+def record_daily_scores(scored):
+    """Write today's score for every scored name into ngx_persistence.json
+    — one entry per ticker per calendar day, last run of the day wins.
+
+    Called once per run, after the macro bridge, before the gate. The
+    full scored list is recorded (not just ENTER candidates) so a
+    sub-75 day lands on record and breaks a streak honestly."""
+    if not scored:
+        return
     today = datetime.now().strftime("%Y-%m-%d")
-    out   = []
+    history = _load_persistence()
+    for s in scored:
+        ticker = s.get("ticker")
+        if not ticker or s.get("score") is None:
+            continue
+        entries = [e for e in history.get(ticker, [])
+                   if e.get("date") != today]
+        entries.append({"date": today, "score": s["score"]})
+        entries.sort(key=lambda e: e.get("date", ""))
+        history[ticker] = entries[-PERSISTENCE_WINDOW_DAYS:]
+    try:
+        with open(PERSISTENCE_FILE, "w") as f:
+            json.dump(history, f, indent=2)
+    except Exception:
+        pass
+
+
+def apply_persistence_gate(signals):
+    """Require 3 consecutive recorded days at the ENTER threshold (75,
+    v2.2) before ENTER fires. NOTE: signals reaching here have already
+    passed the score>=75 gate in apply_macro_bridge; this checks the
+    prior days' scores held >=75 too.
+
+    Read-only since v2.3: the history is maintained by
+    record_daily_scores (one entry per ticker per day), so
+    'consecutive' means consecutive days — no sub-75 day and no
+    >4-day calendar gap in between."""
+    history = _load_persistence()
+    out = []
     for s in signals:
-        ticker = s["ticker"]
-        streak = history.get(ticker, [])
-        streak.append({"date": today, "score": s["score"]})
-        streak = streak[-7:]
-        history[ticker] = streak
+        entries = sorted(history.get(s["ticker"], []),
+                         key=lambda e: e.get("date", ""))
         consecutive = 0
-        for day in reversed(streak):
-            if day["score"] >= 75:
+        prev_date = None
+        for day in reversed(entries):
+            d = day.get("date")
+            if prev_date is not None and d:
+                try:
+                    gap = (datetime.strptime(prev_date, "%Y-%m-%d")
+                           - datetime.strptime(d, "%Y-%m-%d")).days
+                except Exception:
+                    gap = 0
+                if gap > PERSISTENCE_MAX_GAP_DAYS:
+                    break
+            if day.get("score", 0) >= 75:
                 consecutive += 1
+                prev_date = d
             else:
                 break
         if consecutive >= 3:
@@ -594,10 +661,6 @@ def apply_persistence_gate(signals):
         else:
             s["persistence"] = f"{consecutive}/3 building"; s["eligible"] = False
         out.append(s)
-    try:
-        json.dump(history, open("ngx_persistence.json","w"), indent=2)
-    except Exception:
-        pass
     return out
 
 
@@ -754,6 +817,10 @@ def run_ngx_screen(investos_macro="NORMAL", verbose=True):
 
     # ── v2.1 gate: WATCH shows even in RISK_OFF ───────────────────────────────
     signals, watch, gate_status = apply_macro_bridge(scored, investos_macro, brent_trend, basket_regime)
+
+    # v2.3: record the day's scores for the full scored list (one entry
+    # per ticker per day), then let the gate read that history.
+    record_daily_scores(scored)
 
     # Apply persistence gate only to ENTER-eligible signals
     signals = apply_persistence_gate(signals)
