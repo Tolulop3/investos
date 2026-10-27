@@ -2,7 +2,7 @@
 ticker: SU.TO
 updated: 2026-10-27
 streak_days: 9
-score_now: 95.2
+score_now: 94.7
 velocity: 0
 pf_30d: None
 picks_30d: 6
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **9 of last 7 days**.
-Avg score: 95.2
+Avg score: 94.7
 Dates: 2026-10-19, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26, 2026-10-27
 
 ---
