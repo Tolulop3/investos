@@ -3656,6 +3656,96 @@ def test_true_horizon_summary_avg_return_survives_nan_rows():
     assert summary["overall"]["avg_return"] == round(5.0 / 3, 3)
 
 
+def test_receipts_pack_window_math_and_stories():
+    """content_outputs Receipts Pack (2026-10-29): the window is the 7
+    days ending window_end over true_horizon_date; averages are net of
+    the 0.20% cost convention; NaN FLAT rows count 0.0 and are reported;
+    underwater categories are named; best/worst carry the story fields."""
+    import content_outputs as co
+    from datetime import date
+
+    def row(ticker, cat, ret, outcome, res_date, sig="2026-09-01"):
+        return {"ticker": ticker, "category": cat,
+                "signal_date": sig, "entry_price": 100.0,
+                "true_horizon_resolved": True,
+                "true_horizon_return": ret,
+                "true_horizon_outcome": outcome,
+                "true_horizon_date": res_date, "true_horizon_days": 30}
+
+    outcomes = [
+        row("AAA", "WATCH", 10.0, "WIN", "2026-10-28"),
+        row("BBB", "WATCH", -4.0, "LOSS", "2026-10-27"),
+        row("CCC", "GROWTH CORE", -2.0, "LOSS", "2026-10-26"),
+        row("DDD", "GROWTH CORE", float("nan"), "FLAT", "2026-10-26"),
+        row("OLD", "WATCH", 50.0, "WIN", "2026-10-20"),   # outside window
+        row("UNR", "WATCH", 99.0, "WIN", "2026-10-28"),   # not TH-resolved
+    ]
+    outcomes[-1]["true_horizon_resolved"] = False
+
+    pack = co.build_receipts_pack(outcomes, date(2026, 10, 28))
+    assert pack["window"] == {"start": "2026-10-22", "end": "2026-10-28"}
+    assert pack["week"]["n"] == 4
+    assert pack["week"]["win_rate"] == 25.0
+    # (10 - 4 - 2 + 0) / 4 = 1.0 gross; net = 1.0 - 0.20
+    assert pack["week"]["avg_return_gross"] == 1.0
+    assert pack["week"]["avg_return_net"] == 0.8
+    assert pack["best_pick"]["ticker"] == "AAA"
+    assert pack["best_pick"]["exit_price_derived"] == 110.0
+    assert pack["worst_pick"]["ticker"] == "BBB"
+    assert pack["underwater_categories"] == ["GROWTH CORE"]
+    assert pack["data_quality"]["non_finite_returns_in_window"] == 1
+    assert pack["overall_book"]["n"] == 5  # includes OLD, excludes UNR
+
+
+def test_receipts_pack_weekly_windows_tile():
+    """Consecutive Friday packs must tile: a resolution lands in exactly
+    one weekly window (window = 7 days ending the day before the run)."""
+    import content_outputs as co
+    from datetime import date, timedelta
+
+    def row(res_date):
+        return {"ticker": "AAA", "category": "WATCH",
+                "signal_date": "2026-09-01", "entry_price": 100.0,
+                "true_horizon_resolved": True, "true_horizon_return": 1.0,
+                "true_horizon_outcome": "WIN",
+                "true_horizon_date": res_date, "true_horizon_days": 90}
+
+    outcomes = [row("2026-10-22"), row("2026-10-23"), row("2026-10-29")]
+    # Friday Oct 23 run -> window ending Thu Oct 22; Friday Oct 30 -> Oct 29
+    p1 = co.build_receipts_pack(outcomes, date(2026, 10, 23) - timedelta(days=1))
+    p2 = co.build_receipts_pack(outcomes, date(2026, 10, 30) - timedelta(days=1))
+    assert p1["week"]["n"] == 1 and p1["window"]["end"] == "2026-10-22"
+    assert p2["week"]["n"] == 2 and p2["window"]["start"] == "2026-10-23"
+
+
+def test_plain_english_digest_shape_and_framing():
+    """content_outputs digest (2026-10-29): built from macro +
+    market_regime only; education framing is structural -- closing line
+    present, 3-5 meaning lines, no picks structure anywhere."""
+    import content_outputs as co
+
+    brief = {
+        "date": "October 29, 2026",
+        "market_regime": {"regime": "BULL", "signal": "FULL_EXPOSURE",
+                          "spx_price": 7743.98, "ma200": 7302.71,
+                          "pct_above_ma": 6.04},
+        "macro": {"regime": "RISK_OFF", "articles_read": 151,
+                  "active_signals": {"earnings_beats": {"confidence": 84}},
+                  "headline_summary": {"active_signals": [
+                      {"signal": "Middle East Tension", "confidence": 100},
+                      {"signal": "Earnings Season", "confidence": 80}]}},
+        "unified_regime": "RISK_ON",
+    }
+    d = co.build_plain_english_digest(brief)
+    assert "bull market" in d["paragraph"]
+    assert "Middle East Tension" in d["paragraph"]
+    assert d["themes"][0] == "Middle East Tension"
+    assert 3 <= len(d["what_it_means"]) <= 5
+    assert "never a tip" in d["what_it_means"][-1]
+    assert d["framing"].startswith("Education only")
+    assert "picks" not in d and "ticker" not in d
+
+
 def test_dead_features_removed_and_configs_stay_in_sync():
     """sector_momentum, market_regime, close_to_ema20_ratio were confirmed
     constant (zero variance) across the entire training set -- must not
