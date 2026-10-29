@@ -44,8 +44,8 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| NEE | 🟡 WATCH | 7d | — | — |
 | ADI | 🟡 WATCH | 7d | — | — |
+| NEE | 🟡 WATCH | 7d | — | — |
 | CSU.TO | 🟡 WATCH | 7d | — | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
