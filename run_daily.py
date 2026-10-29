@@ -2303,6 +2303,29 @@ def run_daily(test_mode=False, dry_run=False):
 
     rotate_brief_history(brief)
 
+    # ── CONTENT OUTPUTS (2026-10-29) ─────────────────────────────
+    # Additive, freeze-safe: plain-English market digest + weekly
+    # Receipts Pack feeding OkMoneyMatters drafting (content_outputs.py).
+    # Reads the finished brief + outcomes_log; changes no scoring, model,
+    # gate, or universe behaviour. The digest section is attached to the
+    # brief and latest_brief.json re-saved; the NGX re-save below uses
+    # the same dict, so the section survives it.
+    try:
+        from content_outputs import (build_plain_english_digest,
+                                     write_daily_digest, write_receipts_pack,
+                                     RECEIPTS_ANCHOR_WEEKDAY)
+        brief["plain_english_digest"] = build_plain_english_digest(brief)
+        with open("latest_brief.json", "w") as _cf:
+            json.dump(brief, _cf, indent=2, default=str)
+        if not dry_run:
+            write_daily_digest(brief)
+            print("  📰 Plain-English digest saved to digest/")
+            if datetime.now().weekday() == RECEIPTS_ANCHOR_WEEKDAY:
+                _pack_paths = write_receipts_pack()
+                print(f"  🧾 Receipts Pack saved: {_pack_paths}")
+    except Exception as _coe:
+        print(f"  ⚠️  Content outputs skipped: {_coe}")
+
     # ── FINAL SUMMARY ─────────────────────────────────────────
     _mark("Social Content Engine + Outcome Tracking")
     elapsed    = round((datetime.now()-start).total_seconds(), 1)
