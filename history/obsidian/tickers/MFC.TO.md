@@ -2,7 +2,7 @@
 ticker: MFC.TO
 updated: 2026-10-30
 streak_days: 6
-score_now: 71.7
+score_now: 71.1
 velocity: 0
 pf_30d: 10.69
 picks_30d: 7
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **6 of last 7 days**.
-Avg score: 71.7
+Avg score: 71.1
 Dates: 2026-10-23, 2026-10-26, 2026-10-27, 2026-10-28, 2026-10-29, 2026-10-30
 
 ## Recent Performance (last 30d)
