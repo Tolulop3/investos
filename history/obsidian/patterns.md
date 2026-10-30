@@ -45,7 +45,7 @@ tags: [investos, patterns, weekly]
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | SU.TO | 🟡 WATCH | 7d | — | 2.5 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| MFC.TO | 🟡 WATCH | 6d | — | 10.69 |
+| NEE | 🟡 WATCH | 7d | — | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
