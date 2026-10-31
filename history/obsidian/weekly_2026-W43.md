@@ -1,6 +1,6 @@
 ---
 week: 2026-W43
-generated: 2026-10-30
+generated: 2026-10-31
 oos_n: 703
 oos_wr: 41.3
 oos_pf: 0.98
@@ -21,18 +21,18 @@ tags: [investos, weekly, performance]
 ## Regime Timeline (recent)
 | Regime | Period | Duration | Avg Sharpe |
 |--------|--------|----------|------------|
-| FULL_EXPOSURE | 2026-06-17 → 2026-10-30 | 116d | -0.3 |
+| FULL_EXPOSURE | 2026-06-17 → 2026-10-31 | 117d | -0.297 |
 
 ## Sharpe Trajectory (last 7 days)
 | Date | Sharpe | 7d Avg | Direction |
 |------|--------|--------|-----------|
-| 2026-10-22 | 0.086 | -0.002 | improving |
 | 2026-10-23 | 0.125 | 0.029 | improving |
 | 2026-10-26 | 0.083 | 0.052 | declining |
 | 2026-10-27 | 0.079 | 0.075 | declining |
 | 2026-10-28 | 0.062 | 0.083 | declining |
 | 2026-10-29 | 0.083 | 0.085 | improving |
 | 2026-10-30 | 0.104 | 0.089 | improving |
+| 2026-10-31 | 0.104 | 0.091 | improving |
 
 ## Pick Quality by Macro Signal (min 5 picks)
 | Signal | n | WR | PF | Status |
