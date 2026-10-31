@@ -1,8 +1,8 @@
 ---
 ticker: CSU.TO
-updated: 2026-10-30
+updated: 2026-10-31
 streak_days: 9
-score_now: 89.0
+score_now: 87.0
 velocity: 0
 pf_30d: 29.9
 picks_30d: 8
@@ -13,8 +13,8 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **9 of last 7 days**.
-Avg score: 89.0
-Dates: 2026-10-22, 2026-10-23, 2026-10-26, 2026-10-27, 2026-10-28, 2026-10-29, 2026-10-29, 2026-10-30, 2026-10-30
+Avg score: 87.0
+Dates: 2026-10-23, 2026-10-26, 2026-10-27, 2026-10-28, 2026-10-29, 2026-10-29, 2026-10-30, 2026-10-30, 2026-10-31
 
 ## Recent Performance (last 30d)
 Profit Factor: **29.9** ✅  |  n=8 picks
