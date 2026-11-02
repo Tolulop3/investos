@@ -1,6 +1,6 @@
 ---
 ticker: ADI
-updated: 2026-10-31
+updated: 2026-11-02
 streak_days: 11
 score_now: 99.1
 velocity: 0
