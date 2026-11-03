@@ -2,7 +2,7 @@
 ticker: KXS.TO
 updated: 2026-11-03
 streak_days: 3
-score_now: 92.6
+score_now: 95.3
 velocity: 0
 pf_30d: None
 picks_30d: 0
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **3 of last 7 days**.
-Avg score: 92.6
+Avg score: 95.3
 Dates: 2026-10-31, 2026-11-03, 2026-11-03
 
 ---
