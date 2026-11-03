@@ -7,18 +7,19 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 71.9%  (+0.31%/day)
-- Sharpe: 0.161  (+0.012/day)
+- Breadth (200MA): 72.4%  (+0.39%/day)
+- Sharpe: 0.188  (+0.016/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CSU.TO** — 11d streak, avg score 87.2
+- **CSU.TO** — 11d streak, avg score 87.5
+- **ADI** — 11d streak, avg score 98.4
 - **CNQ.TO** — 10d streak, avg score 96.8
-- **ADI** — 10d streak, avg score 100.0
-- **MFC.TO** — 7d streak, avg score 68.2
-- **NEE** — 6d streak, avg score 77.7
+- **MFC.TO** — 7d streak, avg score 67.9
 - **PSX** — 6d streak, avg score 98.9
-- **SLF.TO** — 3d streak, avg score 66.9
+- **NEE** — 5d streak, avg score 76.8
 - **SU.TO** — 3d streak, avg score 94.8
+- **KXS.TO** — 3d streak, avg score 92.6
+- **XOM** — 3d streak, avg score 97.8
 
 ## Score Velocity (rising/falling fast)
 - 📉 **MPC** -23.5 pts/day  (97.0 → 50.0)
@@ -31,19 +32,19 @@ tags: [investos, patterns, weekly]
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 67.7% of recent picks (21 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 65.7% of recent picks (23 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| CNQ.TO | 🟡 WATCH | 10d | -9.7 | 11.56 |
+| CNQ.TO | 🟡 WATCH | 10d | -9.1 | 11.56 |
 | MPC | 🟡 WATCH | 0d | -23.5 | 2.2 |
 | CSU.TO | 🟡 WATCH | 11d | — | 36.43 |
-| ADI | 🟡 WATCH | 10d | — | — |
+| ADI | 🟡 WATCH | 11d | — | — |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | LLY | 🟡 WATCH | 0d | -18.7 | — |
-| VLO | 🟡 WATCH | 0d | +17.5 | 0.99 |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
+| VLO | 🟡 WATCH | 0d | +17.5 | 0.99 |
 | THC | 🟡 WATCH | 0d | +17.4 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 
