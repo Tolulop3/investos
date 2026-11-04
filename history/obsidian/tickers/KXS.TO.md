@@ -1,6 +1,6 @@
 ---
 ticker: KXS.TO
-updated: 2026-11-03
+updated: 2026-11-04
 streak_days: 3
 score_now: 95.3
 velocity: 0
