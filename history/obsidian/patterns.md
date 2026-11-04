@@ -7,24 +7,23 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 71.5%  (+0.31%/day)
-- Sharpe: 0.207  (+0.021/day)
+- Breadth (200MA): 74.6%  (+0.76%/day)
+- Sharpe: 0.232  (+0.024/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CSU.TO** — 12d streak, avg score 87.6
+- **CSU.TO** — 12d streak, avg score 87.3
 - **ADI** — 9d streak, avg score 98.1
 - **CNQ.TO** — 8d streak, avg score 96.9
-- **MFC.TO** — 7d streak, avg score 67.3
-- **PSX** — 6d streak, avg score 98.5
-- **NEE** — 5d streak, avg score 77.7
-- **XOM** — 4d streak, avg score 98.3
-- **WCP.TO** — 4d streak, avg score 84.0
+- **MFC.TO** — 7d streak, avg score 67.1
+- **NEE** — 5d streak, avg score 79.0
+- **PSX** — 4d streak, avg score 98.9
+- **XOM** — 4d streak, avg score 97.8
 - **KXS.TO** — 3d streak, avg score 95.3
-- **IMO.TO** — 3d streak, avg score 74.2
+- **IMO.TO** — 3d streak, avg score 73.8
 
 ## Score Velocity (rising/falling fast)
+- 📉 **PSX** -24.4 pts/day  (98.8 → 50.0)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
-- 📉 **LLY** -18.7 pts/day  (87.4 → 50.0)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
@@ -33,15 +32,15 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 67.6% of recent picks (23 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 73.3% of recent picks (22 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
+| PSX | 🟡 WATCH | 4d | -24.4 | 2.95 |
 | CSU.TO | 🟡 WATCH | 12d | — | 40.99 |
+| CNQ.TO | 🟡 WATCH | 8d | -5.1 | 9.42 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
-| LLY | 🟡 WATCH | 0d | -18.7 | — |
-| CNQ.TO | 🟡 WATCH | 8d | — | 9.42 |
 | ADI | 🟡 WATCH | 9d | — | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |

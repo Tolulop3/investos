@@ -2,7 +2,7 @@
 ticker: XOM
 updated: 2026-11-04
 streak_days: 4
-score_now: 98.3
+score_now: 97.8
 velocity: 0
 pf_30d: None
 picks_30d: 5
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **4 of last 7 days**.
-Avg score: 98.3
+Avg score: 97.8
 Dates: 2026-11-02, 2026-11-03, 2026-11-03, 2026-11-04
 
 ---

@@ -2,7 +2,7 @@
 ticker: NEE
 updated: 2026-11-04
 streak_days: 5
-score_now: 77.7
+score_now: 79.0
 velocity: 0
 pf_30d: None
 picks_30d: 16
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **5 of last 7 days**.
-Avg score: 77.7
+Avg score: 79.0
 Dates: 2026-10-28, 2026-10-29, 2026-10-30, 2026-11-02, 2026-11-04
 
 ---
