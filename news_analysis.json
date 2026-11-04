@@ -1,26 +1,26 @@
 {
-  "timestamp": "2026-11-04T18:31:58.423755",
+  "timestamp": "2026-11-04T21:35:24.333555",
   "date": "November 04, 2026",
   "articles_fetched": 143,
   "feeds_online": 11,
   "feeds_total": 12,
   "signals_detected": 6,
   "active_signals": {
+    "earnings_misses": {
+      "confidence": 76,
+      "note": "Earnings misses = defensive tilt, watch FHSA positions"
+    },
     "middle_east_tension": {
       "confidence": 100,
       "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
     },
-    "trump_tariff_negative": {
-      "confidence": 100,
-      "note": "Tariffs hurt Canadian exporters and US cross-border freight carriers \u2014 reduce exposure"
-    },
-    "earnings_beats": {
-      "confidence": 69,
-      "note": "Strong earnings season = risk-on, growth picks benefit"
-    },
     "russia_ukraine": {
       "confidence": 100,
       "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported"
+    },
+    "trump_tariff_negative": {
+      "confidence": 100,
+      "note": "Tariffs hurt Canadian exporters and US cross-border freight carriers \u2014 reduce exposure"
     },
     "oil_price_drop": {
       "confidence": 100,
@@ -32,6 +32,19 @@
     }
   },
   "sector_sentiment": {
+    "REPORTING_SECTOR": {
+      "bullish_score": 0,
+      "bearish_score": 114.0,
+      "net_score": -114.0,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "earnings_misses",
+          "direction": "bearish",
+          "confidence": 76
+        }
+      ]
+    },
     "OIL": {
       "bullish_score": 200,
       "bearish_score": 0,
@@ -140,71 +153,6 @@
         }
       ]
     },
-    "TSX_EXPORTERS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "TRADE_SENSITIVE_US": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "CANADIAN_MATERIALS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "AUTOS": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "trump_tariff_negative",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "REPORTING_SECTOR": {
-      "bullish_score": 104.0,
-      "bearish_score": 0,
-      "net_score": 104.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "earnings_beats",
-          "direction": "bullish",
-          "confidence": 69
-        }
-      ]
-    },
     "EUROPEAN_ENERGY": {
       "bullish_score": 150.0,
       "bearish_score": 0,
@@ -252,6 +200,58 @@
       "signals": [
         {
           "name": "russia_ukraine",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "TSX_EXPORTERS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "TRADE_SENSITIVE_US": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "CANADIAN_MATERIALS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
+    "AUTOS": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "trump_tariff_negative",
           "direction": "bearish",
           "confidence": 100
         }
@@ -870,8 +870,8 @@
   },
   "weight_adjustments": {
     "safety_weight": 10,
-    "momentum_weight": 0,
-    "growth_weight": 2,
+    "momentum_weight": -5,
+    "growth_weight": 0,
     "dividend_weight": 0,
     "value_weight": 0,
     "regime": "RISK_OFF",
@@ -886,19 +886,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
         "articles": [
-          "Midterm elections 2026 live updates: Vance blames Iran war for GOP losses, Trump talks ballroom",
+          "What Trump losing power over Congress means for Iran, Ukraine and foreign policy",
           "What Republicans' huge loss means for Trump"
-        ]
-      },
-      {
-        "signal": "Trump Tariff Negative",
-        "magnitude": "HIGH",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Tariffs hurt Canadian exporters and US cross-border freight carriers \u2014 reduce exposure",
-        "articles": [
-          "What Republicans' huge loss means for Trump",
-          "Arabica Coffee Prices Hit Record on U.S., Colombia Tariff Spat"
         ]
       },
       {
@@ -910,6 +899,17 @@
         "articles": [
           "What Trump losing power over Congress means for Iran, Ukraine and foreign policy",
           "Russia and Ukraine Head to White House for Melania Trump-Led Talks"
+        ]
+      },
+      {
+        "signal": "Trump Tariff Negative",
+        "magnitude": "HIGH",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Tariffs hurt Canadian exporters and US cross-border freight carriers \u2014 reduce exposure",
+        "articles": [
+          "What Republicans' huge loss means for Trump",
+          "\u2018Cartwheels\u2019 in Canada after Trump punished in US midterm elections"
         ]
       },
       {
@@ -934,13 +934,13 @@
         ]
       },
       {
-        "signal": "Earnings Beats",
+        "signal": "Earnings Misses",
         "magnitude": "MODERATE",
-        "confidence": 69,
+        "confidence": 76,
         "bars": "\u2588\u2588\u2588",
-        "note": "Strong earnings season = risk-on, growth picks benefit",
+        "note": "Earnings misses = defensive tilt, watch FHSA positions",
         "articles": [
-          "McDonald's stock rises as earnings beat, U.S. restaurants show improvement"
+          "Snap shares fall over 10% on third-quarter earnings miss"
         ]
       }
     ],
