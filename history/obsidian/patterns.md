@@ -6,17 +6,17 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-11-05
 
 ## Regime Drift
-- ⚠️ Breadth declining -0.5%/day — watch for regime shift if sustained
-- Breadth (200MA): 68.0%  (-0.51%/day)
+- ⚠️ Breadth declining -0.6%/day — watch for regime shift if sustained
+- Breadth (200MA): 67.1%  (-0.64%/day)
 - Sharpe: 0.249  (+0.024/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **CSU.TO** — 12d streak, avg score 87.2
 - **ADI** — 7d streak, avg score 97.6
-- **MFC.TO** — 7d streak, avg score 67.2
+- **MFC.TO** — 7d streak, avg score 67.1
 - **CNQ.TO** — 6d streak, avg score 95.9
-- **NEE** — 6d streak, avg score 86.6
-- **XOM** — 5d streak, avg score 93.5
+- **XOM** — 5d streak, avg score 92.7
+- **NEE** — 4d streak, avg score 79.8
 - **PSX** — 4d streak, avg score 98.9
 - **IMO.TO** — 4d streak, avg score 73.7
 - **KXS.TO** — 3d streak, avg score 95.3
@@ -33,7 +33,7 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 71.0% of recent picks (22 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 73.3% of recent picks (22 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -47,7 +47,7 @@ tags: [investos, patterns, weekly]
 | MFC.TO | 🟡 WATCH | 7d | — | 8.46 |
 | THC | 🟡 WATCH | 0d | +15.8 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| CNQ.TO | 🟡 WATCH | 6d | — | 3.74 |
+| ADI | 🟡 WATCH | 7d | — | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
