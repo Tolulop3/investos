@@ -1,9 +1,9 @@
 ---
 ticker: PSX
-updated: 2026-11-04
+updated: 2026-11-05
 streak_days: 4
 score_now: 98.9
-velocity: -24.4
+velocity: 0
 pf_30d: 2.95
 picks_30d: 8
 tags: [investos, ticker, pattern]
@@ -15,10 +15,6 @@ tags: [investos, ticker, pattern]
 Appeared in picks **4 of last 7 days**.
 Avg score: 98.9
 Dates: 2026-10-31, 2026-10-31, 2026-11-02, 2026-11-02
-
-## Score Velocity
-📉 **FALLING** at -24.4 pts/day
-Score: 98.8 → 50.0 (Δ -48.8 over 3 days)
 
 ## Recent Performance (last 30d)
 Profit Factor: **2.95** ✅  |  n=8 picks
