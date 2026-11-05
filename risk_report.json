@@ -1,5 +1,5 @@
 {
-  "date": "November 04, 2026",
+  "date": "November 05, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-11-04T21:37:38.857912",
+    "run_at": "2026-11-05T01:23:13.442308",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -30,59 +30,59 @@
       "ml_noise": {
         "name": "10% ML Prediction Noise",
         "normal_count": 13,
-        "survived": 10,
-        "survival_pct": 76.9,
-        "avg_score_change": 3.4,
+        "survived": 9,
+        "survival_pct": 69.2,
+        "avg_score_change": 3.2,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.4 pts with 10% noise"
+        "note": "Avg score change: \u00b13.2 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 73.3,
+        "normal_avg": 75.5,
         "stressed_avg": 63.3,
-        "score_drop": 10.0,
+        "score_drop": 12.2,
         "removed": [
-          "NEE",
           "BAM.TO",
+          "CRBG",
+          "ADI",
           "XOM",
-          "CSU.TO",
-          "VLO"
+          "XEL"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 10.0 pts without top 5 \u2014 system depth check"
+        "verdict": "\u274c CONCENTRATED",
+        "note": "Score drops 12.2 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 13,
-        "survived": 11,
-        "survival_pct": 84.6,
-        "avg_score_drop": 1.6,
+        "survived": 10,
+        "survival_pct": 76.9,
+        "avg_score_drop": 2.0,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 1.6 pts"
+        "note": "If momentum stops working: avg score drops 2.0 pts"
       }
     },
     "summary": {
       "normal_picks": 13,
-      "normal_avg_score": 73.3,
+      "normal_avg_score": 75.5,
       "scenarios_robust": 4,
-      "scenarios_fragile": 1,
-      "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+      "scenarios_fragile": 0,
+      "scenarios_broken": 1,
+      "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
-    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+    "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
   },
   "decay_monitor": {
-    "date": "November 04, 2026",
+    "date": "November 05, 2026",
     "robustness_score": 50,
     "rolling_sharpe": {
-      "sharpe": 0.232,
-      "avg_ret_pct": 0.13,
+      "sharpe": 0.237,
+      "avg_ret_pct": 0.14,
       "std_ret_pct": 4.19,
-      "picks_used": 943,
-      "date_from": "2026-08-06",
+      "picks_used": 927,
+      "date_from": "2026-08-07",
       "date_to": "2026-11-04",
       "source": "resolved_returns",
-      "note": "Sharpe from 943 resolved picks (2026-08-06 \u2192 2026-11-04) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 927 resolved picks (2026-08-07 \u2192 2026-11-04) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": -0.44,
@@ -93,23 +93,23 @@
       "sharpe": 0.63,
       "symbol": "^GSPC"
     },
-    "alpha": -0.398,
+    "alpha": -0.393,
     "neg_alpha_days": 91,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 76.2,
-      "momentum_picks": 21,
-      "note": "16/21 rising-score picks also rose in price"
+      "alignment_pct": 77.3,
+      "momentum_picks": 22,
+      "note": "17/22 rising-score picks also rose in price"
     },
     "alerts": [
       {
         "level": "\u2139\ufe0f NOTE",
-        "message": "Alpha vs SPX negative for 91 days but Sharpe 0.23 is positive \u2014 system recovering, monitor."
+        "message": "Alpha vs SPX negative for 91 days but Sharpe 0.24 is positive \u2014 system recovering, monitor."
       },
       {
         "level": "\u26a0\ufe0f WARNING",
-        "message": "Rolling Sharpe 0.23 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        "message": "Rolling Sharpe 0.24 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
       }
     ],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
