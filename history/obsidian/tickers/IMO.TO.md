@@ -2,7 +2,7 @@
 ticker: IMO.TO
 updated: 2026-11-05
 streak_days: 4
-score_now: 73.6
+score_now: 73.7
 velocity: 0
 pf_30d: None
 picks_30d: 2
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **4 of last 7 days**.
-Avg score: 73.6
+Avg score: 73.7
 Dates: 2026-11-02, 2026-11-03, 2026-11-04, 2026-11-05
 
 ---
