@@ -1,6 +1,6 @@
 ---
 ticker: PSX
-updated: 2026-11-05
+updated: 2026-11-06
 streak_days: 4
 score_now: 98.9
 velocity: 0
