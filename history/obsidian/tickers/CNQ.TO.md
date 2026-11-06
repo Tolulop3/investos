@@ -3,7 +3,7 @@ ticker: CNQ.TO
 updated: 2026-11-06
 streak_days: 4
 score_now: 96.0
-velocity: 12.7
+velocity: 10.15
 pf_30d: 2.16
 picks_30d: 19
 tags: [investos, ticker, pattern]
@@ -17,8 +17,8 @@ Avg score: 96.0
 Dates: 2026-10-30, 2026-10-30, 2026-10-31, 2026-10-31
 
 ## Score Velocity
-📈 **RISING** at +12.7 pts/day
-Score: 68.4 → 93.8 (Δ +25.4 over 3 days)
+📈 **RISING** at +10.2 pts/day
+Score: 68.4 → 88.7 (Δ +20.3 over 3 days)
 
 ## Recent Performance (last 30d)
 Profit Factor: **2.16** ✅  |  n=19 picks

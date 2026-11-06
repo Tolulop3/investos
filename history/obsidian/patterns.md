@@ -7,47 +7,47 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 75.0%  (+0.89%/day)
-- Sharpe: 0.252  (+0.021/day)
+- Breadth (200MA): 66.7%  (-0.30%/day)
+- Sharpe: 0.232  (+0.018/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CSU.TO** — 12d streak, avg score 87.9
-- **MFC.TO** — 7d streak, avg score 64.7
-- **XOM** — 6d streak, avg score 89.4
+- **CSU.TO** — 11d streak, avg score 87.4
+- **MFC.TO** — 6d streak, avg score 65.3
 - **ADI** — 5d streak, avg score 96.6
-- **IMO.TO** — 5d streak, avg score 73.6
+- **NEE** — 5d streak, avg score 87.4
+- **XOM** — 5d streak, avg score 92.7
+- **IMO.TO** — 5d streak, avg score 71.0
 - **CNQ.TO** — 4d streak, avg score 96.0
 - **PSX** — 4d streak, avg score 98.9
-- **BAM.TO** — 4d streak, avg score 88.2
-- **NEE** — 3d streak, avg score 81.3
-- **KXS.TO** — 3d streak, avg score 95.3
+- **BAM.TO** — 4d streak, avg score 93.6
+- **THC** — 3d streak, avg score 95.7
 
 ## Score Velocity (rising/falling fast)
+- 📈 **LLY** +21.9 pts/day  (50.0 → 93.7)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
+- 📉 **DSG.TO** -19.1 pts/day  (88.3 → 50.0)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
-- 📈 **THC** +15.8 pts/day  (50.0 → 81.5)
+- 📈 **MPC** +15.9 pts/day  (50.0 → 81.9)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
-- 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
-- 📈 **CNQ.TO** +12.7 pts/day  (68.4 → 93.8)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 76.9% of recent picks (20 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 73.3% of recent picks (22 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| CSU.TO | 🟡 WATCH | 12d | — | 49.78 |
-| CNQ.TO | 🟢 CONSIDER | 4d | +12.7 | 2.16 |
+| CSU.TO | 🟡 WATCH | 11d | — | 49.78 |
+| LLY | 🟡 WATCH | 0d | +21.9 | — |
+| CNQ.TO | 🟢 CONSIDER | 4d | +10.2 | 2.16 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
+| DSG.TO | 🟡 WATCH | 0d | -19.1 | — |
+| MPC | 🟡 WATCH | 0d | +15.9 | 1.58 |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
-| MFC.TO | 🟡 WATCH | 7d | — | 4.37 |
-| THC | 🟡 WATCH | 0d | +15.8 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| RTX | 🟡 WATCH | 0d | +13.1 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)

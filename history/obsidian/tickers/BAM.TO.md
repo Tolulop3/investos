@@ -2,7 +2,7 @@
 ticker: BAM.TO
 updated: 2026-11-06
 streak_days: 4
-score_now: 88.2
+score_now: 93.6
 velocity: 0
 pf_30d: None
 picks_30d: 7
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **4 of last 7 days**.
-Avg score: 88.2
+Avg score: 93.6
 Dates: 2026-11-04, 2026-11-04, 2026-11-05, 2026-11-06
 
 ---
