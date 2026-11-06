@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-11-06T17:53:54.056308",
+    "run_at": "2026-11-06T21:09:12.606066",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -22,8 +22,8 @@
       "execution_delay": {
         "name": "2-Day Execution Delay",
         "normal_count": 13,
-        "survived": 11,
-        "survival_pct": 84.6,
+        "survived": 12,
+        "survival_pct": 92.3,
         "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
@@ -32,44 +32,44 @@
         "normal_count": 13,
         "survived": 11,
         "survival_pct": 84.6,
-        "avg_score_change": 3.8,
+        "avg_score_change": 3.5,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.8 pts with 10% noise"
+        "note": "Avg score change: \u00b13.5 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 82.9,
-        "stressed_avg": 72.9,
-        "score_drop": 10.0,
+        "normal_avg": 82.5,
+        "stressed_avg": 71.7,
+        "score_drop": 10.8,
         "removed": [
-          "THC",
           "MPC",
-          "ABBV",
           "LLY",
-          "NEE"
+          "ABBV",
+          "BAM.TO",
+          "THC"
         ],
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "Score drops 10.0 pts without top 5 \u2014 system depth check"
+        "verdict": "\u274c CONCENTRATED",
+        "note": "Score drops 10.8 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 13,
         "survived": 11,
         "survival_pct": 84.6,
-        "avg_score_drop": 2.2,
+        "avg_score_drop": 2.0,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.2 pts"
+        "note": "If momentum stops working: avg score drops 2.0 pts"
       }
     },
     "summary": {
       "normal_picks": 13,
-      "normal_avg_score": 82.9,
+      "normal_avg_score": 82.5,
       "scenarios_robust": 4,
-      "scenarios_fragile": 1,
-      "scenarios_broken": 0,
-      "overall_verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+      "scenarios_fragile": 0,
+      "scenarios_broken": 1,
+      "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
-    "verdict": "\u2705 ACCEPTABLE \u2014 Minor vulnerabilities"
+    "verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
   },
   "decay_monitor": {
     "date": "November 06, 2026",
@@ -85,22 +85,22 @@
       "note": "Sharpe from 931 resolved picks (2026-08-10 \u2192 2026-11-06) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": -4.43,
-      "ret_30d": -3.97,
-      "ret_90d": -1.4,
-      "ann_ret": -3.9,
+      "ret_7d": -4.45,
+      "ret_30d": -3.99,
+      "ret_90d": -1.42,
+      "ann_ret": -4.0,
       "ann_vol": 13.3,
-      "sharpe": -0.29,
+      "sharpe": -0.3,
       "symbol": "^GSPC"
     },
-    "alpha": 0.522,
+    "alpha": 0.532,
     "neg_alpha_days": 0,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 73.1,
-      "momentum_picks": 26,
-      "note": "19/26 rising-score picks also rose in price"
+      "alignment_pct": 76.0,
+      "momentum_picks": 25,
+      "note": "19/25 rising-score picks also rose in price"
     },
     "alerts": [
       {
