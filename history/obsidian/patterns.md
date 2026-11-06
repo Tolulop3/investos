@@ -7,38 +7,39 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 66.7%  (-0.30%/day)
+- Breadth (200MA): 66.2%  (-0.37%/day)
 - Sharpe: 0.232  (+0.018/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **CSU.TO** — 11d streak, avg score 87.4
+- **CSU.TO** — 10d streak, avg score 87.6
 - **MFC.TO** — 6d streak, avg score 65.3
 - **ADI** — 5d streak, avg score 96.6
-- **NEE** — 5d streak, avg score 87.4
 - **XOM** — 5d streak, avg score 92.7
 - **IMO.TO** — 5d streak, avg score 71.0
+- **BAM.TO** — 5d streak, avg score 97.0
 - **CNQ.TO** — 4d streak, avg score 96.0
+- **NEE** — 4d streak, avg score 82.6
 - **PSX** — 4d streak, avg score 98.9
-- **BAM.TO** — 4d streak, avg score 93.6
 - **THC** — 3d streak, avg score 95.7
 
 ## Score Velocity (rising/falling fast)
 - 📈 **LLY** +21.9 pts/day  (50.0 → 93.7)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
 - 📉 **DSG.TO** -19.1 pts/day  (88.3 → 50.0)
+- 📉 **KXS.TO** -17.9 pts/day  (85.9 → 50.0)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📈 **MPC** +15.9 pts/day  (50.0 → 81.9)
-- 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 73.3% of recent picks (22 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 76.7% of recent picks (23 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| CSU.TO | 🟡 WATCH | 11d | — | 49.78 |
+| KXS.TO | 🟡 WATCH | 3d | -17.9 | — |
+| CSU.TO | 🟡 WATCH | 10d | — | 49.78 |
 | LLY | 🟡 WATCH | 0d | +21.9 | — |
 | CNQ.TO | 🟢 CONSIDER | 4d | +10.2 | 2.16 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
@@ -47,7 +48,6 @@ tags: [investos, patterns, weekly]
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
-| UNP | 🟡 WATCH | 0d | -15.0 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)

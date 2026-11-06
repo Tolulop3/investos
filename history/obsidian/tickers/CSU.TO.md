@@ -1,8 +1,8 @@
 ---
 ticker: CSU.TO
 updated: 2026-11-06
-streak_days: 11
-score_now: 87.4
+streak_days: 10
+score_now: 87.6
 velocity: 0
 pf_30d: 49.78
 picks_30d: 13
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # CSU.TO — Pattern Log
 
 ## Streak
-Appeared in picks **11 of last 7 days**.
-Avg score: 87.4
-Dates: 2026-10-30, 2026-10-30, 2026-10-31, 2026-11-02, 2026-11-02, 2026-11-03, 2026-11-03, 2026-11-04, 2026-11-05, 2026-11-05, 2026-11-06
+Appeared in picks **10 of last 7 days**.
+Avg score: 87.6
+Dates: 2026-10-30, 2026-10-30, 2026-10-31, 2026-11-02, 2026-11-02, 2026-11-03, 2026-11-03, 2026-11-04, 2026-11-05, 2026-11-05
 
 ## Recent Performance (last 30d)
 Profit Factor: **49.78** ✅  |  n=13 picks
