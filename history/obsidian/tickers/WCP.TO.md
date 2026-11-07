@@ -1,6 +1,6 @@
 ---
 ticker: WCP.TO
-updated: 2026-11-06
+updated: 2026-11-07
 streak_days: 3
 score_now: 75.2
 velocity: 0
