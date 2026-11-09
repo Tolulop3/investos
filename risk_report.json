@@ -9,7 +9,7 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-11-09T21:23:32.320969",
+    "run_at": "2026-11-09T23:54:48.456849",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
@@ -32,38 +32,38 @@
         "normal_count": 13,
         "survived": 11,
         "survival_pct": 84.6,
-        "avg_score_change": 3.3,
+        "avg_score_change": 3.4,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b13.3 pts with 10% noise"
+        "note": "Avg score change: \u00b13.4 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 81.2,
-        "stressed_avg": 70.2,
-        "score_drop": 11.0,
+        "normal_avg": 80.7,
+        "stressed_avg": 70.6,
+        "score_drop": 10.1,
         "removed": [
-          "HLT",
-          "MDT",
-          "PPL.TO",
           "LLY",
-          "THC"
+          "THC",
+          "TD.TO",
+          "HLT",
+          "MDT"
         ],
         "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 11.0 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 10.1 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
         "normal_count": 13,
         "survived": 11,
         "survival_pct": 84.6,
-        "avg_score_drop": 2.1,
+        "avg_score_drop": 2.3,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 2.1 pts"
+        "note": "If momentum stops working: avg score drops 2.3 pts"
       }
     },
     "summary": {
       "normal_picks": 13,
-      "normal_avg_score": 81.2,
+      "normal_avg_score": 80.7,
       "scenarios_robust": 4,
       "scenarios_fragile": 0,
       "scenarios_broken": 1,
@@ -75,14 +75,14 @@
     "date": "November 09, 2026",
     "robustness_score": 70,
     "rolling_sharpe": {
-      "sharpe": 0.193,
-      "avg_ret_pct": 0.12,
-      "std_ret_pct": 4.33,
-      "picks_used": 929,
+      "sharpe": 0.085,
+      "avg_ret_pct": 0.05,
+      "std_ret_pct": 4.37,
+      "picks_used": 940,
       "date_from": "2026-08-11",
-      "date_to": "2026-11-07",
+      "date_to": "2026-11-09",
       "source": "resolved_returns",
-      "note": "Sharpe from 929 resolved picks (2026-08-11 \u2192 2026-11-07) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      "note": "Sharpe from 940 resolved picks (2026-08-11 \u2192 2026-11-09) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
       "ret_7d": -0.4,
@@ -93,7 +93,7 @@
       "sharpe": 0.03,
       "symbol": "^GSPC"
     },
-    "alpha": 0.163,
+    "alpha": 0.055,
     "neg_alpha_days": 0,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
@@ -105,7 +105,7 @@
     "alerts": [
       {
         "level": "\u26a0\ufe0f WARNING",
-        "message": "Rolling Sharpe 0.19 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        "message": "Rolling Sharpe 0.09 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
       }
     ],
     "survivorship_note": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nSURVIVORSHIP BIAS DISCLOSURE\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nThis system screens from a CURRENT watchlist. Stocks that\nexist today survived \u2014 stocks that failed, got delisted,\nor went bankrupt between 2008\u20132026 are INVISIBLE to the\nbacktest.\n\nEstimated impact on historical performance:\n  \u2022 Studies show survivorship bias inflates backtest\n    returns by 1\u20133% annually on average\n  \u2022 In crisis periods (2008, 2020), the inflation is\n    higher because most failures happen during crashes\n  \u2022 Your estimated 13\u201321% annual return range should\n    be mentally discounted by ~1.5\u20132% for this bias\n\nWhat this system does to partially mitigate it:\n  \u2022 Walk-forward validation (no full-history optimization)\n  \u2022 Conservative XGBoost (shallow trees, regularized)\n  \u2022 Bootstrap data based on known factor relationships\n    not cherry-picked winning stocks\n\nWhat you should do:\n  \u2022 After 90 days of live data, compare live Sharpe\n    to backtested Sharpe. Live < backtested = normal.\n  \u2022 If live Sharpe < 0.3, investigate factor decay.\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
