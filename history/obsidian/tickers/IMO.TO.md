@@ -1,11 +1,11 @@
 ---
 ticker: IMO.TO
-updated: 2026-11-07
+updated: 2026-11-09
 streak_days: 6
 score_now: 69.2
 velocity: 0
 pf_30d: None
-picks_30d: 2
+picks_30d: 3
 tags: [investos, ticker, pattern]
 ---
 
