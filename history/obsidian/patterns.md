@@ -7,7 +7,7 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 71.9%  (+0.00%/day)
+- Breadth (200MA): 71.4%  (-0.07%/day)
 - Sharpe: 0.029  (-0.023/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -15,14 +15,15 @@ tags: [investos, patterns, weekly]
 - **ABBV** — 5d streak, avg score 100.0
 - **CSU.TO** — 5d streak, avg score 88.2
 - **IMO.TO** — 5d streak, avg score 68.2
-- **NEE** — 5d streak, avg score 82.4
+- **NEE** — 5d streak, avg score 82.1
 - **LLY** — 5d streak, avg score 100.0
 - **MDT** — 5d streak, avg score 95.0
 - **XOM** — 4d streak, avg score 92.6
 - **THC** — 4d streak, avg score 97.9
-- **TGT** — 4d streak, avg score 81.0
+- **TGT** — 4d streak, avg score 81.2
 
 ## Score Velocity (rising/falling fast)
+- 📉 **TRP.TO** -20.4 pts/day  (92.0 → 51.2)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
 - 📉 **DSG.TO** -19.1 pts/day  (88.3 → 50.0)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
@@ -30,7 +31,6 @@ tags: [investos, patterns, weekly]
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📈 **MPC** +15.9 pts/day  (50.0 → 81.9)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
-- 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
 - **UNKNOWN**: 74.2% of recent picks (23 picks) — HIGH_CONCENTRATION
@@ -38,6 +38,7 @@ tags: [investos, patterns, weekly]
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
+| TRP.TO | 🟡 WATCH | 0d | -20.4 | — |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | DSG.TO | 🟡 WATCH | 0d | -19.1 | — |
 | BAM.TO | 🟡 WATCH | 9d | — | — |
@@ -46,8 +47,7 @@ tags: [investos, patterns, weekly]
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | MPC | 🟡 WATCH | 0d | +15.9 | 0.24 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| TGT | 🟢 CONSIDER | 4d | +5.3 | — |
-| RTX | 🟡 WATCH | 0d | +13.1 | — |
+| TGT | 🟢 CONSIDER | 4d | +5.8 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)
