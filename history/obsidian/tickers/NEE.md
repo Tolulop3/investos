@@ -1,11 +1,11 @@
 ---
 ticker: NEE
-updated: 2026-11-09
+updated: 2026-11-10
 streak_days: 5
 score_now: 85.7
 velocity: 0
 pf_30d: None
-picks_30d: 14
+picks_30d: 13
 tags: [investos, ticker, pattern]
 ---
 

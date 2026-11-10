@@ -1,6 +1,6 @@
 ---
 ticker: THC
-updated: 2026-11-09
+updated: 2026-11-10
 streak_days: 4
 score_now: 97.9
 velocity: 0

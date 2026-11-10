@@ -1,6 +1,6 @@
 ---
 ticker: LLY
-updated: 2026-11-09
+updated: 2026-11-10
 streak_days: 5
 score_now: 100.0
 velocity: 0
