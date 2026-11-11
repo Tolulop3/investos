@@ -7,20 +7,20 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 73.7%  (-0.24%/day)
-- Sharpe: 0.033  (-0.028/day)
+- Breadth (200MA): 74.6%  (-0.11%/day)
+- Sharpe: -0.024  (-0.037/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **BAM.TO** — 11d streak, avg score 98.7
-- **NEE** — 6d streak, avg score 80.4
+- **BAM.TO** — 10d streak, avg score 97.8
+- **NEE** — 6d streak, avg score 79.1
 - **TGT** — 6d streak, avg score 87.5
 - **LLY** — 5d streak, avg score 100.0
 - **MDT** — 5d streak, avg score 95.0
 - **IMO.TO** — 4d streak, avg score 66.8
 - **ABBV** — 4d streak, avg score 100.0
 - **CSU.TO** — 3d streak, avg score 87.0
+- **BNS.TO** — 3d streak, avg score 91.3
 - **THC** — 3d streak, avg score 100.0
-- **TD.TO** — 3d streak, avg score 92.1
 
 ## Score Velocity (rising/falling fast)
 - 📉 **TRP.TO** -20.4 pts/day  (92.0 → 51.2)
@@ -30,16 +30,16 @@ tags: [investos, patterns, weekly]
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
-- 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
+- 📉 **GS** -14.2 pts/day  (92.0 → 63.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 77.8% of recent picks (21 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 81.5% of recent picks (22 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| BAM.TO | 🟡 WATCH | 11d | — | — |
 | TRP.TO | 🟡 WATCH | 0d | -20.4 | — |
+| BAM.TO | 🟡 WATCH | 10d | — | — |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | DSG.TO | 🟡 WATCH | 0d | -19.1 | — |
 | TGT | 🟢 CONSIDER | 6d | +5.8 | — |
@@ -47,7 +47,7 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| RTX | 🟡 WATCH | 0d | +13.1 | — |
+| GS | 🟡 WATCH | 0d | -14.2 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)

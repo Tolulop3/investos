@@ -1,9 +1,9 @@
 ---
 ticker: BNS.TO
-updated: 2026-11-10
+updated: 2026-11-11
 streak_days: 3
-score_now: 89.9
-velocity: -5.35
+score_now: 91.3
+velocity: 0
 pf_30d: 5.46
 picks_30d: 6
 tags: [investos, ticker, pattern]
@@ -13,12 +13,8 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **3 of last 7 days**.
-Avg score: 89.9
-Dates: 2026-11-05, 2026-11-09, 2026-11-10
-
-## Score Velocity
-📉 **FALLING** at -5.3 pts/day
-Score: 97.0 → 86.3 (Δ -10.7 over 3 days)
+Avg score: 91.3
+Dates: 2026-11-05, 2026-11-09, 2026-11-11
 
 ## Recent Performance (last 30d)
 Profit Factor: **5.46** ✅  |  n=6 picks
