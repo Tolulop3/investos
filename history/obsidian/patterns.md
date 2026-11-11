@@ -7,13 +7,13 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 74.6%  (-0.11%/day)
+- Breadth (200MA): 75.0%  (-0.06%/day)
 - Sharpe: -0.024  (-0.037/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **BAM.TO** — 10d streak, avg score 97.8
 - **NEE** — 6d streak, avg score 79.1
-- **TGT** — 6d streak, avg score 87.5
+- **TGT** — 5d streak, avg score 85.0
 - **LLY** — 5d streak, avg score 100.0
 - **MDT** — 5d streak, avg score 95.0
 - **IMO.TO** — 4d streak, avg score 66.8
@@ -33,7 +33,7 @@ tags: [investos, patterns, weekly]
 - 📉 **GS** -14.2 pts/day  (92.0 → 63.6)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 81.5% of recent picks (22 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 84.6% of recent picks (22 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -42,10 +42,10 @@ tags: [investos, patterns, weekly]
 | BAM.TO | 🟡 WATCH | 10d | — | — |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | DSG.TO | 🟡 WATCH | 0d | -19.1 | — |
-| TGT | 🟢 CONSIDER | 6d | +5.8 | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
+| TGT | 🟢 CONSIDER | 5d | +5.8 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | GS | 🟡 WATCH | 0d | -14.2 | — |
 
