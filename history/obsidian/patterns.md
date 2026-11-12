@@ -11,29 +11,29 @@ tags: [investos, patterns, weekly]
 - Sharpe: -0.090  (-0.048/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **BAM.TO** — 9d streak, avg score 95.2
-- **LLY** — 5d streak, avg score 100.0
+- **BAM.TO** — 9d streak, avg score 95.3
+- **LLY** — 7d streak, avg score 100.0
 - **NEE** — 5d streak, avg score 77.7
-- **TGT** — 5d streak, avg score 84.4
 - **MDT** — 5d streak, avg score 95.0
 - **ABBV** — 4d streak, avg score 100.0
-- **TD.TO** — 4d streak, avg score 91.7
-- **CM.TO** — 4d streak, avg score 83.2
-- **EOG** — 4d streak, avg score 85.8
+- **THC** — 4d streak, avg score 100.0
+- **TGT** — 4d streak, avg score 86.7
+- **TD.TO** — 4d streak, avg score 91.4
 - **BNS.TO** — 3d streak, avg score 91.3
+- **IMO.TO** — 3d streak, avg score 64.7
 
 ## Score Velocity (rising/falling fast)
 - 📉 **TRP.TO** -20.4 pts/day  (92.0 → 51.2)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
 - 📉 **DSG.TO** -19.1 pts/day  (88.3 → 50.0)
+- 📈 **BTSG** +19.1 pts/day  (50.0 → 88.3)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **GS** -15.0 pts/day  (92.0 → 62.0)
-- 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 86.4% of recent picks (19 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 87.5% of recent picks (21 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -42,12 +42,12 @@ tags: [investos, patterns, weekly]
 | BAM.TO | 🟡 WATCH | 9d | — | 65.06 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | DSG.TO | 🟡 WATCH | 0d | -19.1 | — |
+| BTSG | 🟡 WATCH | 0d | +19.1 | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
+| LLY | 🟡 WATCH | 7d | — | 6.74 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
-| GS | 🟡 WATCH | 0d | -15.0 | — |
-| RTX | 🟡 WATCH | 0d | +13.1 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)

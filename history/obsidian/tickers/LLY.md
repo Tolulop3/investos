@@ -1,7 +1,7 @@
 ---
 ticker: LLY
 updated: 2026-11-12
-streak_days: 5
+streak_days: 7
 score_now: 100.0
 velocity: 0
 pf_30d: 6.74
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # LLY — Pattern Log
 
 ## Streak
-Appeared in picks **5 of last 7 days**.
+Appeared in picks **7 of last 7 days**.
 Avg score: 100.0
-Dates: 2026-11-06, 2026-11-06, 2026-11-07, 2026-11-09, 2026-11-09
+Dates: 2026-11-06, 2026-11-06, 2026-11-07, 2026-11-09, 2026-11-09, 2026-11-12, 2026-11-12
 
 ## Recent Performance (last 30d)
 Profit Factor: **6.74** ✅  |  n=6 picks
