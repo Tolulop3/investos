@@ -2,7 +2,7 @@
 ticker: TD.TO
 updated: 2026-11-12
 streak_days: 4
-score_now: 92.4
+score_now: 91.7
 velocity: 0
 pf_30d: None
 picks_30d: 6
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **4 of last 7 days**.
-Avg score: 92.4
+Avg score: 91.7
 Dates: 2026-11-09, 2026-11-10, 2026-11-11, 2026-11-12
 
 ---

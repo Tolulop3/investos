@@ -2,7 +2,7 @@
 ticker: TGT
 updated: 2026-11-12
 streak_days: 5
-score_now: 89.3
+score_now: 84.4
 velocity: 0
 pf_30d: None
 picks_30d: 2
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **5 of last 7 days**.
-Avg score: 89.3
+Avg score: 84.4
 Dates: 2026-11-06, 2026-11-07, 2026-11-10, 2026-11-11, 2026-11-12
 
 ---

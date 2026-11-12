@@ -2,7 +2,7 @@
 ticker: CM.TO
 updated: 2026-11-12
 streak_days: 4
-score_now: 82.9
+score_now: 83.2
 velocity: 0
 pf_30d: None
 picks_30d: 2
@@ -13,7 +13,7 @@ tags: [investos, ticker, pattern]
 
 ## Streak
 Appeared in picks **4 of last 7 days**.
-Avg score: 82.9
+Avg score: 83.2
 Dates: 2026-11-09, 2026-11-10, 2026-11-11, 2026-11-12
 
 ---

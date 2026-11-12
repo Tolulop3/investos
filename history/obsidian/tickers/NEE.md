@@ -1,8 +1,8 @@
 ---
 ticker: NEE
 updated: 2026-11-12
-streak_days: 6
-score_now: 75.5
+streak_days: 5
+score_now: 77.7
 velocity: 0
 pf_30d: 18.95
 picks_30d: 16
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # NEE — Pattern Log
 
 ## Streak
-Appeared in picks **6 of last 7 days**.
-Avg score: 75.5
-Dates: 2026-11-06, 2026-11-07, 2026-11-09, 2026-11-10, 2026-11-11, 2026-11-12
+Appeared in picks **5 of last 7 days**.
+Avg score: 77.7
+Dates: 2026-11-06, 2026-11-07, 2026-11-09, 2026-11-10, 2026-11-11
 
 ## Recent Performance (last 30d)
 Profit Factor: **18.95** ✅  |  n=16 picks
