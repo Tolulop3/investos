@@ -1,8 +1,8 @@
 ---
 week: 2026-W45
 generated: 2026-11-13
-oos_n: 832
-oos_wr: 41.6
+oos_n: 833
+oos_wr: 41.7
 oos_pf: 0.93
 pre_oos_pf: 1.06
 tags: [investos, weekly, performance]
@@ -14,7 +14,7 @@ tags: [investos, weekly, performance]
 | Period | n | WR | Avg Return | PF |
 |--------|---|----|------------|-----|
 | Pre-OOS (in-sample) | 2645 | 47.0% | 0.1% | 1.06 |
-| **Post-OOS (live test)** | **832** | **41.6%** | **-0.13%** | **0.93** |
+| **Post-OOS (live test)** | **833** | **41.7%** | **-0.12%** | **0.93** |
 
 > OOS picks are made under frozen v4.1 rules — no tuning since 2026-08-15.
 
@@ -32,13 +32,13 @@ tags: [investos, weekly, performance]
 | 2026-11-10 | 0.029 | 0.178 | declining |
 | 2026-11-11 | -0.024 | 0.148 | declining |
 | 2026-11-12 | -0.09 | 0.102 | declining |
-| 2026-11-13 | -0.165 | 0.043 | declining |
+| 2026-11-13 | -0.115 | 0.05 | declining |
 
 ## Pick Quality by Macro Signal (min 5 picks)
 | Signal | n | WR | PF | Status |
 |--------|---|----|----|--------|
 | NO_DATA | 1587 | 53.9% | 1.13 | ⚠️ |
-| NO_SIGNALS | 1472 | 49.9% | 0.9 | 🔴 |
+| NO_SIGNALS | 1473 | 49.9% | 0.91 | 🔴 |
 
 ## Notes
 _Add weekly observations here_
