@@ -6,48 +6,48 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-11-13
 
 ## Regime Drift
-- ⚠️ Sharpe deteriorating -0.057/day — monitor position sizing
-- Breadth (200MA): 74.6%  (+1.20%/day)
-- Sharpe: -0.165  (-0.057/day)
+- ✅ Regime stable — no drift signals
+- Breadth (200MA): 73.2%  (+1.00%/day)
+- Sharpe: -0.104  (-0.048/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **BAM.TO** — 9d streak, avg score 93.4
+- **BAM.TO** — 9d streak, avg score 93.3
 - **LLY** — 7d streak, avg score 100.0
-- **MDT** — 7d streak, avg score 93.9
 - **NEE** — 5d streak, avg score 77.7
-- **TGT** — 5d streak, avg score 88.4
-- **TD.TO** — 5d streak, avg score 90.4
+- **MDT** — 5d streak, avg score 95.0
+- **HLT** — 5d streak, avg score 100.0
+- **TD.TO** — 5d streak, avg score 89.8
+- **EOG** — 5d streak, avg score 87.8
 - **ABBV** — 4d streak, avg score 100.0
 - **THC** — 4d streak, avg score 100.0
-- **HLT** — 4d streak, avg score 100.0
-- **CM.TO** — 4d streak, avg score 78.1
+- **TGT** — 4d streak, avg score 86.7
 
 ## Score Velocity (rising/falling fast)
 - 📉 **TRP.TO** -20.4 pts/day  (92.0 → 51.2)
+- 📉 **LLY** -20.1 pts/day  (90.2 → 50.0)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
+- 📈 **BTSG** +19.6 pts/day  (50.0 → 89.3)
 - 📉 **DSG.TO** -19.1 pts/day  (88.3 → 50.0)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
-- 📉 **GS** -15.0 pts/day  (92.0 → 62.0)
-- 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 84.0% of recent picks (21 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 82.1% of recent picks (23 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
+| LLY | 🟡 WATCH | 7d | -20.1 | 15.95 |
 | TRP.TO | 🟡 WATCH | 0d | -20.4 | — |
 | BAM.TO | 🟡 WATCH | 9d | — | 65.06 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
+| BTSG | 🟡 WATCH | 0d | +19.6 | — |
 | DSG.TO | 🟡 WATCH | 0d | -19.1 | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
-| LLY | 🟡 WATCH | 7d | — | 6.74 |
-| MDT | 🟡 WATCH | 7d | — | 9.11 |
-| GS | 🟡 WATCH | 0d | -15.0 | — |
+| EOG | 🟢 CONSIDER | 5d | +5.5 | — |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
 - Status: **🚨 ALERT** (flag if 2 consecutive months < 45.0%)

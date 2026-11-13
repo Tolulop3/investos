@@ -1,8 +1,8 @@
 ---
 ticker: MDT
 updated: 2026-11-13
-streak_days: 7
-score_now: 93.9
+streak_days: 5
+score_now: 95.0
 velocity: 0
 pf_30d: 9.11
 picks_30d: 5
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # MDT — Pattern Log
 
 ## Streak
-Appeared in picks **7 of last 7 days**.
-Avg score: 93.9
-Dates: 2026-11-06, 2026-11-07, 2026-11-07, 2026-11-09, 2026-11-09, 2026-11-13, 2026-11-13
+Appeared in picks **5 of last 7 days**.
+Avg score: 95.0
+Dates: 2026-11-06, 2026-11-07, 2026-11-07, 2026-11-09, 2026-11-09
 
 ## Recent Performance (last 30d)
 Profit Factor: **9.11** ✅  |  n=5 picks
