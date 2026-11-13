@@ -1,6 +1,6 @@
 ---
 ticker: ABBV
-updated: 2026-11-12
+updated: 2026-11-13
 streak_days: 4
 score_now: 100.0
 velocity: 0
