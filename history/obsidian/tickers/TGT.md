@@ -1,20 +1,20 @@
 ---
 ticker: TGT
-updated: 2026-11-13
-streak_days: 4
-score_now: 86.7
+updated: 2026-11-14
+streak_days: 3
+score_now: 91.1
 velocity: -5.8
 pf_30d: None
-picks_30d: 3
+picks_30d: 4
 tags: [investos, ticker, pattern]
 ---
 
 # TGT — Pattern Log
 
 ## Streak
-Appeared in picks **4 of last 7 days**.
-Avg score: 86.7
-Dates: 2026-11-06, 2026-11-07, 2026-11-10, 2026-11-11
+Appeared in picks **3 of last 7 days**.
+Avg score: 91.1
+Dates: 2026-11-07, 2026-11-10, 2026-11-11
 
 ## Score Velocity
 📉 **FALLING** at -5.8 pts/day
