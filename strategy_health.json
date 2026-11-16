@@ -10328,9 +10328,58 @@
         }
       ],
       "robustness_score": 45
+    },
+    {
+      "date": "2026-11-16",
+      "timestamp": "2026-11-16T20:54:34.427718",
+      "rolling_sharpe": {
+        "sharpe": -0.201,
+        "avg_ret_pct": -0.12,
+        "std_ret_pct": 4.26,
+        "picks_used": 905,
+        "date_from": "2026-08-18",
+        "date_to": "2026-11-14",
+        "source": "resolved_returns",
+        "note": "Sharpe from 905 resolved picks (2026-08-18 \u2192 2026-11-14) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
+      },
+      "benchmark_spx": {
+        "ret_7d": 0.51,
+        "ret_30d": -5.17,
+        "ret_90d": -1.34,
+        "ann_ret": -3.8,
+        "ann_vol": 14.3,
+        "sharpe": -0.26,
+        "symbol": "^GSPC"
+      },
+      "benchmark_tsx": {
+        "ret_7d": -0.17,
+        "ret_30d": 0.59,
+        "ret_90d": 1.5,
+        "ann_ret": 4.2,
+        "ann_vol": 13.1,
+        "sharpe": 0.32,
+        "symbol": "^GSPTSE"
+      },
+      "alpha_vs_spx": 0.059,
+      "neg_alpha_days": 0,
+      "last_streak_increment_date": null,
+      "momentum_health": {
+        "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
+        "decaying": false,
+        "alignment_pct": 77.8,
+        "momentum_picks": 27,
+        "note": "21/27 rising-score picks also rose in price"
+      },
+      "alerts": [
+        {
+          "level": "\u26a0\ufe0f WARNING",
+          "message": "Rolling Sharpe -0.20 below 0.3 minimum threshold. Reduce position sizes until Sharpe recovers."
+        }
+      ],
+      "robustness_score": 55
     }
   ],
   "created": "2026-03-02T03:33:15.277905",
-  "last_updated": "2026-11-14T01:20:46.013429",
+  "last_updated": "2026-11-16T20:54:34.427718",
   "streak_corrected_note": "Deduplicated 532 entries to 107 (one per calendar day) on 2026-07-02. Real streak = 9 days vs inflated 49."
 }
