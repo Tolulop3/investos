@@ -1,8 +1,8 @@
 ---
 ticker: BAM.TO
-updated: 2026-11-14
-streak_days: 8
-score_now: 89.0
+updated: 2026-11-16
+streak_days: 6
+score_now: 85.3
 velocity: 0
 pf_30d: 22.87
 picks_30d: 12
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # BAM.TO — Pattern Log
 
 ## Streak
-Appeared in picks **8 of last 7 days**.
-Avg score: 89.0
-Dates: 2026-11-07, 2026-11-07, 2026-11-10, 2026-11-10, 2026-11-11, 2026-11-12, 2026-11-13, 2026-11-14
+Appeared in picks **6 of last 7 days**.
+Avg score: 85.3
+Dates: 2026-11-10, 2026-11-10, 2026-11-11, 2026-11-12, 2026-11-13, 2026-11-14
 
 ## Recent Performance (last 30d)
 Profit Factor: **22.87** ✅  |  n=12 picks
