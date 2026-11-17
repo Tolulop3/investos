@@ -1,8 +1,8 @@
 ---
 ticker: TD.TO
 updated: 2026-11-17
-streak_days: 7
-score_now: 83.7
+streak_days: 6
+score_now: 85.7
 velocity: 0
 pf_30d: 2.57
 picks_30d: 5
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # TD.TO — Pattern Log
 
 ## Streak
-Appeared in picks **7 of last 7 days**.
-Avg score: 83.7
-Dates: 2026-11-10, 2026-11-11, 2026-11-12, 2026-11-13, 2026-11-14, 2026-11-16, 2026-11-17
+Appeared in picks **6 of last 7 days**.
+Avg score: 85.7
+Dates: 2026-11-10, 2026-11-11, 2026-11-12, 2026-11-13, 2026-11-14, 2026-11-16
 
 ## Recent Performance (last 30d)
 Profit Factor: **2.57** ✅  |  n=5 picks

@@ -6,21 +6,20 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-11-17
 
 ## Regime Drift
-- ✅ Regime stable — no drift signals
-- Breadth (200MA): 69.2%  (-0.31%/day)
-- Sharpe: -0.190  (-0.031/day)
+- ⚠️ Breadth declining -0.9%/day — watch for regime shift if sustained
+- Breadth (200MA): 65.2%  (-0.89%/day)
+- Sharpe: -0.204  (-0.033/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **EOG** — 8d streak, avg score 86.7
-- **TD.TO** — 7d streak, avg score 83.7
+- **EOG** — 8d streak, avg score 87.1
 - **BAM.TO** — 6d streak, avg score 85.3
+- **TD.TO** — 6d streak, avg score 85.7
 - **HLT** — 5d streak, avg score 100.0
-- **CVX** — 5d streak, avg score 77.3
-- **CM.TO** — 4d streak, avg score 79.2
-- **TGT** — 4d streak, avg score 97.5
+- **TGT** — 4d streak, avg score 92.5
 - **LLY** — 4d streak, avg score 100.0
 - **COP** — 4d streak, avg score 92.3
-- **BNS.TO** — 3d streak, avg score 75.8
+- **CVX** — 4d streak, avg score 79.0
+- **CM.TO** — 3d streak, avg score 84.3
 
 ## Score Velocity (rising/falling fast)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
@@ -33,7 +32,7 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 88.0% of recent picks (22 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 85.7% of recent picks (18 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -44,9 +43,9 @@ tags: [investos, patterns, weekly]
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
-| TD.TO | 🟡 WATCH | 7d | — | 2.57 |
-| GS | 🟡 WATCH | 0d | -15.0 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
+| GS | 🟡 WATCH | 0d | -15.0 | — |
+| TD.TO | 🟡 WATCH | 6d | — | 2.57 |
 | BAM.TO | 🟡 WATCH | 6d | — | 8.7 |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
