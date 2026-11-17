@@ -1,6 +1,6 @@
 ---
 ticker: BAM.TO
-updated: 2026-11-16
+updated: 2026-11-17
 streak_days: 6
 score_now: 85.3
 velocity: 0

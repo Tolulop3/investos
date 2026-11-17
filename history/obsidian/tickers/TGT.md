@@ -1,6 +1,6 @@
 ---
 ticker: TGT
-updated: 2026-11-16
+updated: 2026-11-17
 streak_days: 3
 score_now: 98.3
 velocity: 0
