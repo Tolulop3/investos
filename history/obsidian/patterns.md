@@ -6,8 +6,8 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-11-17
 
 ## Regime Drift
-- ⚠️ Breadth declining -0.9%/day — watch for regime shift if sustained
-- Breadth (200MA): 65.2%  (-0.89%/day)
+- ⚠️ Breadth declining -0.8%/day — watch for regime shift if sustained
+- Breadth (200MA): 65.6%  (-0.83%/day)
 - Sharpe: -0.204  (-0.033/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
@@ -15,7 +15,7 @@ tags: [investos, patterns, weekly]
 - **BAM.TO** — 6d streak, avg score 85.3
 - **TD.TO** — 6d streak, avg score 85.7
 - **HLT** — 5d streak, avg score 100.0
-- **TGT** — 4d streak, avg score 92.5
+- **TGT** — 4d streak, avg score 97.3
 - **LLY** — 4d streak, avg score 100.0
 - **COP** — 4d streak, avg score 92.3
 - **CVX** — 4d streak, avg score 79.0
@@ -24,15 +24,15 @@ tags: [investos, patterns, weekly]
 ## Score Velocity (rising/falling fast)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
 - 📈 **BTSG** +19.6 pts/day  (50.0 → 89.3)
+- 📈 **ENB.TO** +17.7 pts/day  (56.6 → 92.0)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **GS** -15.0 pts/day  (92.0 → 62.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
-- 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 85.7% of recent picks (18 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 86.4% of recent picks (19 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -40,12 +40,12 @@ tags: [investos, patterns, weekly]
 | EOG | 🟡 WATCH | 8d | -6.2 | — |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | BTSG | 🟡 WATCH | 0d | +19.6 | — |
+| ENB.TO | 🟡 WATCH | 0d | +17.7 | — |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
-| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | GS | 🟡 WATCH | 0d | -15.0 | — |
-| TD.TO | 🟡 WATCH | 6d | — | 2.57 |
+| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | BAM.TO | 🟡 WATCH | 6d | — | 8.7 |
 
 ## 📉 Alpha Half-Life Monitor (90–100 tier, monthly WR)
