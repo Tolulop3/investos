@@ -1,6 +1,6 @@
 ---
 ticker: HLT
-updated: 2026-11-17
+updated: 2026-11-18
 streak_days: 5
 score_now: 100.0
 velocity: 0
