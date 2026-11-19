@@ -6,20 +6,19 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-11-19
 
 ## Regime Drift
-- ⚠️ Breadth declining -1.3%/day — watch for regime shift if sustained
-- Breadth (200MA): 64.3%  (-1.27%/day)
-- Sharpe: -0.251  (-0.023/day)
+- ⚠️ Breadth declining -2.6%/day — watch for regime shift if sustained
+- Breadth (200MA): 54.8%  (-2.63%/day)
+- Sharpe: -0.351  (-0.037/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **EOG** — 8d streak, avg score 87.1
+- **EOG** — 8d streak, avg score 86.7
 - **HLT** — 5d streak, avg score 100.0
+- **CVX** — 5d streak, avg score 75.6
 - **LLY** — 4d streak, avg score 100.0
 - **COP** — 4d streak, avg score 92.3
 - **TD.TO** — 4d streak, avg score 81.9
-- **CVX** — 4d streak, avg score 79.0
-- **PEY.TO** — 4d streak, avg score 88.2
 - **BAM.TO** — 3d streak, avg score 73.1
-- **MDLZ** — 3d streak, avg score 98.3
+- **PEY.TO** — 3d streak, avg score 88.3
 
 ## Score Velocity (rising/falling fast)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
@@ -32,7 +31,7 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 84.6% of recent picks (11 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 91.7% of recent picks (11 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -43,8 +42,8 @@ tags: [investos, patterns, weekly]
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
 | EOG | 🟡 WATCH | 8d | — | — |
-| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | GS | 🟡 WATCH | 0d | -15.0 | — |
+| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
 
