@@ -1,11 +1,11 @@
 ---
 ticker: HLT
-updated: 2026-11-18
+updated: 2026-11-19
 streak_days: 5
 score_now: 100.0
 velocity: 0
 pf_30d: None
-picks_30d: 2
+picks_30d: 3
 tags: [investos, ticker, pattern]
 ---
 
