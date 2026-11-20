@@ -1,6 +1,6 @@
 ---
 ticker: PEY.TO
-updated: 2026-11-19
+updated: 2026-11-20
 streak_days: 3
 score_now: 88.3
 velocity: 0
