@@ -1,8 +1,8 @@
 ---
 ticker: EOG
 updated: 2026-11-20
-streak_days: 8
-score_now: 83.6
+streak_days: 7
+score_now: 85.4
 velocity: 0
 pf_30d: 1.78
 picks_30d: 5
@@ -12,9 +12,9 @@ tags: [investos, ticker, pattern]
 # EOG — Pattern Log
 
 ## Streak
-Appeared in picks **8 of last 7 days**.
-Avg score: 83.6
-Dates: 2026-11-13, 2026-11-13, 2026-11-14, 2026-11-16, 2026-11-17, 2026-11-18, 2026-11-19, 2026-11-20
+Appeared in picks **7 of last 7 days**.
+Avg score: 85.4
+Dates: 2026-11-13, 2026-11-13, 2026-11-14, 2026-11-16, 2026-11-17, 2026-11-18, 2026-11-19
 
 ## Recent Performance (last 30d)
 Profit Factor: **1.78** ✅  |  n=5 picks

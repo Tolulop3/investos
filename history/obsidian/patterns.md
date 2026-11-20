@@ -6,15 +6,15 @@ tags: [investos, patterns, weekly]
 # InvestOS Pattern Summary — 2026-11-20
 
 ## Regime Drift
-- ⚠️ Breadth declining -1.9%/day — watch for regime shift if sustained
-- Breadth (200MA): 59.7%  (-1.93%/day)
-- Sharpe: -0.337  (-0.033/day)
+- ⚠️ Breadth declining -3.5%/day — watch for regime shift if sustained
+- Breadth (200MA): 48.9%  (-3.47%/day)
+- Sharpe: -0.429  (-0.046/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **EOG** — 8d streak, avg score 83.6
-- **HLT** — 4d streak, avg score 100.0
+- **EOG** — 7d streak, avg score 85.4
+- **HLT** — 5d streak, avg score 99.7
 - **CVX** — 4d streak, avg score 76.0
-- **MDLZ** — 4d streak, avg score 89.7
+- **MDLZ** — 4d streak, avg score 89.5
 - **TD.TO** — 3d streak, avg score 79.4
 - **COP** — 3d streak, avg score 93.0
 - **PEY.TO** — 3d streak, avg score 88.3
@@ -30,17 +30,17 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 76.9% of recent picks (10 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 72.7% of recent picks (8 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | BTSG | 🟡 WATCH | 0d | +19.6 | — |
-| EOG | 🟡 WATCH | 8d | — | 1.78 |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
+| EOG | 🟡 WATCH | 7d | — | 1.78 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | GS | 🟡 WATCH | 0d | -15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
