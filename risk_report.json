@@ -1,5 +1,5 @@
 {
-  "date": "November 20, 2026",
+  "date": "November 21, 2026",
   "drawdown_lock": {
     "locked": false,
     "drawdown_pct": 0.0,
@@ -9,70 +9,70 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-11-20T22:26:03.898189",
+    "run_at": "2026-11-21T02:02:15.773589",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
-        "normal_count": 12,
-        "survived": 4,
-        "survival_pct": 33.3,
+        "normal_count": 13,
+        "survived": 5,
+        "survival_pct": 38.5,
         "verdict": "\u274c BROKEN",
         "note": "8 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
-        "normal_count": 12,
-        "survived": 11,
-        "survival_pct": 91.7,
-        "verdict": "\u2705 ROBUST",
+        "normal_count": 13,
+        "survived": 10,
+        "survival_pct": 76.9,
+        "verdict": "\u26a0\ufe0f FRAGILE",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
-        "normal_count": 12,
+        "normal_count": 13,
         "survived": 9,
-        "survival_pct": 75.0,
-        "avg_score_change": 2.8,
+        "survival_pct": 69.2,
+        "avg_score_change": 2.6,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b12.8 pts with 10% noise"
+        "note": "Avg score change: \u00b12.6 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 74.0,
-        "stressed_avg": 60.7,
-        "score_drop": 13.3,
+        "normal_avg": 71.3,
+        "stressed_avg": 59.7,
+        "score_drop": 11.6,
         "removed": [
-          "HLT",
+          "TGT",
+          "TRP.TO",
           "AQN.TO",
           "BAM.TO",
-          "TGT",
-          "PEY.TO"
+          "PEP"
         ],
         "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 13.3 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 11.6 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
-        "normal_count": 12,
+        "normal_count": 13,
         "survived": 10,
-        "survival_pct": 83.3,
-        "avg_score_drop": 0.9,
+        "survival_pct": 76.9,
+        "avg_score_drop": 0.7,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 0.9 pts"
+        "note": "If momentum stops working: avg score drops 0.7 pts"
       }
     },
     "summary": {
-      "normal_picks": 12,
-      "normal_avg_score": 74.0,
-      "scenarios_robust": 3,
-      "scenarios_fragile": 0,
+      "normal_picks": 13,
+      "normal_avg_score": 71.3,
+      "scenarios_robust": 2,
+      "scenarios_fragile": 1,
       "scenarios_broken": 2,
       "overall_verdict": "\u274c FRAGILE \u2014 System needs redesign"
     },
     "verdict": "\u274c FRAGILE \u2014 System needs redesign"
   },
   "decay_monitor": {
-    "date": "November 20, 2026",
+    "date": "November 21, 2026",
     "robustness_score": 65,
     "rolling_sharpe": {
       "sharpe": -0.429,
