@@ -1,11 +1,11 @@
 ---
 ticker: PEY.TO
-updated: 2026-11-21
+updated: 2026-11-23
 streak_days: 3
 score_now: 88.3
 velocity: 0
 pf_30d: None
-picks_30d: 0
+picks_30d: 1
 tags: [investos, ticker, pattern]
 ---
 
