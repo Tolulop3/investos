@@ -7,8 +7,9 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ⚠️ Breadth declining -0.9%/day — watch for regime shift if sustained
+- ⚠️ Sharpe deteriorating -0.058/day — monitor position sizing
 - Breadth (200MA): 59.3%  (-0.90%/day)
-- Sharpe: -0.527  (-0.046/day)
+- Sharpe: -0.613  (-0.058/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **TGT** — 5d streak, avg score 89.4
