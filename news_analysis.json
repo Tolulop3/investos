@@ -1,18 +1,14 @@
 {
-  "timestamp": "2026-11-24T05:09:49.158364",
+  "timestamp": "2026-11-24T21:03:11.426041",
   "date": "November 24, 2026",
-  "articles_fetched": 126,
-  "feeds_online": 10,
+  "articles_fetched": 140,
+  "feeds_online": 11,
   "feeds_total": 12,
   "signals_detected": 5,
   "active_signals": {
     "trump_tariff_negative": {
       "confidence": 100,
       "note": "Tariffs hurt Canadian exporters and US cross-border freight carriers \u2014 reduce exposure"
-    },
-    "middle_east_tension": {
-      "confidence": 100,
-      "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
     },
     "russia_ukraine": {
       "confidence": 100,
@@ -25,6 +21,10 @@
     "cad_weakness": {
       "confidence": 75,
       "note": "Weak CAD = your US-listed holdings worth more in CAD"
+    },
+    "middle_east_tension": {
+      "confidence": 100,
+      "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)"
     }
   },
   "sector_sentiment": {
@@ -103,19 +103,6 @@
         }
       ]
     },
-    "OIL": {
-      "bullish_score": 200,
-      "bearish_score": 0,
-      "net_score": 200,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "middle_east_tension",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
     "DEFENSE": {
       "bullish_score": 350.0,
       "bearish_score": 0,
@@ -123,10 +110,23 @@
       "sentiment": "BULLISH",
       "signals": [
         {
-          "name": "middle_east_tension",
+          "name": "russia_ukraine",
           "direction": "bullish",
           "confidence": 100
         },
+        {
+          "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "EUROPEAN_ENERGY": {
+      "bullish_score": 150.0,
+      "bearish_score": 0,
+      "net_score": 150.0,
+      "sentiment": "BULLISH",
+      "signals": [
         {
           "name": "russia_ukraine",
           "direction": "bullish",
@@ -141,56 +141,12 @@
       "sentiment": "BULLISH",
       "signals": [
         {
-          "name": "middle_east_tension",
+          "name": "russia_ukraine",
           "direction": "bullish",
           "confidence": 100
         },
         {
-          "name": "russia_ukraine",
-          "direction": "bullish",
-          "confidence": 100
-        }
-      ]
-    },
-    "AIRLINES": {
-      "bullish_score": 0,
-      "bearish_score": 400,
-      "net_score": -400,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
           "name": "middle_east_tension",
-          "direction": "bearish",
-          "confidence": 100
-        },
-        {
-          "name": "health_outbreak",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "SHIPPING": {
-      "bullish_score": 0,
-      "bearish_score": 200,
-      "net_score": -200,
-      "sentiment": "BEARISH",
-      "signals": [
-        {
-          "name": "middle_east_tension",
-          "direction": "bearish",
-          "confidence": 100
-        }
-      ]
-    },
-    "EUROPEAN_ENERGY": {
-      "bullish_score": 150.0,
-      "bearish_score": 0,
-      "net_score": 150.0,
-      "sentiment": "BULLISH",
-      "signals": [
-        {
-          "name": "russia_ukraine",
           "direction": "bullish",
           "confidence": 100
         }
@@ -352,6 +308,24 @@
         }
       ]
     },
+    "AIRLINES": {
+      "bullish_score": 0,
+      "bearish_score": 400,
+      "net_score": -400,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "health_outbreak",
+          "direction": "bearish",
+          "confidence": 100
+        },
+        {
+          "name": "middle_east_tension",
+          "direction": "bearish",
+          "confidence": 100
+        }
+      ]
+    },
     "VFV.TO": {
       "bullish_score": 112.0,
       "bearish_score": 0,
@@ -401,6 +375,32 @@
           "name": "cad_weakness",
           "direction": "bearish",
           "confidence": 75
+        }
+      ]
+    },
+    "OIL": {
+      "bullish_score": 200,
+      "bearish_score": 0,
+      "net_score": 200,
+      "sentiment": "BULLISH",
+      "signals": [
+        {
+          "name": "middle_east_tension",
+          "direction": "bullish",
+          "confidence": 100
+        }
+      ]
+    },
+    "SHIPPING": {
+      "bullish_score": 0,
+      "bearish_score": 200,
+      "net_score": -200,
+      "sentiment": "BEARISH",
+      "signals": [
+        {
+          "name": "middle_east_tension",
+          "direction": "bearish",
+          "confidence": 100
         }
       ]
     }
@@ -645,15 +645,6 @@
       "news_sentiment": "BULLISH",
       "causing_magnitude": "LOW"
     },
-    "AC.TO": {
-      "adjustment": -25,
-      "reasons": [
-        "\ud83d\udcc9 AIRLINES (BEARISH)",
-        "\ud83d\udcc9 SHIPPING (BEARISH)"
-      ],
-      "news_sentiment": "BEARISH",
-      "causing_magnitude": "HIGH"
-    },
     "JNJ": {
       "adjustment": 13.3,
       "reasons": [
@@ -829,6 +820,15 @@
       ],
       "news_sentiment": "BULLISH",
       "causing_magnitude": "LOW"
+    },
+    "AC.TO": {
+      "adjustment": -25,
+      "reasons": [
+        "\ud83d\udcc9 AIRLINES (BEARISH)",
+        "\ud83d\udcc9 SHIPPING (BEARISH)"
+      ],
+      "news_sentiment": "BEARISH",
+      "causing_magnitude": "HIGH"
     }
   },
   "weight_adjustments": {
@@ -849,19 +849,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Tariffs hurt Canadian exporters and US cross-border freight carriers \u2014 reduce exposure",
         "articles": [
-          "Iran says three tankers hit mines in Hormuz despite U.S. escort, as Treasury widens sanctions",
-          "Arabica Coffee Prices Hit Record on U.S., Colombia Tariff Spat"
-        ]
-      },
-      {
-        "signal": "Middle East Tension",
-        "magnitude": "HIGH",
-        "confidence": 100,
-        "bars": "\u2588\u2588\u2588\u2588\u2588",
-        "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
-        "articles": [
-          "Iran says three tankers hit mines in Hormuz despite U.S. escort, as Treasury widens sanctions",
-          "Will Canadian workers refuse to handle Israeli goods? Why unions increasingly say they should"
+          "Trump readies raft of new tariffs on major economies",
+          "Huawei convicted in US trial that exposed corporate espionage and sanctions evasion"
         ]
       },
       {
@@ -871,8 +860,8 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Russia/Ukraine ongoing \u2014 defense and gold remain supported",
         "articles": [
-          "U.S. adds Megaspeed to trade blacklist over export control concerns amid Nvidia controversy",
-          "\u2018Little room for error\u2019: what a debt-laden cloud computing company says about the AI boom"
+          "Pentagon delays Patriot missile shipments to Ukraine",
+          "Britain bought fake C4 explosives for Ukraine"
         ]
       },
       {
@@ -882,8 +871,19 @@
         "bars": "\u2588\u2588\u2588\u2588\u2588",
         "note": "Health outbreak = defensive positioning. Pharma, staples, ecommerce.",
         "articles": [
-          "Mortgage arrears in Ontario approaching levels last seen in 2008 financial crisis",
+          "The casino that never closes: Inside Canada\u2019s online gambling epidemic",
           "New WHO technical package to help countries improve health data for COVID-19 response and beyond"
+        ]
+      },
+      {
+        "signal": "Middle East Tension",
+        "magnitude": "HIGH",
+        "confidence": 100,
+        "bars": "\u2588\u2588\u2588\u2588\u2588",
+        "note": "Middle East tension = Canadian energy stocks benefit (ENB, CNQ, SU)",
+        "articles": [
+          "Will Canadian workers refuse to handle Israeli goods? Why unions increasingly say they should",
+          "Grade I interiors, gold bars, cost fears: Bank of England faces headache over \u00a3160m revamp"
         ]
       },
       {
