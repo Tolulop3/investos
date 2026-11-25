@@ -37,8 +37,8 @@ tags: [investos, patterns, weekly]
 | STN.TO | 🟡 WATCH | 0d | -17.3 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
-| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | GS | 🟡 WATCH | 0d | -15.0 | — |
+| UNP | 🟡 WATCH | 0d | -15.0 | — |
 | TGT | 🟡 WATCH | 6d | — | 17.32 |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 
