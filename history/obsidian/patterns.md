@@ -7,11 +7,11 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ⚠️ Breadth declining -0.6%/day — watch for regime shift if sustained
-- Breadth (200MA): 58.9%  (-0.63%/day)
-- Sharpe: -0.521  (-0.036/day)
+- Breadth (200MA): 59.3%  (-0.57%/day)
+- Sharpe: -0.550  (-0.041/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **TGT** — 6d streak, avg score 89.5
+- **TGT** — 6d streak, avg score 89.8
 - **MDLZ** — 4d streak, avg score 89.5
 - **DOL.TO** — 4d streak, avg score 100.0
 
@@ -26,7 +26,7 @@ tags: [investos, patterns, weekly]
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 64.3% of recent picks (9 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 57.1% of recent picks (8 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -37,8 +37,8 @@ tags: [investos, patterns, weekly]
 | STN.TO | 🟡 WATCH | 0d | -17.3 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
-| GS | 🟡 WATCH | 0d | -15.0 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
+| GS | 🟡 WATCH | 0d | -15.0 | — |
 | TGT | 🟡 WATCH | 6d | — | 17.32 |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 
