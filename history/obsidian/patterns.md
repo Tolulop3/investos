@@ -7,11 +7,12 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 61.2%  (+0.91%/day)
-- Sharpe: -0.533  (-0.026/day)
+- Breadth (200MA): 62.6%  (+1.11%/day)
+- Sharpe: -0.539  (-0.027/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **TGT** — 8d streak, avg score 87.2
+- **DOL.TO** — 4d streak, avg score 100.0
 
 ## Score Velocity (rising/falling fast)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
@@ -24,7 +25,7 @@ tags: [investos, patterns, weekly]
 - 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 57.1% of recent picks (8 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 56.2% of recent picks (9 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
@@ -35,8 +36,8 @@ tags: [investos, patterns, weekly]
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
-| GS | 🟡 WATCH | 0d | -15.0 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
+| GS | 🟡 WATCH | 0d | -15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
 
