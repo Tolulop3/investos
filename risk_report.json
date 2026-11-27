@@ -9,63 +9,63 @@
   },
   "system_locked": false,
   "stress_test": {
-    "run_at": "2026-11-27T03:33:31.674643",
+    "run_at": "2026-11-27T19:54:44.269151",
     "scenarios": {
       "double_costs": {
         "name": "Double Transaction Costs",
-        "normal_count": 14,
-        "survived": 7,
-        "survival_pct": 50.0,
-        "verdict": "\u26a0\ufe0f FRAGILE",
-        "note": "7 picks unviable after doubling costs"
+        "normal_count": 13,
+        "survived": 10,
+        "survival_pct": 76.9,
+        "verdict": "\u2705 ROBUST",
+        "note": "3 picks unviable after doubling costs"
       },
       "execution_delay": {
         "name": "2-Day Execution Delay",
-        "normal_count": 14,
-        "survived": 12,
-        "survival_pct": 85.7,
+        "normal_count": 13,
+        "survived": 13,
+        "survival_pct": 100.0,
         "verdict": "\u2705 ROBUST",
         "note": "~0.6% slippage from 2-day delay on avg"
       },
       "ml_noise": {
         "name": "10% ML Prediction Noise",
-        "normal_count": 14,
-        "survived": 10,
-        "survival_pct": 71.4,
-        "avg_score_change": 2.6,
+        "normal_count": 13,
+        "survived": 9,
+        "survival_pct": 69.2,
+        "avg_score_change": 3.2,
         "verdict": "\u2705 ROBUST",
-        "note": "Avg score change: \u00b12.6 pts with 10% noise"
+        "note": "Avg score change: \u00b13.2 pts with 10% noise"
       },
       "remove_top5": {
         "name": "Remove Top 5 Stocks",
-        "normal_avg": 72.2,
-        "stressed_avg": 58.9,
-        "score_drop": 13.3,
+        "normal_avg": 77.3,
+        "stressed_avg": 63.2,
+        "score_drop": 14.1,
         "removed": [
-          "CVX",
           "BAM.TO",
-          "TGT",
-          "AQN.TO",
-          "PEP"
+          "L.TO",
+          "ABBV",
+          "HLT",
+          "V"
         ],
         "verdict": "\u274c CONCENTRATED",
-        "note": "Score drops 13.3 pts without top 5 \u2014 system depth check"
+        "note": "Score drops 14.1 pts without top 5 \u2014 system depth check"
       },
       "momentum_decay": {
         "name": "Momentum Factor -30%",
-        "normal_count": 14,
-        "survived": 12,
-        "survival_pct": 85.7,
-        "avg_score_drop": 0.9,
+        "normal_count": 13,
+        "survived": 10,
+        "survival_pct": 76.9,
+        "avg_score_drop": 2.9,
         "verdict": "\u2705 ROBUST",
-        "note": "If momentum stops working: avg score drops 0.9 pts"
+        "note": "If momentum stops working: avg score drops 2.9 pts"
       }
     },
     "summary": {
-      "normal_picks": 14,
-      "normal_avg_score": 72.2,
-      "scenarios_robust": 3,
-      "scenarios_fragile": 1,
+      "normal_picks": 13,
+      "normal_avg_score": 77.3,
+      "scenarios_robust": 4,
+      "scenarios_fragile": 0,
       "scenarios_broken": 1,
       "overall_verdict": "\u26a0\ufe0f MODERATE \u2014 Monitor closely"
     },
@@ -73,7 +73,7 @@
   },
   "decay_monitor": {
     "date": "November 27, 2026",
-    "robustness_score": 55,
+    "robustness_score": 45,
     "rolling_sharpe": {
       "sharpe": -0.502,
       "avg_ret_pct": -0.29,
@@ -85,22 +85,22 @@
       "note": "Sharpe from 877 resolved picks (2026-08-31 \u2192 2026-11-27) \u00b7 90d window \u00b7 weekly horizon \u00b7 capped at 4.0"
     },
     "benchmark": {
-      "ret_7d": -2.15,
-      "ret_30d": -7.25,
-      "ret_90d": -4.22,
-      "ann_ret": -11.8,
-      "ann_vol": 17.7,
-      "sharpe": -0.67,
+      "ret_7d": -0.36,
+      "ret_30d": -4.73,
+      "ret_90d": -1.5,
+      "ann_ret": -4.2,
+      "ann_vol": 17.9,
+      "sharpe": -0.23,
       "symbol": "^GSPC"
     },
-    "alpha": 0.168,
-    "neg_alpha_days": 0,
+    "alpha": -0.272,
+    "neg_alpha_days": 1,
     "momentum_health": {
       "verdict": "\u2705 HEALTHY \u2014 Momentum factor working",
       "decaying": false,
-      "alignment_pct": 82.1,
-      "momentum_picks": 28,
-      "note": "23/28 rising-score picks also rose in price"
+      "alignment_pct": 81.5,
+      "momentum_picks": 27,
+      "note": "22/27 rising-score picks also rose in price"
     },
     "alerts": [
       {
