@@ -8,7 +8,7 @@ tags: [investos, patterns, weekly]
 ## Regime Drift
 - ✅ Regime stable — no drift signals
 - Breadth (200MA): 62.1%  (+1.89%/day)
-- Sharpe: -0.540  (-0.016/day)
+- Sharpe: -0.502  (-0.010/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
 - **TGT** — 10d streak, avg score 88.7
@@ -37,8 +37,8 @@ tags: [investos, patterns, weekly]
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
-| GS | 🟡 WATCH | 0d | -15.0 | — |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
+| GS | 🟡 WATCH | 0d | -15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |
 | MMM | 🟡 WATCH | 0d | -12.2 | — |
 
