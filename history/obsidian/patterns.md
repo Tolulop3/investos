@@ -7,37 +7,40 @@ tags: [investos, patterns, weekly]
 
 ## Regime Drift
 - ✅ Regime stable — no drift signals
-- Breadth (200MA): 68.7%  (+2.83%/day)
+- Breadth (200MA): 68.7%  (+2.57%/day)
 - Sharpe: -0.502  (-0.010/day)
 
 ## Ticker Streaks (appeared 3+ days in picks)
-- **TGT** — 10d streak, avg score 88.5
+- **TGT** — 12d streak, avg score 87.5
 - **DOL.TO** — 4d streak, avg score 100.0
-- **HLT** — 3d streak, avg score 98.6
+- **ABBV** — 4d streak, avg score 100.0
+- **L.TO** — 4d streak, avg score 100.0
+- **HLT** — 4d streak, avg score 99.3
+- **V** — 4d streak, avg score 100.0
 
 ## Score Velocity (rising/falling fast)
 - 📉 **MS** -19.8 pts/day  (100.0 → 60.5)
 - 📈 **BTSG** +19.6 pts/day  (50.0 → 89.3)
-- 📈 **LLY** +18.1 pts/day  (50.0 → 86.3)
 - 📉 **NMIH** -17.5 pts/day  (85.0 → 50.0)
 - 📈 **BKNG** +17.1 pts/day  (50.0 → 84.2)
 - 📉 **GE** -16.6 pts/day  (94.1 → 60.8)
 - 📉 **GS** -15.0 pts/day  (92.0 → 62.0)
 - 📉 **UNP** -15.0 pts/day  (76.9 → 46.9)
+- 📈 **RTX** +13.1 pts/day  (50.0 → 76.1)
 
 ## ⚠️ Sector Concentration Risk
-- **UNKNOWN**: 52.4% of recent picks (11 picks) — HIGH_CONCENTRATION
+- **UNKNOWN**: 53.6% of recent picks (15 picks) — HIGH_CONCENTRATION
 
 ## Signal Watchlist (top 10)
 | Ticker | Action | Streak | Velocity | PF |
 |--------|--------|--------|----------|----|
-| TGT | 🟡 WATCH | 10d | — | 17.32 |
+| TGT | 🟡 WATCH | 12d | — | 17.32 |
 | MS | 🟡 WATCH | 0d | -19.8 | — |
 | BTSG | 🟡 WATCH | 0d | +19.6 | — |
-| LLY | 🟡 WATCH | 0d | +18.1 | 1.36 |
 | NMIH | 🟡 WATCH | 0d | -17.5 | — |
 | BKNG | 🟡 WATCH | 0d | +17.1 | — |
 | GE | 🟡 WATCH | 0d | -16.6 | — |
+| HLT | 🟢 CONSIDER | 4d | +7.9 | 0.54 |
 | UNP | 🟡 WATCH | 0d | -15.0 | — |
 | GS | 🟡 WATCH | 0d | -15.0 | — |
 | RTX | 🟡 WATCH | 0d | +13.1 | — |

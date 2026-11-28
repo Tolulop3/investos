@@ -1,9 +1,9 @@
 ---
 ticker: HLT
 updated: 2026-11-28
-streak_days: 3
-score_now: 98.6
-velocity: 0
+streak_days: 4
+score_now: 99.3
+velocity: 7.9
 pf_30d: 0.54
 picks_30d: 6
 tags: [investos, ticker, pattern]
@@ -12,9 +12,13 @@ tags: [investos, ticker, pattern]
 # HLT — Pattern Log
 
 ## Streak
-Appeared in picks **3 of last 7 days**.
-Avg score: 98.6
-Dates: 2026-11-20, 2026-11-27, 2026-11-27
+Appeared in picks **4 of last 7 days**.
+Avg score: 99.3
+Dates: 2026-11-27, 2026-11-27, 2026-11-28, 2026-11-28
+
+## Score Velocity
+📈 **RISING** at +7.9 pts/day
+Score: 79.9 → 95.7 (Δ +15.8 over 3 days)
 
 ## Recent Performance (last 30d)
 Profit Factor: **0.54** 🔴  |  n=6 picks
