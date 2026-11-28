@@ -1,6 +1,6 @@
 ---
 ticker: DOL.TO
-updated: 2026-11-27
+updated: 2026-11-28
 streak_days: 4
 score_now: 100.0
 velocity: 0
